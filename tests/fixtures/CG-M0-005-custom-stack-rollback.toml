@@ -1,0 +1,37 @@
+schema_version = 1
+id = "CG-M0-005"
+status = "protocol-only"
+spec_sections = ["6.7", "8.3", "13.4", "13.6", "13.14", "13.16", "20.9"]
+purpose = "Fixes transactional Custom READ access to the caller Data Stack and rollback on failed invocation."
+distinguishes = "Leaving a normal board is not successful Custom completion; a failed invocation cannot commit staged caller Data Stack changes."
+
+[program]
+format = "source-format-draft"
+text = """codegrid 2
+program {
+  boundary exit
+  board Main size 2 1 {
+    initial 0 0 right
+    row 0: [(] [#0]
+  }
+  custom #0 {
+    board Main size 1 1 {
+      initial 0 0 right
+      row 0: [,>]
+    }
+  }
+}"""
+
+[run]
+boundary = "exit"
+seed = 0
+custom_execution_limit = 4
+max_global_ticks = 2
+
+[expect.v2]
+status = "error"
+committed_global_ticks = 1
+trace = ["t1 PUSH outer R0=0", "t2 #0 starts fresh invocation", "custom t1 READ stages caller-stack pop", "custom t1 OutOfBounds", "outer t2 discards Custom transaction"]
+final_data_stack_thread_0 = [0]
+errors = ["OutOfBounds"]
+metrics = ["Custom internal READ attempted=1"]

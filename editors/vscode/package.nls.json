@@ -1,0 +1,21 @@
+{
+  "extension.description": "Full CodeGrid editing, local execution and Global Tick debugging, with an optional native language server.",
+  "codegrid.runtime.path.description": "Path to the native CodeGrid executable. Empty uses the bundled runtime, then PATH.",
+  "codegrid.execution.input.description": "Input bytes for Run and Debug commands.",
+  "codegrid.execution.boundary.description": "Board boundary behavior.",
+  "codegrid.execution.seed.description": "Canonical decimal u64 seed.",
+  "codegrid.execution.customLimit.description": "Custom execution limit.",
+  "codegrid.execution.maxTicks.description": "Maximum committed Global Ticks per session.",
+  "codegrid.execution.maxWorkUnits.description": "Maximum work units per atomic Global Tick.",
+  "codegrid.languageServer.enabled.description": "Enable the optional native CodeGrid language server. Standalone editor features remain available if it cannot start.",
+  "codegrid.languageServer.path.description": "Executable path for the native CodeGrid language server.",
+  "codegrid.languageServer.arguments.description": "Arguments passed to the native CodeGrid language server executable.",
+  "codegrid.run.title": "Run Current File",
+  "codegrid.debug.title": "Debug Current File",
+  "codegrid.newFile.title": "New CodeGrid File",
+  "codegrid.openReadme.title": "Learn about CodeGrid 0.1",
+  "debug.program.description": "CodeGrid source file.",
+  "debug.runtimePath.description": "Optional native executable override.",
+  "debug.configuration.name": "Debug CodeGrid",
+  "debug.snippet.label": "CodeGrid: Debug current file"
+}

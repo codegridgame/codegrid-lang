@@ -1,0 +1,205 @@
+name: Rust CI
+
+on:
+  push:
+    branches:
+      - "**"
+    tags:
+      - "wasm-mvp-v*"
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  native:
+    name: Native architecture, formatting, and tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt
+      - name: Enforce workspace dependency graph
+        run: python3 scripts/check_workspace_dependency_graph.py
+      - name: Check formatting
+        run: cargo fmt --all -- --check
+      - name: Test workspace
+        run: cargo test --workspace
+
+  lsp-vscode-integration:
+    name: Rust LSP and VS Code integration
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Install VS Code extension dependencies
+        run: npm ci --prefix editors/vscode
+      - name: Build the Rust language server and CLI
+        run: cargo build -p codegrid-lsp -p codegrid-cli
+      - name: Run VS Code extension-host tests against the Rust language server
+        run: xvfb-run -a npm test --prefix editors/vscode
+        env:
+          CODEGRID_LSP_TEST_SERVER: ${{ github.workspace }}/target/debug/codegrid-lsp
+          CODEGRID_CLI_TEST_BIN: ${{ github.workspace }}/target/debug/codegrid
+
+  wasm-core:
+    name: Portable, browser, and server WASM crates compile
+    runs-on: ubuntu-latest
+    env:
+      CODEGRID_WASM_MAX_MEMORY_BYTES: 67108864
+    steps:
+      - uses: actions/checkout@v7
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-unknown-unknown
+      - name: Check portable and browser adapter crates for WebAssembly
+        run: >-
+          cargo check --target wasm32-unknown-unknown
+          -p codegrid-model
+          -p codegrid-syntax
+          -p codegrid-hir
+          -p codegrid-ir
+          -p codegrid-compiler
+          -p codegrid-vm
+          -p codegrid-runtime-api
+          -p codegrid-wasm-browser
+          -p codegrid-wasm-server
+
+  browser-smoke:
+    name: Generated browser binding smoke test
+    runs-on: ubuntu-latest
+    outputs:
+      package_version: ${{ steps.package-version.outputs.value }}
+    env:
+      CODEGRID_WASM_MAX_MEMORY_BYTES: 67108864
+    steps:
+      - uses: actions/checkout@v7
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-unknown-unknown
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Install matching wasm-bindgen CLI
+        run: cargo install wasm-bindgen-cli --locked --version 0.2.129
+      - name: Build optimized browser WASM
+        run: cargo build --release --target wasm32-unknown-unknown -p codegrid-wasm-browser
+      - name: Generate browser bindings
+        run: >-
+          wasm-bindgen
+          target/wasm32-unknown-unknown/release/codegrid_wasm_browser.wasm
+          --target web --out-dir target/browser-bindings
+      - name: Generate browser Node.js bindings
+        run: >-
+          wasm-bindgen
+          target/wasm32-unknown-unknown/release/codegrid_wasm_browser.wasm
+          --target nodejs --out-dir target/browser-node-bindings
+      - name: Build generic server ABI for adapter parity checks
+        run: cargo build --release --target wasm32-unknown-unknown -p codegrid-wasm-server
+      - name: Build native CLI for three-host conformance comparison
+        run: cargo build -p codegrid-cli
+      - name: Run headless browser integration smoke
+        run: node crates/codegrid-wasm-browser/tests/run-browser-smoke.mjs
+      - name: Run generated Node.js browser binding smoke
+        run: node crates/codegrid-wasm-browser/tests/run-node-smoke.mjs
+      - name: Run packaged server module lifecycle smoke
+        run: node crates/codegrid-wasm-server/tests/server-smoke.mjs
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Resolve and validate package version
+        id: package-version
+        shell: bash
+        run: |
+          if [[ "$GITHUB_REF_TYPE" == "tag" ]]; then
+            if [[ "$GITHUB_REF_NAME" =~ ^wasm-mvp-v([0-9]+\.[0-9]+\.[0-9]+)$ ]]; then
+              value="${BASH_REMATCH[1]}"
+            else
+              echo "Unsupported release tag: $GITHUB_REF_NAME" >&2
+              exit 1
+            fi
+          else
+            value="0.1.0"
+          fi
+          echo "value=$value" >> "$GITHUB_OUTPUT"
+      - name: Create deterministic versioned package
+        run: >-
+          python3 scripts/package_wasm_mvp.py
+          --version "${{ steps.package-version.outputs.value }}"
+      - name: Upload package artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: wasm-mvp-${{ steps.package-version.outputs.value }}
+          path: dist/wasm-mvp-${{ steps.package-version.outputs.value }}.zip
+          if-no-files-found: error
+          retention-days: 30
+
+  server-wasm-smoke:
+    name: Persistent server WASM ABI lifecycle smoke test
+    runs-on: ubuntu-latest
+    env:
+      CODEGRID_WASM_MAX_MEMORY_BYTES: 67108864
+    steps:
+      - uses: actions/checkout@v7
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-unknown-unknown
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Build optimized server WASM
+        run: cargo build --release --target wasm32-unknown-unknown -p codegrid-wasm-server
+      - name: Run persistent WebAssembly-host ABI smoke
+        run: node crates/codegrid-wasm-server/tests/server-smoke.mjs
+
+  wasmtime-server-host:
+    name: Wasmtime server ABI integration harness
+    runs-on: ubuntu-latest
+    env:
+      CODEGRID_WASM_MAX_MEMORY_BYTES: 67108864
+      CODEGRID_WASM_PATH: ${{ github.workspace }}/target/wasm32-unknown-unknown/release/codegrid_wasm_server.wasm
+    steps:
+      - uses: actions/checkout@v7
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-unknown-unknown
+      - name: Build optimized no-import server WASM
+        run: cargo build --release --target wasm32-unknown-unknown -p codegrid-wasm-server
+      - name: Check standalone harness formatting
+        run: cargo fmt --manifest-path tools/wasmtime-host/Cargo.toml -- --check
+      - name: Run Wasmtime ABI, fixture, and resource-limit checks
+        run: cargo run --locked --manifest-path tools/wasmtime-host/Cargo.toml --release
+
+  wasm-release:
+    name: Attach versioned WASM package to GitHub Release
+    runs-on: ubuntu-latest
+    if: github.ref_type == 'tag'
+    needs:
+      - native
+      - lsp-vscode-integration
+      - wasm-core
+      - browser-smoke
+      - server-wasm-smoke
+      - wasmtime-server-host
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: wasm-mvp-${{ needs.browser-smoke.outputs.package_version }}
+          path: dist
+      - name: Create GitHub Release with the verified package
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ needs.browser-smoke.outputs.package_version }}
+        run: >-
+          gh release create "wasm-mvp-v${VERSION}"
+          "dist/wasm-mvp-${VERSION}.zip"
+          --repo "$GITHUB_REPOSITORY"
+          --title "CodeGrid WASM MVP ${VERSION}"
+          --generate-notes --verify-tag

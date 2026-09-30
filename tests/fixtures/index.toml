@@ -1,0 +1,14 @@
+schema_version = 1
+stage = "M0"
+status = "historical-protocol-only"
+source_syntax = "superseded-draft; not valid .cg"
+
+fixtures = [
+  "CG-M0-001-u8-wrap.toml",
+  "CG-M0-002-exit-rollback.toml",
+  "CG-M0-003-repeat-cross-tick.toml",
+  "CG-M0-004-initial-thread-order.toml",
+  "CG-M0-005-custom-stack-rollback.toml",
+  "CG-M0-006-prng-golden-vector.toml",
+  "CG-M0-007-self-modifying-scope.toml",
+]

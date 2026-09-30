@@ -1,0 +1,9 @@
+@size 2x2
+@main
+~> #0
+~> #0
+@end main
+@C0
+@size 4x1
+~> + + #]
+@end C0

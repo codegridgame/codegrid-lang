@@ -1,0 +1,36 @@
+[workspace]
+resolver = "2"
+members = [
+    "crates/codegrid-model",
+    "crates/codegrid-syntax",
+    "crates/codegrid-hir",
+    "crates/codegrid-ir",
+    "crates/codegrid-compiler",
+    "crates/codegrid-vm",
+    "crates/codegrid-runtime-api",
+    "crates/codegrid-wasm-browser",
+    "crates/codegrid-wasm-server",
+    "crates/codegrid-cli",
+    "crates/codegrid-lsp",
+]
+default-members = [
+    "crates/codegrid-model",
+    "crates/codegrid-syntax",
+    "crates/codegrid-hir",
+    "crates/codegrid-ir",
+    "crates/codegrid-compiler",
+    "crates/codegrid-vm",
+    "crates/codegrid-runtime-api",
+    "crates/codegrid-wasm-browser",
+    "crates/codegrid-wasm-server",
+    "crates/codegrid-cli",
+    "crates/codegrid-lsp",
+]
+
+[workspace.package]
+edition = "2021"
+license = "BSD-3-Clause"
+repository = "https://github.com/codegridgame/codegrid-lang"
+
+[workspace.lints.rust]
+unsafe_code = "deny"

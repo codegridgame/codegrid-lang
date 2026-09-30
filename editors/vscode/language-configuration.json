@@ -1,0 +1,19 @@
+{
+  "comments": {
+    "lineComment": "//",
+    "blockComment": [["/*", "*/"]]
+  },
+  "brackets": [],
+  "autoClosingPairs": [],
+  "surroundingPairs": [],
+  "wordPattern": "[^\\s]+",
+  "onEnterRules": [
+    {
+      "beforeText": "^\\s*//.*$",
+      "action": {
+        "indent": "none",
+        "appendText": "// "
+      }
+    }
+  ]
+}

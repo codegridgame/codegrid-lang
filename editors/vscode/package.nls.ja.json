@@ -1,0 +1,21 @@
+{
+  "extension.description": "CodeGrid の編集、ローカル実行、Global Tick デバッグ。言語サーバーは任意。",
+  "codegrid.runtime.path.description": "CodeGrid 実行ファイルのパス。空の場合は同梱ランタイム、次に PATH を使用。",
+  "codegrid.execution.input.description": "実行とデバッグの入力バイト。",
+  "codegrid.execution.boundary.description": "ボード境界での動作。",
+  "codegrid.execution.seed.description": "正規の十進数 u64 シード。",
+  "codegrid.execution.customLimit.description": "Custom の実行上限。",
+  "codegrid.execution.maxTicks.description": "セッションごとの確定 Global Tick 数の上限。",
+  "codegrid.execution.maxWorkUnits.description": "アトミックな Global Tick ごとの作業単位上限。",
+  "codegrid.languageServer.enabled.description": "任意のネイティブ言語サーバーを有効化。起動に失敗しても単独の編集機能を利用できます。",
+  "codegrid.languageServer.path.description": "CodeGrid ネイティブ言語サーバーのパス。",
+  "codegrid.languageServer.arguments.description": "ネイティブ言語サーバーに渡す引数。",
+  "codegrid.run.title": "現在のファイルを実行",
+  "codegrid.debug.title": "現在のファイルをデバッグ",
+  "codegrid.newFile.title": "CodeGrid ファイルを新規作成",
+  "codegrid.openReadme.title": "CodeGrid 0.1 について",
+  "debug.program.description": "CodeGrid ソースファイル。",
+  "debug.runtimePath.description": "ネイティブ実行ファイルの任意の代替パス。",
+  "debug.configuration.name": "CodeGrid をデバッグ",
+  "debug.snippet.label": "CodeGrid: 現在のファイルをデバッグ"
+}

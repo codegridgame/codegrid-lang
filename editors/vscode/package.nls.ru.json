@@ -1,0 +1,21 @@
+{
+  "extension.description": "Редактирование CodeGrid, локальный запуск и отладка по Global Tick; необязательный языковой сервер.",
+  "codegrid.runtime.path.description": "Путь к CodeGrid. Если пусто: встроенная среда, затем PATH.",
+  "codegrid.execution.input.description": "Входные байты для запуска и отладки.",
+  "codegrid.execution.boundary.description": "Поведение на границе поля.",
+  "codegrid.execution.seed.description": "Начальное значение u64 в канонической десятичной записи.",
+  "codegrid.execution.customLimit.description": "Лимит выполнения Custom.",
+  "codegrid.execution.maxTicks.description": "Максимум завершённых Global Tick за сеанс.",
+  "codegrid.execution.maxWorkUnits.description": "Максимум единиц работы за атомарный Global Tick.",
+  "codegrid.languageServer.enabled.description": "Включить необязательный языковой сервер. При сбое остаются автономные функции редактора.",
+  "codegrid.languageServer.path.description": "Путь к языковому серверу CodeGrid.",
+  "codegrid.languageServer.arguments.description": "Аргументы языкового сервера.",
+  "codegrid.run.title": "Запустить текущий файл",
+  "codegrid.debug.title": "Отладить текущий файл",
+  "codegrid.newFile.title": "Новый файл CodeGrid",
+  "codegrid.openReadme.title": "О CodeGrid 0.1",
+  "debug.program.description": "Исходный файл CodeGrid.",
+  "debug.runtimePath.description": "Необязательный путь к другому исполняемому файлу.",
+  "debug.configuration.name": "Отладка CodeGrid",
+  "debug.snippet.label": "CodeGrid: отладить текущий файл"
+}

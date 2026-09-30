@@ -1,0 +1,21 @@
+{
+  "extension.description": "完整 CodeGrid 編輯、本機執行及 Global Tick 除錯，支援選用語言伺服器。",
+  "codegrid.runtime.path.description": "CodeGrid 執行檔路徑。留空時先使用內建執行環境，再搜尋 PATH。",
+  "codegrid.execution.input.description": "執行及除錯使用的輸入位元組。",
+  "codegrid.execution.boundary.description": "棋盤邊界行為。",
+  "codegrid.execution.seed.description": "標準十進位 u64 種子。",
+  "codegrid.execution.customLimit.description": "Custom 執行上限。",
+  "codegrid.execution.maxTicks.description": "每個工作階段可提交的 Global Tick 上限。",
+  "codegrid.execution.maxWorkUnits.description": "每個原子 Global Tick 的工作單位上限。",
+  "codegrid.languageServer.enabled.description": "啟用選用的原生語言伺服器。啟動失敗時仍可使用獨立編輯功能。",
+  "codegrid.languageServer.path.description": "CodeGrid 原生語言伺服器執行檔路徑。",
+  "codegrid.languageServer.arguments.description": "傳給原生語言伺服器的參數。",
+  "codegrid.run.title": "執行目前檔案",
+  "codegrid.debug.title": "偵錯目前檔案",
+  "codegrid.newFile.title": "新增 CodeGrid 檔案",
+  "codegrid.openReadme.title": "認識 CodeGrid 0.1",
+  "debug.program.description": "CodeGrid 原始碼檔案。",
+  "debug.runtimePath.description": "選用的原生執行檔替代路徑。",
+  "debug.configuration.name": "偵錯 CodeGrid",
+  "debug.snippet.label": "CodeGrid：偵錯目前檔案"
+}

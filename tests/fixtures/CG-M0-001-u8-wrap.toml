@@ -1,0 +1,31 @@
+schema_version = 1
+id = "CG-M0-001"
+status = "protocol-only"
+spec_sections = ["2.1", "2.2", "17.5"]
+purpose = "Fixes u8 wrapping arithmetic for ordinary registers."
+distinguishes = "v2 wraps over 0..255; signed or saturating arithmetic is not valid."
+
+[program]
+format = "source-format-draft"
+text = """codegrid 2
+program {
+  boundary exit
+  board Main size 4 1 {
+    initial 0 0 right
+    row 0: [!] [-] [+] [;]
+  }
+}"""
+
+[run]
+boundary = "exit"
+seed = 0
+custom_execution_limit = 32
+max_global_ticks = 4
+
+[expect.v2]
+status = "halted"
+committed_global_ticks = 4
+trace = ["t1 R0=0", "t2 R0=255", "t3 R0=0", "t4 HALT"]
+final_registers = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+errors = []
+metrics = ["ADD operations=1", "SUB operations=1", "HALT operations=1"]

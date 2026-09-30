@@ -1,0 +1,10 @@
+/target/
+/tools/wasmtime-host/target/
+/docs/tasks/
+**/node_modules/
+**/dist/
+**/.vscode-test/
+*.vsix
+/editors/vscode/runtime/
+/.vscode/
+/tasks/

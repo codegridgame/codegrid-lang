@@ -1,0 +1,31 @@
+schema_version = 1
+id = "CG-M0-004"
+status = "protocol-only"
+spec_sections = ["4.1", "4.3", "4.4", "6.1", "20.1"]
+purpose = "Fixes InitialThread ordering, unique starting positions, and the absence of ThreadId-based semantic priority."
+distinguishes = "v2 has no runtime SPAWN; ThreadId provides stable identity and must not determine conflicts or execution priority."
+
+[program]
+format = "source-format-draft"
+text = """codegrid 2
+program {
+  boundary wrap
+  board Main size 2 1 {
+    initial 0 0 right
+    initial 1 0 left
+    row 0: [>] [<]
+  }
+}"""
+
+[run]
+boundary = "wrap"
+seed = 0
+custom_execution_limit = 32
+max_global_ticks = 1
+
+[expect.v2]
+status = "running"
+committed_global_ticks = 1
+trace = ["ThreadId(0): (0,0)->(1,0), direction=Right", "ThreadId(1): (1,0)->(0,0), direction=Left"]
+errors = []
+metrics = ["no shared write conflict"]

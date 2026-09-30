@@ -1,0 +1,21 @@
+{
+  "extension.description": "Edición CodeGrid, ejecución local y depuración por Global Tick; servidor de lenguaje opcional.",
+  "codegrid.runtime.path.description": "Ruta del ejecutable CodeGrid. Vacía: motor incluido y después PATH.",
+  "codegrid.execution.input.description": "Bytes de entrada para ejecutar y depurar.",
+  "codegrid.execution.boundary.description": "Comportamiento en los límites del tablero.",
+  "codegrid.execution.seed.description": "Semilla u64 en decimal canónico.",
+  "codegrid.execution.customLimit.description": "Límite de ejecución de Custom.",
+  "codegrid.execution.maxTicks.description": "Máximo de Global Ticks confirmados por sesión.",
+  "codegrid.execution.maxWorkUnits.description": "Máximo de unidades de trabajo por Global Tick atómico.",
+  "codegrid.languageServer.enabled.description": "Activar el servidor de lenguaje nativo opcional. Las funciones independientes siguen disponibles si falla.",
+  "codegrid.languageServer.path.description": "Ruta del servidor de lenguaje nativo CodeGrid.",
+  "codegrid.languageServer.arguments.description": "Argumentos del servidor de lenguaje nativo.",
+  "codegrid.run.title": "Ejecutar el archivo actual",
+  "codegrid.debug.title": "Depurar el archivo actual",
+  "codegrid.newFile.title": "Nuevo archivo CodeGrid",
+  "codegrid.openReadme.title": "Información sobre CodeGrid 0.1",
+  "debug.program.description": "Archivo fuente CodeGrid.",
+  "debug.runtimePath.description": "Ruta opcional de otro ejecutable nativo.",
+  "debug.configuration.name": "Depurar CodeGrid",
+  "debug.snippet.label": "CodeGrid: depurar el archivo actual"
+}

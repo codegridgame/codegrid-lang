@@ -1,0 +1,322 @@
+{
+  "schema_version": 1,
+  "cases": [
+    {
+      "id": "nonzero-ifzero-preserves-direction",
+      "source_file": "nonzero-ifzero-preserves-direction.cg",
+      "run": {
+        "boundary": "exit",
+        "input": [],
+        "max_ticks": "8"
+      },
+      "expected": {
+        "status": "halted",
+        "position": { "x": 3, "y": 0 },
+        "direction": "right",
+        "register_pointer": 0,
+        "remaining_input": [],
+        "output": [],
+        "registers": [1, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        "committed_ticks": "4",
+        "operation_count": "3",
+        "used_cell_count": "4",
+        "used_cells": [
+          { "x": 0, "y": 0 }, { "x": 1, "y": 0 },
+          { "x": 2, "y": 0 }, { "x": 3, "y": 0 }
+        ],
+        "instruction_variety": ["IfZero", "Add", "Halt"],
+        "error_codes": []
+      }
+    },
+    {
+      "id": "input-arithmetic-output-halt",
+      "source_file": "input-arithmetic-output-halt.cg",
+      "run": {
+        "boundary": "exit",
+        "input": [255],
+        "max_ticks": "16"
+      },
+      "expected": {
+        "status": "halted",
+        "position": { "x": 8, "y": 0 },
+        "direction": "right",
+        "register_pointer": 0,
+        "remaining_input": [],
+        "output": [0, 255],
+        "registers": [127, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        "committed_ticks": "9",
+        "operation_count": "8",
+        "used_cell_count": "9",
+        "used_cells": [
+          { "x": 0, "y": 0 }, { "x": 1, "y": 0 }, { "x": 2, "y": 0 },
+          { "x": 3, "y": 0 }, { "x": 4, "y": 0 }, { "x": 5, "y": 0 },
+          { "x": 6, "y": 0 }, { "x": 7, "y": 0 }, { "x": 8, "y": 0 }
+        ],
+        "instruction_variety": ["Read", "Add", "Sub", "Output", "Shift", "Halt"],
+        "error_codes": []
+      }
+    },
+    {
+      "id": "empty-read-turns",
+      "source_file": "empty-read-turns.cg",
+      "run": {
+        "boundary": "exit",
+        "input": [],
+        "max_ticks": "16"
+      },
+      "expected": {
+        "status": "halted",
+        "position": { "x": 3, "y": 1 },
+        "direction": "right",
+        "register_pointer": 0,
+        "remaining_input": [],
+        "output": [0],
+        "registers": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        "committed_ticks": "5",
+        "operation_count": "3",
+        "used_cell_count": "5",
+        "used_cells": [
+          { "x": 0, "y": 0 }, { "x": 1, "y": 0 }, { "x": 1, "y": 1 },
+          { "x": 2, "y": 1 }, { "x": 3, "y": 1 }
+        ],
+        "instruction_variety": ["Read", "Output", "Halt"],
+        "error_codes": []
+      }
+    },
+    {
+      "id": "all-empty-read-directions",
+      "source_file": "all-empty-read-directions.cg",
+      "run": {
+        "boundary": "exit",
+        "input": [],
+        "max_ticks": "20"
+      },
+      "expected": {
+        "status": "halted",
+        "position": { "x": 1, "y": 2 },
+        "direction": "up",
+        "register_pointer": 0,
+        "remaining_input": [],
+        "output": [],
+        "registers": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        "committed_ticks": "11",
+        "operation_count": "5",
+        "used_cell_count": "11",
+        "used_cells": [
+          { "x": 0, "y": 1 }, { "x": 1, "y": 1 }, { "x": 1, "y": 2 },
+          { "x": 1, "y": 3 }, { "x": 2, "y": 1 }, { "x": 2, "y": 3 },
+          { "x": 3, "y": 1 }, { "x": 3, "y": 3 }, { "x": 4, "y": 1 },
+          { "x": 4, "y": 2 }, { "x": 4, "y": 3 }
+        ],
+        "instruction_variety": ["Read", "Halt"],
+        "error_codes": []
+      }
+    },
+    {
+      "id": "all-direction-instructions",
+      "source_file": "direction-cycle.cg",
+      "run": {
+        "boundary": "wrap",
+        "input": [],
+        "max_ticks": "8"
+      },
+      "expected": {
+        "status": "tick_limit_reached",
+        "position": { "x": 3, "y": 1 },
+        "direction": "up",
+        "register_pointer": 0,
+        "remaining_input": [],
+        "output": [],
+        "registers": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        "committed_ticks": "8",
+        "operation_count": "0",
+        "used_cell_count": "5",
+        "used_cells": [
+          { "x": 1, "y": 1 }, { "x": 2, "y": 1 }, { "x": 2, "y": 2 },
+          { "x": 3, "y": 1 }, { "x": 3, "y": 2 }
+        ],
+        "instruction_variety": [],
+        "error_codes": []
+      }
+    },
+    {
+      "id": "all-zero-conditional-directions",
+      "source_file": "ifzero-cycle.cg",
+      "run": {
+        "boundary": "wrap",
+        "input": [],
+        "max_ticks": "8"
+      },
+      "expected": {
+        "status": "tick_limit_reached",
+        "position": { "x": 3, "y": 1 },
+        "direction": "up",
+        "register_pointer": 0,
+        "remaining_input": [],
+        "output": [],
+        "registers": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        "committed_ticks": "8",
+        "operation_count": "7",
+        "used_cell_count": "5",
+        "used_cells": [
+          { "x": 1, "y": 1 }, { "x": 2, "y": 1 }, { "x": 2, "y": 2 },
+          { "x": 3, "y": 1 }, { "x": 3, "y": 2 }
+        ],
+        "instruction_variety": ["IfZero"],
+        "error_codes": []
+      }
+    },
+    {
+      "id": "single-cell-wrap-tick-limit",
+      "source_file": "single-cell-wrap.cg",
+      "run": {
+        "boundary": "wrap",
+        "input": [],
+        "max_ticks": "3"
+      },
+      "expected": {
+        "status": "tick_limit_reached",
+        "position": { "x": 0, "y": 0 },
+        "direction": "right",
+        "register_pointer": 0,
+        "remaining_input": [],
+        "output": [],
+        "registers": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        "committed_ticks": "3",
+        "operation_count": "0",
+        "used_cell_count": "1",
+        "used_cells": [{ "x": 0, "y": 0 }],
+        "instruction_variety": [],
+        "error_codes": []
+      }
+    },
+    {
+      "id": "single-cell-exit-error",
+      "source_file": "single-cell-wrap.cg",
+      "run": {
+        "boundary": "exit",
+        "input": [],
+        "max_ticks": "3"
+      },
+      "expected": {
+        "status": "error",
+        "position": { "x": 0, "y": 0 },
+        "direction": "right",
+        "register_pointer": 0,
+        "remaining_input": [],
+        "output": [],
+        "registers": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        "committed_ticks": "0",
+        "operation_count": "0",
+        "used_cell_count": "1",
+        "used_cells": [{ "x": 0, "y": 0 }],
+        "instruction_variety": [],
+        "error_codes": ["OutOfBounds"]
+      }
+    },
+    {
+      "id": "exit-boundary-rolls-back-add",
+      "source_file": "exit-boundary-rolls-back-add.cg",
+      "run": {
+        "boundary": "exit",
+        "input": [],
+        "max_ticks": "4"
+      },
+      "expected": {
+        "status": "error",
+        "position": { "x": 1, "y": 0 },
+        "direction": "right",
+        "register_pointer": 0,
+        "remaining_input": [],
+        "output": [],
+        "registers": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        "committed_ticks": "1",
+        "operation_count": "1",
+        "used_cell_count": "2",
+        "used_cells": [{ "x": 0, "y": 0 }, { "x": 1, "y": 0 }],
+        "instruction_variety": ["Add"],
+        "error_codes": ["OutOfBounds"]
+      }
+    },
+    {
+      "id": "positive-size-with-leading-zeros",
+      "source_file": "leading-zero-size.cg",
+      "run": {
+        "boundary": "exit",
+        "input": [],
+        "max_ticks": "4"
+      },
+      "expected": {
+        "status": "halted",
+        "position": { "x": 1, "y": 0 },
+        "direction": "right",
+        "register_pointer": 0,
+        "remaining_input": [],
+        "output": [],
+        "registers": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        "committed_ticks": "2",
+        "operation_count": "1",
+        "used_cell_count": "2",
+        "used_cells": [{ "x": 0, "y": 0 }, { "x": 1, "y": 0 }],
+        "instruction_variety": ["Halt"],
+        "error_codes": []
+      }
+    },
+    {
+      "id": "size-between-grid-rows",
+      "source_file": "size-between-rows.cg",
+      "run": {
+        "boundary": "wrap",
+        "input": [],
+        "max_ticks": "8"
+      },
+      "expected": {
+        "status": "halted",
+        "position": { "x": 0, "y": 1 },
+        "direction": "down",
+        "register_pointer": 0,
+        "remaining_input": [],
+        "output": [],
+        "registers": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        "committed_ticks": "2",
+        "operation_count": "1",
+        "used_cell_count": "2",
+        "used_cells": [
+          { "x": 0, "y": 0 }, { "x": 0, "y": 1 }
+        ],
+        "instruction_variety": ["Halt"],
+        "error_codes": []
+      }
+    }
+  ],
+  "invalid_sources": [
+    {
+      "id": "unsupported-random-token",
+      "source_file": "../invalid/unsupported-random-token.cg"
+    },
+    {
+      "id": "incomplete-primary-prefix",
+      "source_file": "../invalid/incomplete-primary-prefix.cg"
+    },
+    {
+      "id": "unsupported-board-directive",
+      "source_file": "../invalid/unsupported-board-directive.cg"
+    },
+    {
+      "id": "forbidden-attachment",
+      "source_file": "../invalid/forbidden-attachment.cg"
+    },
+    {
+      "id": "duplicate-entry",
+      "source_file": "../invalid/duplicate-entry.cg"
+    },
+    {
+      "id": "non-rectangular-board",
+      "source_file": "../invalid/non-rectangular-board.cg"
+    },
+    {
+      "id": "size-mismatch",
+      "source_file": "../invalid/size-mismatch.cg"
+    }
+  ]
+}

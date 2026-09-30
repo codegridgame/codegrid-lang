@@ -1,0 +1,13 @@
+@size 3x2
+@main
+~> #0 ;
+~> #1 ;
+@end main
+@C0
+@size 4x1
+~> ( . #]
+@end C0
+@C1
+@size 5x1
+~> + + ( #]
+@end C1

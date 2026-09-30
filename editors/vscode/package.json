@@ -1,0 +1,298 @@
+{
+  "name": "codegrid-vscode",
+  "displayName": "CodeGrid",
+  "description": "%extension.description%",
+  "version": "0.4.2",
+  "publisher": "codegrid",
+  "license": "BSD-3-Clause",
+  "icon": "icons/codegrid-icon.png",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/codegridgame/codegrid-lang"
+  },
+  "engines": {
+    "vscode": "^1.82.0"
+  },
+  "categories": [
+    "Programming Languages",
+    "Debuggers",
+    "Formatters"
+  ],
+  "keywords": [
+    "codegrid",
+    "grid",
+    "esolang"
+  ],
+  "contributes": {
+    "configuration": {
+      "title": "CodeGrid",
+      "properties": {
+        "codegrid.runtime.path": {
+          "type": "string",
+          "default": "",
+          "scope": "machine",
+          "description": "%codegrid.runtime.path.description%"
+        },
+        "codegrid.execution.input": {
+          "type": "array",
+          "items": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 255
+          },
+          "default": [],
+          "description": "%codegrid.execution.input.description%"
+        },
+        "codegrid.execution.boundary": {
+          "type": "string",
+          "enum": [
+            "exit",
+            "wrap"
+          ],
+          "default": "exit",
+          "description": "%codegrid.execution.boundary.description%"
+        },
+        "codegrid.execution.seed": {
+          "type": "string",
+          "default": "0",
+          "pattern": "^(0|[1-9][0-9]*)$",
+          "description": "%codegrid.execution.seed.description%"
+        },
+        "codegrid.execution.customLimit": {
+          "type": "string",
+          "default": "10000",
+          "pattern": "^[1-9][0-9]*$",
+          "description": "%codegrid.execution.customLimit.description%"
+        },
+        "codegrid.execution.maxTicks": {
+          "type": "string",
+          "default": "100000",
+          "pattern": "^[1-9][0-9]*$",
+          "description": "%codegrid.execution.maxTicks.description%"
+        },
+        "codegrid.execution.maxWorkUnits": {
+          "type": "string",
+          "default": "1000000",
+          "pattern": "^[1-9][0-9]*$",
+          "description": "%codegrid.execution.maxWorkUnits.description%"
+        },
+        "codegrid.languageServer.enabled": {
+          "type": "boolean",
+          "default": false,
+          "scope": "window",
+          "description": "%codegrid.languageServer.enabled.description%"
+        },
+        "codegrid.languageServer.path": {
+          "type": "string",
+          "default": "codegrid-lsp",
+          "scope": "machine",
+          "description": "%codegrid.languageServer.path.description%"
+        },
+        "codegrid.languageServer.arguments": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "default": [],
+          "scope": "machine",
+          "description": "%codegrid.languageServer.arguments.description%"
+        }
+      }
+    },
+    "languages": [
+      {
+        "id": "codegrid",
+        "aliases": [
+          "CodeGrid",
+          "codegrid"
+        ],
+        "extensions": [
+          ".cg"
+        ],
+        "icon": {
+          "light": "./icons/codegrid-icon.png",
+          "dark": "./icons/codegrid-icon.png"
+        },
+        "configuration": "./language-configuration.json"
+      }
+    ],
+    "grammars": [
+      {
+        "language": "codegrid",
+        "scopeName": "source.cg",
+        "path": "./syntaxes/codegrid.tmLanguage.json"
+      }
+    ],
+    "commands": [
+      {
+        "command": "codegrid.run",
+        "title": "%codegrid.run.title%",
+        "category": "CodeGrid",
+        "icon": "$(play)"
+      },
+      {
+        "command": "codegrid.debug",
+        "title": "%codegrid.debug.title%",
+        "category": "CodeGrid",
+        "icon": "$(debug-alt)"
+      },
+      {
+        "command": "codegrid.newFile",
+        "title": "%codegrid.newFile.title%",
+        "category": "CodeGrid"
+      },
+      {
+        "command": "codegrid.openReadme",
+        "title": "%codegrid.openReadme.title%",
+        "category": "CodeGrid"
+      }
+    ],
+    "menus": {
+      "editor/title": [
+        {
+          "command": "codegrid.run",
+          "when": "resourceLangId == codegrid",
+          "group": "navigation@1"
+        },
+        {
+          "command": "codegrid.debug",
+          "when": "resourceLangId == codegrid",
+          "group": "navigation@2"
+        }
+      ],
+      "editor/context": [
+        {
+          "command": "codegrid.run",
+          "when": "resourceLangId == codegrid",
+          "group": "codegrid@1"
+        },
+        {
+          "command": "codegrid.debug",
+          "when": "resourceLangId == codegrid",
+          "group": "codegrid@2"
+        }
+      ],
+      "file/newFileMenu": [
+        {
+          "command": "codegrid.newFile",
+          "group": "file"
+        }
+      ]
+    },
+    "breakpoints": [
+      {
+        "language": "codegrid"
+      }
+    ],
+    "debuggers": [
+      {
+        "type": "codegrid",
+        "label": "CodeGrid",
+        "languages": [
+          "codegrid"
+        ],
+        "configurationAttributes": {
+          "launch": {
+            "required": [
+              "program"
+            ],
+            "properties": {
+              "program": {
+                "type": "string",
+                "description": "%debug.program.description%",
+                "default": "${file}"
+              },
+              "runtimePath": {
+                "type": "string",
+                "description": "%debug.runtimePath.description%"
+              },
+              "stopOnEntry": {
+                "type": "boolean",
+                "default": true
+              },
+              "input": {
+                "type": "array",
+                "items": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 255
+                },
+                "default": []
+              },
+              "boundary": {
+                "type": "string",
+                "enum": [
+                  "exit",
+                  "wrap"
+                ],
+                "default": "exit"
+              },
+              "seed": {
+                "type": "string",
+                "default": "0"
+              },
+              "customLimit": {
+                "type": "string",
+                "default": "10000"
+              },
+              "maxTicks": {
+                "type": "string",
+                "default": "100000"
+              },
+              "maxWorkUnits": {
+                "type": "string",
+                "default": "1000000"
+              }
+            }
+          }
+        },
+        "initialConfigurations": [
+          {
+            "type": "codegrid",
+            "request": "launch",
+            "name": "%debug.configuration.name%",
+            "program": "${file}",
+            "stopOnEntry": true
+          }
+        ],
+        "configurationSnippets": [
+          {
+            "label": "%debug.snippet.label%",
+            "body": {
+              "type": "codegrid",
+              "request": "launch",
+              "name": "%debug.configuration.name%",
+              "program": "${file}",
+              "stopOnEntry": true,
+              "input": [],
+              "seed": "0"
+            }
+          }
+        ]
+      }
+    ]
+  },
+  "main": "./out/extension.js",
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "test": "npm run compile && node ./out/test/runTest.js",
+    "package": "vsce package --allow-missing-repository"
+  },
+  "dependencies": {
+    "vscode-languageclient": "^8.1.0"
+  },
+  "devDependencies": {
+    "@types/mocha": "^10.0.7",
+    "@types/node": "^20.14.0",
+    "@types/vscode": "^1.82.0",
+    "@vscode/test-electron": "^2.4.1",
+    "@vscode/vsce": "^3.1.0",
+    "mocha": "^10.6.0",
+    "typescript": "^5.5.4",
+    "vscode-oniguruma": "^2.0.1",
+    "vscode-textmate": "^9.2.0"
+  },
+  "l10n": "./l10n"
+}

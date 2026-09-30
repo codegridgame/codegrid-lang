@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>CodeGrid Full browser WASM smoke test</title>
+  </head>
+  <body data-result="running">
+    <pre id="result">Running Full browser WASM smoke test.</pre>
+    <script type="module">
+      import { runFullSmoke, RUNTIME_API_VERSION } from "./full-smoke.mjs";
+
+      const assert = (condition, message) => {
+        if (!condition) throw new Error(message);
+      };
+      const deepEqual = (actual, expected, message) => {
+        const canonical = (value) => Array.isArray(value)
+          ? value.map(canonical)
+          : value && typeof value === "object"
+            ? Object.fromEntries(Object.keys(value).sort().map((key) => [key, canonical(value[key])]))
+            : value;
+        const actualJson = JSON.stringify(canonical(actual));
+        const expectedJson = JSON.stringify(canonical(expected));
+        if (actualJson !== expectedJson) {
+          throw new Error(`${message}: expected ${expectedJson}, got ${actualJson}`);
+        }
+      };
+
+      async function run() {
+        const query = new URLSearchParams(location.search);
+        const bindingsPath = query.get("bindingsPath");
+        const baselinePath = query.get("baselinePath");
+        assert(bindingsPath, "runner must provide the generated browser bindings path");
+        assert(baselinePath, "runner must provide the generated Native CLI full-result baseline path");
+        const wasmBindings = await import(bindingsPath);
+        const exports = await wasmBindings.default();
+        const maximumPages = Number(query.get("memoryMaximumPages"));
+        assert(Number.isSafeInteger(maximumPages) && maximumPages > 0, "runner must provide the linear-memory maximum in pages");
+        assertMemoryCeiling(exports.memory, maximumPages);
+
+        const invalidInteger = createRuntime(wasmBindings.BrowserRuntime, { maxSourceBytes: -1 });
+        assert(invalidInteger.error, "negative integer resource limits must be rejected by the binding");
+
+        const invalidWideInteger = createRuntime(wasmBindings.BrowserRuntime, { maxRunTicksPerCall: "1".repeat(21) });
+        assert(invalidWideInteger.error, "oversized decimal u64 limits must be rejected before conversion");
+
+        const response = await fetch("/tests/fixtures/conformance-v1.json");
+        assert(response.ok, "the shared Full fixture suite must be served");
+        const suite = await response.json();
+        const baselineResponse = await fetch(baselinePath);
+        assert(baselineResponse.ok, "the generated Native CLI full-result baseline must be served");
+        const baseline = await baselineResponse.json();
+        const count = runFullSmoke(
+          wasmBindings.BrowserRuntime,
+          suite,
+          baseline,
+          assert,
+          deepEqual,
+        );
+        return `PASS: browser WebAssembly Runtime API v${RUNTIME_API_VERSION}, ${count} Full conformance fixtures, lifecycle and quotas; configured linear-memory maximum ${maximumPages * 65536} bytes.`;
+      }
+
+      function createRuntime(Runtime, overrides = {}) {
+        try {
+          return new Runtime(
+            overrides.maxSourceBytes ?? 1_048_576,
+            128,
+            128,
+            1_048_576,
+            65_536,
+            1_048_576,
+            1_048_576,
+            1_048_576,
+            overrides.maxRunTicksPerCall ?? "10000",
+            "10000",
+            "1000000",
+          );
+        } catch (error) {
+          return { error };
+        }
+      }
+
+      function assertMemoryCeiling(memory, maximumPages) {
+        assert(memory instanceof WebAssembly.Memory, "generated bindings must expose their WebAssembly memory");
+        const bytesBefore = memory.buffer.byteLength;
+        const currentPages = bytesBefore / 65536;
+        assert(currentPages <= maximumPages, "initial memory exceeds the configured maximum");
+        let rejected = false;
+        try {
+          memory.grow(maximumPages - currentPages + 1);
+        } catch (error) {
+          rejected = error instanceof RangeError;
+        }
+        assert(rejected, "browser engine must reject memory growth beyond the configured maximum");
+        assert(memory.buffer.byteLength === bytesBefore, "rejected growth must preserve current memory");
+      }
+
+      run().then((message) => {
+        document.body.dataset.result = "passed";
+        document.querySelector("#result").textContent = message;
+      }).catch((error) => {
+        document.body.dataset.result = "failed";
+        document.querySelector("#result").textContent = `FAIL: ${error?.stack ?? error}`;
+      });
+    </script>
+  </body>
+</html>

@@ -1,0 +1,34 @@
+schema_version = 1
+id = "CG-M0-006"
+status = "protocol-only"
+spec_sections = ["19.1", "19.2", "19.4"]
+purpose = "Fixes the SplitMix64 outer-seed derivation and first random-direction golden vector."
+distinguishes = "The v2 seed, initial state, mix64 function, and low-bit mapping must match across hosts; do not use runtime-provided randomness."
+
+[program]
+format = "source-format-draft"
+text = """codegrid 2
+program {
+  boundary exit
+  board Main size 1 2 {
+    initial 0 0 right
+    row 0: [?]
+    row 1: [;]
+  }
+}"""
+
+[run]
+boundary = "exit"
+seed = 0
+custom_execution_limit = 32
+max_global_ticks = 2
+
+[expect.v2]
+status = "halted"
+committed_global_ticks = 2
+outer_thread_0_initial_state = "034CA5DFE1C65CBB"
+first_random_state = "531E83D8554C75ED"
+first_random_direction = "Down"
+trace = ["t1 ? maps to Down and moves to (0,1)", "t2 HALT"]
+errors = []
+metrics = ["RandomDirection operations=1", "Halt operations=1"]

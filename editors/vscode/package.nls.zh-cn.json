@@ -1,0 +1,21 @@
+{
+  "extension.description": "完整 CodeGrid 编辑、本地运行及 Global Tick 调试，支持可选语言服务器。",
+  "codegrid.runtime.path.description": "CodeGrid 可执行文件路径。留空时先使用内置运行环境，再搜索 PATH。",
+  "codegrid.execution.input.description": "运行及调试使用的输入字节。",
+  "codegrid.execution.boundary.description": "棋盘边界行为。",
+  "codegrid.execution.seed.description": "标准十进制 u64 种子。",
+  "codegrid.execution.customLimit.description": "Custom 执行上限。",
+  "codegrid.execution.maxTicks.description": "每个会话可提交的 Global Tick 上限。",
+  "codegrid.execution.maxWorkUnits.description": "每个原子 Global Tick 的工作单位上限。",
+  "codegrid.languageServer.enabled.description": "启用可选的原生语言服务器。启动失败时仍可使用独立编辑功能。",
+  "codegrid.languageServer.path.description": "CodeGrid 原生语言服务器可执行文件路径。",
+  "codegrid.languageServer.arguments.description": "传给原生语言服务器的参数。",
+  "codegrid.run.title": "运行当前文件",
+  "codegrid.debug.title": "调试当前文件",
+  "codegrid.newFile.title": "新建 CodeGrid 文件",
+  "codegrid.openReadme.title": "了解 CodeGrid 0.1",
+  "debug.program.description": "CodeGrid 源文件。",
+  "debug.runtimePath.description": "可选的原生可执行文件替代路径。",
+  "debug.configuration.name": "调试 CodeGrid",
+  "debug.snippet.label": "CodeGrid：调试当前文件"
+}

@@ -1,0 +1,34 @@
+{
+  "schema_version": 1,
+  "suite_id": "codegrid-source-diagnostics-v1",
+  "cases": [
+    {
+      "id": "detached-attachment-after-unicode-crlf-comment",
+      "source": "// α\r\n~x\n",
+      "expected": [
+        {
+          "severity": "error",
+          "message": "The cell contains a detached, combined, or invalid Attachment.",
+          "span": {
+            "start": "7",
+            "end": "9"
+          }
+        }
+      ]
+    },
+    {
+      "id": "bare-carriage-return",
+      "source": "~>\r_\n",
+      "expected": [
+        {
+          "severity": "error",
+          "message": "Bare carriage return is not a supported line ending; use LF or CRLF.",
+          "span": {
+            "start": "2",
+            "end": "3"
+          }
+        }
+      ]
+    }
+  ]
+}

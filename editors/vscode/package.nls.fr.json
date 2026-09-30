@@ -1,0 +1,21 @@
+{
+  "extension.description": "Édition CodeGrid, exécution locale et débogage par Global Tick ; serveur de langage facultatif.",
+  "codegrid.runtime.path.description": "Chemin de l’exécutable CodeGrid. Vide : moteur intégré, puis PATH.",
+  "codegrid.execution.input.description": "Octets d’entrée pour l’exécution et le débogage.",
+  "codegrid.execution.boundary.description": "Comportement aux limites du plateau.",
+  "codegrid.execution.seed.description": "Graine u64 en décimal canonique.",
+  "codegrid.execution.customLimit.description": "Limite d’exécution de Custom.",
+  "codegrid.execution.maxTicks.description": "Nombre maximal de Global Ticks validés par session.",
+  "codegrid.execution.maxWorkUnits.description": "Unités de travail maximales par Global Tick atomique.",
+  "codegrid.languageServer.enabled.description": "Activer le serveur de langage natif facultatif. Les fonctions autonomes restent disponibles en cas d’échec.",
+  "codegrid.languageServer.path.description": "Chemin du serveur de langage natif CodeGrid.",
+  "codegrid.languageServer.arguments.description": "Arguments transmis au serveur de langage natif.",
+  "codegrid.run.title": "Exécuter le fichier actuel",
+  "codegrid.debug.title": "Déboguer le fichier actuel",
+  "codegrid.newFile.title": "Nouveau fichier CodeGrid",
+  "codegrid.openReadme.title": "Découvrir CodeGrid 0.1",
+  "debug.program.description": "Fichier source CodeGrid.",
+  "debug.runtimePath.description": "Chemin facultatif d’un autre exécutable natif.",
+  "debug.configuration.name": "Déboguer CodeGrid",
+  "debug.snippet.label": "CodeGrid : déboguer le fichier actuel"
+}

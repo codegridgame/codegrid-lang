@@ -1,0 +1,5 @@
+@size 3x2
+@main
+~> #v _
+~> + _
+@end main
