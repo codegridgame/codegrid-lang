@@ -1,0 +1,366 @@
+{
+  "format_version": 1,
+  "profile": "profiles/local-v1.json",
+  "cases": [
+    {
+      "id": "echo-duplicates",
+      "level": "echo-duplicates.json",
+      "program": "echo.cg",
+      "mode": "Official",
+      "boundary": "Exit",
+      "seed": "18446744073709551615",
+      "custom_limit": "1000",
+      "expected_status": "Passed"
+    },
+    {
+      "id": "wrong-output",
+      "level": "wrong-output.json",
+      "program": "echo.cg",
+      "mode": "Official",
+      "boundary": "Exit",
+      "seed": "18446744073709551615",
+      "custom_limit": "1000",
+      "expected_status": "TestFailed"
+    },
+    {
+      "id": "incomplete-output",
+      "level": "incomplete-output.json",
+      "program": "halt.cg",
+      "mode": "Official",
+      "boundary": "Exit",
+      "seed": "18446744073709551615",
+      "custom_limit": "1000",
+      "expected_status": "TestFailed"
+    },
+    {
+      "id": "empty-output",
+      "level": "empty-output.json",
+      "program": "halt.cg",
+      "mode": "Official",
+      "boundary": "Exit",
+      "seed": "18446744073709551615",
+      "custom_limit": "1000",
+      "expected_status": "Passed"
+    },
+    {
+      "id": "unexpected-output",
+      "level": "unexpected-output.json",
+      "program": "echo.cg",
+      "mode": "Official",
+      "boundary": "Exit",
+      "seed": "18446744073709551615",
+      "custom_limit": "1000",
+      "expected_status": "TestFailed"
+    },
+    {
+      "id": "hidden-wrong-official",
+      "level": "hidden-wrong-official.json",
+      "program": "echo.cg",
+      "mode": "Official",
+      "boundary": "Exit",
+      "seed": "18446744073709551615",
+      "custom_limit": "1000",
+      "expected_status": "TestFailed"
+    },
+    {
+      "id": "hidden-wrong-debug",
+      "level": "hidden-wrong-debug.json",
+      "program": "echo.cg",
+      "mode": "Debug",
+      "boundary": "Exit",
+      "seed": "18446744073709551615",
+      "custom_limit": "1000",
+      "expected_status": "Passed"
+    },
+    {
+      "id": "static-constraint",
+      "level": "static-constraint.json",
+      "program": "echo.cg",
+      "mode": "Official",
+      "boundary": "Exit",
+      "seed": "18446744073709551615",
+      "custom_limit": "1000",
+      "expected_status": "ConstraintExceeded"
+    },
+    {
+      "id": "dynamic-constraint",
+      "level": "dynamic-constraint.json",
+      "program": "echo.cg",
+      "mode": "Official",
+      "boundary": "Exit",
+      "seed": "18446744073709551615",
+      "custom_limit": "1000",
+      "expected_status": "ConstraintExceeded"
+    },
+    {
+      "id": "rating-zero",
+      "level": "rating-zero.json",
+      "program": "echo.cg",
+      "mode": "Official",
+      "boundary": "Exit",
+      "seed": "18446744073709551615",
+      "custom_limit": "1000",
+      "expected_status": "Passed"
+    },
+    {
+      "id": "read-exhaustion",
+      "level": "read-exhaustion.json",
+      "program": "read-exhaustion.cg",
+      "mode": "Official",
+      "boundary": "Exit",
+      "seed": "18446744073709551615",
+      "custom_limit": "1000",
+      "expected_status": "Passed"
+    },
+    {
+      "id": "functions",
+      "level": "functions.json",
+      "program": "functions.cg",
+      "mode": "Official",
+      "boundary": "Exit",
+      "seed": "18446744073709551615",
+      "custom_limit": "1000",
+      "expected_status": "Passed"
+    },
+    {
+      "id": "folded",
+      "level": "folded.json",
+      "program": "folded.cg",
+      "mode": "Official",
+      "boundary": "Exit",
+      "seed": "18446744073709551615",
+      "custom_limit": "1000",
+      "expected_status": "Passed"
+    },
+    {
+      "id": "custom-memory",
+      "level": "custom-memory.json",
+      "program": "custom-memory.cg",
+      "mode": "Official",
+      "boundary": "Exit",
+      "seed": "18446744073709551615",
+      "custom_limit": "1000",
+      "expected_status": "Passed"
+    },
+    {
+      "id": "custom-limit",
+      "level": "custom-limit.json",
+      "program": "custom-limit.cg",
+      "mode": "Official",
+      "boundary": "Exit",
+      "seed": "18446744073709551615",
+      "custom_limit": "1",
+      "expected_status": "RuntimeError"
+    },
+    {
+      "id": "thread-conflict",
+      "level": "thread-conflict.json",
+      "program": "thread-conflict.cg",
+      "mode": "Official",
+      "boundary": "Exit",
+      "seed": "18446744073709551615",
+      "custom_limit": "1000",
+      "expected_status": "RuntimeError"
+    },
+    {
+      "id": "repeat",
+      "level": "repeat.json",
+      "program": "repeat.cg",
+      "mode": "Official",
+      "boundary": "Exit",
+      "seed": "18446744073709551615",
+      "custom_limit": "1000",
+      "expected_status": "Passed"
+    },
+    {
+      "id": "generated-custom",
+      "level": "generated-custom.json",
+      "program": "generated-custom.cg",
+      "mode": "Official",
+      "boundary": "Exit",
+      "seed": "18446744073709551615",
+      "custom_limit": "1000",
+      "expected_status": "ProgramRejected"
+    },
+    {
+      "id": "generated-outer",
+      "level": "generated-outer.json",
+      "program": "generated-outer.cg",
+      "mode": "Official",
+      "boundary": "Exit",
+      "seed": "18446744073709551615",
+      "custom_limit": "1000",
+      "expected_status": "ProgramRejected"
+    },
+    {
+      "id": "attachments",
+      "level": "attachments.json",
+      "program": "attachments.cg",
+      "mode": "Official",
+      "boundary": "Exit",
+      "seed": "18446744073709551615",
+      "custom_limit": "1000",
+      "expected_status": "Passed"
+    },
+    {
+      "id": "instruction-stack",
+      "level": "instruction-stack.json",
+      "program": "instruction-stack.cg",
+      "mode": "Official",
+      "boundary": "Exit",
+      "seed": "18446744073709551615",
+      "custom_limit": "1000",
+      "expected_status": "Passed"
+    },
+    {
+      "id": "memory",
+      "level": "memory.json",
+      "program": "memory.cg",
+      "mode": "Official",
+      "boundary": "Exit",
+      "seed": "18446744073709551615",
+      "custom_limit": "1000",
+      "expected_status": "Passed"
+    },
+    {
+      "id": "randomness",
+      "level": "randomness.json",
+      "program": "randomness.cg",
+      "mode": "Official",
+      "boundary": "Exit",
+      "seed": "18446744073709551615",
+      "custom_limit": "1000",
+      "expected_status": "Passed"
+    },
+    {
+      "id": "halt-output-error-priority",
+      "level": "halt-output-error-priority.json",
+      "program": "halt-output-error-priority.cg",
+      "mode": "Official",
+      "boundary": "Exit",
+      "seed": "18446744073709551615",
+      "custom_limit": "1000",
+      "expected_status": "RuntimeError"
+    },
+    {
+      "id": "constraint-max_boards_used",
+      "level": "constraint-max_boards_used.json",
+      "program": "functions.cg",
+      "mode": "Official",
+      "boundary": "Exit",
+      "seed": "18446744073709551615",
+      "custom_limit": "1000",
+      "expected_status": "ConstraintExceeded"
+    },
+    {
+      "id": "constraint-max_call_stack_depth",
+      "level": "constraint-max_call_stack_depth.json",
+      "program": "functions.cg",
+      "mode": "Official",
+      "boundary": "Exit",
+      "seed": "18446744073709551615",
+      "custom_limit": "1000",
+      "expected_status": "ConstraintExceeded"
+    },
+    {
+      "id": "constraint-max_data_stack_depth",
+      "level": "constraint-max_data_stack_depth.json",
+      "program": "memory.cg",
+      "mode": "Official",
+      "boundary": "Exit",
+      "seed": "18446744073709551615",
+      "custom_limit": "1000",
+      "expected_status": "ConstraintExceeded"
+    },
+    {
+      "id": "constraint-max_functions_used",
+      "level": "constraint-max_functions_used.json",
+      "program": "functions.cg",
+      "mode": "Official",
+      "boundary": "Exit",
+      "seed": "18446744073709551615",
+      "custom_limit": "1000",
+      "expected_status": "ConstraintExceeded"
+    },
+    {
+      "id": "constraint-max_instruction_kinds",
+      "level": "constraint-max_instruction_kinds.json",
+      "program": "echo.cg",
+      "mode": "Official",
+      "boundary": "Exit",
+      "seed": "18446744073709551615",
+      "custom_limit": "1000",
+      "expected_status": "ConstraintExceeded"
+    },
+    {
+      "id": "constraint-max_instruction_stack_depth",
+      "level": "constraint-max_instruction_stack_depth.json",
+      "program": "instruction-stack.cg",
+      "mode": "Official",
+      "boundary": "Exit",
+      "seed": "18446744073709551615",
+      "custom_limit": "1000",
+      "expected_status": "ConstraintExceeded"
+    },
+    {
+      "id": "constraint-max_memory_addresses",
+      "level": "constraint-max_memory_addresses.json",
+      "program": "memory.cg",
+      "mode": "Official",
+      "boundary": "Exit",
+      "seed": "18446744073709551615",
+      "custom_limit": "1000",
+      "expected_status": "ConstraintExceeded"
+    },
+    {
+      "id": "constraint-max_operation_count",
+      "level": "constraint-max_operation_count.json",
+      "program": "echo.cg",
+      "mode": "Official",
+      "boundary": "Exit",
+      "seed": "18446744073709551615",
+      "custom_limit": "1000",
+      "expected_status": "ConstraintExceeded"
+    },
+    {
+      "id": "constraint-max_ticks",
+      "level": "constraint-max_ticks.json",
+      "program": "echo.cg",
+      "mode": "Official",
+      "boundary": "Exit",
+      "seed": "18446744073709551615",
+      "custom_limit": "1000",
+      "expected_status": "ConstraintExceeded"
+    },
+    {
+      "id": "rating-max-alias",
+      "level": "rating-max-alias.json",
+      "program": "echo.cg",
+      "mode": "Official",
+      "boundary": "Exit",
+      "seed": "18446744073709551615",
+      "custom_limit": "1000",
+      "expected_status": "Passed"
+    },
+    {
+      "id": "generated-memory",
+      "level": "generated-memory.json",
+      "program": "generated-outer.cg",
+      "mode": "Official",
+      "boundary": "Exit",
+      "seed": "18446744073709551615",
+      "custom_limit": "1000",
+      "expected_status": "ProgramRejected"
+    },
+    {
+      "id": "hidden-generated",
+      "level": "hidden-generated.json",
+      "program": "generated-outer.cg",
+      "mode": "Official",
+      "boundary": "Exit",
+      "seed": "18446744073709551615",
+      "custom_limit": "1000",
+      "expected_status": "ProgramRejected"
+    }
+  ]
+}

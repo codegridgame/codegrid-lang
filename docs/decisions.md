@@ -7,6 +7,73 @@
 - [`spec/codegrid-runtime-api-spec.md`](../spec/codegrid-runtime-api-spec.md) defines the normative host-neutral Full contract in v3. Browser binding and server ABI use separately versioned transport contracts.
 - Historical compiler, IR, and VM tests plus retained Full examples are evidence to review, not automatic replacements for normative rules.
 
+## Level Core architecture (2026-09-30)
+
+Explicit user decision: use the [Level Core v1 specification](../spec/codegrid-level-core-spec-v1.md)
+to design Rust level validation and evaluation, invoked through WASM by Web,
+Steam, and backend hosts. The [architecture](level-core-architecture.md) places
+`codegrid-level-core` above the unchanged language crates, with a separate
+level API and browser/portable WASM adapters. These components are planned,
+not implemented, and do not change the current Cargo dependency graph or
+Runtime API v3 / Server ABI v4 contracts. Logical evaluation and scoring belong
+to this upper layer; assets, Steam integration, and publication remain host concerns.
+
+Resolve omitted seeds at the host boundary and pass explicit seed data to Rust;
+this reconciles the specification's automatic-seed convenience with the
+deterministic core rule. Backend Official evaluation uses trusted full levels
+and freshly compiled submitted source. Client results cannot certify
+server-authoritative leaderboard records; Steam achievements and offline
+progress remain game-host policy. Hidden data shipped to clients is not secret.
+
+Follow-up explicit user decision: align the architecture with the normative VM.
+Only successfully committed output can complete tests/actions. Concurrent
+outer output writes conflict; failed ticks roll back; runtime errors outrank
+same-tick HALT. Tick/work exhaustion is a nonterminal yield, never a synthesized
+VM `TickLimitExceeded` error. Interrupted work retries the entire tick, so
+insufficient repeated budgets do not guarantee progress. Cumulative evaluation
+safety termination requires its own host/evaluation contract. Level Core
+sections 15 and 34 require normative clarification against these VM rules
+before implementation; this change does not edit either specification.
+
+### ExactIO first-phase contract (2026-09-30)
+
+The user explicitly selected cost as VM Operation Count, explicit per-evaluation
+Exit/Wrap configuration, first-phase WriteCode support, and enforcement of the
+whitelist on generated code. The user then authorized the remaining recommended
+choices. The [ExactIO implementation contract](../spec/codegrid-level-exactio-contract-v1.md)
+records the schema, independent Attachment whitelist, capability mapping,
+metric/constraint registry, shuffle recurrence, seed derivation, safety profile,
+and terminal priorities. Level Core sections 15 and 34 are now clarified to
+follow the VM's runtime-error and nonterminal yield rules.
+
+Generated forbidden code is detected after successful commit, including
+committed Custom code-change events, and ends the evaluation as ProgramRejected
+before output acceptance. This supersedes the earlier conversational suggestion
+to roll back a tick for a level policy violation; VM semantics remain unchanged.
+Debug still runs all visible tests after ordinary test/constraint failures, but
+program rejection or terminal host resource/fault outcomes end evaluation.
+
+No implementation, host ABI, scene protocol, or host parity is claimed. Host
+safety profile values are explicit versioned inputs; production defaults are
+not selected by this decision.
+
+### Level delivery task scope (2026-09-30)
+
+Explicit user decision: prepare a task book for Rust level judgment, Web/Steam/
+backend WASM invocation with matching results, and a CLI command reading level
+JSON and `.cg` files and reporting evaluation/scoring. Design the Environment
+extension fully but defer concrete scenes. The [task book](../tasks/level-core-exactio-v1.md)
+records staged contracts, implementation, examples, safety/error preparation,
+CLI and WASM delivery, and actual-host parity gates. Its CLI command spelling
+is a proposal to publish before implementation; no existing CLI/ABI version or
+dependency graph changes in this documentation step.
+
+Schema details, instruction capability mapping, metric definitions, scene
+protocols, deterministic shuffle/seed derivation, atomic completion priorities,
+and level API/ABI/error contracts remain implementation gates listed in the
+architecture. No source/VM semantics or level specification text is changed by
+this architectural decision.
+
 ## Stable error identifiers (2026-09-30)
 
 Explicit user decision: complete stable error codes and publish their full specification under `spec`. Validators assign source/IR codes at detection; adapters forward the codes. Diagnostic `code` is additive under CLI run-result schema 1, Runtime API v3 and Server ABI v4. Existing VM codes and WASM aliases remain compatible. Native debug errors change from a string to `{code,message}`, advancing the protocol to 2 and the editor to 0.3.0. No source acceptance, VM transition, error ordering or rollback rule changes. See the [error specification](../spec/codegrid-error-codes.md) and its JSON registry.
@@ -133,3 +200,45 @@ oversized responses are rejected as complete errors rather than partial JSON.
 Adapter schemas, local resource ceilings, and wide-integer representations are specified in the respective versioned host contracts. Do not infer production suitability from local limits.
 
 Production authentication/authorization, multi-user quota policy, and deployment operations are outside the local development scope and are not gates for the Full local CLI or language core.
+
+## Level delivery contracts (2026-09-30)
+
+Level Host API, browser binding, and portable byte ABI start at independent
+version 1; existing language Runtime API v3 and Server ABI v4 remain unchanged.
+The [API contract](level-api-v1.md) and [transport contract](level-wasm-v1.md)
+define shared operations and exact wire data. The named
+[local profile](../fixtures/levels/profiles/local-v1.json) is verification input,
+not a guessed production profile.
+
+VM dispatch accounting is exposed as a neutral observation alongside the
+existing atomic work-limited step. It counts actual attempts without changing
+rollback, metrics, errors, or execution semantics. Retained-state accounting
+uses explicit logical storage units and input-representation bytes, as defined
+in [safety accounting](level-safety-accounting.md); physical heap ceilings remain
+embedding-runtime responsibility. This resolves the implementation gap that a
+borrowed VM snapshot cannot measure Rust allocator capacity reliably.
+
+Environment extension interfaces are described in
+[the design](level-environment-extension.md). No production scene is registered;
+unsupported scene requests retain their dedicated error identity. Scene
+transition priority remains a required normative scene decision before delivery.
+
+## Level feedback and response safety refinement (2026-10-01)
+
+Completion review found that a wire response ceiling alone did not bound retained
+visible feedback and terminal results. Level API v1 now reserves an explicit
+conservative encoded feedback/result allowance together with each evaluation's
+input clones, charged against the existing trusted state-byte ceiling. The Rust
+kernel receives the effective allowance as resolved configuration; no player
+level field can change it. Before retaining each visible feedback record, the
+kernel checks its bound. Terminal exhaustion remains ResourceLimitExceeded,
+without official metrics or rating. Fixed-schema and per-record bounds are
+published in [level safety accounting](level-safety-accounting.md).
+
+Response projection checks these bounds before building JSON collections, and a
+bounded writer prevents oversized serialized-buffer allocation. Trusted level
+loading ceilings are host resource errors rather than malformed-level errors.
+Committed generated-code rejection diagnostics retain trusted scope/cell/Primary
+internally; only permitted privacy-safe reasons are projected to clients. These
+changes refine host safety and diagnostics without changing source acceptance,
+VM transitions, work units, correctness, metrics, or scoring.

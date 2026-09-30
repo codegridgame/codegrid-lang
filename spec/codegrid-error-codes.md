@@ -208,6 +208,20 @@ State effect: Exit categories remain stable; host failures do not produce a run-
 | `cli.serialization_failed` | A native run-result JSON cannot be serialized. |
 | `cli.vm_initialization_failed` | Verified program cannot initialize its VM. |
 | `cli.invalid_tick_limit` | The internal run boundary rejects a zero tick limit. |
+| `cli.limits_io` | The trusted safety profile file cannot be opened or read; evaluate exits before API initialization. |
+| `cli.profile_too_large` | The trusted safety profile exceeds the fixed CLI profile-file ceiling. |
+| `cli.profile_utf8` | The trusted safety profile file is not valid UTF-8. |
+| `cli.profile_bom` | The trusted safety profile begins with a forbidden UTF-8 byte-order mark. |
+| `cli.level_api_protocol` | The shared Level API response is invalid JSON or violates the response shape expected by the CLI. |
+| `cli.unknown_evaluation_status` | The shared Level API returned an unrecognized terminal evaluation status. |
+| `cli.malformed_evaluation_result` | The shared Level API terminal result omitted its status. |
+| `cli.level_io` | The evaluate command cannot open or read the level file. |
+| `cli.level_too_large` | The level JSON exceeds the trusted profile's level-byte ceiling. |
+| `cli.source_too_large` | The source file exceeds the trusted profile's source-byte ceiling. |
+| `cli.level_utf8` | The level file is not valid UTF-8. |
+| `cli.source_utf8` | The evaluate command's source file is not valid UTF-8; existing check/run reads retain `cli.source_io`. |
+| `cli.level_bom` | The level file begins with a forbidden UTF-8 byte-order mark. |
+| `cli.source_bom` | The evaluate command's source file begins with a forbidden UTF-8 byte-order mark. |
 
 ### debug
 
@@ -377,6 +391,11 @@ State effect: Pre-dispatch reservation failure does not execute the request. A l
 | 7 | Work-unit budget exhausted. |
 | 8 | VM fault. |
 
+The `evaluate` command additionally uses exit code 9 for player evaluation
+failure, 10 for invalid/unsupported level data, and 11 for a trusted resource
+limit. Its complete command-specific mapping is documented in the [CLI
+contract](../docs/cli.md#evaluate-level-command).
+
 CLI yielded results retain yield_reason values tick_slice_exhausted and work_unit_budget_exhausted. Runtime API/WASM bounded-run yield reasons have the same stable spellings. These are resumable host statuses, not language error codes. Debug session tick/work ceilings use debug.tick_limit_exceeded and debug.work_limit_exceeded. An editor no-debug run uses DAP exit 0 for halt, 5 for VM failure, and 1 for host/session failure; detailed identity is in the coded output. LSP process exit 1 reports abnormal lifecycle or transport failure with its stderr code.
 
 ## 5. Fault and host details
@@ -386,3 +405,33 @@ Metric overflow counter values are operation_count, global_tick, data_stack_usag
 ## 6. Implementation and verification rules
 
 Assign source/IR codes where validation detects the failure. Never classify an error by matching English text. Adapters forward the compiler/VM identifier rather than defining a competing source validator or interpreter. Tests must check both code and location/resource fields, include malformed transport errors, and compare native/LSP/browser/server diagnostic codes. Registry consistency checks reject an emitted code missing from this registry. Updating a test message must not automatically update its expected code.
+
+## 7. Level evaluator and host errors v1
+
+| `level.invalid` | Invalid logical JSON/schema/capability/metric; no validated level is returned. Details are typed reason and field path. |
+| `level.unsupported_format_version` | Unsupported logical format; payload is not interpreted as v1. |
+| `level.unsupported_scene_type` | No registered production scene; execution never falls back to ExactIO. |
+| `level.program_rejected` | Initial structural or committed generated capability violation; evaluation ends without rating. |
+| `level.evaluator_fault` | Reserved umbrella for future or otherwise unclassified evaluator fault categories. Known v1 fault kinds use their more specific codes below. |
+| `level.metric_overflow` | Checked level metric/aggregate arithmetic overflows; result status is Fault with no final metrics or rating. |
+| `level.vm_fault` | The VM reports a fault during level evaluation; result status is Fault with no final metrics or rating. |
+| `level.vm_initialization_fault` | Standard VM initialization fails for an evaluation test; result status is Fault with no final metrics or rating. |
+| `level.resource_limit` | Trusted evaluation tick/work/state/output ceiling prevents completion; no official success. |
+| `level.cancelled` | Evaluation cancelled; no official success. |
+| `level_api.invalid_profile` | Malformed, duplicate, unknown, zero, or unsupported host numeric/identity data; session not created. |
+| `level_api.unsupported_profile_version` | Unsupported trusted profile version; session not created. |
+| `level_api.unsupported_version` | Unsupported API version; no semantic dispatch. |
+| `level_api.invalid_request` | Malformed, duplicate, unknown, incorrect-type request or unsupported operation; no semantic dispatch. |
+| `level_api.invalid_configuration` | Unsupported mode/boundary or noncanonical/zero required integer; no evaluation starts. |
+| `level_api.seed_required` | Seed omitted without an explicit host seed source; no evaluation starts. |
+| `level_api.invalid_handle` | Released, stale, wrong-kind, or other-session handle; no referenced operation executes. |
+| `level_api.handle_exhausted` | Checked handle/namespace capacity exhausted; no new handle is created. |
+| `level_api.resource_limit` | Request/source/program/retained-state/handle/per-call ceiling exceeded; no requested operation starts. |
+| `level_api.response_too_large` | A complete result/diagnostic response exceeds the ceiling; return a complete error, never partial JSON. Evaluation may already have advanced. |
+| `level_api.shutdown` | Operation attempted after shutdown; state remains released. |
+| `level_api.fault` | Shared API produced an invalid transport response; infrastructure failure, never player success. |
+| `level_abi.unsupported_version` | Unsupported portable ABI version; no dispatch. |
+| `level_abi.already_initialized` | Attempt to replace an initialized immutable profile; current session unchanged. |
+| `level_abi.not_initialized` | Semantic request before trusted initialization; no dispatch. |
+
+See [Level error identities v1](codegrid-level-errors-v1.md) for typed reason and transport details.

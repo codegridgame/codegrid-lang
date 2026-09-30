@@ -29,14 +29,19 @@ These rules apply to all AI-assisted work in this repository.
   codegrid-compiler     -> codegrid-hir, codegrid-ir, codegrid-model, codegrid-syntax
   codegrid-vm           -> codegrid-ir, codegrid-model
   codegrid-runtime-api  -> codegrid-compiler, codegrid-ir, codegrid-model, codegrid-vm
-  codegrid-cli          -> codegrid-compiler, codegrid-ir, codegrid-model, codegrid-syntax, codegrid-vm
+  codegrid-cli          -> codegrid-compiler, codegrid-ir, codegrid-model, codegrid-syntax, codegrid-vm, codegrid-level-api
   codegrid-lsp          -> codegrid-compiler, codegrid-model, codegrid-syntax
   codegrid-wasm-browser -> codegrid-runtime-api
   codegrid-wasm-server  -> codegrid-runtime-api
+  codegrid-level-core   -> codegrid-ir, codegrid-model, codegrid-vm
+  codegrid-level-api    -> codegrid-level-core, codegrid-compiler, codegrid-ir, codegrid-model
+  codegrid-level-wasm-browser -> codegrid-level-api
+  codegrid-level-wasm-server  -> codegrid-level-api
   ```
 
-  Native CLI intentionally composes compiler and VM APIs directly at the
-  process boundary. Browser/server adapters use `codegrid-runtime-api` for
+  Native CLI check/run/debug intentionally compose compiler and VM APIs directly
+  at the process boundary; evaluate delegates to `codegrid-level-api`.
+  Browser/server language adapters use `codegrid-runtime-api` for
   their versioned host contract. Do not introduce dependency cycles or a
   parallel `codegrid-core` model.
 - Keep model, syntax, HIR, IR, compiler, and VM independent of CLI, LSP transport, VS Code, browsers, JavaScript bindings, operating-system I/O, and game rules. Pass source, input, seed, limits, and results as data.
@@ -46,6 +51,11 @@ These rules apply to all AI-assisted work in this repository.
 - Keep source spans as UTF-8 byte offsets in the core. Convert them explicitly to UTF-16 positions at LSP/editor boundaries; never assume byte offsets are editor columns.
 - Keep VM behavior deterministic. Do not derive language results from wall-clock time, host randomness, thread scheduling, or unordered container iteration.
 - Keep scoring, levels, Steam integration, and game UI outside this repository's language core.
+  The Rust level evaluation layer lives above the language core as
+  described in `docs/level-core-architecture.md`; logical level validation and
+  scoring belong there, never in model/compiler/VM or host code. Its actual
+  dependencies appear in the workspace graph above. Web, Steam, and backend level evaluation must
+  invoke the shared Rust evaluator through WASM.
 
 ### Prohibited shortcuts
 

@@ -1,6 +1,10 @@
 [workspace]
 resolver = "2"
 members = [
+    "crates/codegrid-level-wasm-browser",
+    "crates/codegrid-level-wasm-server",
+    "crates/codegrid-level-api",
+    "crates/codegrid-level-core",
     "crates/codegrid-model",
     "crates/codegrid-syntax",
     "crates/codegrid-hir",
@@ -14,6 +18,10 @@ members = [
     "crates/codegrid-lsp",
 ]
 default-members = [
+    "crates/codegrid-level-wasm-browser",
+    "crates/codegrid-level-wasm-server",
+    "crates/codegrid-level-api",
+    "crates/codegrid-level-core",
     "crates/codegrid-model",
     "crates/codegrid-syntax",
     "crates/codegrid-hir",

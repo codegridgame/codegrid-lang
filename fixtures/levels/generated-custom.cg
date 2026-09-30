@@ -1,0 +1,8 @@
+@main
+@size 5x1
+~> ,> ( #0 ;
+@end main
+@C0
+@size 5x1
+~> ,> & >= #]
+@end C0

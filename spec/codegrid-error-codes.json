@@ -1652,6 +1652,318 @@
       "surface": "Numeric sentinel 0, interpreted with the called ABI export; no JSON response exists at this boundary.",
       "state_effect": "Pre-dispatch reservation failure does not execute the request. A late response-write failure has no rollback guarantee; do not blindly retry.",
       "code_type": "integer"
-    }
+    },
+{
+    "layer": "level",
+    "code": "level.invalid",
+    "condition": "Invalid logical JSON/schema/capability/metric; no validated level is returned. Details are typed reason and field path.",
+    "surface": "Level API v1 coded error or terminal failure, native CLI evaluate, browser binding v1 and portable ABI v1.",
+    "state_effect": "Invalid logical JSON/schema/capability/metric; no validated level is returned. Details are typed reason and field path.",
+    "code_type": "string"
+  },
+  {
+    "layer": "level",
+    "code": "level.unsupported_format_version",
+    "condition": "Unsupported logical format; payload is not interpreted as v1.",
+    "surface": "Level API v1 coded error or terminal failure, native CLI evaluate, browser binding v1 and portable ABI v1.",
+    "state_effect": "Unsupported logical format; payload is not interpreted as v1.",
+    "code_type": "string"
+  },
+  {
+    "layer": "level",
+    "code": "level.unsupported_scene_type",
+    "condition": "No registered production scene; execution never falls back to ExactIO.",
+    "surface": "Level API v1 coded error or terminal failure, native CLI evaluate, browser binding v1 and portable ABI v1.",
+    "state_effect": "No registered production scene; execution never falls back to ExactIO.",
+    "code_type": "string"
+  },
+  {
+    "layer": "level",
+    "code": "level.program_rejected",
+    "condition": "Initial structural or committed generated capability violation; evaluation ends without rating.",
+    "surface": "Level API v1 coded error or terminal failure, native CLI evaluate, browser binding v1 and portable ABI v1.",
+    "state_effect": "Initial structural or committed generated capability violation; evaluation ends without rating.",
+    "code_type": "string"
+  },
+  {
+    "layer": "level",
+    "code": "level.evaluator_fault",
+    "condition": "Reserved umbrella for future or otherwise unclassified evaluator fault categories; known v1 fault kinds use more specific registered codes.",
+    "surface": "Reserved registry identity; no known v1 detection emits this code. Known v1 fault codes appear in Level API result failure.code and native CLI evaluate JSON.",
+    "state_effect": "Infrastructure fault; no final metrics or rating are returned.",
+    "code_type": "string"
+  },
+  {
+    "layer": "level",
+    "code": "level.resource_limit",
+    "condition": "Trusted evaluation tick/work/state/output ceiling prevents completion; no official success.",
+    "surface": "Level API v1 coded error or terminal failure, native CLI evaluate, browser binding v1 and portable ABI v1.",
+    "state_effect": "Trusted evaluation tick/work/state/output ceiling prevents completion; no official success.",
+    "code_type": "string"
+  },
+  {
+    "layer": "level",
+    "code": "level.cancelled",
+    "condition": "Evaluation cancelled; no official success.",
+    "surface": "Level API v1 coded error or terminal failure, native CLI evaluate, browser binding v1 and portable ABI v1.",
+    "state_effect": "Evaluation cancelled; no official success.",
+    "code_type": "string"
+  },
+  {
+    "layer": "level",
+    "code": "level_api.invalid_profile",
+    "condition": "Malformed, duplicate, unknown, zero, or unsupported host numeric/identity data; session not created.",
+    "surface": "Level API v1 coded error or terminal failure, native CLI evaluate, browser binding v1 and portable ABI v1.",
+    "state_effect": "Malformed, duplicate, unknown, zero, or unsupported host numeric/identity data; session not created.",
+    "code_type": "string"
+  },
+  {
+    "layer": "level",
+    "code": "level_api.unsupported_profile_version",
+    "condition": "Unsupported trusted profile version; session not created.",
+    "surface": "Level API v1 coded error or terminal failure, native CLI evaluate, browser binding v1 and portable ABI v1.",
+    "state_effect": "Unsupported trusted profile version; session not created.",
+    "code_type": "string"
+  },
+  {
+    "layer": "level",
+    "code": "level_api.unsupported_version",
+    "condition": "Unsupported API version; no semantic dispatch.",
+    "surface": "Level API v1 coded error or terminal failure, native CLI evaluate, browser binding v1 and portable ABI v1.",
+    "state_effect": "Unsupported API version; no semantic dispatch.",
+    "code_type": "string"
+  },
+  {
+    "layer": "level",
+    "code": "level_api.invalid_request",
+    "condition": "Malformed, duplicate, unknown, incorrect-type request or unsupported operation; no semantic dispatch.",
+    "surface": "Level API v1 coded error or terminal failure, native CLI evaluate, browser binding v1 and portable ABI v1.",
+    "state_effect": "Malformed, duplicate, unknown, incorrect-type request or unsupported operation; no semantic dispatch.",
+    "code_type": "string"
+  },
+  {
+    "layer": "level",
+    "code": "level_api.invalid_configuration",
+    "condition": "Unsupported mode/boundary or noncanonical/zero required integer; no evaluation starts.",
+    "surface": "Level API v1 coded error or terminal failure, native CLI evaluate, browser binding v1 and portable ABI v1.",
+    "state_effect": "Unsupported mode/boundary or noncanonical/zero required integer; no evaluation starts.",
+    "code_type": "string"
+  },
+  {
+    "layer": "level",
+    "code": "level_api.seed_required",
+    "condition": "Seed omitted without an explicit host seed source; no evaluation starts.",
+    "surface": "Level API v1 coded error or terminal failure, native CLI evaluate, browser binding v1 and portable ABI v1.",
+    "state_effect": "Seed omitted without an explicit host seed source; no evaluation starts.",
+    "code_type": "string"
+  },
+  {
+    "layer": "level",
+    "code": "level_api.invalid_handle",
+    "condition": "Released, stale, wrong-kind, or other-session handle; no referenced operation executes.",
+    "surface": "Level API v1 coded error or terminal failure, native CLI evaluate, browser binding v1 and portable ABI v1.",
+    "state_effect": "Released, stale, wrong-kind, or other-session handle; no referenced operation executes.",
+    "code_type": "string"
+  },
+  {
+    "layer": "level",
+    "code": "level_api.handle_exhausted",
+    "condition": "Checked handle/namespace capacity exhausted; no new handle is created.",
+    "surface": "Level API v1 coded error or terminal failure, native CLI evaluate, browser binding v1 and portable ABI v1.",
+    "state_effect": "Checked handle/namespace capacity exhausted; no new handle is created.",
+    "code_type": "string"
+  },
+  {
+    "layer": "level",
+    "code": "level_api.resource_limit",
+    "condition": "Request/source/program/retained-state/handle/per-call ceiling exceeded; no requested operation starts.",
+    "surface": "Level API v1 coded error or terminal failure, native CLI evaluate, browser binding v1 and portable ABI v1.",
+    "state_effect": "Request/source/program/retained-state/handle/per-call ceiling exceeded; no requested operation starts.",
+    "code_type": "string"
+  },
+  {
+    "layer": "level",
+    "code": "level_api.response_too_large",
+    "condition": "A complete result/diagnostic response exceeds the ceiling; return a complete error, never partial JSON. Evaluation may already have advanced.",
+    "surface": "Level API v1 coded error or terminal failure, native CLI evaluate, browser binding v1 and portable ABI v1.",
+    "state_effect": "A complete result/diagnostic response exceeds the ceiling; return a complete error, never partial JSON. Evaluation may already have advanced.",
+    "code_type": "string"
+  },
+  {
+    "layer": "level",
+    "code": "level_api.shutdown",
+    "condition": "Operation attempted after shutdown; state remains released.",
+    "surface": "Level API v1 coded error or terminal failure, native CLI evaluate, browser binding v1 and portable ABI v1.",
+    "state_effect": "Operation attempted after shutdown; state remains released.",
+    "code_type": "string"
+  },
+  {
+    "layer": "level",
+    "code": "level_api.fault",
+    "condition": "Shared API produced an invalid transport response; infrastructure failure, never player success.",
+    "surface": "Level API v1 coded error or terminal failure, native CLI evaluate, browser binding v1 and portable ABI v1.",
+    "state_effect": "Shared API produced an invalid transport response; infrastructure failure, never player success.",
+    "code_type": "string"
+  },
+  {
+    "layer": "level",
+    "code": "level_abi.unsupported_version",
+    "condition": "Unsupported portable ABI version; no dispatch.",
+    "surface": "Level API v1 coded error or terminal failure, native CLI evaluate, browser binding v1 and portable ABI v1.",
+    "state_effect": "Unsupported portable ABI version; no dispatch.",
+    "code_type": "string"
+  },
+  {
+    "layer": "level",
+    "code": "level_abi.already_initialized",
+    "condition": "Attempt to replace an initialized immutable profile; current session unchanged.",
+    "surface": "Level API v1 coded error or terminal failure, native CLI evaluate, browser binding v1 and portable ABI v1.",
+    "state_effect": "Attempt to replace an initialized immutable profile; current session unchanged.",
+    "code_type": "string"
+  },
+  {
+    "layer": "level",
+    "code": "level_abi.not_initialized",
+    "condition": "Semantic request before trusted initialization; no dispatch.",
+    "surface": "Level API v1 coded error or terminal failure, native CLI evaluate, browser binding v1 and portable ABI v1.",
+    "state_effect": "Semantic request before trusted initialization; no dispatch.",
+    "code_type": "string"
+  },
+  {
+    "layer": "level",
+    "code": "level.metric_overflow",
+    "condition": "Checked level metric or aggregate arithmetic overflows during evaluation.",
+    "surface": "Level API v1 result failure.code and native CLI evaluate JSON; the terminal result status is Fault.",
+    "state_effect": "Infrastructure fault; no final metrics or rating are returned.",
+    "code_type": "string"
+  },
+  {
+    "layer": "level",
+    "code": "level.vm_fault",
+    "condition": "The shared VM reports a fault during level evaluation.",
+    "surface": "Level API v1 result failure.code and native CLI evaluate JSON; the terminal result status is Fault.",
+    "state_effect": "Infrastructure fault; no final metrics or rating are returned.",
+    "code_type": "string"
+  },
+  {
+    "layer": "level",
+    "code": "level.vm_initialization_fault",
+    "condition": "The shared VM cannot initialize a standard state for an evaluation test.",
+    "surface": "Level API v1 result failure.code and native CLI evaluate JSON; the terminal result status is Fault.",
+    "state_effect": "Infrastructure fault; no final metrics or rating are returned.",
+    "code_type": "string"
+  },
+  {
+    "layer": "cli",
+    "code": "cli.limits_io",
+    "condition": "The trusted safety profile file cannot be opened or read.",
+    "surface": "Native stderr: error: [code] message.",
+    "state_effect": "Evaluate exits with code 3 before API initialization and emits no JSON envelope.",
+    "code_type": "string"
+  },
+  {
+    "layer": "cli",
+    "code": "cli.profile_too_large",
+    "condition": "The trusted safety profile exceeds the fixed CLI profile-file ceiling.",
+    "surface": "Native stderr: error: [code] message.",
+    "state_effect": "Evaluate exits with code 2 before API initialization and emits no JSON envelope.",
+    "code_type": "string"
+  },
+  {
+    "layer": "cli",
+    "code": "cli.profile_utf8",
+    "condition": "The trusted safety profile file is not valid UTF-8.",
+    "surface": "Native stderr: error: [code] message.",
+    "state_effect": "Evaluate exits with code 2 before API initialization and emits no JSON envelope.",
+    "code_type": "string"
+  },
+  {
+    "layer": "cli",
+    "code": "cli.profile_bom",
+    "condition": "The trusted safety profile begins with a forbidden UTF-8 byte-order mark.",
+    "surface": "Native stderr: error: [code] message.",
+    "state_effect": "Evaluate exits with code 2 before API initialization and emits no JSON envelope.",
+    "code_type": "string"
+  },
+  {
+    "layer": "cli",
+    "code": "cli.level_api_protocol",
+    "condition": "The shared Level API response is invalid JSON or violates the response shape expected by the CLI.",
+    "surface": "Native stderr: error: [code] message.",
+    "state_effect": "Evaluate exits with code 8; malformed responses are never treated as successful results.",
+    "code_type": "string"
+  },
+  {
+    "layer": "cli",
+    "code": "cli.unknown_evaluation_status",
+    "condition": "The shared Level API returned an unrecognized terminal evaluation status.",
+    "surface": "Native stderr: error: [code] message; the parsed API response is also written to JSON stdout when requested.",
+    "state_effect": "Evaluate exits with code 8; an unknown status cannot be treated as success.",
+    "code_type": "string"
+  },
+  {
+    "layer": "cli",
+    "code": "cli.malformed_evaluation_result",
+    "condition": "The shared Level API terminal result omitted its status.",
+    "surface": "Native stderr: error: [code] message; the parsed API response is also written to JSON stdout when requested.",
+    "state_effect": "Evaluate exits with code 8; a result without status cannot be treated as success.",
+    "code_type": "string"
+  },
+  {
+    "layer": "cli",
+    "code": "cli.level_io",
+    "condition": "The evaluate command cannot open or read the level file.",
+    "surface": "Native stderr: error: [code] message.",
+    "state_effect": "Evaluate exits with code 3 before API submission and emits no JSON envelope.",
+    "code_type": "string"
+  },
+  {
+    "layer": "cli",
+    "code": "cli.level_too_large",
+    "condition": "The level JSON exceeds the trusted profile's level-byte ceiling.",
+    "surface": "Native stderr: error: [code] message.",
+    "state_effect": "Evaluate exits with code 11 before API submission and emits no JSON envelope.",
+    "code_type": "string"
+  },
+  {
+    "layer": "cli",
+    "code": "cli.source_too_large",
+    "condition": "The source file exceeds the trusted profile's source-byte ceiling.",
+    "surface": "Native stderr: error: [code] message.",
+    "state_effect": "Evaluate exits with code 11 before API submission and emits no JSON envelope.",
+    "code_type": "string"
+  },
+  {
+    "layer": "cli",
+    "code": "cli.level_utf8",
+    "condition": "The level file is not valid UTF-8.",
+    "surface": "Native stderr: error: [code] message.",
+    "state_effect": "Evaluate exits with code 3 before API submission and emits no JSON envelope.",
+    "code_type": "string"
+  },
+  {
+    "layer": "cli",
+    "code": "cli.source_utf8",
+    "condition": "The evaluate command's source file is not valid UTF-8.",
+    "surface": "Native stderr: error: [code] message.",
+    "state_effect": "Evaluate exits with code 3 before API submission and emits no JSON envelope; existing check/run source reads retain cli.source_io.",
+    "code_type": "string"
+  },
+  {
+    "layer": "cli",
+    "code": "cli.level_bom",
+    "condition": "The level file begins with a forbidden UTF-8 byte-order mark.",
+    "surface": "Native stderr: error: [code] message.",
+    "state_effect": "Evaluate exits with code 3 before API submission and emits no JSON envelope.",
+    "code_type": "string"
+  },
+  {
+    "layer": "cli",
+    "code": "cli.source_bom",
+    "condition": "The evaluate command's source file begins with a forbidden UTF-8 byte-order mark.",
+    "surface": "Native stderr: error: [code] message.",
+    "state_effect": "Evaluate exits with code 3 before API submission and emits no JSON envelope.",
+    "code_type": "string"
+  }
   ]
 }

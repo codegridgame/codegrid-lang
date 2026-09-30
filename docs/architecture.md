@@ -4,7 +4,7 @@
 
 The local delivery target is the Full language over one shared compiler and VM, surfaced through `codegrid check`, `codegrid run`, the Rust LSP, VS Code, Runtime API, and browser/server WASM adapters. Existing host implementations cover only part of the Full language and must be revalidated against the expanded contracts.
 
-The game repository owns game UI, levels, story, scoring, Steam integration, and telemetry. This repository owns the language and its host adapters. Game code must not add a second source parser, validator, instruction table, or interpreter.
+The game repository owns game UI, level content, story, Steam integration, and telemetry. This repository owns the language and its host adapters. The Rust level evaluation layer owns logical level validation, ExactIO, constraints, and scoring above the language core; see the [Level Core architecture](level-core-architecture.md). Web, Steam, and backend hosts invoke that layer through WASM. Game code must not add a second source parser, validator, instruction table, interpreter, or level evaluator.
 
 ## Workspace layers
 
@@ -26,6 +26,10 @@ codegrid/
     codegrid-runtime-api/         Versioned host requests and instance lifecycle
     codegrid-wasm-browser/        Browser ABI adapter
     codegrid-wasm-server/         Server ABI adapter
+    codegrid-level-core/          Logical ExactIO policy above the language core
+    codegrid-level-api/           Shared versioned level host operations
+    codegrid-level-wasm-browser/  Browser Level binding v1
+    codegrid-level-wasm-server/   Portable Level ABI v1
   editors/vscode/                TypeScript editor client without language semantics
   tests/                         Shared fixtures
   examples/                      Full language and migration programs
@@ -61,6 +65,16 @@ graph TD
   runtime_api --> vm
   browser[codegrid-wasm-browser] --> runtime_api
   server[codegrid-wasm-server] --> runtime_api
+  level_core[codegrid-level-core] --> ir
+  level_core --> model
+  level_core --> vm
+  level_api[codegrid-level-api] --> level_core
+  level_api --> compiler
+  level_api --> ir
+  level_api --> model
+  cli --> level_api
+  level_browser[codegrid-level-wasm-browser] --> level_api
+  level_server[codegrid-level-wasm-server] --> level_api
 ```
 
 Required constraints:

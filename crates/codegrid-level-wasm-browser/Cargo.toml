@@ -1,0 +1,16 @@
+[package]
+name = "codegrid-level-wasm-browser"
+version = "0.0.0"
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+publish = false
+[lib]
+crate-type = ["cdylib", "rlib"]
+[dependencies]
+codegrid-level-api = { path = "../codegrid-level-api" }
+wasm-bindgen = "0.2"
+js-sys = "0.3"
+serde_json = "1"
+[lints]
+workspace = true

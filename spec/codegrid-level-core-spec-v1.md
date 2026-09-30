@@ -5,6 +5,11 @@
 **Scope:** Rust `level-core` evaluation layer  
 **Version:** 1
 
+The [ExactIO implementation contract](codegrid-level-exactio-contract-v1.md)
+records the decided v1 schema, capabilities, metric projections, deterministic
+configuration, and execution boundaries. Its explicit refinements supersede
+the earlier conceptual examples where their details differ.
+
 ---
 
 ## 1. Purpose
@@ -225,6 +230,8 @@ Example:
       "READ",
       "OUTPUT"
     ],
+
+    "allowed_attachments": [],
 
     "main_board": {
       "width": 5,
@@ -684,11 +691,14 @@ Examples include:
 
 ```text
 OutOfBounds
-StackUnderflow
-InvalidMemoryAccess
-CallStackOverflow
-TickLimitExceeded
+CustomExecutionLimitExceeded
+ConcurrentOutputConflict
 ```
+
+Use the VM specification's exact runtime error identities. Tick-slice
+`TickLimitReached` and work-budget interruption are nonterminal yields, not
+runtime errors. A cumulative evaluation resource ceiling has a separate
+`ResourceLimitExceeded` outcome and does not synthesize a VM error.
 
 In Official mode, the entire Level evaluation ends immediately.
 
@@ -774,7 +784,8 @@ max_cost
 max_memory_addresses
 ```
 
-Hidden tests remain subject to VM global hard limits.
+Hidden tests remain subject to VM execution limits and the trusted evaluation
+safety profile defined in section 34.
 
 This prevents hidden programs from running indefinitely or exceeding core safety limits.
 
@@ -1264,24 +1275,21 @@ If an Environment constraint becomes irreversibly violated during execution, eva
 
 ---
 
-## 34. VM Hard Limits
+## 34. VM Execution Limits and Evaluation Safety
 
-The VM defines global, non-overridable safety/resource limits.
+The VM specification owns its execution limits and error/yield behavior.
+Custom execution-limit exhaustion is a runtime error. Bounded tick/work
+exhaustion is nonterminal and does not define universal memory, thread, or
+stack quotas. Do not infer global language quotas from host policy.
 
-Examples may include:
+The embedding evaluator uses an explicit immutable trusted safety profile,
+including cumulative limits and resource ceilings. A Level may never relax
+that profile. Safety ceilings apply to visible and hidden tests; host resource
+termination is distinct from a VM runtime error and logical level constraint.
 
-```text
-maximum ticks
-maximum memory
-maximum threads
-maximum stack depth
-```
-
-A Level may impose stricter limits.
-
-A Level may never relax a VM hard limit.
-
-Global VM hard limits apply to both visible and hidden tests.
+A Level may impose stricter metric constraints, with the visible-only ExactIO
+scope defined in section 33. The ExactIO implementation contract defines the
+separate Pending and ResourceLimitExceeded outcomes and completion boundaries.
 
 ---
 
@@ -1725,10 +1733,9 @@ IncompleteOutput
 IncompleteAction
 InvalidAction
 OutOfBounds
-StackUnderflow
-InvalidMemoryAccess
-CallStackOverflow
-TickLimitExceeded
+CustomExecutionLimitExceeded
+ConcurrentOutputConflict
+ResourceLimitExceeded
 InstructionNotAllowed
 TooManyFunctions
 ThreadNotAllowed
@@ -1765,6 +1772,8 @@ EvaluationFailed
       "ADD",
       "SUB"
     ],
+
+    "allowed_attachments": [],
 
     "main_board": {
       "width": 5,
@@ -1847,6 +1856,8 @@ In Official evaluation:
       "READ",
       "OUTPUT"
     ],
+
+    "allowed_attachments": [],
 
     "main_board": {
       "width": 5,
@@ -1969,7 +1980,14 @@ This repeats until all passengers are delivered or the Level fails.
       "OUTPUT"
     ],
 
+    "allowed_attachments": [],
+
     "main_board": {
+      "width": 5,
+      "height": 5
+    },
+
+    "function_board": {
       "width": 5,
       "height": 5
     },
@@ -2116,7 +2134,7 @@ Visible Tests determine:
 Hidden Tests determine:
 - correctness only
 
-All Tests remain subject to VM global hard limits
+All Tests remain subject to VM execution limits and the trusted evaluation safety profile
 ```
 
 This separation is normative for Level Core v1.
@@ -2138,7 +2156,7 @@ The following requirements are normative:
 9. Official runs visible + hidden tests and is fail-fast.
 10. Hidden tests participate only in correctness.
 11. Hidden tests do not affect official metrics, metric-based constraints, scoring, rating, PBs, or leaderboards.
-12. Hidden tests remain subject to VM hard limits.
+12. Hidden tests remain subject to VM execution limits and the trusted evaluation safety profile.
 13. ExactIO passes immediately after a complete non-empty expected output has been matched.
 14. Empty expected output requires normal termination with no output.
 15. HALT is not itself a success condition.

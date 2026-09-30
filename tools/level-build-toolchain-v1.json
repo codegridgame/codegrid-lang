@@ -1,0 +1,10 @@
+{
+  "schema": "codegrid.level.local-build-toolchain",
+  "schema_version": 1,
+  "rustc_version": "1.98.1",
+  "cargo_version": "1.98.1",
+  "wasm_bindgen_version": "0.2.129",
+  "node_version": "v24.21.0",
+  "wasm_target": "wasm32-unknown-unknown",
+  "scope": "Pinned repository-local verification toolchain; no automatic installation"
+}

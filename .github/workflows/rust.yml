@@ -1,12 +1,7 @@
 name: Rust CI
 
 on:
-  push:
-    branches:
-      - "**"
-    tags:
-      - "wasm-mvp-v*"
-  pull_request:
+  # Automatic CI is temporarily paused; retain manual verification.
   workflow_dispatch:
 
 permissions:

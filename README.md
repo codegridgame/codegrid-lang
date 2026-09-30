@@ -11,6 +11,7 @@ The existing native CLI provides:
 - `codegrid check <program.cg>` using the shared compiler;
 - `codegrid run <program.cg>` using the compiler and verified IR in the shared VM.
 - `codegrid debug --stdio` providing compiler source locations and atomic VM steps to the editor debugger.
+- `codegrid evaluate <level.json> <program.cg>` using the shared Rust ExactIO level API; see [the CLI contract](docs/cli.md#evaluate-level-command).
 
 The [VS Code extension](editors/vscode/README.md) opens `.cg` files with Run
 and Debug buttons, F5/Ctrl+F5 launch, Main/Function/Folded Block breakpoints,
@@ -35,10 +36,18 @@ codegrid-lsp         Static language services over the Language Server Protocol
 codegrid-runtime-api Versioned host request/response and instance lifecycle
 codegrid-wasm-browser Browser WebAssembly adapter
 codegrid-wasm-server Server WebAssembly adapter
+codegrid-level-core  Logical level validation, ExactIO, metrics and rating
+codegrid-level-api   Versioned level requests, profiles, handles and results
+codegrid-level-wasm-browser Browser Level binding v1
+codegrid-level-wasm-server  Portable no-import Level ABI v1
 editors/vscode/       TypeScript editor client without language semantics
 ```
 
 ## Documentation
+
+- [Level Core v1 specification](spec/codegrid-level-core-spec-v1.md) and [Level Core architecture](docs/level-core-architecture.md) define the shared Rust ExactIO evaluation layer and Web, Steam, and backend WASM integration boundaries.
+- [ExactIO implementation contract](spec/codegrid-level-exactio-contract-v1.md) records the decided first-phase evaluation rules.
+- [Rust level evaluation task book](tasks/level-core-exactio-v1.md) covers CLI and WASM delivery, Environment extension design, and actual-host result comparisons.
 
 - [Error code specification](spec/codegrid-error-codes.md) defines all scoped identifiers and stable error categories.
 

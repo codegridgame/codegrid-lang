@@ -1,0 +1,25 @@
+{
+  "format_version": 1,
+  "level_id": "example.echo",
+  "level_version": 1,
+  "evaluation_type": "ExactIO",
+  "program_rules": {
+    "allowed_instructions": ["READ", "OUTPUT", "HALT"],
+    "allowed_attachments": [],
+    "main_board": {"width": 8, "height": 8},
+    "function_board": {"width": 8, "height": 8},
+    "max_functions": 0,
+    "max_custom": 0,
+    "max_threads": 1,
+    "memory_enabled": false
+  },
+  "constraints": {"max_ticks": 6},
+  "scoring": {"metrics": {"ticks": {"target": 6}, "cost": {"target": null}}},
+  "evaluation": {
+    "tests": [
+      {"visible": true, "input": [9], "expected_output": [9]},
+      {"visible": true, "input": [255], "expected_output": [255]},
+      {"visible": false, "input": [211], "expected_output": [211]}
+    ]
+  }
+}

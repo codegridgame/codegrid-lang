@@ -7,4 +7,5 @@
 *.vsix
 /editors/vscode/runtime/
 /.vscode/
-/tasks/
+/tasks/*
+!/tasks/level-core-exactio-v1.md

@@ -192,6 +192,20 @@ impl Vm {
         self.step_with_budget(&mut work_budget)
     }
 
+    /// Attempts the same atomic tick and reports actual thread dispatches,
+    /// including work discarded by rollback. Host accounting is independent
+    /// of normative VM metrics. Runtime-error attempts preserve the VM's
+    /// normative attempted-work metric rules; work-interrupted attempts retain
+    /// no interrupted-tick metrics. The returned dispatch count covers both.
+    pub fn step_with_work_accounting(
+        &mut self,
+        maximum_work_units: NonZeroU64,
+    ) -> (Result<StepResult, WorkLimitExceeded>, u64) {
+        let mut work_budget = ExecutionWorkBudget::limited(maximum_work_units);
+        let result = self.step_with_budget(&mut work_budget);
+        (result, work_budget.consumed)
+    }
+
     fn step_with_budget(
         &mut self,
         work_budget: &mut ExecutionWorkBudget,

@@ -1,10 +1,12 @@
 use std::collections::BTreeMap;
 use std::ffi::OsString;
+use std::io::Read;
 use std::num::NonZeroU64;
 use std::path::PathBuf;
 
 use codegrid_compiler::compile;
 use codegrid_ir::{Board, BoardId, CodeGridId, ScopedProgram};
+use codegrid_level_api::{LevelApi, SafetyProfile, LEVEL_API_VERSION};
 use codegrid_model::{
     AttachmentInstruction, BoundaryMode, Direction, InstructionStackItem, PrimaryInstruction, Slot,
 };
@@ -27,6 +29,10 @@ const EXIT_RUNTIME_ERROR: i32 = 5;
 const EXIT_TICK_LIMIT: i32 = 6;
 const EXIT_WORK_LIMIT: i32 = 7;
 const EXIT_VM_FAULT: i32 = 8;
+const EXIT_EVALUATION_FAILED: i32 = 9;
+const EXIT_LEVEL_REJECTED: i32 = 10;
+const EXIT_RESOURCE_LIMIT: i32 = 11;
+const MAX_PROFILE_FILE_BYTES: usize = 65_536;
 const USAGE: &str = concat!(
     "Usage:\n",
     "  codegrid check <program.cg>\n",
@@ -36,6 +42,10 @@ const USAGE: &str = concat!(
     "    --max-work-units <positive-u64>\n",
     "    [--input <byte,byte,...> | --input-file <json-file>]\n",
     "    [--initial-memory-file <json-file>]\n",
+    "  codegrid evaluate <level.json> <program.cg>\n",
+    "    --mode <debug|official> --boundary <exit|wrap> --seed <u64>\n",
+    "    --custom-limit <positive-u64> --limits-file <trusted-profile.json>\n",
+    "    [--format <json|human>]\n",
 );
 
 struct RunOptions {
@@ -47,6 +57,29 @@ struct RunOptions {
     custom_limit: NonZeroU64,
     max_ticks: NonZeroU64,
     max_work_units: NonZeroU64,
+}
+
+struct EvaluateOptions {
+    level_path: PathBuf,
+    source_path: PathBuf,
+    mode: EvaluationModeArg,
+    boundary: BoundaryMode,
+    seed: u64,
+    custom_limit: NonZeroU64,
+    limits_path: PathBuf,
+    format: OutputFormat,
+}
+
+#[derive(Clone, Copy)]
+enum EvaluationModeArg {
+    Debug,
+    Official,
+}
+
+#[derive(Clone, Copy)]
+enum OutputFormat {
+    Json,
+    Human,
 }
 
 enum InputSource {
@@ -67,10 +100,18 @@ enum InputFileError {
     HostData(String),
 }
 
+enum EvaluationFileError {
+    Io(std::io::Error),
+    TooLarge { limit: u64, actual: usize },
+    InvalidUtf8(std::string::FromUtf8Error),
+    BomNotAllowed,
+}
+
 enum Command {
     Debug,
     Check(PathBuf),
     Run(RunOptions),
+    Evaluate(EvaluateOptions),
     Help,
 }
 
@@ -97,13 +138,14 @@ fn run(arguments: Vec<OsString>) -> i32 {
         }
         Command::Check(path) => check_file(&path),
         Command::Run(options) => run_file(options),
+        Command::Evaluate(options) => evaluate_files(options),
     }
 }
 
 fn parse_arguments(arguments: Vec<OsString>) -> Result<Command, String> {
     let mut arguments = arguments.into_iter();
     let Some(command) = arguments.next() else {
-        return Err("expected a subcommand: check, run or debug".to_owned());
+        return Err("expected a subcommand: check, run, evaluate or debug".to_owned());
     };
     let command = command
         .to_str()
@@ -131,6 +173,7 @@ fn parse_arguments(arguments: Vec<OsString>) -> Result<Command, String> {
             Ok(Command::Check(PathBuf::from(path)))
         }
         "run" => parse_run_arguments(&mut arguments),
+        "evaluate" => parse_evaluate_arguments(&mut arguments),
         _ => Err(format!("unknown subcommand: {command}")),
     }
 }
@@ -229,6 +272,92 @@ fn parse_run_arguments(arguments: &mut impl Iterator<Item = OsString>) -> Result
         custom_limit: custom_limit.ok_or_else(|| "run requires --custom-limit".to_owned())?,
         max_ticks: max_ticks.ok_or_else(|| "run requires --max-ticks".to_owned())?,
         max_work_units: max_work_units.ok_or_else(|| "run requires --max-work-units".to_owned())?,
+    }))
+}
+
+fn parse_evaluate_arguments(
+    arguments: &mut impl Iterator<Item = OsString>,
+) -> Result<Command, String> {
+    let Some(level_path) = arguments.next() else {
+        return Err("evaluate requires a level JSON file path".to_owned());
+    };
+    let Some(source_path) = arguments.next() else {
+        return Err("evaluate requires a source file path after the level path".to_owned());
+    };
+    let mut mode = None;
+    let mut boundary = None;
+    let mut seed = None;
+    let mut custom_limit = None;
+    let mut limits_path = None;
+    let mut format = None;
+
+    while let Some(argument) = arguments.next() {
+        let option = argument
+            .to_str()
+            .ok_or_else(|| "option names must be valid UTF-8".to_owned())?;
+        match option {
+            "--mode" => {
+                if mode.is_some() {
+                    return Err("--mode may be specified only once".to_owned());
+                }
+                mode = Some(match option_value_text(arguments, option)?.as_str() {
+                    "debug" => EvaluationModeArg::Debug,
+                    "official" => EvaluationModeArg::Official,
+                    _ => return Err("--mode must be debug or official".to_owned()),
+                });
+            }
+            "--boundary" => {
+                if boundary.is_some() {
+                    return Err("--boundary may be specified only once".to_owned());
+                }
+                boundary = Some(match option_value_text(arguments, option)?.as_str() {
+                    "exit" => BoundaryMode::Exit,
+                    "wrap" => BoundaryMode::Wrap,
+                    _ => return Err("--boundary must be exit or wrap".to_owned()),
+                });
+            }
+            "--seed" => {
+                if seed.is_some() {
+                    return Err("--seed may be specified only once".to_owned());
+                }
+                seed = Some(parse_unsigned_option(arguments, option)?);
+            }
+            "--custom-limit" => {
+                if custom_limit.is_some() {
+                    return Err("--custom-limit may be specified only once".to_owned());
+                }
+                custom_limit = Some(parse_positive_option(arguments, option)?);
+            }
+            "--limits-file" => {
+                if limits_path.is_some() {
+                    return Err("--limits-file may be specified only once".to_owned());
+                }
+                limits_path = Some(PathBuf::from(next_option_value(arguments, option)?));
+            }
+            "--format" => {
+                if format.is_some() {
+                    return Err("--format may be specified only once".to_owned());
+                }
+                format = Some(match option_value_text(arguments, option)?.as_str() {
+                    "json" => OutputFormat::Json,
+                    "human" => OutputFormat::Human,
+                    _ => return Err("--format must be json or human".to_owned()),
+                });
+            }
+            "--help" | "-h" => return Ok(Command::Help),
+            _ => return Err(format!("unknown evaluate option: {option}")),
+        }
+    }
+
+    Ok(Command::Evaluate(EvaluateOptions {
+        level_path: PathBuf::from(level_path),
+        source_path: PathBuf::from(source_path),
+        mode: mode.ok_or_else(|| "evaluate requires --mode".to_owned())?,
+        boundary: boundary.ok_or_else(|| "evaluate requires --boundary".to_owned())?,
+        seed: seed.ok_or_else(|| "evaluate requires --seed".to_owned())?,
+        custom_limit: custom_limit.ok_or_else(|| "evaluate requires --custom-limit".to_owned())?,
+        limits_path: limits_path.ok_or_else(|| "evaluate requires --limits-file".to_owned())?,
+        format: format.unwrap_or(OutputFormat::Json),
     }))
 }
 
@@ -494,6 +623,346 @@ fn run_file(options: RunOptions) -> i32 {
         eprintln!("{}", runtime_error_summary(error));
     }
     exit_code
+}
+
+fn evaluate_files(options: EvaluateOptions) -> i32 {
+    let profile_text = match read_limited_utf8_file(
+        &options.limits_path,
+        MAX_PROFILE_FILE_BYTES as u64,
+    ) {
+        Ok(text) => text,
+        Err(EvaluationFileError::Io(error)) => {
+            eprintln!(
+                "error: [cli.limits_io] cannot read trusted safety profile '{}': {error}",
+                options.limits_path.display()
+            );
+            return EXIT_IO_ERROR;
+        }
+        Err(EvaluationFileError::TooLarge { limit, actual }) => {
+            eprintln!("error: [cli.profile_too_large] trusted safety profile contains at least {actual} bytes; the CLI limit is {limit} bytes");
+            return EXIT_INVALID_ARGUMENTS;
+        }
+        Err(EvaluationFileError::InvalidUtf8(error)) => {
+            eprintln!(
+                "error: [cli.profile_utf8] trusted safety profile '{}' is not UTF-8: {error}",
+                options.limits_path.display()
+            );
+            return EXIT_INVALID_ARGUMENTS;
+        }
+        Err(EvaluationFileError::BomNotAllowed) => {
+            eprintln!("error: [cli.profile_bom] trusted safety profile '{}' must not start with a UTF-8 BOM", options.limits_path.display());
+            return EXIT_INVALID_ARGUMENTS;
+        }
+    };
+    let profile = match SafetyProfile::from_json(&profile_text) {
+        Ok(profile) => profile,
+        Err(error) => {
+            eprintln!(
+                "error: [{}] invalid trusted safety profile '{}': {}",
+                error.code,
+                options.limits_path.display(),
+                error.message
+            );
+            return EXIT_INVALID_ARGUMENTS;
+        }
+    };
+    let level_text = match read_limited_utf8_file(&options.level_path, profile.max_level_bytes) {
+        Ok(text) => text,
+        Err(error) => return report_evaluation_file_error(&options.level_path, "level", error),
+    };
+    let source_text = match read_limited_utf8_file(&options.source_path, profile.max_source_bytes) {
+        Ok(text) => text,
+        Err(error) => return report_evaluation_file_error(&options.source_path, "source", error),
+    };
+
+    let work_budget = profile.max_work_per_call;
+    let mut api = match LevelApi::new(profile) {
+        Ok(api) => api,
+        Err(error) => {
+            eprintln!(
+                "error: [{}] cannot initialize level evaluator: {}",
+                error.code, error.message
+            );
+            return EXIT_INVALID_ARGUMENTS;
+        }
+    };
+    let mut handles: Vec<(&'static str, String)> = Vec::new();
+    let evaluation = (|| -> Result<(JsonValue, i32), String> {
+        let response =
+            level_api_request(&mut api, "load_level", json!({ "level_json": level_text }))?;
+        match response_status(&response) {
+            Some("level_rejected") => return Ok((response, EXIT_LEVEL_REJECTED)),
+            Some("error") => return Ok((response.clone(), level_api_error_exit(&response))),
+            Some("ok") => {}
+            other => return Err(format!("unexpected load_level response status: {other:?}")),
+        }
+        let level_handle = response_handle(&response)?;
+        handles.push(("level", level_handle.clone()));
+
+        let response = level_api_request(
+            &mut api,
+            "compile_program",
+            json!({ "source": source_text }),
+        )?;
+        match response_status(&response) {
+            Some("source_rejected") => return Ok((response, EXIT_STATIC_ERROR)),
+            Some("error") => return Ok((response.clone(), level_api_error_exit(&response))),
+            Some("ok") => {}
+            other => {
+                return Err(format!(
+                    "unexpected compile_program response status: {other:?}"
+                ))
+            }
+        }
+        let program_handle = response_handle(&response)?;
+        handles.push(("program", program_handle.clone()));
+
+        let response = level_api_request(
+            &mut api,
+            "start_evaluation",
+            json!({
+                "level": level_handle,
+                "program": program_handle,
+                "mode": match options.mode { EvaluationModeArg::Debug => "Debug", EvaluationModeArg::Official => "Official" },
+                "boundary_mode": boundary_api_name(options.boundary),
+                "shuffle_seed": options.seed.to_string(),
+                "custom_execution_limit": options.custom_limit.get().to_string(),
+            }),
+        )?;
+        match response_status(&response) {
+            Some("source_rejected") => return Ok((response, EXIT_STATIC_ERROR)),
+            Some("level_rejected") => return Ok((response, EXIT_LEVEL_REJECTED)),
+            Some("error") => return Ok((response.clone(), level_api_error_exit(&response))),
+            Some("ok") => {}
+            other => {
+                return Err(format!(
+                    "unexpected start_evaluation response status: {other:?}"
+                ))
+            }
+        }
+        let evaluation_handle = response_handle(&response)?;
+        handles.push(("evaluation", evaluation_handle.clone()));
+
+        loop {
+            let response = level_api_request(
+                &mut api,
+                "advance_evaluation",
+                json!({
+                    "evaluation": evaluation_handle,
+                    "work_budget": work_budget.to_string(),
+                }),
+            )?;
+            match response_status(&response) {
+                Some("pending") => continue,
+                Some("result") => {
+                    let exit_code = evaluation_result_exit(&response);
+                    return Ok((response, exit_code));
+                }
+                Some("level_rejected") => return Ok((response, EXIT_LEVEL_REJECTED)),
+                Some("source_rejected") => return Ok((response, EXIT_STATIC_ERROR)),
+                Some("error") => return Ok((response.clone(), level_api_error_exit(&response))),
+                other => {
+                    return Err(format!(
+                        "unexpected advance_evaluation response status: {other:?}"
+                    ))
+                }
+            }
+        }
+    })();
+
+    for (kind, handle) in handles.into_iter().rev() {
+        let _ = level_api_request(
+            &mut api,
+            "release",
+            json!({ "kind": kind, "handle": handle }),
+        );
+    }
+    let _ = level_api_request(&mut api, "shutdown", json!({}));
+
+    match evaluation {
+        Ok((response, exit_code)) => {
+            match options.format {
+                OutputFormat::Json => match serde_json::to_string_pretty(&response) {
+                    Ok(serialized) => println!("{serialized}"),
+                    Err(error) => {
+                        eprintln!("error: [cli.serialization_failed] failed to serialize level evaluation result: {error}");
+                        return EXIT_VM_FAULT;
+                    }
+                },
+                OutputFormat::Human => print_evaluation_human(&response),
+            }
+            exit_code
+        }
+        Err(message) => {
+            eprintln!("error: [cli.level_api_protocol] {message}");
+            EXIT_VM_FAULT
+        }
+    }
+}
+
+fn read_limited_utf8_file(path: &PathBuf, limit: u64) -> Result<String, EvaluationFileError> {
+    let file = std::fs::File::open(path).map_err(EvaluationFileError::Io)?;
+    read_limited_utf8(file, limit)
+}
+
+fn read_limited_utf8(reader: impl Read, limit: u64) -> Result<String, EvaluationFileError> {
+    let mut bytes = Vec::new();
+    reader
+        .take(limit.saturating_add(1))
+        .read_to_end(&mut bytes)
+        .map_err(EvaluationFileError::Io)?;
+    if bytes.len() as u128 > limit as u128 {
+        return Err(EvaluationFileError::TooLarge {
+            limit,
+            actual: bytes.len(),
+        });
+    }
+    let text = String::from_utf8(bytes).map_err(EvaluationFileError::InvalidUtf8)?;
+    if text.starts_with('\u{feff}') {
+        return Err(EvaluationFileError::BomNotAllowed);
+    }
+    Ok(text)
+}
+
+fn report_evaluation_file_error(path: &PathBuf, label: &str, error: EvaluationFileError) -> i32 {
+    match error {
+        EvaluationFileError::Io(error) => {
+            eprintln!(
+                "error: [cli.{label}_io] cannot read {label} file '{}': {error}",
+                path.display()
+            );
+            EXIT_IO_ERROR
+        }
+        EvaluationFileError::TooLarge { limit, actual } => {
+            eprintln!("error: [cli.{label}_too_large] {label} file '{}' contains at least {actual} bytes; the trusted profile limit is {limit} bytes", path.display());
+            EXIT_RESOURCE_LIMIT
+        }
+        EvaluationFileError::InvalidUtf8(error) => {
+            eprintln!(
+                "error: [cli.{label}_utf8] {label} file '{}' is not UTF-8: {error}",
+                path.display()
+            );
+            EXIT_IO_ERROR
+        }
+        EvaluationFileError::BomNotAllowed => {
+            eprintln!(
+                "error: [cli.{label}_bom] {label} file '{}' must not start with a UTF-8 BOM",
+                path.display()
+            );
+            EXIT_IO_ERROR
+        }
+    }
+}
+
+fn level_api_request(
+    api: &mut LevelApi,
+    operation: &str,
+    fields: JsonValue,
+) -> Result<JsonValue, String> {
+    let mut request = json!({ "api_version": LEVEL_API_VERSION, "operation": operation });
+    let request_object = request
+        .as_object_mut()
+        .ok_or_else(|| "internal request construction did not produce a JSON object".to_owned())?;
+    let fields_object = fields
+        .as_object()
+        .ok_or_else(|| "internal API fields did not produce a JSON object".to_owned())?;
+    request_object.extend(fields_object.clone());
+    let request_text = serde_json::to_string(&request).map_err(|error| error.to_string())?;
+    let response_text = api.request_json(&request_text);
+    serde_json::from_str(&response_text).map_err(|error| {
+        format!(
+            "level API returned invalid JSON ({error}): {}",
+            response_text.chars().take(400).collect::<String>()
+        )
+    })
+}
+
+fn response_status(response: &JsonValue) -> Option<&str> {
+    response.get("status").and_then(JsonValue::as_str)
+}
+
+fn boundary_api_name(boundary: BoundaryMode) -> &'static str {
+    match boundary {
+        BoundaryMode::Exit => "Exit",
+        BoundaryMode::Wrap => "Wrap",
+    }
+}
+
+fn response_handle(response: &JsonValue) -> Result<String, String> {
+    response
+        .get("handle")
+        .and_then(JsonValue::as_str)
+        .map(str::to_owned)
+        .ok_or_else(|| "successful level API operation omitted its handle".to_owned())
+}
+
+fn level_api_error_exit(response: &JsonValue) -> i32 {
+    match response.pointer("/error/code").and_then(JsonValue::as_str) {
+        Some("level_api.resource_limit" | "level_api.response_too_large") => EXIT_RESOURCE_LIMIT,
+        Some(code) if code.contains("fault") || code.contains("invariant") => EXIT_VM_FAULT,
+        Some(_) | None => EXIT_INVALID_ARGUMENTS,
+    }
+}
+
+fn evaluation_result_exit(response: &JsonValue) -> i32 {
+    match response
+        .pointer("/result/status")
+        .and_then(JsonValue::as_str)
+    {
+        Some("Passed") => EXIT_SUCCESS,
+        Some("ProgramRejected" | "TestFailed" | "RuntimeError" | "ConstraintExceeded") => {
+            EXIT_EVALUATION_FAILED
+        }
+        Some("ResourceLimitExceeded" | "Cancelled") => EXIT_RESOURCE_LIMIT,
+        Some("Fault") => EXIT_VM_FAULT,
+        Some(other) => {
+            eprintln!("error: [cli.unknown_evaluation_status] unrecognized level API result status '{other}'");
+            EXIT_VM_FAULT
+        }
+        None => {
+            eprintln!(
+                "error: [cli.malformed_evaluation_result] level API result omitted its status"
+            );
+            EXIT_VM_FAULT
+        }
+    }
+}
+
+fn print_evaluation_human(response: &JsonValue) {
+    let response_status = response_status(response).unwrap_or("unknown");
+    let result = response.get("result").unwrap_or(response);
+    let result_status = result
+        .get("status")
+        .and_then(JsonValue::as_str)
+        .unwrap_or(response_status);
+    println!("Evaluation: {result_status}");
+
+    for (label, keys) in [
+        ("Failure", &["failure", "error"][..]),
+        ("Source diagnostics", &["diagnostics"][..]),
+        ("Visible tests", &["visible_tests"][..]),
+        ("Hidden failure category", &["hidden_failure"][..]),
+        ("Constraints", &["constraint_results", "constraints"][..]),
+        ("Partial metrics", &["partial_metrics"][..]),
+        ("Final metrics", &["final_metrics"][..]),
+        ("Scoring", &["scoring"][..]),
+        ("Rating", &["rating"][..]),
+    ] {
+        if let Some(value) = keys
+            .iter()
+            .find_map(|key| result.get(*key))
+            .filter(|value| !value.is_null())
+        {
+            if value == &JsonValue::Array(vec![]) || value == &json!({}) {
+                continue;
+            }
+            println!("{label}:");
+            match serde_json::to_string_pretty(value) {
+                Ok(serialized) => println!("{serialized}"),
+                Err(_) => println!("{value}"),
+            }
+        }
+    }
 }
 
 fn configuration_json(
@@ -1026,6 +1495,28 @@ mod tests {
         parse_arguments, parse_byte_list, parse_canonical_signed, parse_canonical_u64, Command,
     };
     use std::ffi::OsString;
+
+    #[test]
+    fn limited_reads_stop_after_the_first_excess_byte() {
+        let mut input = std::io::Cursor::new(vec![b'a'; 1024]);
+        assert!(matches!(
+            super::read_limited_utf8(&mut input, 8),
+            Err(super::EvaluationFileError::TooLarge {
+                limit: 8,
+                actual: 9
+            })
+        ));
+        assert_eq!(input.position(), 9);
+        assert!(matches!(super::read_limited_utf8(&b"12345678"[..], 8), Ok(s) if s == "12345678"));
+        assert!(matches!(
+            super::read_limited_utf8(&b"\xff"[..], 8),
+            Err(super::EvaluationFileError::InvalidUtf8(_))
+        ));
+        assert!(matches!(
+            super::read_limited_utf8("\u{feff}".as_bytes(), 8),
+            Err(super::EvaluationFileError::BomNotAllowed)
+        ));
+    }
 
     #[test]
     fn accepts_only_canonical_unsigned_arguments() {

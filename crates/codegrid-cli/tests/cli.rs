@@ -4,6 +4,7 @@ use std::path::PathBuf;
 use std::process::{Command, Output};
 use std::sync::atomic::{AtomicUsize, Ordering};
 
+use codegrid_level_api::{LevelApi, SafetyProfile, LEVEL_API_VERSION};
 use serde_json::{json, Value};
 
 static NEXT_TEMP_FILE: AtomicUsize = AtomicUsize::new(0);
@@ -72,6 +73,174 @@ fn configured_args<'a>(source: &'a str) -> Vec<&'a str> {
         "--max-work-units",
         "100000",
     ]
+}
+
+fn exact_io_level(expected_output: &[u8]) -> String {
+    json!({
+        "format_version": 1,
+        "level_id": "cli.evaluate.test",
+        "level_version": 1,
+        "evaluation_type": "ExactIO",
+        "program_rules": {
+            "allowed_instructions": ["HALT", "OUTPUT"],
+            "allowed_attachments": [],
+            "main_board": {"width": 8, "height": 2},
+            "function_board": {"width": 8, "height": 2},
+            "max_functions": 0,
+            "max_custom": 0,
+            "max_threads": 1,
+            "memory_enabled": false
+        },
+        "constraints": {},
+        "scoring": {"metrics": {}},
+        "evaluation": {"tests": [{
+            "visible": true,
+            "input": [],
+            "expected_output": expected_output
+        }]}
+    })
+    .to_string()
+}
+
+fn evaluate_args<'a>(level: &'a str, source: &'a str, profile: &'a str) -> Vec<&'a str> {
+    vec![
+        "evaluate",
+        level,
+        source,
+        "--mode",
+        "debug",
+        "--boundary",
+        "exit",
+        "--seed",
+        "18446744073709551615",
+        "--custom-limit",
+        "1000",
+        "--limits-file",
+        profile,
+    ]
+}
+
+fn level_api_call(api: &mut LevelApi, operation: &str, extra: Value) -> Value {
+    let mut request = json!({"api_version": LEVEL_API_VERSION, "operation": operation});
+    request
+        .as_object_mut()
+        .unwrap()
+        .extend(extra.as_object().unwrap().clone());
+    let response = api.request_json(&request.to_string());
+    serde_json::from_str(&response)
+        .unwrap_or_else(|error| panic!("Level API response must be JSON ({error}): {response}"))
+}
+
+fn direct_api_evaluate(level_text: &str, source: &str, mode: &str) -> Value {
+    let profile_text = include_str!("../../../fixtures/levels/profiles/local-v1.json");
+    let profile = SafetyProfile::from_json(profile_text).expect("shared local profile is valid");
+    let work_budget = profile.max_work_per_call.to_string();
+    let mut api = LevelApi::new(profile).expect("level API must initialize");
+    let loaded = level_api_call(&mut api, "load_level", json!({"level_json": level_text}));
+    let level = loaded["handle"]
+        .as_str()
+        .expect("valid level returns handle")
+        .to_owned();
+    let compiled = level_api_call(&mut api, "compile_program", json!({"source": source}));
+    let program = compiled["handle"]
+        .as_str()
+        .expect("valid program returns handle")
+        .to_owned();
+    let started = level_api_call(
+        &mut api,
+        "start_evaluation",
+        json!({
+            "level": level,
+            "program": program,
+            "mode": mode,
+            "boundary_mode": "Exit",
+            "shuffle_seed": "18446744073709551615",
+            "custom_execution_limit": "1000"
+        }),
+    );
+    let evaluation = started["handle"]
+        .as_str()
+        .expect("evaluation returns handle")
+        .to_owned();
+    loop {
+        let response = level_api_call(
+            &mut api,
+            "advance_evaluation",
+            json!({"evaluation": evaluation, "work_budget": work_budget}),
+        );
+        if response["status"] == "pending" {
+            continue;
+        }
+        assert_eq!(
+            response["status"], "result",
+            "direct API evaluation must finish"
+        );
+        return response["result"].clone();
+    }
+}
+
+#[test]
+fn level_manifest_cli_matches_direct_rust_api_complete_results() {
+    let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../fixtures/levels");
+    let manifest: Value =
+        serde_json::from_str(&std::fs::read_to_string(root.join("conformance-v1.json")).unwrap())
+            .unwrap();
+    for case in manifest["cases"].as_array().unwrap() {
+        let profile = SafetyProfile::from_json(
+            &std::fs::read_to_string(root.join(manifest["profile"].as_str().unwrap())).unwrap(),
+        )
+        .unwrap();
+        let mut api = LevelApi::new(profile.clone()).unwrap();
+        let level_path = root.join(case["level"].as_str().unwrap());
+        let source_path = root.join(case["program"].as_str().unwrap());
+        let level = level_api_call(
+            &mut api,
+            "load_level",
+            json!({"level_json":std::fs::read_to_string(&level_path).unwrap()}),
+        );
+        let program = level_api_call(
+            &mut api,
+            "compile_program",
+            json!({"source":std::fs::read_to_string(&source_path).unwrap()}),
+        );
+        let evaluation = level_api_call(
+            &mut api,
+            "start_evaluation",
+            json!({"level":level["handle"],"program":program["handle"],"mode":case["mode"],"boundary_mode":case["boundary"],"shuffle_seed":case["seed"],"custom_execution_limit":case["custom_limit"]}),
+        );
+        assert_eq!(evaluation["status"], "ok", "{case}: {evaluation}");
+        let direct = loop {
+            let response = level_api_call(
+                &mut api,
+                "advance_evaluation",
+                json!({"evaluation":evaluation["handle"],"work_budget":profile.max_work_per_call.to_string()}),
+            );
+            if response["status"] != "pending" {
+                break response;
+            }
+        };
+        let output = std::process::Command::new(env!("CARGO_BIN_EXE_codegrid"))
+            .arg("evaluate")
+            .arg(level_path)
+            .arg(source_path)
+            .args([
+                "--mode",
+                &case["mode"].as_str().unwrap().to_ascii_lowercase(),
+                "--boundary",
+                &case["boundary"].as_str().unwrap().to_ascii_lowercase(),
+                "--seed",
+                case["seed"].as_str().unwrap(),
+                "--custom-limit",
+                case["custom_limit"].as_str().unwrap(),
+                "--limits-file",
+            ])
+            .arg(root.join(manifest["profile"].as_str().unwrap()))
+            .output()
+            .unwrap();
+        let cli: Value = serde_json::from_slice(&output.stdout).unwrap();
+        assert_eq!(cli, direct, "Complete permitted result for {}", case["id"]);
+        assert_eq!(cli["result"]["status"], case["expected_status"]);
+    }
 }
 
 #[test]
@@ -504,4 +673,422 @@ fn run_serialization_is_deterministic_and_emits_only_json_on_stdout() {
     assert!(value["snapshot"]["runtime_program"]["main"]["cells"].is_array());
     assert!(value["events"].is_array());
     assert!(value["snapshot"]["metrics"]["used_cells"].is_array());
+}
+
+#[test]
+fn evaluate_cli_result_matches_the_direct_shared_level_api() {
+    let level_text = exact_io_level(&[]);
+    let level = TempFile::new("json", level_text.as_bytes());
+    let source = TempFile::new("cg", b"~> ;\n");
+    let profile = TempFile::new(
+        "json",
+        include_str!("../../../fixtures/levels/profiles/local-v1.json").as_bytes(),
+    );
+    let args = evaluate_args(level.text_path(), source.text_path(), profile.text_path());
+    let output = run_cli(&args);
+
+    assert_eq!(output.status.code(), Some(0));
+    assert!(
+        output.stderr.is_empty(),
+        "{}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    assert_eq!(
+        output.stdout.iter().filter(|byte| **byte == b'\n').count() > 1,
+        true,
+        "JSON mode writes one complete pretty-printed response"
+    );
+    let cli_response = parse_result(&output);
+    assert_eq!(cli_response["schema"], "codegrid.level.response");
+    assert_eq!(cli_response["api_version"], 1);
+    assert_eq!(cli_response["status"], "result");
+    assert_eq!(cli_response["result"]["status"], "Passed");
+    assert_eq!(
+        cli_response["result"],
+        direct_api_evaluate(&level_text, "~> ;\n", "Debug"),
+        "CLI must preserve the shared Level API semantic result"
+    );
+    assert_eq!(
+        cli_response["result"]["configuration"]["shuffle_seed"],
+        "18446744073709551615"
+    );
+    assert_eq!(cli_response["result"]["rating"], Value::Null);
+    assert_eq!(cli_response["result"]["scoring"], json!([]));
+
+    let mut rated_value: Value = serde_json::from_str(&level_text).unwrap();
+    rated_value["scoring"]["metrics"] = json!({"cost": {"target": 1}});
+    let rated_level = TempFile::new("json", rated_value.to_string().as_bytes());
+    let rated_args = evaluate_args(
+        rated_level.text_path(),
+        source.text_path(),
+        profile.text_path(),
+    );
+    let rated = run_cli(&rated_args);
+    assert_eq!(rated.status.code(), Some(0));
+    let rated_result = parse_result(&rated);
+    assert_eq!(rated_result["result"]["rating"], 3);
+    assert_eq!(rated_result["result"]["scoring"][0]["name"], "cost");
+    assert_eq!(rated_result["result"]["scoring"][0]["target"], "1");
+
+    let human_args = [
+        "evaluate",
+        level.text_path(),
+        source.text_path(),
+        "--mode",
+        "debug",
+        "--boundary",
+        "exit",
+        "--seed",
+        "0",
+        "--custom-limit",
+        "1000",
+        "--limits-file",
+        profile.text_path(),
+        "--format",
+        "human",
+    ];
+    let human = run_cli(&human_args);
+    assert_eq!(human.status.code(), Some(0));
+    let human_text = String::from_utf8_lossy(&human.stdout);
+    assert!(human_text.contains("Evaluation: Passed"));
+    assert!(!human_text.trim_start().starts_with('{'));
+}
+
+#[test]
+fn evaluate_official_echo_u64_max_matches_the_direct_level_api() {
+    let mut level_value: Value = serde_json::from_str(&exact_io_level(&[42])).unwrap();
+    level_value["program_rules"]["allowed_instructions"] = json!(["HALT", "OUTPUT", "READ_RIGHT"]);
+    level_value["evaluation"]["tests"][0]["input"] = json!([42]);
+    let level_text = level_value.to_string();
+    let level = TempFile::new("json", level_text.as_bytes());
+    let source = TempFile::new("cg", b"~> ,> . ;\n");
+    let profile = TempFile::new(
+        "json",
+        include_str!("../../../fixtures/levels/profiles/local-v1.json").as_bytes(),
+    );
+    let mut args = evaluate_args(level.text_path(), source.text_path(), profile.text_path());
+    let mode_index = args.iter().position(|arg| *arg == "--mode").unwrap();
+    args[mode_index + 1] = "official";
+    let output = run_cli(&args);
+
+    assert_eq!(output.status.code(), Some(0));
+    assert!(
+        output.stderr.is_empty(),
+        "{}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    let cli_response = parse_result(&output);
+    assert_eq!(cli_response["result"]["mode"], "Official");
+    assert_eq!(cli_response["result"]["status"], "Passed");
+    assert_eq!(
+        cli_response["result"]["visible_tests"][0]["input"],
+        json!([42])
+    );
+    assert_eq!(
+        cli_response["result"]["visible_tests"][0]["actual_output"],
+        json!([42])
+    );
+    assert_eq!(
+        cli_response["result"],
+        direct_api_evaluate(&level_text, "~> ,> . ;\n", "Official"),
+        "CLI must preserve the complete shared result for the same official request"
+    );
+}
+
+#[test]
+fn evaluate_reports_source_and_level_rejections_as_complete_api_responses() {
+    let profile = TempFile::new(
+        "json",
+        include_str!("../../../fixtures/levels/profiles/local-v1.json").as_bytes(),
+    );
+
+    let level = TempFile::new("json", exact_io_level(&[]).as_bytes());
+    let invalid_source = TempFile::new("cg", b"~> [0\n");
+    let source_args = evaluate_args(
+        level.text_path(),
+        invalid_source.text_path(),
+        profile.text_path(),
+    );
+    let source_result = run_cli(&source_args);
+    assert_eq!(source_result.status.code(), Some(4));
+    let source_response = parse_result(&source_result);
+    assert_eq!(source_response["status"], "source_rejected");
+    assert!(source_response["diagnostics"].is_array());
+
+    let malformed_level = TempFile::new("json", b"{}");
+    let source = TempFile::new("cg", b"~> ;\n");
+    let args = evaluate_args(
+        malformed_level.text_path(),
+        source.text_path(),
+        profile.text_path(),
+    );
+    let malformed = run_cli(&args);
+    assert_eq!(malformed.status.code(), Some(10));
+    let malformed_response = parse_result(&malformed);
+    assert_eq!(malformed_response["status"], "level_rejected");
+
+    let malformed_json = TempFile::new("json", b"{");
+    let args = evaluate_args(
+        malformed_json.text_path(),
+        source.text_path(),
+        profile.text_path(),
+    );
+    let malformed_json_result = run_cli(&args);
+    assert_eq!(malformed_json_result.status.code(), Some(10));
+    assert_eq!(
+        parse_result(&malformed_json_result)["status"],
+        "level_rejected"
+    );
+
+    let mut unsupported_value: Value = serde_json::from_str(&exact_io_level(&[])).unwrap();
+    unsupported_value["evaluation_type"] = json!("Environment");
+    unsupported_value["evaluation"] = json!({
+        "scene_type": "Elevator",
+        "scene_data": {},
+        "goals": {}
+    });
+    let unsupported_scene = TempFile::new("json", unsupported_value.to_string().as_bytes());
+    let args = evaluate_args(
+        unsupported_scene.text_path(),
+        source.text_path(),
+        profile.text_path(),
+    );
+    let unsupported = run_cli(&args);
+    assert_eq!(unsupported.status.code(), Some(10));
+    let unsupported_response = parse_result(&unsupported);
+    assert_eq!(unsupported_response["status"], "level_rejected");
+    assert_eq!(
+        unsupported_response["error"]["category"],
+        "UnsupportedSceneType"
+    );
+}
+
+#[test]
+fn evaluate_maps_player_rejection_failure_constraints_and_hidden_redaction() {
+    let profile = TempFile::new(
+        "json",
+        include_str!("../../../fixtures/levels/profiles/local-v1.json").as_bytes(),
+    );
+    let level = TempFile::new("json", exact_io_level(&[]).as_bytes());
+    let forbidden_source = TempFile::new("cg", b"~> + ;\n");
+    let args = evaluate_args(
+        level.text_path(),
+        forbidden_source.text_path(),
+        profile.text_path(),
+    );
+    let rejected = run_cli(&args);
+    assert_eq!(rejected.status.code(), Some(9));
+    assert_eq!(
+        parse_result(&rejected)["result"]["status"],
+        "ProgramRejected"
+    );
+
+    let mut generated_value: Value = serde_json::from_str(&exact_io_level(&[])).unwrap();
+    generated_value["program_rules"]["allowed_instructions"] =
+        json!(["READ_RIGHT", "DECODE", "MOVE_RIGHT", "HALT"]);
+    generated_value["program_rules"]["allowed_attachments"] = json!(["WRITE_CODE"]);
+    generated_value["evaluation"]["tests"][0]["input"] = json!([94]);
+    let generated_level = TempFile::new("json", generated_value.to_string().as_bytes());
+    let generated_source = TempFile::new("cg", b"@main\n~> ,> & >= ;\n@end main\n");
+    let args = evaluate_args(
+        generated_level.text_path(),
+        generated_source.text_path(),
+        profile.text_path(),
+    );
+    let generated = run_cli(&args);
+    assert_eq!(
+        generated.status.code(),
+        Some(9),
+        "stdout={} stderr={}",
+        String::from_utf8_lossy(&generated.stdout),
+        String::from_utf8_lossy(&generated.stderr)
+    );
+    let generated_result = parse_result(&generated);
+    assert_eq!(generated_result["result"]["status"], "ProgramRejected");
+    assert_eq!(
+        generated_result["result"]["failure"]["reason"],
+        "GeneratedInstructionNotAllowed"
+    );
+
+    let wrong_level = TempFile::new("json", exact_io_level(&[1]).as_bytes());
+    let output_source = TempFile::new("cg", b"~> . ;\n");
+    let args = evaluate_args(
+        wrong_level.text_path(),
+        output_source.text_path(),
+        profile.text_path(),
+    );
+    let wrong = run_cli(&args);
+    assert_eq!(wrong.status.code(), Some(9));
+    assert_eq!(parse_result(&wrong)["result"]["status"], "TestFailed");
+
+    let mut constrained_value: Value = serde_json::from_str(&exact_io_level(&[])).unwrap();
+    constrained_value["constraints"]["max_ticks"] = json!(0);
+    let constrained_level = TempFile::new("json", constrained_value.to_string().as_bytes());
+    let halt_source = TempFile::new("cg", b"~> ;\n");
+    let args = evaluate_args(
+        constrained_level.text_path(),
+        halt_source.text_path(),
+        profile.text_path(),
+    );
+    let constrained = run_cli(&args);
+    assert_eq!(constrained.status.code(), Some(9));
+    assert_eq!(
+        parse_result(&constrained)["result"]["status"],
+        "ConstraintExceeded"
+    );
+
+    let mut private_level: Value = serde_json::from_str(&exact_io_level(&[])).unwrap();
+    private_level["evaluation"]["tests"]
+        .as_array_mut()
+        .unwrap()
+        .push(json!({
+            "visible": false,
+            "input": [77],
+            "expected_output": [99]
+        }));
+    let private_level = TempFile::new("json", private_level.to_string().as_bytes());
+    let mut args = evaluate_args(
+        private_level.text_path(),
+        halt_source.text_path(),
+        profile.text_path(),
+    );
+    let mode_index = args.iter().position(|arg| *arg == "--mode").unwrap();
+    args[mode_index + 1] = "official";
+    let hidden_failure = run_cli(&args);
+    assert_eq!(hidden_failure.status.code(), Some(9));
+    let public_text = String::from_utf8_lossy(&hidden_failure.stdout);
+    let hidden = parse_result(&hidden_failure);
+    // Content digests may contain the same decimal substring as a private byte.
+    // Check semantic disclosure fields rather than searching opaque hash text.
+    assert!(hidden["result"]["visible_tests"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .all(|test| {
+            ["input", "expected_output", "actual_output"]
+                .iter()
+                .all(|field| {
+                    !test[*field]
+                        .as_array()
+                        .unwrap()
+                        .iter()
+                        .any(|byte| byte == &json!(77) || byte == &json!(99))
+                })
+        }));
+    assert!(public_text.contains("HiddenTestFailed"));
+}
+
+#[test]
+fn evaluate_rejects_bad_arguments_profiles_and_files_without_json() {
+    let level = TempFile::new("json", exact_io_level(&[]).as_bytes());
+    let source = TempFile::new("cg", b"~> ;\n");
+    let profile = TempFile::new(
+        "json",
+        include_str!("../../../fixtures/levels/profiles/local-v1.json").as_bytes(),
+    );
+
+    let mut missing = evaluate_args(level.text_path(), source.text_path(), profile.text_path());
+    missing.pop();
+    let invalid_arguments = run_cli(&missing);
+    assert_eq!(invalid_arguments.status.code(), Some(2));
+    assert!(invalid_arguments.stdout.is_empty());
+
+    let malformed_profile = TempFile::new("json", b"{}");
+    let args = evaluate_args(
+        level.text_path(),
+        source.text_path(),
+        malformed_profile.text_path(),
+    );
+    let invalid_profile = run_cli(&args);
+    assert_eq!(invalid_profile.status.code(), Some(2));
+    assert!(invalid_profile.stdout.is_empty());
+
+    let missing_path =
+        std::env::temp_dir().join(format!("codegrid-missing-{}.json", std::process::id()));
+    let missing_path = missing_path.to_str().expect("temporary paths are UTF-8");
+    let args = evaluate_args(missing_path, source.text_path(), profile.text_path());
+    let missing_file = run_cli(&args);
+    assert_eq!(missing_file.status.code(), Some(3));
+    assert!(missing_file.stdout.is_empty());
+
+    let invalid_utf8_level = TempFile::new("json", &[0xff, 0xfe]);
+    let args = evaluate_args(
+        invalid_utf8_level.text_path(),
+        source.text_path(),
+        profile.text_path(),
+    );
+    let invalid_utf8 = run_cli(&args);
+    assert_eq!(invalid_utf8.status.code(), Some(3));
+    assert!(invalid_utf8.stdout.is_empty());
+
+    let bom_level = TempFile::new("json", b"\xef\xbb\xbf{}");
+    let args = evaluate_args(
+        bom_level.text_path(),
+        source.text_path(),
+        profile.text_path(),
+    );
+    let bom = run_cli(&args);
+    assert_eq!(bom.status.code(), Some(3));
+    assert!(bom.stdout.is_empty());
+}
+
+#[test]
+fn evaluate_returns_resource_status_and_rejects_oversized_inputs() {
+    let mut profile_value: Value = serde_json::from_str(include_str!(
+        "../../../fixtures/levels/profiles/local-v1.json"
+    ))
+    .unwrap();
+    profile_value["max_total_work"] = json!("1");
+    let low_work_profile = TempFile::new("json", profile_value.to_string().as_bytes());
+    let mut looping_level_value: Value = serde_json::from_str(&exact_io_level(&[])).unwrap();
+    looping_level_value["program_rules"]["allowed_instructions"] =
+        json!(["HALT", "OUTPUT", "MOVE_RIGHT"]);
+    let level = TempFile::new("json", looping_level_value.to_string().as_bytes());
+    let looping_source = TempFile::new("cg", b"~> >\n");
+    let mut args = evaluate_args(
+        level.text_path(),
+        looping_source.text_path(),
+        low_work_profile.text_path(),
+    );
+    let boundary_index = args.iter().position(|arg| *arg == "exit").unwrap();
+    args[boundary_index] = "wrap";
+    let resource = run_cli(&args);
+    assert_eq!(resource.status.code(), Some(11));
+    assert_eq!(
+        parse_result(&resource)["result"]["status"],
+        "ResourceLimitExceeded"
+    );
+
+    profile_value["max_level_bytes"] = json!("8");
+    let tiny_profile = TempFile::new("json", profile_value.to_string().as_bytes());
+    let args = evaluate_args(
+        level.text_path(),
+        looping_source.text_path(),
+        tiny_profile.text_path(),
+    );
+    let too_large = run_cli(&args);
+    assert_eq!(too_large.status.code(), Some(11));
+    assert!(too_large.stdout.is_empty());
+}
+
+#[test]
+fn evaluate_response_ceiling_returns_resource_exit_code() {
+    let mut profile: Value = serde_json::from_str(include_str!(
+        "../../../fixtures/levels/profiles/local-v1.json"
+    ))
+    .unwrap();
+    profile["max_response_bytes"] = json!("512");
+    let profile = TempFile::new("json", profile.to_string().as_bytes());
+    let level = TempFile::new("json", include_bytes!("../../../fixtures/levels/echo.json"));
+    let source = TempFile::new("cg", include_bytes!("../../../fixtures/levels/echo.cg"));
+    let output = run_cli(&evaluate_args(
+        level.text_path(),
+        source.text_path(),
+        profile.text_path(),
+    ));
+    assert_eq!(output.status.code(), Some(11));
+    assert_eq!(
+        parse_result(&output)["error"]["code"],
+        "level_api.response_too_large"
+    );
 }

@@ -22,7 +22,7 @@ function visit(directory) {
       let source = fs.readFileSync(file, 'utf8');
       const tests = source.lastIndexOf('#[cfg(test)]\nmod tests');
       if (tests >= 0) source = source.slice(0, tests);
-      for (const pattern of [/["'`\[]((?:source|ir|cli|debug|editor|browser|lsp)\.[a-z_]+)["'`\]]/g, /\b(?:input_error_json|error_response)\(\s*"([a-z_]+)"/g, /\.ok_or\(\(\s*"([a-z_]+)"/g]) {
+      for (const pattern of [/["'`\[]((?:source|ir|cli|debug|editor|browser|lsp|level|level_api|level_abi)\.[a-z_]+)["'`\]]/g, /\b(?:input_error_json|error_response)\(\s*"([a-z_]+)"/g, /\.ok_or\(\(\s*"([a-z_]+)"/g]) {
         for (const match of source.matchAll(pattern)) {
           if (!known.has(match[1])) throw new Error(`Unregistered code ${match[1]} in ${path.relative(root, file)}`);
           checked++;

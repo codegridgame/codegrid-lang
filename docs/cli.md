@@ -1,6 +1,6 @@
 # Native CLI Contract
 
-The native CLI provides a local process boundary for the Full language. It owns command-line parsing, file access, input conversion, JSON serialization, terminal diagnostics, and process exit codes. The shared compiler owns source acceptance and verified-program construction under the [source specification](../spec/codegrid-source-spec.md); the shared VM owns execution and snapshots under the [VM specification](../spec/codegrid-vm-spec.md). The CLI must not implement a second parser, validator, instruction table, or interpreter. It composes the compiler and VM directly and does not route through Runtime API.
+The native CLI provides a local process boundary for the Full language and level evaluation. It owns command-line parsing, file access, input conversion, JSON serialization, terminal diagnostics, presentation, and process exit codes. The shared compiler owns source acceptance and verified-program construction under the [source specification](../spec/codegrid-source-spec.md); the shared VM owns execution and snapshots under the [VM specification](../spec/codegrid-vm-spec.md). The `check`, `run`, and `debug` commands compose the compiler and VM directly. The `evaluate` command delegates all level semantics to the shared [Level Host API](level-api-v1.md). No CLI command implements a second parser, validator, instruction table, interpreter, metric calculator, or scoring policy.
 
 This contract describes the local Full target. It does not select deployment authentication, multi-user quotas, or production service policy.
 
@@ -14,6 +14,10 @@ codegrid run <program.cg> --boundary <exit|wrap> --seed <u64>
     --max-work-units <positive-u64>
     [--input <byte-list> | --input-file <json-file>]
     [--initial-memory-file <json-file>]
+codegrid evaluate <level.json> <program.cg>
+    --mode <debug|official> --boundary <exit|wrap> --seed <u64>
+    --custom-limit <positive-u64> --limits-file <trusted-profile.json>
+    [--format <json|human>]
 ```
 
 The `run` options `--boundary`, `--seed`, `--custom-limit`, `--max-ticks`, and `--max-work-units` are required exactly once. Numeric option values use canonical unsigned ASCII decimal notation: `0` or a nonzero digit followed by zero or more digits, with no sign, separators, whitespace, or leading zero. `--seed` accepts the inclusive range `0..=u64::MAX`. The other numeric options must be in `1..=u64::MAX`. `--boundary` accepts exactly `exit` or `wrap`, case-sensitively. Unknown options, repeated options, missing values, and incompatible input sources are rejected.
@@ -168,6 +172,81 @@ Byte values, register indexes, slots, coordinates, dimensions, bounded Repeat co
 | `8` | VM fault. `run` writes `vm_fault` and the complete fault snapshot. |
 
 `run` returns code `0` only for `halted`. A yield is deliberately distinguishable from normal termination. For successful compiler submission, runtime errors, yields, and VM faults, stdout contains the one complete JSON result described above; stderr is reserved for human-readable messages. Argument/host-data failures and I/O failures produce no JSON result and write their message to stderr. A source diagnostic result is also rendered on stderr with one-based line and Unicode-scalar column. Help goes to stdout. JSON output is never truncated or mixed with progress messages.
+
+## `evaluate` level command
+
+`codegrid evaluate <level.json> <program.cg>` runs the shared Rust level
+evaluator through [Level Host API v1](level-api-v1.md). It does not compile,
+validate, execute, score, or rate levels independently. The command requires
+`--mode <debug|official>`, `--boundary <exit|wrap>`, `--seed <u64>`,
+`--custom-limit <positive-u64>`, and `--limits-file <trusted-profile.json>`.
+Each option may appear exactly once. `--format <json|human>` is optional and
+defaults to `json`.
+
+`--seed` is a canonical unsigned decimal value in `0..=u64::MAX` and is passed
+as the API's explicit `shuffle_seed`, preserving reproducibility. The boundary
+and positive Custom limit are passed as resolved evaluation configuration.
+The CLI supplies the profile's `max_work_per_call` as each `advance_evaluation`
+budget and continues until the shared API returns a terminal result or typed
+resource outcome. Safety ceilings come only from the trusted profile; level
+JSON and source cannot override them. The command does not accept initial
+memory, register state, or inline input overrides.
+
+The profile file is at most 65,536 bytes and must be UTF-8 without a byte-order
+mark. The CLI applies its positive `max_level_bytes` and `max_source_bytes`
+limits before submitting the level JSON and source text to the API. Both files
+must be UTF-8 without a byte-order mark. A missing/unreadable file or invalid
+UTF-8 returns code `3`; a file over the trusted size limit returns code `11`.
+These pre-evaluation file failures write only to stderr and produce no JSON.
+Malformed profiles, invalid profile values, and invalid command-line values
+return code `2` and produce no JSON.
+
+In JSON mode, stdout contains exactly one complete Level Host API v1 response,
+pretty-printed with a trailing newline. This is the same semantic `result`
+projection used by the WASM level adapters. A reached API rejection is still
+returned as one response: compiler diagnostics use `source_rejected`, while
+malformed or unsupported level data uses `level_rejected`. File failures that
+occur before API submission are the exception described above. Stderr is
+reserved for file/argument failures and concise compiler or VM fault summaries;
+no progress output is emitted. A response is never truncated into apparent
+success.
+
+`--format human` prints correctness status, any typed failure or source
+diagnostics, visible-test feedback, constraint results, available partial or
+final metrics, scoring values/targets, and optional rating. It uses only fields
+permitted by the shared API result and does not expose hidden test data.
+
+| Exit code | `evaluate` meaning |
+| ---: | --- |
+| `0` | Evaluation passed. |
+| `2` | Invalid arguments or trusted safety profile. |
+| `3` | Level, source, or profile file access/UTF-8 failure before evaluation. |
+| `4` | Shared compiler rejected the source. |
+| `8` | Evaluator fault or invalid API result. |
+| `9` | Player evaluation failed: program rejection, wrong/incomplete output, runtime error, or logical constraint breach. |
+| `10` | Level is invalid, uses an unsupported format, or requests an unsupported scene/capability. |
+| `11` | Trusted resource limit prevented evaluation or a level/source file exceeded its profile size limit. |
+
+File reads stop after at most the configured limit plus one byte, before UTF-8
+decoding. Oversize diagnostics report the observed minimum size. A shared API
+`level_api.response_too_large` error also returns exit code `11`.
+
+The `evaluate` exit-code mapping is specific to this command. Existing `check`,
+`run`, and `debug` exit codes and result contracts remain unchanged.
+
+For a complete repository fixture run, use:
+
+```text
+cargo run -p codegrid-cli -- evaluate fixtures/levels/echo.json fixtures/levels/echo.cg --mode official --boundary exit --seed 18446744073709551615 --custom-limit 1000 --limits-file fixtures/levels/profiles/local-v1.json
+```
+
+Acceptance for `evaluate` compares the parsed CLI JSON result with a direct
+request sequence through the same Level Host API, including an Official ExactIO
+run with the maximum `u64` seed. Focused subprocess cases cover source and level
+rejections, unsupported scene types, player failures, hidden-test redaction,
+constraints, resource ceilings, malformed files and profiles, UTF-8/BOM
+handling, and JSON/human output. This checks CLI delegation and presentation;
+it does not claim native/WASM parity.
 
 ## Acceptance
 

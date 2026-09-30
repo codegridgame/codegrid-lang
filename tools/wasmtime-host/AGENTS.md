@@ -5,6 +5,8 @@
 This standalone tool embeds the built `codegrid-wasm-server` artifact in the
 official Wasmtime Rust runtime. It verifies the server ABI, no-import boundary,
 runtime limits, and the shared Full conformance fixtures.
+The `level-parity` binary also verifies the independently versioned Level ABI
+v1 against actual native CLI level responses using the shared level manifest.
 
 ## Dependencies and boundaries
 
