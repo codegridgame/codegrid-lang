@@ -117,5 +117,19 @@
   "ir.return_scope": "RETURN is only allowed inside a Function.",
   "ir.custom_return_scope": "CUSTOM_RETURN requires a Custom Main board.",
   "cli.input_data": "input must be an array of byte integers (0..255).",
-  "cli.vm_initialization_failed": "The VM could not be initialized."
+  "cli.vm_initialization_failed": "The VM could not be initialized.",
+  "cli.limits_io": "An error occurred. Inspect the details for more information.",
+  "cli.profile_too_large": "An error occurred. Inspect the details for more information.",
+  "cli.profile_utf8": "An error occurred. Inspect the details for more information.",
+  "cli.profile_bom": "An error occurred. Inspect the details for more information.",
+  "cli.level_api_protocol": "An error occurred. Inspect the details for more information.",
+  "cli.unknown_evaluation_status": "An error occurred. Inspect the details for more information.",
+  "cli.malformed_evaluation_result": "An error occurred. Inspect the details for more information.",
+  "cli.level_io": "An error occurred. Inspect the details for more information.",
+  "cli.level_too_large": "An error occurred. Inspect the details for more information.",
+  "cli.source_too_large": "An error occurred. Inspect the details for more information.",
+  "cli.level_utf8": "An error occurred. Inspect the details for more information.",
+  "cli.source_utf8": "An error occurred. Inspect the details for more information.",
+  "cli.level_bom": "An error occurred. Inspect the details for more information.",
+  "cli.source_bom": "An error occurred. Inspect the details for more information."
 }

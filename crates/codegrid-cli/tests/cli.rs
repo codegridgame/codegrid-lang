@@ -289,6 +289,7 @@ fn run_emits_a_source_error_result_without_creating_a_vm_snapshot() {
         .is_empty());
     assert!(!result["diagnostics"].as_array().unwrap().is_empty());
     assert_eq!(result["diagnostics"][0]["code"], "ir.undefined_function");
+    assert_eq!(result["diagnostics"][0]["error_number"], "2015");
 }
 
 #[test]
@@ -296,6 +297,7 @@ fn native_host_failures_and_debug_errors_have_stable_identifiers() {
     use std::process::Stdio;
     let bad_args = run_cli(&["run"]);
     assert!(String::from_utf8_lossy(&bad_args.stderr).contains("[cli.invalid_arguments]"));
+    assert!(String::from_utf8_lossy(&bad_args.stderr).contains("[5000] [cli.invalid_arguments]"));
     let mut child = Command::new(env!("CARGO_BIN_EXE_codegrid"))
         .args(["debug", "--stdio"])
         .stdin(Stdio::piped())
@@ -319,7 +321,9 @@ fn native_host_failures_and_debug_errors_have_stable_identifiers() {
         .collect();
     assert_eq!(responses[0]["debug_protocol_version"], 2);
     assert_eq!(responses[0]["error"]["code"], "debug.no_program");
+    assert_eq!(responses[0]["error"]["error_number"], "5103");
     assert_eq!(responses[1]["error"]["code"], "debug.invalid_request");
+    assert_eq!(responses[1]["error"]["error_number"], "5100");
     assert!(responses[0]["error"]["message"].is_string());
 }
 

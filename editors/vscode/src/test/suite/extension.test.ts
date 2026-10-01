@@ -162,14 +162,14 @@ suite('VS Code extension and optional LSP', () => {
         const cli = spawnSync(cliPath, ['check', sourcePath], { encoding: 'utf8' });
         assert.strictEqual(cli.status, 4, cli.stderr);
         const cliDiagnostics = cli.stderr.trim().split(/\r?\n/).map((lineText) => {
-          const match = lineText.match(/:(\d+):(\d+): (error|warning): \[([^\]]+)\] (.*)$/);
+          const match = lineText.match(/:(\d+):(\d+): (error|warning): \[([0-9]{4})\] \[([^\]]+)\] (.*)$/);
           assert.ok(match, `CLI diagnostic must use its source format: ${lineText}`);
           return {
             line: Number(match![1]),
             column: Number(match![2]),
             severity: match![3],
-            code: match![4],
-            message: match![5],
+            code: match![5],
+            message: `[${match![4]}] [${match![5]}] ${match![6]}`,
           };
         });
         const invalidDocument = await vscode.workspace.openTextDocument(sourcePath);

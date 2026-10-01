@@ -3,6 +3,7 @@
 //! This adapter contains no language rules. It owns only the JavaScript
 //! binding and the JSON projection for the Full Runtime API contract.
 
+use codegrid_runtime_api::error_number;
 use codegrid_runtime_api::{
     ApiError, BoardId, BoardView, BoundaryMode, CallFrameSnapshot, CheckRequest, CodeGridId,
     CodeGridView, CompileOutcome, CompileRequest, Coordinate, CreateInstanceRequest, Diagnostic,
@@ -37,7 +38,7 @@ pub struct BrowserRuntime {
 
 const MIN_RESPONSE_BYTES: u32 = 256;
 const MIN_INSTANCE_STATE_BYTES: u32 = 256;
-const RESPONSE_LIMIT_ERROR: &str = r#"{"api_version":3,"error":{"code":"response_payload_limit_exceeded","message":"serialized response exceeds the configured byte limit"}}"#;
+const RESPONSE_LIMIT_ERROR: &str = r#"{"api_version":3,"error":{"code":"response_payload_limit_exceeded","error_number":"7019","message":"serialized response exceeds the configured byte limit"}}"#;
 
 #[derive(Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -293,7 +294,7 @@ fn bounded_input_error_json(field: &str, error: BoundedInputError, maximum: usiz
     serialize_bounded_json(
         &json!({
             "api_version": RUNTIME_API_VERSION,
-            "error": { "code": code, "message": message },
+            "error": { "code": code, "error_number": error_number("browser", code), "message": message },
         }),
         maximum,
     )
@@ -306,6 +307,13 @@ fn as_u32_limit(value: usize) -> u32 {
 fn parse_u32_number(value: f64) -> Option<u32> {
     (value.is_finite() && value >= 0.0 && value <= f64::from(u32::MAX) && value.fract() == 0.0)
         .then_some(value as u32)
+}
+
+fn host_limit_error(message: &str) -> JsValue {
+    JsValue::from_str(&format!(
+        "[{}] [browser.invalid_host_limit] {message}",
+        error_number("browser", "browser.invalid_host_limit").expect("Registered browser error")
+    ))
 }
 
 #[wasm_bindgen]
@@ -328,58 +336,34 @@ impl BrowserRuntime {
         max_total_ticks_per_instance: JsValue,
         max_work_units_per_call: JsValue,
     ) -> Result<BrowserRuntime, JsValue> {
-        let max_source_bytes = parse_u32_number(max_source_bytes).ok_or_else(|| {
-            JsValue::from_str("[browser.invalid_host_limit] max_source_bytes must be a u32 integer")
-        })?;
-        let max_compiled_programs = parse_u32_number(max_compiled_programs).ok_or_else(|| {
-            JsValue::from_str(
-                "[browser.invalid_host_limit] max_compiled_programs must be a u32 integer",
-            )
-        })?;
-        let max_instances = parse_u32_number(max_instances).ok_or_else(|| {
-            JsValue::from_str("[browser.invalid_host_limit] max_instances must be a u32 integer")
-        })?;
-        let max_input_bytes = parse_u32_number(max_input_bytes).ok_or_else(|| {
-            JsValue::from_str("[browser.invalid_host_limit] max_input_bytes must be a u32 integer")
-        })?;
-        let max_initial_memory_entries =
-            parse_u32_number(max_initial_memory_entries).ok_or_else(|| {
-                JsValue::from_str(
-                    "[browser.invalid_host_limit] max_initial_memory_entries must be a u32 integer",
-                )
-            })?;
-        let max_request_bytes = parse_u32_number(max_request_bytes).ok_or_else(|| {
-            JsValue::from_str(
-                "[browser.invalid_host_limit] max_request_bytes must be a u32 integer",
-            )
-        })?;
+        let max_source_bytes = parse_u32_number(max_source_bytes)
+            .ok_or_else(|| host_limit_error("max_source_bytes must be a u32 integer"))?;
+        let max_compiled_programs = parse_u32_number(max_compiled_programs)
+            .ok_or_else(|| host_limit_error("max_compiled_programs must be a u32 integer"))?;
+        let max_instances = parse_u32_number(max_instances)
+            .ok_or_else(|| host_limit_error("max_instances must be a u32 integer"))?;
+        let max_input_bytes = parse_u32_number(max_input_bytes)
+            .ok_or_else(|| host_limit_error("max_input_bytes must be a u32 integer"))?;
+        let max_initial_memory_entries = parse_u32_number(max_initial_memory_entries)
+            .ok_or_else(|| host_limit_error("max_initial_memory_entries must be a u32 integer"))?;
+        let max_request_bytes = parse_u32_number(max_request_bytes)
+            .ok_or_else(|| host_limit_error("max_request_bytes must be a u32 integer"))?;
         let max_response_bytes = parse_u32_number(max_response_bytes)
             .filter(|maximum| *maximum >= MIN_RESPONSE_BYTES)
-            .ok_or_else(|| {
-                JsValue::from_str(
-                    "[browser.invalid_host_limit] max_response_bytes must be a u32 of at least 256",
-                )
-            })?;
+            .ok_or_else(|| host_limit_error("max_response_bytes must be a u32 of at least 256"))?;
         let max_instance_state_bytes = parse_u32_number(max_instance_state_bytes)
             .filter(|maximum| *maximum >= MIN_INSTANCE_STATE_BYTES)
             .ok_or_else(|| {
-                JsValue::from_str("[browser.invalid_host_limit] max_instance_state_bytes must be a u32 of at least 256")
+                host_limit_error("max_instance_state_bytes must be a u32 of at least 256")
             })?;
-        let max_run_ticks_per_call = bounded_string(&max_run_ticks_per_call, 20).map_err(|_| {
-            JsValue::from_str(
-                "[browser.invalid_host_limit] max_run_ticks_per_call must be a decimal string",
-            )
-        })?;
+        let max_run_ticks_per_call = bounded_string(&max_run_ticks_per_call, 20)
+            .map_err(|_| host_limit_error("max_run_ticks_per_call must be a decimal string"))?;
         let max_total_ticks_per_instance = bounded_string(&max_total_ticks_per_instance, 20)
             .map_err(|_| {
-                JsValue::from_str("[browser.invalid_host_limit] max_total_ticks_per_instance must be a decimal string")
+                host_limit_error("max_total_ticks_per_instance must be a decimal string")
             })?;
-        let max_work_units_per_call =
-            bounded_string(&max_work_units_per_call, 20).map_err(|_| {
-                JsValue::from_str(
-                    "[browser.invalid_host_limit] max_work_units_per_call must be a decimal string",
-                )
-            })?;
+        let max_work_units_per_call = bounded_string(&max_work_units_per_call, 20)
+            .map_err(|_| host_limit_error("max_work_units_per_call must be a decimal string"))?;
         Self::with_limits(
             max_source_bytes,
             max_compiled_programs,
@@ -393,7 +377,7 @@ impl BrowserRuntime {
             &max_total_ticks_per_instance,
             &max_work_units_per_call,
         )
-        .map_err(|message| JsValue::from_str(&format!("[browser.invalid_host_limit] {message}")))
+        .map_err(|message| host_limit_error(&message))
     }
 
     /// Returns the host-neutral API version understood by this adapter.
@@ -652,6 +636,7 @@ impl BrowserRuntime {
                 "api_version": RUNTIME_API_VERSION,
                 "error": {
                     "code": "instance_state_limit_exceeded",
+                    "error_number": error_number("browser", "instance_state_limit_exceeded"),
                     "details": { "maximum_bytes": self.max_instance_state_bytes.to_string() },
                 },
             }),
@@ -1052,7 +1037,7 @@ fn input_error_json(code: &str, message: &str, maximum: usize) -> String {
     serialize_bounded_json(
         &json!({
             "api_version": RUNTIME_API_VERSION,
-            "error": { "code": code, "message": message },
+            "error": { "code": code, "error_number": error_number("browser", code), "message": message },
         }),
         maximum,
     )
@@ -1138,6 +1123,7 @@ impl Serialize for DiagnosticProjection<'_> {
     {
         serialize_object!(serializer, {
             "code" => self.0.code,
+            "error_number" => codegrid_runtime_api::error_number("source", self.0.code).or_else(|| codegrid_runtime_api::error_number("ir", self.0.code)),
             "severity" => match self.0.severity {
                 Severity::Error => "error",
                 Severity::Warning => "warning",
@@ -2104,6 +2090,7 @@ impl Serialize for RuntimeErrorProjection<'_> {
     {
         serialize_object!(serializer, {
             "code" => self.0.code(),
+            "error_number" => codegrid_runtime_api::error_number("vm", self.0.code()),
             "global_tick" => DisplayValue(self.0.global_tick()),
             "scope" => ScopeProjection(self.0.scope()),
             "details" => RuntimeErrorDetailsProjection(self.0.kind()),
@@ -2225,14 +2212,14 @@ impl Serialize for FaultProjection {
     {
         match self.0 {
             VmFault::MetricCounterOverflow(counter) => serialize_object!(serializer, {
-                "kind" => "metric_counter_overflow",
+                "kind" => "metric_counter_overflow", "error_number" => codegrid_runtime_api::error_number("fault", "metric_counter_overflow"),
                 "counter" => metric_counter_name(counter),
             }),
             VmFault::GlobalTickOverflow => {
-                serialize_object!(serializer, { "kind" => "global_tick_overflow" })
+                serialize_object!(serializer, { "kind" => "global_tick_overflow", "error_number" => codegrid_runtime_api::error_number("fault", "global_tick_overflow") })
             }
             VmFault::InternalInvariantViolation => {
-                serialize_object!(serializer, { "kind" => "internal_invariant_violation" })
+                serialize_object!(serializer, { "kind" => "internal_invariant_violation", "error_number" => codegrid_runtime_api::error_number("fault", "internal_invariant_violation") })
             }
         }
     }
@@ -2402,7 +2389,7 @@ fn api_error_json(error: ApiError, maximum: usize) -> String {
     serialize_bounded_json(
         &json!({
             "api_version": RUNTIME_API_VERSION,
-            "error": { "code": code, "details": details },
+            "error": { "code": code, "error_number": error_number("api", code), "details": details },
         }),
         maximum,
     )
@@ -2634,6 +2621,10 @@ mod tests {
         assert_eq!(response, RESPONSE_LIMIT_ERROR);
         assert!(response.len() <= 256);
         assert!(serde_json::from_str::<Value>(&response).is_ok());
+        assert_eq!(
+            serde_json::from_str::<Value>(&response).unwrap()["error"]["error_number"],
+            "7019"
+        );
     }
 
     #[test]

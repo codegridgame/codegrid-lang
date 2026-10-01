@@ -215,6 +215,7 @@ impl Serialize for DiagnosticProjection<'_> {
         };
         serialize_object!(serializer, {
             "code" => self.0.code,
+            "error_number" => codegrid_runtime_api::error_number("source", self.0.code).or_else(|| codegrid_runtime_api::error_number("ir", self.0.code)),
             "severity" => severity,
             "message" => &self.0.message,
             "span" => DiagnosticSpan(self.0)
@@ -980,6 +981,7 @@ impl Serialize for RuntimeErrorProjection<'_> {
     {
         serialize_object!(serializer, {
             "code" => self.0.code(),
+            "error_number" => codegrid_runtime_api::error_number("vm", self.0.code()),
             "global_tick" => DisplayValue(self.0.global_tick()),
             "scope" => ExecutionScopeProjection(self.0.scope()),
             "details" => RuntimeErrorDetailsProjection(self.0.kind())
@@ -1096,14 +1098,14 @@ impl Serialize for FaultProjection {
     {
         match self.0 {
             VmFault::MetricCounterOverflow(counter) => serialize_object!(serializer, {
-                "kind" => "metric_counter_overflow",
+                "kind" => "metric_counter_overflow", "error_number" => codegrid_runtime_api::error_number("fault", "metric_counter_overflow"),
                 "counter" => super::metric_counter_name(counter)
             }),
             VmFault::GlobalTickOverflow => {
-                serialize_object!(serializer, { "kind" => "global_tick_overflow" })
+                serialize_object!(serializer, { "kind" => "global_tick_overflow", "error_number" => codegrid_runtime_api::error_number("fault", "global_tick_overflow") })
             }
             VmFault::InternalInvariantViolation => {
-                serialize_object!(serializer, { "kind" => "internal_invariant_violation" })
+                serialize_object!(serializer, { "kind" => "internal_invariant_violation", "error_number" => codegrid_runtime_api::error_number("fault", "internal_invariant_violation") })
             }
         }
     }

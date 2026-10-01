@@ -22,6 +22,10 @@ pub enum FaultReason {
     VmInitialization,
 }
 impl FaultReason {
+    pub fn error_number(&self) -> Option<&'static str> {
+        codegrid_model::error_number("level", self.code())
+    }
+
     /// Stable fault identity assigned by the evaluator at detection.
     pub const fn code(&self) -> &'static str {
         match self {

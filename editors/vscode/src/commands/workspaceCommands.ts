@@ -1,3 +1,4 @@
+import { errorNumber } from '../language/errorMessages';
 import * as vscode from 'vscode';
 import { TEMPLATES, findTemplate } from '../language/templates';
 
@@ -12,7 +13,7 @@ export const OPEN_README_COMMAND = 'codegrid.openReadme';
 export async function newCodeGridFile(templateId?: string): Promise<void> {
   let template = templateId ? findTemplate(templateId) : undefined;
   if (templateId && !template) {
-    vscode.window.showWarningMessage(vscode.l10n.t('[editor.invalid_template] Unknown CodeGrid template: {0}', templateId));
+    vscode.window.showWarningMessage('[' + errorNumber('editor.invalid_template') + '] ' + vscode.l10n.t('[editor.invalid_template] Unknown CodeGrid template: {0}', templateId));
     return;
   }
   if (!template) {

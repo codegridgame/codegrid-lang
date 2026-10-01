@@ -1,4 +1,5 @@
 //! No-import portable level transport with exact live buffer ownership.
+use codegrid_level_api::error_number;
 use codegrid_level_api::{LevelApi, SafetyProfile};
 use serde::Deserialize;
 use serde_json::json;
@@ -11,7 +12,7 @@ const MAX_RETAINED_BYTES: usize = 24 * 1024 * 1024;
 #[cfg(any(target_arch = "wasm32", test))]
 const MAX_BUFFER_COUNT: usize = 1024;
 fn error(code: &str, message: &str) -> String {
-    json!({"abi_version":1,"api_version":1,"status":"error","error":{"code":code,"message":message}}).to_string()
+    json!({"abi_version":1,"api_version":1,"status":"error","error":{"code":code,"error_number":error_number("level",code),"message":message}}).to_string()
 }
 #[derive(Deserialize)]
 #[serde(tag = "operation", rename_all = "snake_case", deny_unknown_fields)]

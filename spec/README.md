@@ -2,6 +2,9 @@
 
 The [error code specification](codegrid-error-codes.md) defines stable source, IR, VM, API, CLI, debug, editor, LSP and WASM error categories, response shapes, compatibility and state effects. Its machine-readable registry is [codegrid-error-codes.json](codegrid-error-codes.json).
 
+The [four-digit error table](codegrid-error-numbers.md) lists every numeric
+presentation identity alongside its original code and trigger.
+
 The [source specification](codegrid-source-spec.md) defines the normative Full source syntax and static acceptance contract, including Main, Function, Custom, and Folded Block structures, the complete Primary and Attachment inventory, scopes, dimensions, references, and diagnostics. Source decisions are recorded in [`docs/decisions.md`](../docs/decisions.md), and compiler conformance tests cover the accepted rules.
 
 The [VM specification](codegrid-vm-spec.md) defines the normative Full execution contract for multi-thread transitions, calls and resumes, Custom invocations, Folded Blocks, Repeat, stacks, memory, Page, randomness, self-modifying code, transactions, errors, metrics, deterministic work accounting, and determinism. Remaining direct conformance cases are listed in [Section 17](codegrid-vm-spec.md#conformance-coverage-gates) and tracked in [`docs/decisions.md`](../docs/decisions.md).

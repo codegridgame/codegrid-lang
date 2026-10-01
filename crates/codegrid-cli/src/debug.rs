@@ -7,6 +7,7 @@ const MAX_REQUEST_BYTES: usize = 4 * 1024 * 1024;
 #[derive(Debug, serde::Serialize)]
 struct DebugError {
     code: &'static str,
+    error_number: Option<&'static str>,
     message: String,
 }
 
@@ -14,6 +15,7 @@ impl DebugError {
     fn new(code: &'static str, message: impl Into<String>) -> Self {
         Self {
             code,
+            error_number: error_number("debug", code),
             message: message.into(),
         }
     }
@@ -185,7 +187,11 @@ pub(super) fn serve() -> i32 {
         let count = match bounded.read_until(b'\n', &mut bytes) {
             Ok(count) => count,
             Err(error) => {
-                eprintln!("error: [debug.transport_io] {error}");
+                eprintln!(
+                    "error: [{error_number}] [debug.transport_io] {error}",
+                    error_number = codegrid_model::error_number("debug", "debug.transport_io")
+                        .expect("Registered process error")
+                );
                 return EXIT_IO_ERROR;
             }
         };
@@ -212,7 +218,11 @@ pub(super) fn serve() -> i32 {
             || writer.write_all(b"\n").is_err()
             || writer.flush().is_err()
         {
-            eprintln!("error: [debug.transport_io] cannot write debug response");
+            eprintln!(
+                "error: [{error_number}] [debug.transport_io] cannot write debug response",
+                error_number = codegrid_model::error_number("debug", "debug.transport_io")
+                    .expect("Registered process error")
+            );
             return EXIT_IO_ERROR;
         }
         if disconnect {
@@ -240,7 +250,7 @@ mod tests {
     #[test]
     fn debug_steps_use_shared_vm_and_preserve_utf16_source_locations() {
         let mut session = Session::default();
-        let loaded = session.request(launch("/*🙂*/ ~> ,v . ;\r\n")).unwrap();
+        let loaded = session.request(launch("/*馃檪*/ ~> ,v . ;\r\n")).unwrap();
         assert_eq!(
             loaded["locations"]
                 .as_array()

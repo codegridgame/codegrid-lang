@@ -1,9 +1,10 @@
 //! Worker-compatible browser binding over the shared level API.
+use codegrid_level_api::error_number;
 use codegrid_level_api::{ApiError, LevelApi, SafetyProfile};
 use wasm_bindgen::prelude::*;
 const MAX_TEXT_BYTES: usize = 8 * 1024 * 1024;
 fn error(code: &str, message: &str) -> String {
-    serde_json::json!({"api_version":1,"status":"error","error":{"code":code,"message":message}})
+    serde_json::json!({"api_version":1,"status":"error","error":{"code":code,"error_number":error_number("level",code),"message":message}})
         .to_string()
 }
 #[wasm_bindgen]
@@ -41,7 +42,12 @@ impl LevelSession {
 impl LevelSession {
     #[wasm_bindgen(constructor)]
     pub fn new(profile: JsValue) -> Result<LevelSession, JsValue> {
-        let profile = bounded_js_string(profile)?;
+        let profile = bounded_js_string(profile).map_err(|_| {
+            JsValue::from_str(&error(
+                "level_api.invalid_profile",
+                "Expected a profile string within the adapter byte ceiling",
+            ))
+        })?;
         Self::from_profile_json(&profile).map_err(|e| JsValue::from_str(&error(e.code, &e.message)))
     }
     pub fn request(&mut self, request: JsValue) -> String {

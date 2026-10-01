@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import { localizeError, presentRuntimeErrors } from '../language/errorMessages';
+import { errorLabel, localizeError, presentRuntimeErrors } from '../language/errorMessages';
 import * as path from 'path';
 import * as fs from 'fs';
 import { NativeRuntime, SourceLocation, RuntimeReply } from './nativeRuntime';
@@ -57,7 +57,7 @@ export class CodeGridDebugAdapter implements vscode.DebugAdapter {
   private send(message: any): void { if (!this.closed) this.emitter.fire({ seq: this.sequence++, ...message }); }
   private event(event: string, body: any = {}): void { this.send({ type: 'event', event, body }); }
   private reply(request: Request, body: any = {}, error?: CodedError): void {
-    this.send({ type: 'response', request_seq: request.seq, command: request.command, success: !error, body: error ? { error: { id: 1000, format: '[{code}] {message}', variables: { code: error.code, message: error.message }, showUser: true } } : body, ...(error ? { message: error.code } : {}) });
+    this.send({ type: 'response', request_seq: request.seq, command: request.command, success: !error, body: error ? { error: { id: Number(error.errorNumber), format: '[{error_number}] [{code}] {message}', variables: { error_number: error.errorNumber, code: error.code, message: error.message }, showUser: true } } : body, ...(error ? { message: error.code } : {}) });
   }
   private output(output: string, category = 'console'): void { this.event('output', { output, category }); }
 
@@ -90,7 +90,7 @@ export class CodeGridDebugAdapter implements vscode.DebugAdapter {
             { name: vscode.l10n.t('Input / Output'), variablesReference: this.reference({ remaining_input: this.snapshot.remaining_input, output: this.snapshot.output }), expensive: false },
             { name: vscode.l10n.t('Metrics'), variablesReference: this.reference(this.snapshot.metrics || {}), expensive: false },
             { name: vscode.l10n.t('Last Tick Events'), variablesReference: this.reference(this.lastEvents), expensive: false },
-            { name: vscode.l10n.t('Errors'), variablesReference: this.reference({ messages: this.snapshot.status === 'error' ? presentRuntimeErrors(this.snapshot).map(({ code, message }) => `[${code}] ${message}`) : [], errors: this.snapshot.errors, fault: this.snapshot.fault }), expensive: false },
+            { name: vscode.l10n.t('Errors'), variablesReference: this.reference({ messages: this.snapshot.status === 'error' ? presentRuntimeErrors(this.snapshot).map(({ code, message }) => `${errorLabel(code)} ${message}`) : [], errors: this.snapshot.errors, fault: this.snapshot.fault }), expensive: false },
           ] }); return;
         }
         case 'variables': {
@@ -148,7 +148,7 @@ export class CodeGridDebugAdapter implements vscode.DebugAdapter {
       for (const diagnostic of loaded.diagnostics) {
         const prefix = bytes.subarray(0, Number(diagnostic.span.start)).toString('utf8');
         const lines = prefix.split('\n');
-        this.output(`${this.sourcePath}:${lines.length}:${lines[lines.length - 1].length + 1}: [${diagnostic.code}] ${localizeError(diagnostic.code, diagnostic.message)}\n`, 'stderr');
+        this.output(`${this.sourcePath}:${lines.length}:${lines[lines.length - 1].length + 1}: ${errorLabel(diagnostic.code)} ${localizeError(diagnostic.code, diagnostic.message)}\n`, 'stderr');
       }
       throw new CodedError('editor.source_errors', 'The program has source errors. See the Debug Console.');
     }
@@ -190,7 +190,7 @@ export class CodeGridDebugAdapter implements vscode.DebugAdapter {
         this.update(result);
         if (this.snapshot.status === 'error') {
           const issues = presentRuntimeErrors(this.snapshot);
-          const description = issues.map((issue) => `[${issue.code}] ${issue.message}`).join('\n');
+          const description = issues.map((issue) => `${errorLabel(issue.code)} ${issue.message}`).join('\n');
           this.output(description + '\n', 'stderr');
           this.output(vscode.l10n.t('Details: {0}', JSON.stringify(this.snapshot.fault || this.snapshot.errors)) + '\n', 'stderr');
           if (this.launchOptions.noDebug) { this.event('exited', { exitCode: 5 }); this.finish(); }
@@ -204,7 +204,7 @@ export class CodeGridDebugAdapter implements vscode.DebugAdapter {
     } catch (error) {
       if (!this.closed) {
         const failure = codedError(error);
-        const message = `[${failure.code}] ${failure.message}`;
+        const message = `${errorLabel(failure.code)} ${failure.message}`;
         this.output(message + '\n', 'stderr');
         if (this.launchOptions.noDebug) { this.event('exited', { exitCode: 1 }); this.finish(); }
         else this.stop('exception', { description: message, text: message, code: failure.code });
@@ -288,14 +288,14 @@ export class CodeGridDebugAdapter implements vscode.DebugAdapter {
 export function registerExecution(context: vscode.ExtensionContext): vscode.Disposable[] {
   const start = async (noDebug: boolean, uri?: vscode.Uri): Promise<boolean> => {
     const document = uri ? await vscode.workspace.openTextDocument(uri) : vscode.window.activeTextEditor?.document;
-    if (!document || document.languageId !== 'codegrid') { void vscode.window.showErrorMessage(vscode.l10n.t('[editor.no_codegrid_file] Open a CodeGrid (.cg) file first.')); return false; }
+    if (!document || document.languageId !== 'codegrid') { void vscode.window.showErrorMessage(`${errorLabel('editor.no_codegrid_file')} ${vscode.l10n.t('[editor.no_codegrid_file] Open a CodeGrid (.cg) file first.')}`); return false; }
     if (document.isUntitled && !await document.save()) return false;
     const defaults = vscode.workspace.getConfiguration('codegrid.execution');
     return vscode.debug.startDebugging(vscode.workspace.getWorkspaceFolder(document.uri), { type: 'codegrid', request: 'launch', name: noDebug ? vscode.l10n.t('Run CodeGrid') : vscode.l10n.t('Debug CodeGrid'), program: document.uri.fsPath, noDebug, stopOnEntry: !noDebug, input: defaults.get('input', []), boundary: defaults.get('boundary', 'exit'), seed: defaults.get('seed', '0'), customLimit: defaults.get('customLimit', '10000'), maxTicks: defaults.get('maxTicks', '100000'), maxWorkUnits: defaults.get('maxWorkUnits', '1000000'), internalConsoleOptions: 'openOnSessionStart' }, { noDebug });
   };
   return [
-    vscode.commands.registerCommand('codegrid.run', (uri?: vscode.Uri) => start(true, uri).catch((error) => { const failure = codedError(error); void vscode.window.showErrorMessage(`[${failure.code}] ${failure.message}`); return false; })),
-    vscode.commands.registerCommand('codegrid.debug', (uri?: vscode.Uri) => start(false, uri).catch((error) => { const failure = codedError(error); void vscode.window.showErrorMessage(`[${failure.code}] ${failure.message}`); return false; })),
+    vscode.commands.registerCommand('codegrid.run', (uri?: vscode.Uri) => start(true, uri).catch((error) => { const failure = codedError(error); void vscode.window.showErrorMessage(`${errorLabel(failure.code)} ${failure.message}`); return false; })),
+    vscode.commands.registerCommand('codegrid.debug', (uri?: vscode.Uri) => start(false, uri).catch((error) => { const failure = codedError(error); void vscode.window.showErrorMessage(`${errorLabel(failure.code)} ${failure.message}`); return false; })),
     vscode.debug.registerDebugAdapterDescriptorFactory('codegrid', { createDebugAdapterDescriptor: () => new vscode.DebugAdapterInlineImplementation(new CodeGridDebugAdapter(context)) }),
     vscode.debug.registerDebugConfigurationProvider('codegrid', {
       provideDebugConfigurations: () => [{ type: 'codegrid', request: 'launch', name: vscode.l10n.t('Debug CodeGrid'), program: '${file}', stopOnEntry: true }],

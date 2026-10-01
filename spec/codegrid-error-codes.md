@@ -1,6 +1,6 @@
 # CodeGrid Error Code Specification
 
-Registry version: 1. Status: normative for error identifiers and their categories. Recorded decision: 2026-09-30, explicit user request to complete all stable error codes. The source and VM specifications still define language acceptance, execution, ordering and rollback. This document does not introduce new language failures.
+Registry version: 2. Status: normative for error identifiers and their categories. Recorded decisions: 2026-09-30, explicit user request to complete all stable error codes; 2026-10-01, explicit user request for four-digit presentation numbers. The source and VM specifications still define language acceptance, execution, ordering and rollback. This document does not introduce new language failures.
 
 ## 1. Identity and compatibility
 
@@ -12,6 +12,30 @@ Registry version: 1. Status: normative for error identifiers and their categorie
 - The machine-readable registry is [codegrid-error-codes.json](codegrid-error-codes.json). Every entry identifies layer, code, trigger, return surface and state effect. The called ABI export is part of the identity for numeric sentinel errors.
 
 ## 2. Response shapes
+
+### Four-digit presentation numbers
+
+The complete [four-digit error table](codegrid-error-numbers.md) is generated
+from the JSON registry. Each scoped identity has a unique, stable `error_number`
+string of exactly four decimal digits. Existing numbers are append-only and
+must never be renumbered or recycled. Reserved starting ranges are source 1000,
+IR 2000, VM 3000, faults 3100, Runtime API 4000, CLI 5000, debug 5100, editor 6000,
+browser 7000, server 7500, LSP 8000, ABI sentinels 8100, and levels 9000.
+
+Process errors render `[number] [original_code]`; JSON error, diagnostic and
+fault objects add `error_number` without replacing original `code` or `kind`.
+LSP keeps standard JSON-RPC error codes and carries the number in `error.data`;
+diagnostics use `data.error_number`. DAP uses the four-digit number as its
+presentation `id` and includes `error_number` in format variables. Level runtime
+code arrays have parallel `error_numbers`, with hidden runtime details redacted
+in both arrays. Binary ABI zero sentinels cannot carry an extra field: their
+export-specific numbers are documented in the table, and the zero ABI remains
+compatible. Uncaught OS/runtime traps remain host failures as defined above.
+
+Native Rust callers can use the data-only `codegrid_model::error_number` lookup
+and diagnostic/error helper methods. WASM adapters access the same lookup via
+their allowed runtime/level API dependencies. TypeScript presentation data is
+generated from the same registry; it introduces no language semantics.
 
 ### Source diagnostics
 
@@ -27,7 +51,7 @@ API Rust errors expose `ApiError::code()`. Browser/server JSON uses `error:{code
 
 ### Debug and editor errors
 
-`{debug_protocol_version:2,error:{code,message}}` or `{debug_protocol_version:2,body:...}`. Compilation diagnostics remain a successful transport body containing diagnostic records; they are not malformed-request errors. DAP failure response.message is the code; `body.error` is `{id:1000,format:"[{code}] {message}",variables:{code,message},showUser:true}`. The numeric 1000 is a generic DAP presentation ID, not a language error code. Runtime error stops expose the original snapshot error codes. Host/limit stops include the host code in the stopped event.
+`{debug_protocol_version:2,error:{code,error_number,message}}` or `{debug_protocol_version:2,body:...}`. Compilation diagnostics remain a successful transport body containing diagnostic records; they are not malformed-request errors. DAP failure response.message is the original code; `body.error` uses the four-digit number as `id`, `format:"[{error_number}] [{code}] {message}"`, `variables:{error_number,code,message}`, and `showUser:true`. Runtime error stops expose the original snapshot error codes and their numbers. Host/limit stops include the host identity in the stopped event.
 
 ### Process and ABI failures
 
@@ -435,3 +459,15 @@ Assign source/IR codes where validation detects the failure. Never classify an e
 | `level_abi.not_initialized` | Semantic request before trusted initialization; no dispatch. |
 
 See [Level error identities v1](codegrid-level-errors-v1.md) for typed reason and transport details.
+
+### Additional ExactIO presentation identities
+
+These classify existing outcomes without changing correctness or failure priority.
+
+| Code | Trigger / meaning |
+| --- | --- |
+| `level.wrong_output` | A committed output byte differs from the expected stream. |
+| `level.incomplete_output` | Execution terminates before the expected stream completes. |
+| `level.test_failed` | An ExactIO correctness check fails. |
+| `level.runtime_error` | An ExactIO test encounters a VM error; hidden details remain redacted. |
+| `level.constraint_exceeded` | A permitted metric exceeds a level constraint. |

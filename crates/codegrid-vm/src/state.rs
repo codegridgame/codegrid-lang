@@ -265,6 +265,17 @@ pub enum VmFault {
     InternalInvariantViolation,
 }
 
+impl VmFault {
+    pub fn error_number(self) -> Option<&'static str> {
+        let code = match self {
+            Self::MetricCounterOverflow(_) => "metric_counter_overflow",
+            Self::GlobalTickOverflow => "global_tick_overflow",
+            Self::InternalInvariantViolation => "internal_invariant_violation",
+        };
+        codegrid_model::error_number("fault", code)
+    }
+}
+
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct VmSnapshot {
     pub status: VmStatus,

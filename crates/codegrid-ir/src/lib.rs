@@ -326,6 +326,12 @@ pub struct IrError {
     pub message: &'static str,
 }
 
+impl IrError {
+    pub fn error_number(&self) -> Option<&'static str> {
+        codegrid_model::error_number("ir", self.code)
+    }
+}
+
 #[derive(Clone, Copy)]
 enum BoardContext {
     OuterMain,

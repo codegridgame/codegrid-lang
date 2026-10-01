@@ -240,6 +240,7 @@ impl Server {
                     },
                     "source": "codegrid",
                     "code": diagnostic.code,
+                    "data": {"error_number": codegrid_model::error_number("source", diagnostic.code).or_else(|| codegrid_model::error_number("ir", diagnostic.code))},
                     "message": diagnostic.message
                 })
             })
@@ -884,7 +885,7 @@ fn error_response(id: Value, code: i64, message: &str) -> Value {
     json!({
         "jsonrpc": "2.0",
         "id": id,
-        "error": { "code": code, "message": message }
+        "error": { "code": code, "message": message, "data": {"error_number": codegrid_model::error_number("lsp", &code.to_string())} }
     })
 }
 
@@ -1411,6 +1412,10 @@ mod tests {
         assert_eq!(diagnostics.len(), compiler_diagnostics.len());
         for (actual, expected) in diagnostics.iter().zip(&compiler_diagnostics) {
             assert_eq!(actual["message"], expected.message);
+            assert_eq!(
+                actual["data"]["error_number"],
+                json!(expected.error_number())
+            );
             assert_eq!(
                 actual["severity"],
                 match expected.severity {

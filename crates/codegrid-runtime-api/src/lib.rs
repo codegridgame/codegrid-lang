@@ -12,7 +12,7 @@ pub use codegrid_compiler::{
     BoardView, CellView, CodeGridView, Diagnostic, ProgramView, Severity, Span,
 };
 pub use codegrid_ir::{BoardId, CodeGridId, Program, ScopedProgram, VerifiedProgram};
-pub use codegrid_model::Direction;
+pub use codegrid_model::{error_number, Direction};
 pub use codegrid_vm::{
     BoundaryMode, CallFrameSnapshot, Coordinate, ExecutionScope, InstructionKind, MemoryAddress,
     MemoryLocationId, MemorySpaceId, MetricCounterOverflow, Page, RunOutcome, RuntimeError,
@@ -668,6 +668,10 @@ pub enum ApiError {
 }
 
 impl ApiError {
+    pub fn error_number(&self) -> Option<&'static str> {
+        error_number("api", self.code())
+    }
+
     /// Stable API error category, independent of host-specific wire aliases.
     pub const fn code(&self) -> &'static str {
         match self {

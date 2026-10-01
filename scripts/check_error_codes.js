@@ -4,6 +4,9 @@ const fs = require('fs');
 const path = require('path');
 const root = path.resolve(__dirname, '..');
 const registry = JSON.parse(fs.readFileSync(path.join(root, 'spec/codegrid-error-codes.json'), 'utf8'));
+const generated = require('child_process').spawnSync(process.execPath,
+  [path.join(__dirname, 'generate_error_numbers.js'), '--check'], { encoding: 'utf8' });
+if (generated.status !== 0) throw new Error(generated.stderr || 'Error-number generation check failed');
 const scoped = new Set();
 for (const entry of registry.entries) {
   const key = `${entry.layer}:${entry.code}`;

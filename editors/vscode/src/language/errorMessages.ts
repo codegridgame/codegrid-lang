@@ -1,4 +1,18 @@
 import * as vscode from 'vscode';
+import { errorNumbers } from './errorNumbers';
+
+/** Numeric presentation only; source acceptance and VM behavior remain in Rust. */
+export function errorNumber(code: string): string {
+  for (const layer of ['source', 'ir', 'vm', 'fault', 'debug', 'editor', 'level']) {
+    const number = errorNumbers[`${layer}:${code}`];
+    if (number) return number;
+  }
+  return errorNumbers['editor:editor.operation_failed'];
+}
+
+export function errorLabel(code: string): string {
+  return `[${errorNumber(code)}] [${code}]`;
+}
 
 /** Presentation keys indexed by published identities, never by message text. */
 export const ERROR_MESSAGES: Readonly<Record<string, string>> = require('../../l10n/error-messages.json');
@@ -10,11 +24,10 @@ export function localizeError(code: string, originalMessage?: string): string {
 }
 
 export function localizeDiagnostic(uri: vscode.Uri, diagnostic: vscode.Diagnostic): vscode.Diagnostic {
-  if (vscode.env.language.toLowerCase().startsWith('en')) return diagnostic;
   const identity = typeof diagnostic.code === 'object' ? diagnostic.code.value : diagnostic.code;
   const code = typeof identity === 'string' || typeof identity === 'number' ? String(identity) : 'editor.operation_failed';
   const localized = Object.assign(new vscode.Diagnostic(diagnostic.range, diagnostic.message, diagnostic.severity), diagnostic);
-  localized.message = `[${code}] ${localizeError(code, diagnostic.message)}`;
+  localized.message = `${errorLabel(code)} ${localizeError(code, diagnostic.message)}`;
   localized.relatedInformation = [
     ...(diagnostic.relatedInformation || []),
     new vscode.DiagnosticRelatedInformation(new vscode.Location(uri, diagnostic.range),

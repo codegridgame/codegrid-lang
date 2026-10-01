@@ -482,6 +482,7 @@ const sourceOverLimit = limitedDispatch({
   source: `${" ".repeat(65)}`,
 });
 assert.equal(sourceOverLimit.error.code, "source_payload_limit_exceeded", "source bytes must obey the configured ceiling");
+assert.equal(sourceOverLimit.error.error_number, "7508", "server transport alias retains its scoped numeric identity");
 const limitedProgram = limitedDispatch({
   abi_version: 4,
   api_version: 3,

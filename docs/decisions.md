@@ -242,3 +242,16 @@ Committed generated-code rejection diagnostics retain trusted scope/cell/Primary
 internally; only permitted privacy-safe reasons are projected to clients. These
 changes refine host safety and diagnostics without changing source acceptance,
 VM transitions, work units, correctness, metrics, or scoring.
+
+## Four-digit error identities (2026-10-01)
+
+An explicit user request assigns stable four-digit decimal strings to all
+registered toolchain errors. Registry v2 adds error_number to each scoped
+identity. Published textual identifiers, VM spellings, transport aliases,
+standard JSON-RPC codes and ABI zero sentinels remain compatible. Structured
+outputs carry the number; process/editor messages show it alongside the
+original identifier. LSP stores it in data and DAP uses it as the presentation
+error ID. Numbers are never inferred from message wording, reassigned, or
+recycled. Generated Rust/TypeScript lookup data and the Markdown table use
+the JSON registry. Existing ExactIO failure outcomes also gain registered
+presentation identities without changing execution, priority, or privacy.

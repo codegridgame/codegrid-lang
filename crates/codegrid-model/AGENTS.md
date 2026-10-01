@@ -4,6 +4,10 @@
 
 Own the canonical language-level values, identifiers, enums, and instruction inventory shared by the compiler, VM, and adapters.
 
+Own the generated, data-only four-digit error identity lookup shared by hosts.
+The JSON error registry defines these identities; this module does not detect
+host errors or implement transport, editor, or level policy.
+
 ## Allowed dependency and call direction
 
 - This crate is the dependency root for semantic Rust crates. It must not depend on another workspace crate.

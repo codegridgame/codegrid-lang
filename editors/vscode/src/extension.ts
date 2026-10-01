@@ -1,3 +1,4 @@
+import { errorNumber } from './language/errorMessages';
 import * as vscode from 'vscode';
 import { LanguageClient, TransportKind } from 'vscode-languageclient/node';
 import { State } from 'vscode-languageclient/lib/common/client';
@@ -102,7 +103,7 @@ async function configureLanguageServer(): Promise<void> {
   const args = settings.get<string[]>('arguments', []);
   if (!command) {
     vscode.window.showWarningMessage(
-      vscode.l10n.t('[editor.lsp_path_empty] CodeGrid language server path is empty. Standalone editor features remain available.')
+      '[' + errorNumber('editor.lsp_path_empty') + '] ' + vscode.l10n.t('[editor.lsp_path_empty] CodeGrid language server path is empty. Standalone editor features remain available.')
     );
     return;
   }
@@ -150,7 +151,7 @@ async function configureLanguageServer(): Promise<void> {
     registerStandaloneProviders();
     const message = error instanceof Error ? error.message : String(error);
     vscode.window.showWarningMessage(
-      vscode.l10n.t('[editor.lsp_start_failed] CodeGrid language server could not be started ({0}). Standalone editor features remain available.', message)
+      '[' + errorNumber('editor.lsp_start_failed') + '] ' + vscode.l10n.t('[editor.lsp_start_failed] CodeGrid language server could not be started ({0}). Standalone editor features remain available.', message)
     );
   }
 }

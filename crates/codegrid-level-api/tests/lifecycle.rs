@@ -9,6 +9,26 @@ fn api() -> LevelApi {
     )
     .unwrap()
 }
+
+#[test]
+fn errors_and_diagnostics_include_stable_four_digit_numbers() {
+    let mut api = api();
+    let bad = request(&mut api, json!({"operation":"unknown"}));
+    assert_eq!(bad["error"]["code"], "level_api.invalid_request");
+    assert_eq!(bad["error"]["error_number"], "9010");
+    let bad_source = request(
+        &mut api,
+        json!({"operation":"compile_program","source":"~x\n"}),
+    );
+    assert_eq!(bad_source["diagnostics"][0]["code"], "source.invalid_entry");
+    assert_eq!(bad_source["diagnostics"][0]["error_number"], "1003");
+    let bad_level = request(
+        &mut api,
+        json!({"operation":"load_level","level_json":"{}"}),
+    );
+    assert_eq!(bad_level["error"]["code"], "level.invalid");
+    assert_eq!(bad_level["error"]["error_number"], "9000");
+}
 fn request(api: &mut LevelApi, mut fields: Value) -> Value {
     fields["api_version"] = json!(1);
     serde_json::from_str(&api.request_json(&fields.to_string())).unwrap()

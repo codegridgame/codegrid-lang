@@ -7,6 +7,7 @@ use std::path::PathBuf;
 use codegrid_compiler::compile;
 use codegrid_ir::{Board, BoardId, CodeGridId, ScopedProgram};
 use codegrid_level_api::{LevelApi, SafetyProfile, LEVEL_API_VERSION};
+use codegrid_model::error_number;
 use codegrid_model::{
     AttachmentInstruction, BoundaryMode, Direction, InstructionStackItem, PrimaryInstruction, Slot,
 };
@@ -124,7 +125,11 @@ fn run(arguments: Vec<OsString>) -> i32 {
     let command = match parse_arguments(arguments) {
         Ok(command) => command,
         Err(message) => {
-            eprintln!("error: [cli.invalid_arguments] {message}");
+            eprintln!(
+                "error: [{error_number}] [cli.invalid_arguments] {message}",
+                error_number = codegrid_model::error_number("cli", "cli.invalid_arguments")
+                    .expect("Registered process error")
+            );
             print_usage();
             return EXIT_INVALID_ARGUMENTS;
         }
@@ -483,7 +488,11 @@ fn check_file(path: &PathBuf) -> i32 {
     let source = match read_source(path) {
         Ok(source) => source,
         Err(message) => {
-            eprintln!("error: [cli.source_io] {message}");
+            eprintln!(
+                "error: [{error_number}] [cli.source_io] {message}",
+                error_number = codegrid_model::error_number("cli", "cli.source_io")
+                    .expect("Registered process error")
+            );
             return EXIT_IO_ERROR;
         }
     };
@@ -499,47 +508,53 @@ fn check_file(path: &PathBuf) -> i32 {
 fn run_file(options: RunOptions) -> i32 {
     let input = match &options.input {
         InputSource::Bytes(bytes) => bytes.clone(),
-        InputSource::JsonFile(path) => match read_input_file(path) {
-            Ok(bytes) => bytes,
-            Err(InputFileError::Io(error)) => {
-                eprintln!(
-                    "error: [cli.input_io] cannot read input file '{}': {error}",
-                    path.display()
-                );
-                return EXIT_IO_ERROR;
+        InputSource::JsonFile(path) => {
+            match read_input_file(path) {
+                Ok(bytes) => bytes,
+                Err(InputFileError::Io(error)) => {
+                    eprintln!(
+                    "error: [{error_number}] [cli.input_io] cannot read input file '{}': {error}",
+                    path.display(), error_number = codegrid_model::error_number("cli", "cli.input_io").expect("Registered process error"));
+                    return EXIT_IO_ERROR;
+                }
+                Err(InputFileError::InvalidJson(error)) => {
+                    eprintln!(
+                    "error: [{error_number}] [cli.input_json] input file '{}' must contain one JSON byte array: {error}",
+                    path.display(), error_number = codegrid_model::error_number("cli", "cli.input_json").expect("Registered process error"));
+                    return EXIT_INVALID_ARGUMENTS;
+                }
+                Err(InputFileError::HostData(message)) => {
+                    eprintln!(
+                        "error: [{error_number}] [cli.input_data] {message}",
+                        error_number = codegrid_model::error_number("cli", "cli.input_data")
+                            .expect("Registered process error")
+                    );
+                    return EXIT_INVALID_ARGUMENTS;
+                }
             }
-            Err(InputFileError::InvalidJson(error)) => {
-                eprintln!(
-                    "error: [cli.input_json] input file '{}' must contain one JSON byte array: {error}",
-                    path.display()
-                );
-                return EXIT_INVALID_ARGUMENTS;
-            }
-            Err(InputFileError::HostData(message)) => {
-                eprintln!("error: [cli.input_data] {message}");
-                return EXIT_INVALID_ARGUMENTS;
-            }
-        },
+        }
     };
     let initial_memory = match options.initial_memory_file.as_ref() {
         Some(path) => match read_initial_memory_file(path) {
             Ok(memory) => memory,
             Err(InputFileError::Io(error)) => {
                 eprintln!(
-                    "error: [cli.memory_io] cannot read initial memory file '{}': {error}",
-                    path.display()
-                );
+                    "error: [{error_number}] [cli.memory_io] cannot read initial memory file '{}': {error}",
+                    path.display(), error_number = codegrid_model::error_number("cli", "cli.memory_io").expect("Registered process error"));
                 return EXIT_IO_ERROR;
             }
             Err(InputFileError::InvalidJson(error)) => {
                 eprintln!(
-                    "error: [cli.memory_json] initial memory file '{}' must contain one valid JSON memory array: {error}",
-                    path.display()
-                );
+                    "error: [{error_number}] [cli.memory_json] initial memory file '{}' must contain one valid JSON memory array: {error}",
+                    path.display(), error_number = codegrid_model::error_number("cli", "cli.memory_json").expect("Registered process error"));
                 return EXIT_INVALID_ARGUMENTS;
             }
             Err(InputFileError::HostData(message)) => {
-                eprintln!("error: [cli.memory_data] {message}");
+                eprintln!(
+                    "error: [{error_number}] [cli.memory_data] {message}",
+                    error_number = codegrid_model::error_number("cli", "cli.memory_data")
+                        .expect("Registered process error")
+                );
                 return EXIT_INVALID_ARGUMENTS;
             }
         },
@@ -548,7 +563,11 @@ fn run_file(options: RunOptions) -> i32 {
     let source = match read_source(&options.source_path) {
         Ok(source) => source,
         Err(message) => {
-            eprintln!("error: [cli.source_io] {message}");
+            eprintln!(
+                "error: [{error_number}] [cli.source_io] {message}",
+                error_number = codegrid_model::error_number("cli", "cli.source_io")
+                    .expect("Registered process error")
+            );
             return EXIT_IO_ERROR;
         }
     };
@@ -568,8 +587,7 @@ fn run_file(options: RunOptions) -> i32 {
             );
             if let Err(error) = print_run_result(&result) {
                 eprintln!(
-                    "error: [cli.serialization_failed] failed to serialize run result: {error}"
-                );
+                    "error: [{error_number}] [cli.serialization_failed] failed to serialize run result: {error}", error_number = codegrid_model::error_number("cli", "cli.serialization_failed").expect("Registered process error"));
             }
             return EXIT_STATIC_ERROR;
         }
@@ -578,7 +596,7 @@ fn run_file(options: RunOptions) -> i32 {
     let mut vm = match Vm::with_initial_memory(program, input, initial_memory, config) {
         Ok(vm) => vm,
         Err(error) => {
-            eprintln!("error: [cli.vm_initialization_failed] VM initialization failed: {error:?}");
+            eprintln!("error: [{error_number}] [cli.vm_initialization_failed] VM initialization failed: {error:?}", error_number = codegrid_model::error_number("cli", "cli.vm_initialization_failed").expect("Registered process error"));
             return EXIT_RUNTIME_ERROR;
         }
     };
@@ -600,7 +618,7 @@ fn run_file(options: RunOptions) -> i32 {
             EXIT_WORK_LIMIT,
         ),
         codegrid_vm::RunOutcome::InvalidTickLimit => {
-            eprintln!("error: [cli.invalid_tick_limit] max tick limit must be greater than zero");
+            eprintln!("error: [{error_number}] [cli.invalid_tick_limit] max tick limit must be greater than zero", error_number = codegrid_model::error_number("cli", "cli.invalid_tick_limit").expect("Registered process error"));
             return EXIT_INVALID_ARGUMENTS;
         }
     };
@@ -616,7 +634,7 @@ fn run_file(options: RunOptions) -> i32 {
         Some(snapshot_json(&snapshot)),
     );
     if let Err(error) = print_run_result(&result) {
-        eprintln!("error: [cli.serialization_failed] failed to serialize run result: {error}");
+        eprintln!("error: [{error_number}] [cli.serialization_failed] failed to serialize run result: {error}", error_number = codegrid_model::error_number("cli", "cli.serialization_failed").expect("Registered process error"));
         return EXIT_RUNTIME_ERROR;
     }
     for error in &snapshot.errors {
@@ -633,13 +651,12 @@ fn evaluate_files(options: EvaluateOptions) -> i32 {
         Ok(text) => text,
         Err(EvaluationFileError::Io(error)) => {
             eprintln!(
-                "error: [cli.limits_io] cannot read trusted safety profile '{}': {error}",
-                options.limits_path.display()
-            );
+                "error: [{error_number}] [cli.limits_io] cannot read trusted safety profile '{}': {error}",
+                options.limits_path.display(), error_number = codegrid_model::error_number("cli", "cli.limits_io").expect("Registered process error"));
             return EXIT_IO_ERROR;
         }
         Err(EvaluationFileError::TooLarge { limit, actual }) => {
-            eprintln!("error: [cli.profile_too_large] trusted safety profile contains at least {actual} bytes; the CLI limit is {limit} bytes");
+            eprintln!("error: [{error_number}] [cli.profile_too_large] trusted safety profile contains at least {actual} bytes; the CLI limit is {limit} bytes", error_number = codegrid_model::error_number("cli", "cli.profile_too_large").expect("Registered process error"));
             return EXIT_INVALID_ARGUMENTS;
         }
         Err(EvaluationFileError::InvalidUtf8(error)) => {
@@ -650,7 +667,7 @@ fn evaluate_files(options: EvaluateOptions) -> i32 {
             return EXIT_INVALID_ARGUMENTS;
         }
         Err(EvaluationFileError::BomNotAllowed) => {
-            eprintln!("error: [cli.profile_bom] trusted safety profile '{}' must not start with a UTF-8 BOM", options.limits_path.display());
+            eprintln!("error: [{error_number}] [cli.profile_bom] trusted safety profile '{}' must not start with a UTF-8 BOM", options.limits_path.display(), error_number = codegrid_model::error_number("cli", "cli.profile_bom").expect("Registered process error"));
             return EXIT_INVALID_ARGUMENTS;
         }
     };
@@ -658,7 +675,8 @@ fn evaluate_files(options: EvaluateOptions) -> i32 {
         Ok(profile) => profile,
         Err(error) => {
             eprintln!(
-                "error: [{}] invalid trusted safety profile '{}': {}",
+                "error: [{}] [{}] invalid trusted safety profile '{}': {}",
+                error_number("level", error.code).expect("Registered level API error"),
                 error.code,
                 options.limits_path.display(),
                 error.message
@@ -680,8 +698,10 @@ fn evaluate_files(options: EvaluateOptions) -> i32 {
         Ok(api) => api,
         Err(error) => {
             eprintln!(
-                "error: [{}] cannot initialize level evaluator: {}",
-                error.code, error.message
+                "error: [{}] [{}] cannot initialize level evaluator: {}",
+                error_number("level", error.code).expect("Registered level API error"),
+                error.code,
+                error.message
             );
             return EXIT_INVALID_ARGUMENTS;
         }
@@ -785,7 +805,7 @@ fn evaluate_files(options: EvaluateOptions) -> i32 {
                 OutputFormat::Json => match serde_json::to_string_pretty(&response) {
                     Ok(serialized) => println!("{serialized}"),
                     Err(error) => {
-                        eprintln!("error: [cli.serialization_failed] failed to serialize level evaluation result: {error}");
+                        eprintln!("error: [{error_number}] [cli.serialization_failed] failed to serialize level evaluation result: {error}", error_number = codegrid_model::error_number("cli", "cli.serialization_failed").expect("Registered process error"));
                         return EXIT_VM_FAULT;
                     }
                 },
@@ -794,7 +814,11 @@ fn evaluate_files(options: EvaluateOptions) -> i32 {
             exit_code
         }
         Err(message) => {
-            eprintln!("error: [cli.level_api_protocol] {message}");
+            eprintln!(
+                "error: [{error_number}] [cli.level_api_protocol] {message}",
+                error_number = codegrid_model::error_number("cli", "cli.level_api_protocol")
+                    .expect("Registered process error")
+            );
             EXIT_VM_FAULT
         }
     }
@@ -828,27 +852,29 @@ fn report_evaluation_file_error(path: &PathBuf, label: &str, error: EvaluationFi
     match error {
         EvaluationFileError::Io(error) => {
             eprintln!(
-                "error: [cli.{label}_io] cannot read {label} file '{}': {error}",
-                path.display()
+                "error: [{error_number}] [cli.{label}_io] cannot read {label} file '{}': {error}",
+                path.display(),
+                error_number =
+                    error_number("cli", &format!("cli.{label}_io")).expect("Registered file error")
             );
             EXIT_IO_ERROR
         }
         EvaluationFileError::TooLarge { limit, actual } => {
-            eprintln!("error: [cli.{label}_too_large] {label} file '{}' contains at least {actual} bytes; the trusted profile limit is {limit} bytes", path.display());
+            eprintln!("error: [{error_number}] [cli.{label}_too_large] {label} file '{}' contains at least {actual} bytes; the trusted profile limit is {limit} bytes", path.display(), error_number = error_number("cli", &format!("cli.{label}_too_large")).expect("Registered file error"));
             EXIT_RESOURCE_LIMIT
         }
         EvaluationFileError::InvalidUtf8(error) => {
             eprintln!(
-                "error: [cli.{label}_utf8] {label} file '{}' is not UTF-8: {error}",
-                path.display()
+                "error: [{error_number}] [cli.{label}_utf8] {label} file '{}' is not UTF-8: {error}",
+                path.display(),
+                error_number = error_number("cli", &format!("cli.{label}_utf8")).expect("Registered file error")
             );
             EXIT_IO_ERROR
         }
         EvaluationFileError::BomNotAllowed => {
             eprintln!(
-                "error: [cli.{label}_bom] {label} file '{}' must not start with a UTF-8 BOM",
-                path.display()
-            );
+                "error: [{error_number}] [cli.{label}_bom] {label} file '{}' must not start with a UTF-8 BOM",
+                path.display(), error_number = error_number("cli", &format!("cli.{label}_bom")).expect("Registered file error"));
             EXIT_IO_ERROR
         }
     }
@@ -916,13 +942,12 @@ fn evaluation_result_exit(response: &JsonValue) -> i32 {
         Some("ResourceLimitExceeded" | "Cancelled") => EXIT_RESOURCE_LIMIT,
         Some("Fault") => EXIT_VM_FAULT,
         Some(other) => {
-            eprintln!("error: [cli.unknown_evaluation_status] unrecognized level API result status '{other}'");
+            eprintln!("error: [{error_number}] [cli.unknown_evaluation_status] unrecognized level API result status '{other}'", error_number = codegrid_model::error_number("cli", "cli.unknown_evaluation_status").expect("Registered process error"));
             EXIT_VM_FAULT
         }
         None => {
             eprintln!(
-                "error: [cli.malformed_evaluation_result] level API result omitted its status"
-            );
+                "error: [{error_number}] [cli.malformed_evaluation_result] level API result omitted its status", error_number = codegrid_model::error_number("cli", "cli.malformed_evaluation_result").expect("Registered process error"));
             EXIT_VM_FAULT
         }
     }
@@ -1009,6 +1034,7 @@ fn result_json(
 fn diagnostic_json(diagnostic: &Diagnostic) -> JsonValue {
     json!({
         "code": diagnostic.code,
+        "error_number": error_number("source", diagnostic.code).or_else(|| error_number("ir", diagnostic.code)),
         "severity": severity_name(diagnostic.severity),
         "message": diagnostic.message,
         "span": {
@@ -1034,11 +1060,14 @@ fn print_diagnostics(path: &PathBuf, source: &str, diagnostics: &[Diagnostic]) {
     for diagnostic in diagnostics {
         let (line, column) = diagnostic_location(source, &line_index, diagnostic.span.start);
         eprintln!(
-            "{}:{}:{}: {}: [{}] {}",
+            "{}:{}:{}: {}: [{}] [{}] {}",
             path.display(),
             line,
             column,
             severity_name(diagnostic.severity),
+            error_number("source", diagnostic.code)
+                .or_else(|| error_number("ir", diagnostic.code))
+                .expect("Registered diagnostic"),
             diagnostic.code,
             diagnostic.message
         );
@@ -1312,6 +1341,7 @@ fn runtime_error_json(error: &RuntimeError) -> JsonValue {
         "global_tick": error.global_tick().to_string(),
         "scope": scope_json(error.scope()),
         "code": error.code(),
+        "error_number": error_number("vm", error.code()),
         "details": runtime_error_details(error.kind()),
     })
 }
@@ -1404,11 +1434,15 @@ fn scope_json(scope: ExecutionScope) -> JsonValue {
 fn fault_json(fault: VmFault) -> JsonValue {
     match fault {
         VmFault::MetricCounterOverflow(counter) => json!({
-            "kind": "metric_counter_overflow",
+            "kind": "metric_counter_overflow", "error_number" : codegrid_model::error_number("fault", "metric_counter_overflow"),
             "counter": metric_counter_name(counter),
         }),
-        VmFault::GlobalTickOverflow => json!({"kind": "global_tick_overflow"}),
-        VmFault::InternalInvariantViolation => json!({"kind": "internal_invariant_violation"}),
+        VmFault::GlobalTickOverflow => {
+            json!({"kind": "global_tick_overflow", "error_number" : codegrid_model::error_number("fault", "global_tick_overflow")})
+        }
+        VmFault::InternalInvariantViolation => {
+            json!({"kind": "internal_invariant_violation", "error_number" : codegrid_model::error_number("fault", "internal_invariant_violation")})
+        }
     }
 }
 
@@ -1479,8 +1513,9 @@ fn instruction_kind_name(kind: InstructionKind) -> &'static str {
 
 fn runtime_error_summary(error: &RuntimeError) -> String {
     format!(
-        "runtime error at Global Tick {}: {}",
+        "runtime error at Global Tick {}: [{}] [{}]",
         error.global_tick(),
+        error_number("vm", error.code()).expect("Registered VM error"),
         error.code()
     )
 }

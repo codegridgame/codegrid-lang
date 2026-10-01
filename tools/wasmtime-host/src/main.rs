@@ -1221,7 +1221,7 @@ fn normalize_call_frame(frame: &Value) -> Result<Value> {
 fn normalize_error(error: &Value, shape: ResultShape) -> Result<Value> {
     assert_exact_keys(
         error,
-        &["code", "details", "global_tick", "scope"],
+        &["code", "details", "error_number", "global_tick", "scope"],
         "runtime error",
     )?;
     let mut details = error["details"].clone();
@@ -1234,8 +1234,16 @@ fn normalize_error(error: &Value, shape: ResultShape) -> Result<Value> {
         }
     }
     let _ = shape;
+    let number = error["error_number"]
+        .as_str()
+        .context("runtime error number must be a string")?;
+    ensure!(
+        number.len() == 4 && number.bytes().all(|byte| byte.is_ascii_digit()),
+        "runtime error number must contain exactly four digits"
+    );
     Ok(json!({
         "code": error["code"],
+        "error_number": error["error_number"],
         "global_tick": error["global_tick"],
         "scope": error["scope"],
         "details": details,

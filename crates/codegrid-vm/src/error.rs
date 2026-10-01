@@ -158,6 +158,10 @@ impl RuntimeError {
         }
     }
 
+    pub fn error_number(&self) -> Option<&'static str> {
+        codegrid_model::error_number("vm", self.code())
+    }
+
     fn canonical_key(&self) -> CanonicalErrorKey {
         let (resource, thread_ids) = match &self.kind {
             RuntimeErrorKind::ConcurrentCallerStackReadConflict {

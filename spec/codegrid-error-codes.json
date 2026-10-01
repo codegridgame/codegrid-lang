@@ -1,5 +1,5 @@
 {
-  "registry_version": 1,
+  "registry_version": 2,
   "compatibility": "Append-only identifiers; existing code meaning and spelling are stable. Message wording is not normative.",
   "entries": [
     {
@@ -8,7 +8,8 @@
       "condition": "A bare carriage return occurs outside or inside a block comment.",
       "surface": "Diagnostic.code in core, CLI JSON, LSP diagnostics, browser/server diagnostics and debug diagnostics. CLI check renders [code].",
       "state_effect": "Compilation rejection: no executable IR or VM instance.",
-      "code_type": "string"
+      "code_type": "string",
+      "error_number": "1000"
     },
     {
       "layer": "source",
@@ -16,7 +17,8 @@
       "condition": "A block comment starts inside an open block comment.",
       "surface": "Diagnostic.code in core, CLI JSON, LSP diagnostics, browser/server diagnostics and debug diagnostics. CLI check renders [code].",
       "state_effect": "Compilation rejection: no executable IR or VM instance.",
-      "code_type": "string"
+      "code_type": "string",
+      "error_number": "1001"
     },
     {
       "layer": "source",
@@ -24,7 +26,8 @@
       "condition": "A block comment reaches end of source without its closing delimiter.",
       "surface": "Diagnostic.code in core, CLI JSON, LSP diagnostics, browser/server diagnostics and debug diagnostics. CLI check renders [code].",
       "state_effect": "Compilation rejection: no executable IR or VM instance.",
-      "code_type": "string"
+      "code_type": "string",
+      "error_number": "1002"
     },
     {
       "layer": "source",
@@ -32,7 +35,8 @@
       "condition": "An Entry token is malformed or carries an Attachment.",
       "surface": "Diagnostic.code in core, CLI JSON, LSP diagnostics, browser/server diagnostics and debug diagnostics. CLI check renders [code].",
       "state_effect": "Compilation rejection: no executable IR or VM instance.",
-      "code_type": "string"
+      "code_type": "string",
+      "error_number": "1003"
     },
     {
       "layer": "source",
@@ -40,7 +44,8 @@
       "condition": "A complete cell token is unknown, malformed, detached, combined, or has an invalid Primary/Attachment pairing.",
       "surface": "Diagnostic.code in core, CLI JSON, LSP diagnostics, browser/server diagnostics and debug diagnostics. CLI check renders [code].",
       "state_effect": "Compilation rejection: no executable IR or VM instance.",
-      "code_type": "string"
+      "code_type": "string",
+      "error_number": "1004"
     },
     {
       "layer": "source",
@@ -48,7 +53,8 @@
       "condition": "The public directive-head parser receives a head without @.",
       "surface": "Diagnostic.code in core, CLI JSON, LSP diagnostics, browser/server diagnostics and debug diagnostics. CLI check renders [code].",
       "state_effect": "Compilation rejection: no executable IR or VM instance.",
-      "code_type": "string"
+      "code_type": "string",
+      "error_number": "1005"
     },
     {
       "layer": "source",
@@ -56,7 +62,8 @@
       "condition": "A structural path has malformed segments or an out-of-range ID.",
       "surface": "Diagnostic.code in core, CLI JSON, LSP diagnostics, browser/server diagnostics and debug diagnostics. CLI check renders [code].",
       "state_effect": "Compilation rejection: no executable IR or VM instance.",
-      "code_type": "string"
+      "code_type": "string",
+      "error_number": "1006"
     },
     {
       "layer": "source",
@@ -64,7 +71,8 @@
       "condition": "The directive head is not a recognized structural or attribute directive.",
       "surface": "Diagnostic.code in core, CLI JSON, LSP diagnostics, browser/server diagnostics and debug diagnostics. CLI check renders [code].",
       "state_effect": "Compilation rejection: no executable IR or VM instance.",
-      "code_type": "string"
+      "code_type": "string",
+      "error_number": "1007"
     },
     {
       "layer": "source",
@@ -72,7 +80,8 @@
       "condition": "A size declaration does not have exactly one argument.",
       "surface": "Diagnostic.code in core, CLI JSON, LSP diagnostics, browser/server diagnostics and debug diagnostics. CLI check renders [code].",
       "state_effect": "Compilation rejection: no executable IR or VM instance.",
-      "code_type": "string"
+      "code_type": "string",
+      "error_number": "1008"
     },
     {
       "layer": "source",
@@ -80,7 +89,8 @@
       "condition": "Dimensions do not use the required positive decimal WIDTHxHEIGHT spelling.",
       "surface": "Diagnostic.code in core, CLI JSON, LSP diagnostics, browser/server diagnostics and debug diagnostics. CLI check renders [code].",
       "state_effect": "Compilation rejection: no executable IR or VM instance.",
-      "code_type": "string"
+      "code_type": "string",
+      "error_number": "1009"
     },
     {
       "layer": "source",
@@ -88,7 +98,8 @@
       "condition": "A board dimension is zero.",
       "surface": "Diagnostic.code in core, CLI JSON, LSP diagnostics, browser/server diagnostics and debug diagnostics. CLI check renders [code].",
       "state_effect": "Compilation rejection: no executable IR or VM instance.",
-      "code_type": "string"
+      "code_type": "string",
+      "error_number": "1010"
     },
     {
       "layer": "source",
@@ -96,7 +107,8 @@
       "condition": "Dimensions, their product, or total cells exceed portable source bounds or overflow.",
       "surface": "Diagnostic.code in core, CLI JSON, LSP diagnostics, browser/server diagnostics and debug diagnostics. CLI check renders [code].",
       "state_effect": "Compilation rejection: no executable IR or VM instance.",
-      "code_type": "string"
+      "code_type": "string",
+      "error_number": "1011"
     },
     {
       "layer": "source",
@@ -104,7 +116,8 @@
       "condition": "An end directive has more than one closing name.",
       "surface": "Diagnostic.code in core, CLI JSON, LSP diagnostics, browser/server diagnostics and debug diagnostics. CLI check renders [code].",
       "state_effect": "Compilation rejection: no executable IR or VM instance.",
-      "code_type": "string"
+      "code_type": "string",
+      "error_number": "1012"
     },
     {
       "layer": "source",
@@ -112,7 +125,8 @@
       "condition": "A closing name is not a valid structural path.",
       "surface": "Diagnostic.code in core, CLI JSON, LSP diagnostics, browser/server diagnostics and debug diagnostics. CLI check renders [code].",
       "state_effect": "Compilation rejection: no executable IR or VM instance.",
-      "code_type": "string"
+      "code_type": "string",
+      "error_number": "1013"
     },
     {
       "layer": "source",
@@ -120,7 +134,8 @@
       "condition": "A non-Folded-Block definition contains cells on its directive line.",
       "surface": "Diagnostic.code in core, CLI JSON, LSP diagnostics, browser/server diagnostics and debug diagnostics. CLI check renders [code].",
       "state_effect": "Compilation rejection: no executable IR or VM instance.",
-      "code_type": "string"
+      "code_type": "string",
+      "error_number": "1014"
     },
     {
       "layer": "source",
@@ -128,7 +143,8 @@
       "condition": "A directive other than the closing end occurs inside a Folded Block.",
       "surface": "Diagnostic.code in core, CLI JSON, LSP diagnostics, browser/server diagnostics and debug diagnostics. CLI check renders [code].",
       "state_effect": "Compilation rejection: no executable IR or VM instance.",
-      "code_type": "string"
+      "code_type": "string",
+      "error_number": "1015"
     },
     {
       "layer": "source",
@@ -136,7 +152,8 @@
       "condition": "A relative or qualified Function/Folded Block definition appears outside its permitted owner scope.",
       "surface": "Diagnostic.code in core, CLI JSON, LSP diagnostics, browser/server diagnostics and debug diagnostics. CLI check renders [code].",
       "state_effect": "Compilation rejection: no executable IR or VM instance.",
-      "code_type": "string"
+      "code_type": "string",
+      "error_number": "1016"
     },
     {
       "layer": "source",
@@ -144,7 +161,8 @@
       "condition": "A Main or Custom CodeGrid definition is nested inside another definition.",
       "surface": "Diagnostic.code in core, CLI JSON, LSP diagnostics, browser/server diagnostics and debug diagnostics. CLI check renders [code].",
       "state_effect": "Compilation rejection: no executable IR or VM instance.",
-      "code_type": "string"
+      "code_type": "string",
+      "error_number": "1017"
     },
     {
       "layer": "source",
@@ -152,7 +170,8 @@
       "condition": "Main, Custom, Function, or Folded Block is declared more than once at the same identity.",
       "surface": "Diagnostic.code in core, CLI JSON, LSP diagnostics, browser/server diagnostics and debug diagnostics. CLI check renders [code].",
       "state_effect": "Compilation rejection: no executable IR or VM instance.",
-      "code_type": "string"
+      "code_type": "string",
+      "error_number": "1018"
     },
     {
       "layer": "source",
@@ -160,7 +179,8 @@
       "condition": "Implicit Main grid rows are combined with an explicit Main block.",
       "surface": "Diagnostic.code in core, CLI JSON, LSP diagnostics, browser/server diagnostics and debug diagnostics. CLI check renders [code].",
       "state_effect": "Compilation rejection: no executable IR or VM instance.",
-      "code_type": "string"
+      "code_type": "string",
+      "error_number": "1019"
     },
     {
       "layer": "source",
@@ -168,7 +188,8 @@
       "condition": "A Folded Block is nested inside another Folded Block.",
       "surface": "Diagnostic.code in core, CLI JSON, LSP diagnostics, browser/server diagnostics and debug diagnostics. CLI check renders [code].",
       "state_effect": "Compilation rejection: no executable IR or VM instance.",
-      "code_type": "string"
+      "code_type": "string",
+      "error_number": "1020"
     },
     {
       "layer": "source",
@@ -176,7 +197,8 @@
       "condition": "A Folded Block contains more or fewer than one row.",
       "surface": "Diagnostic.code in core, CLI JSON, LSP diagnostics, browser/server diagnostics and debug diagnostics. CLI check renders [code].",
       "state_effect": "Compilation rejection: no executable IR or VM instance.",
-      "code_type": "string"
+      "code_type": "string",
+      "error_number": "1021"
     },
     {
       "layer": "source",
@@ -184,7 +206,8 @@
       "condition": "A grid row appears outside the declared explicit Main block.",
       "surface": "Diagnostic.code in core, CLI JSON, LSP diagnostics, browser/server diagnostics and debug diagnostics. CLI check renders [code].",
       "state_effect": "Compilation rejection: no executable IR or VM instance.",
-      "code_type": "string"
+      "code_type": "string",
+      "error_number": "1022"
     },
     {
       "layer": "source",
@@ -192,7 +215,8 @@
       "condition": "Board rows are noncontiguous or appear after nested definitions, or a nested definition precedes its owner grid.",
       "surface": "Diagnostic.code in core, CLI JSON, LSP diagnostics, browser/server diagnostics and debug diagnostics. CLI check renders [code].",
       "state_effect": "Compilation rejection: no executable IR or VM instance.",
-      "code_type": "string"
+      "code_type": "string",
+      "error_number": "1023"
     },
     {
       "layer": "source",
@@ -200,7 +224,8 @@
       "condition": "A size declaration occurs inside a Folded Block.",
       "surface": "Diagnostic.code in core, CLI JSON, LSP diagnostics, browser/server diagnostics and debug diagnostics. CLI check renders [code].",
       "state_effect": "Compilation rejection: no executable IR or VM instance.",
-      "code_type": "string"
+      "code_type": "string",
+      "error_number": "1024"
     },
     {
       "layer": "source",
@@ -208,7 +233,8 @@
       "condition": "An internal source location cannot be read from the supplied source; compilation is rejected.",
       "surface": "Diagnostic.code in core, CLI JSON, LSP diagnostics, browser/server diagnostics and debug diagnostics. CLI check renders [code].",
       "state_effect": "Compilation rejection: no executable IR or VM instance.",
-      "code_type": "string"
+      "code_type": "string",
+      "error_number": "1025"
     },
     {
       "layer": "source",
@@ -216,7 +242,8 @@
       "condition": "A lexical program, CodeGrid, or Function scope repeats its size declaration.",
       "surface": "Diagnostic.code in core, CLI JSON, LSP diagnostics, browser/server diagnostics and debug diagnostics. CLI check renders [code].",
       "state_effect": "Compilation rejection: no executable IR or VM instance.",
-      "code_type": "string"
+      "code_type": "string",
+      "error_number": "1026"
     },
     {
       "layer": "source",
@@ -224,7 +251,8 @@
       "condition": "An end directive has no open definition to close.",
       "surface": "Diagnostic.code in core, CLI JSON, LSP diagnostics, browser/server diagnostics and debug diagnostics. CLI check renders [code].",
       "state_effect": "Compilation rejection: no executable IR or VM instance.",
-      "code_type": "string"
+      "code_type": "string",
+      "error_number": "1027"
     },
     {
       "layer": "source",
@@ -232,7 +260,8 @@
       "condition": "The closing name does not identify the open definition.",
       "surface": "Diagnostic.code in core, CLI JSON, LSP diagnostics, browser/server diagnostics and debug diagnostics. CLI check renders [code].",
       "state_effect": "Compilation rejection: no executable IR or VM instance.",
-      "code_type": "string"
+      "code_type": "string",
+      "error_number": "1028"
     },
     {
       "layer": "source",
@@ -240,7 +269,8 @@
       "condition": "An open definition reaches end of source without its closing end.",
       "surface": "Diagnostic.code in core, CLI JSON, LSP diagnostics, browser/server diagnostics and debug diagnostics. CLI check renders [code].",
       "state_effect": "Compilation rejection: no executable IR or VM instance.",
-      "code_type": "string"
+      "code_type": "string",
+      "error_number": "1029"
     },
     {
       "layer": "source",
@@ -248,7 +278,8 @@
       "condition": "Function or Custom definitions exist without an explicit Main block.",
       "surface": "Diagnostic.code in core, CLI JSON, LSP diagnostics, browser/server diagnostics and debug diagnostics. CLI check renders [code].",
       "state_effect": "Compilation rejection: no executable IR or VM instance.",
-      "code_type": "string"
+      "code_type": "string",
+      "error_number": "1030"
     },
     {
       "layer": "source",
@@ -256,7 +287,8 @@
       "condition": "A qualified definition belongs to an undeclared Custom CodeGrid.",
       "surface": "Diagnostic.code in core, CLI JSON, LSP diagnostics, browser/server diagnostics and debug diagnostics. CLI check renders [code].",
       "state_effect": "Compilation rejection: no executable IR or VM instance.",
-      "code_type": "string"
+      "code_type": "string",
+      "error_number": "1031"
     },
     {
       "layer": "source",
@@ -264,7 +296,8 @@
       "condition": "A required Main, Custom Main, or Function grid is absent.",
       "surface": "Diagnostic.code in core, CLI JSON, LSP diagnostics, browser/server diagnostics and debug diagnostics. CLI check renders [code].",
       "state_effect": "Compilation rejection: no executable IR or VM instance.",
-      "code_type": "string"
+      "code_type": "string",
+      "error_number": "1032"
     },
     {
       "layer": "source",
@@ -272,7 +305,8 @@
       "condition": "The number of rows differs from the effective board height.",
       "surface": "Diagnostic.code in core, CLI JSON, LSP diagnostics, browser/server diagnostics and debug diagnostics. CLI check renders [code].",
       "state_effect": "Compilation rejection: no executable IR or VM instance.",
-      "code_type": "string"
+      "code_type": "string",
+      "error_number": "1033"
     },
     {
       "layer": "source",
@@ -280,7 +314,8 @@
       "condition": "A row width differs from the effective board width.",
       "surface": "Diagnostic.code in core, CLI JSON, LSP diagnostics, browser/server diagnostics and debug diagnostics. CLI check renders [code].",
       "state_effect": "Compilation rejection: no executable IR or VM instance.",
-      "code_type": "string"
+      "code_type": "string",
+      "error_number": "1034"
     },
     {
       "layer": "source",
@@ -288,7 +323,8 @@
       "condition": "An Outer or Custom Main board has no Entry.",
       "surface": "Diagnostic.code in core, CLI JSON, LSP diagnostics, browser/server diagnostics and debug diagnostics. CLI check renders [code].",
       "state_effect": "Compilation rejection: no executable IR or VM instance.",
-      "code_type": "string"
+      "code_type": "string",
+      "error_number": "1035"
     },
     {
       "layer": "source",
@@ -296,7 +332,8 @@
       "condition": "A Function board does not have exactly one Entry.",
       "surface": "Diagnostic.code in core, CLI JSON, LSP diagnostics, browser/server diagnostics and debug diagnostics. CLI check renders [code].",
       "state_effect": "Compilation rejection: no executable IR or VM instance.",
-      "code_type": "string"
+      "code_type": "string",
+      "error_number": "1036"
     },
     {
       "layer": "source",
@@ -304,7 +341,8 @@
       "condition": "A Folded Block width differs from its owner board width.",
       "surface": "Diagnostic.code in core, CLI JSON, LSP diagnostics, browser/server diagnostics and debug diagnostics. CLI check renders [code].",
       "state_effect": "Compilation rejection: no executable IR or VM instance.",
-      "code_type": "string"
+      "code_type": "string",
+      "error_number": "1037"
     },
     {
       "layer": "source",
@@ -312,7 +350,8 @@
       "condition": "An Entry appears in a Folded Block.",
       "surface": "Diagnostic.code in core, CLI JSON, LSP diagnostics, browser/server diagnostics and debug diagnostics. CLI check renders [code].",
       "state_effect": "Compilation rejection: no executable IR or VM instance.",
-      "code_type": "string"
+      "code_type": "string",
+      "error_number": "1038"
     },
     {
       "layer": "source",
@@ -320,7 +359,8 @@
       "condition": "An Attachment appears in a Folded Block.",
       "surface": "Diagnostic.code in core, CLI JSON, LSP diagnostics, browser/server diagnostics and debug diagnostics. CLI check renders [code].",
       "state_effect": "Compilation rejection: no executable IR or VM instance.",
-      "code_type": "string"
+      "code_type": "string",
+      "error_number": "1039"
     },
     {
       "layer": "source",
@@ -328,7 +368,8 @@
       "condition": "A Primary is forbidden in its Folded Block context.",
       "surface": "Diagnostic.code in core, CLI JSON, LSP diagnostics, browser/server diagnostics and debug diagnostics. CLI check renders [code].",
       "state_effect": "Compilation rejection: no executable IR or VM instance.",
-      "code_type": "string"
+      "code_type": "string",
+      "error_number": "1040"
     },
     {
       "layer": "source",
@@ -336,7 +377,8 @@
       "condition": "RETURN appears on a Main board.",
       "surface": "Diagnostic.code in core, CLI JSON, LSP diagnostics, browser/server diagnostics and debug diagnostics. CLI check renders [code].",
       "state_effect": "Compilation rejection: no executable IR or VM instance.",
-      "code_type": "string"
+      "code_type": "string",
+      "error_number": "1041"
     },
     {
       "layer": "source",
@@ -344,7 +386,8 @@
       "condition": "CUSTOM_RETURN appears outside a Custom Main board.",
       "surface": "Diagnostic.code in core, CLI JSON, LSP diagnostics, browser/server diagnostics and debug diagnostics. CLI check renders [code].",
       "state_effect": "Compilation rejection: no executable IR or VM instance.",
-      "code_type": "string"
+      "code_type": "string",
+      "error_number": "1042"
     },
     {
       "layer": "source",
@@ -352,7 +395,8 @@
       "condition": "A Custom definition calls a Custom instruction.",
       "surface": "Diagnostic.code in core, CLI JSON, LSP diagnostics, browser/server diagnostics and debug diagnostics. CLI check renders [code].",
       "state_effect": "Compilation rejection: no executable IR or VM instance.",
-      "code_type": "string"
+      "code_type": "string",
+      "error_number": "1043"
     },
     {
       "layer": "source",
@@ -360,7 +404,8 @@
       "condition": "Structural compilation did not produce a program.",
       "surface": "Diagnostic.code in core, CLI JSON, LSP diagnostics, browser/server diagnostics and debug diagnostics. CLI check renders [code].",
       "state_effect": "Compilation rejection: no executable IR or VM instance.",
-      "code_type": "string"
+      "code_type": "string",
+      "error_number": "1044"
     },
     {
       "layer": "ir",
@@ -368,7 +413,8 @@
       "condition": "Executable IR format version is unsupported.",
       "surface": "IrError.code; compiler forwards the original IR code into Diagnostic.code with compiler source spans.",
       "state_effect": "IR verification fails; unchecked IR cannot execute.",
-      "code_type": "string"
+      "code_type": "string",
+      "error_number": "2000"
     },
     {
       "layer": "ir",
@@ -376,7 +422,8 @@
       "condition": "Board dimensions overflow the host address space.",
       "surface": "IrError.code; compiler forwards the original IR code into Diagnostic.code with compiler source spans.",
       "state_effect": "IR verification fails; unchecked IR cannot execute.",
-      "code_type": "string"
+      "code_type": "string",
+      "error_number": "2001"
     },
     {
       "layer": "ir",
@@ -384,7 +431,8 @@
       "condition": "Board geometry exceeds portable Full bounds.",
       "surface": "IrError.code; compiler forwards the original IR code into Diagnostic.code with compiler source spans.",
       "state_effect": "IR verification fails; unchecked IR cannot execute.",
-      "code_type": "string"
+      "code_type": "string",
+      "error_number": "2002"
     },
     {
       "layer": "ir",
@@ -392,7 +440,8 @@
       "condition": "Dimensions are zero or do not match cell count.",
       "surface": "IrError.code; compiler forwards the original IR code into Diagnostic.code with compiler source spans.",
       "state_effect": "IR verification fails; unchecked IR cannot execute.",
-      "code_type": "string"
+      "code_type": "string",
+      "error_number": "2003"
     },
     {
       "layer": "ir",
@@ -400,7 +449,8 @@
       "condition": "A Main board has no Entry.",
       "surface": "IrError.code; compiler forwards the original IR code into Diagnostic.code with compiler source spans.",
       "state_effect": "IR verification fails; unchecked IR cannot execute.",
-      "code_type": "string"
+      "code_type": "string",
+      "error_number": "2004"
     },
     {
       "layer": "ir",
@@ -408,7 +458,8 @@
       "condition": "A Function does not have exactly one Entry.",
       "surface": "IrError.code; compiler forwards the original IR code into Diagnostic.code with compiler source spans.",
       "state_effect": "IR verification fails; unchecked IR cannot execute.",
-      "code_type": "string"
+      "code_type": "string",
+      "error_number": "2005"
     },
     {
       "layer": "ir",
@@ -416,7 +467,8 @@
       "condition": "Folded Block length differs from board width.",
       "surface": "IrError.code; compiler forwards the original IR code into Diagnostic.code with compiler source spans.",
       "state_effect": "IR verification fails; unchecked IR cannot execute.",
-      "code_type": "string"
+      "code_type": "string",
+      "error_number": "2006"
     },
     {
       "layer": "ir",
@@ -424,7 +476,8 @@
       "condition": "A Folded Block contains a forbidden instruction.",
       "surface": "IrError.code; compiler forwards the original IR code into Diagnostic.code with compiler source spans.",
       "state_effect": "IR verification fails; unchecked IR cannot execute.",
-      "code_type": "string"
+      "code_type": "string",
+      "error_number": "2007"
     },
     {
       "layer": "ir",
@@ -432,7 +485,8 @@
       "condition": "An Entry shares its cell with a Primary or Attachment.",
       "surface": "IrError.code; compiler forwards the original IR code into Diagnostic.code with compiler source spans.",
       "state_effect": "IR verification fails; unchecked IR cannot execute.",
-      "code_type": "string"
+      "code_type": "string",
+      "error_number": "2008"
     },
     {
       "layer": "ir",
@@ -440,7 +494,8 @@
       "condition": "An Attachment has no Primary.",
       "surface": "IrError.code; compiler forwards the original IR code into Diagnostic.code with compiler source spans.",
       "state_effect": "IR verification fails; unchecked IR cannot execute.",
-      "code_type": "string"
+      "code_type": "string",
+      "error_number": "2009"
     },
     {
       "layer": "ir",
@@ -448,7 +503,8 @@
       "condition": "Repeat count is outside 2 through 5.",
       "surface": "IrError.code; compiler forwards the original IR code into Diagnostic.code with compiler source spans.",
       "state_effect": "IR verification fails; unchecked IR cannot execute.",
-      "code_type": "string"
+      "code_type": "string",
+      "error_number": "2010"
     },
     {
       "layer": "ir",
@@ -456,7 +512,8 @@
       "condition": "An Attachment is attached to a nonencodable Primary.",
       "surface": "IrError.code; compiler forwards the original IR code into Diagnostic.code with compiler source spans.",
       "state_effect": "IR verification fails; unchecked IR cannot execute.",
-      "code_type": "string"
+      "code_type": "string",
+      "error_number": "2011"
     },
     {
       "layer": "ir",
@@ -464,7 +521,8 @@
       "condition": "Repeat is attached to CALL or RETURN.",
       "surface": "IrError.code; compiler forwards the original IR code into Diagnostic.code with compiler source spans.",
       "state_effect": "IR verification fails; unchecked IR cannot execute.",
-      "code_type": "string"
+      "code_type": "string",
+      "error_number": "2012"
     },
     {
       "layer": "ir",
@@ -472,7 +530,8 @@
       "condition": "RETURN is outside a Function.",
       "surface": "IrError.code; compiler forwards the original IR code into Diagnostic.code with compiler source spans.",
       "state_effect": "IR verification fails; unchecked IR cannot execute.",
-      "code_type": "string"
+      "code_type": "string",
+      "error_number": "2013"
     },
     {
       "layer": "ir",
@@ -480,7 +539,8 @@
       "condition": "CUSTOM_RETURN is outside a Custom Main.",
       "surface": "IrError.code; compiler forwards the original IR code into Diagnostic.code with compiler source spans.",
       "state_effect": "IR verification fails; unchecked IR cannot execute.",
-      "code_type": "string"
+      "code_type": "string",
+      "error_number": "2014"
     },
     {
       "layer": "ir",
@@ -488,7 +548,8 @@
       "condition": "CALL references an undeclared Function in its CodeGrid.",
       "surface": "IrError.code; compiler forwards the original IR code into Diagnostic.code with compiler source spans.",
       "state_effect": "IR verification fails; unchecked IR cannot execute.",
-      "code_type": "string"
+      "code_type": "string",
+      "error_number": "2015"
     },
     {
       "layer": "ir",
@@ -496,7 +557,8 @@
       "condition": "A Folded Block reference is absent from its owner board.",
       "surface": "IrError.code; compiler forwards the original IR code into Diagnostic.code with compiler source spans.",
       "state_effect": "IR verification fails; unchecked IR cannot execute.",
-      "code_type": "string"
+      "code_type": "string",
+      "error_number": "2016"
     },
     {
       "layer": "ir",
@@ -504,7 +566,8 @@
       "condition": "A Custom reference is absent or the call context forbids Custom calls.",
       "surface": "IrError.code; compiler forwards the original IR code into Diagnostic.code with compiler source spans.",
       "state_effect": "IR verification fails; unchecked IR cannot execute.",
-      "code_type": "string"
+      "code_type": "string",
+      "error_number": "2017"
     },
     {
       "layer": "vm",
@@ -513,7 +576,8 @@
       "surface": "RuntimeError.code, CLI/WASM snapshot.errors and step results. DAP displays the same codes.",
       "state_effect": "Entire failing outer tick rolls back; committed events/output are empty; attempted metrics follow the VM specification.",
       "details": "internal_thread_ids",
-      "code_type": "string"
+      "code_type": "string",
+      "error_number": "3000"
     },
     {
       "layer": "vm",
@@ -522,7 +586,8 @@
       "surface": "RuntimeError.code, CLI/WASM snapshot.errors and step results. DAP displays the same codes.",
       "state_effect": "Entire failing outer tick rolls back; committed events/output are empty; attempted metrics follow the VM specification.",
       "details": "internal_thread_ids",
-      "code_type": "string"
+      "code_type": "string",
+      "error_number": "3001"
     },
     {
       "layer": "vm",
@@ -531,7 +596,8 @@
       "surface": "RuntimeError.code, CLI/WASM snapshot.errors and step results. DAP displays the same codes.",
       "state_effect": "Entire failing outer tick rolls back; committed events/output are empty; attempted metrics follow the VM specification.",
       "details": "internal_thread_ids",
-      "code_type": "string"
+      "code_type": "string",
+      "error_number": "3002"
     },
     {
       "layer": "vm",
@@ -540,7 +606,8 @@
       "surface": "RuntimeError.code, CLI/WASM snapshot.errors and step results. DAP displays the same codes.",
       "state_effect": "Entire failing outer tick rolls back; committed events/output are empty; attempted metrics follow the VM specification.",
       "details": "cell, thread_ids",
-      "code_type": "string"
+      "code_type": "string",
+      "error_number": "3003"
     },
     {
       "layer": "vm",
@@ -549,7 +616,8 @@
       "surface": "RuntimeError.code, CLI/WASM snapshot.errors and step results. DAP displays the same codes.",
       "state_effect": "Entire failing outer tick rolls back; committed events/output are empty; attempted metrics follow the VM specification.",
       "details": "thread_ids",
-      "code_type": "string"
+      "code_type": "string",
+      "error_number": "3004"
     },
     {
       "layer": "vm",
@@ -558,7 +626,8 @@
       "surface": "RuntimeError.code, CLI/WASM snapshot.errors and step results. DAP displays the same codes.",
       "state_effect": "Entire failing outer tick rolls back; committed events/output are empty; attempted metrics follow the VM specification.",
       "details": "address, thread_ids",
-      "code_type": "string"
+      "code_type": "string",
+      "error_number": "3005"
     },
     {
       "layer": "vm",
@@ -567,7 +636,8 @@
       "surface": "RuntimeError.code, CLI/WASM snapshot.errors and step results. DAP displays the same codes.",
       "state_effect": "Entire failing outer tick rolls back; committed events/output are empty; attempted metrics follow the VM specification.",
       "details": "thread_ids",
-      "code_type": "string"
+      "code_type": "string",
+      "error_number": "3006"
     },
     {
       "layer": "vm",
@@ -576,7 +646,8 @@
       "surface": "RuntimeError.code, CLI/WASM snapshot.errors and step results. DAP displays the same codes.",
       "state_effect": "Entire failing outer tick rolls back; committed events/output are empty; attempted metrics follow the VM specification.",
       "details": "register, thread_ids",
-      "code_type": "string"
+      "code_type": "string",
+      "error_number": "3007"
     },
     {
       "layer": "vm",
@@ -585,7 +656,8 @@
       "surface": "RuntimeError.code, CLI/WASM snapshot.errors and step results. DAP displays the same codes.",
       "state_effect": "Entire failing outer tick rolls back; committed events/output are empty; attempted metrics follow the VM specification.",
       "details": "limit",
-      "code_type": "string"
+      "code_type": "string",
+      "error_number": "3008"
     },
     {
       "layer": "vm",
@@ -594,7 +666,8 @@
       "surface": "RuntimeError.code, CLI/WASM snapshot.errors and step results. DAP displays the same codes.",
       "state_effect": "Entire failing outer tick rolls back; committed events/output are empty; attempted metrics follow the VM specification.",
       "details": "thread_id, board, position, direction",
-      "code_type": "string"
+      "code_type": "string",
+      "error_number": "3009"
     },
     {
       "layer": "vm",
@@ -603,7 +676,8 @@
       "surface": "RuntimeError.code, CLI/WASM snapshot.errors and step results. DAP displays the same codes.",
       "state_effect": "Entire failing outer tick rolls back; committed events/output are empty; attempted metrics follow the VM specification.",
       "details": "thread_id, board, position",
-      "code_type": "string"
+      "code_type": "string",
+      "error_number": "3010"
     },
     {
       "layer": "fault",
@@ -611,7 +685,8 @@
       "condition": "A normative metric counter cannot represent the attempted increment.",
       "surface": "snapshot.fault.kind; metric_counter_overflow also includes counter.",
       "state_effect": "VM fault; retain the VM-defined terminal state and report a distinct fault, never a normal halt.",
-      "code_type": "string"
+      "code_type": "string",
+      "error_number": "3100"
     },
     {
       "layer": "fault",
@@ -619,7 +694,8 @@
       "condition": "The Global Tick counter cannot represent another tick.",
       "surface": "snapshot.fault.kind; metric_counter_overflow also includes counter.",
       "state_effect": "VM fault; retain the VM-defined terminal state and report a distinct fault, never a normal halt.",
-      "code_type": "string"
+      "code_type": "string",
+      "error_number": "3101"
     },
     {
       "layer": "fault",
@@ -627,7 +703,8 @@
       "condition": "A VM internal invariant fails.",
       "surface": "snapshot.fault.kind; metric_counter_overflow also includes counter.",
       "state_effect": "VM fault; retain the VM-defined terminal state and report a distinct fault, never a normal halt.",
-      "code_type": "string"
+      "code_type": "string",
+      "error_number": "3102"
     },
     {
       "layer": "api",
@@ -635,7 +712,8 @@
       "condition": "Request API version differs from 3.",
       "surface": "ApiError.code(); browser API error.code. Server aliases are listed separately.",
       "state_effect": "Rejected requests do not advance the VM; a work-limited step rolls back its interrupted tick.",
-      "code_type": "string"
+      "code_type": "string",
+      "error_number": "4000"
     },
     {
       "layer": "api",
@@ -643,7 +721,8 @@
       "condition": "Source UTF-8 bytes exceed the configured maximum.",
       "surface": "ApiError.code(); browser API error.code. Server aliases are listed separately.",
       "state_effect": "Rejected requests do not advance the VM; a work-limited step rolls back its interrupted tick.",
-      "code_type": "string"
+      "code_type": "string",
+      "error_number": "4001"
     },
     {
       "layer": "api",
@@ -651,7 +730,8 @@
       "condition": "The runtime compiled-program registry is full.",
       "surface": "ApiError.code(); browser API error.code. Server aliases are listed separately.",
       "state_effect": "Rejected requests do not advance the VM; a work-limited step rolls back its interrupted tick.",
-      "code_type": "string"
+      "code_type": "string",
+      "error_number": "4002"
     },
     {
       "layer": "api",
@@ -659,7 +739,8 @@
       "condition": "The runtime instance registry is full.",
       "surface": "ApiError.code(); browser API error.code. Server aliases are listed separately.",
       "state_effect": "Rejected requests do not advance the VM; a work-limited step rolls back its interrupted tick.",
-      "code_type": "string"
+      "code_type": "string",
+      "error_number": "4003"
     },
     {
       "layer": "api",
@@ -667,7 +748,8 @@
       "condition": "Input length exceeds the configured byte maximum.",
       "surface": "ApiError.code(); browser API error.code. Server aliases are listed separately.",
       "state_effect": "Rejected requests do not advance the VM; a work-limited step rolls back its interrupted tick.",
-      "code_type": "string"
+      "code_type": "string",
+      "error_number": "4004"
     },
     {
       "layer": "api",
@@ -675,7 +757,8 @@
       "condition": "Initial-memory entry count exceeds its maximum.",
       "surface": "ApiError.code(); browser API error.code. Server aliases are listed separately.",
       "state_effect": "Rejected requests do not advance the VM; a work-limited step rolls back its interrupted tick.",
-      "code_type": "string"
+      "code_type": "string",
+      "error_number": "4005"
     },
     {
       "layer": "api",
@@ -683,7 +766,8 @@
       "condition": "Initial memory contains duplicate addresses.",
       "surface": "ApiError.code(); browser API error.code. Server aliases are listed separately.",
       "state_effect": "Rejected requests do not advance the VM; a work-limited step rolls back its interrupted tick.",
-      "code_type": "string"
+      "code_type": "string",
+      "error_number": "4006"
     },
     {
       "layer": "api",
@@ -691,7 +775,8 @@
       "condition": "An execution setting is invalid; details identify the field.",
       "surface": "ApiError.code(); browser API error.code. Server aliases are listed separately.",
       "state_effect": "Rejected requests do not advance the VM; a work-limited step rolls back its interrupted tick.",
-      "code_type": "string"
+      "code_type": "string",
+      "error_number": "4007"
     },
     {
       "layer": "api",
@@ -699,7 +784,8 @@
       "condition": "Program handle is unknown, released, foreign or otherwise unavailable.",
       "surface": "ApiError.code(); browser API error.code. Server aliases are listed separately.",
       "state_effect": "Rejected requests do not advance the VM; a work-limited step rolls back its interrupted tick.",
-      "code_type": "string"
+      "code_type": "string",
+      "error_number": "4008"
     },
     {
       "layer": "api",
@@ -707,7 +793,8 @@
       "condition": "Instance handle is unknown, released, foreign or otherwise unavailable.",
       "surface": "ApiError.code(); browser API error.code. Server aliases are listed separately.",
       "state_effect": "Rejected requests do not advance the VM; a work-limited step rolls back its interrupted tick.",
-      "code_type": "string"
+      "code_type": "string",
+      "error_number": "4009"
     },
     {
       "layer": "api",
@@ -715,7 +802,8 @@
       "condition": "A bounded run requests zero ticks.",
       "surface": "ApiError.code(); browser API error.code. Server aliases are listed separately.",
       "state_effect": "Rejected requests do not advance the VM; a work-limited step rolls back its interrupted tick.",
-      "code_type": "string"
+      "code_type": "string",
+      "error_number": "4010"
     },
     {
       "layer": "api",
@@ -723,7 +811,8 @@
       "condition": "The requested per-call tick budget exceeds the host maximum.",
       "surface": "ApiError.code(); browser API error.code. Server aliases are listed separately.",
       "state_effect": "Rejected requests do not advance the VM; a work-limited step rolls back its interrupted tick.",
-      "code_type": "string"
+      "code_type": "string",
+      "error_number": "4011"
     },
     {
       "layer": "api",
@@ -731,7 +820,8 @@
       "condition": "The requested run exceeds the instance remaining total tick budget.",
       "surface": "ApiError.code(); browser API error.code. Server aliases are listed separately.",
       "state_effect": "Rejected requests do not advance the VM; a work-limited step rolls back its interrupted tick.",
-      "code_type": "string"
+      "code_type": "string",
+      "error_number": "4012"
     },
     {
       "layer": "api",
@@ -739,7 +829,8 @@
       "condition": "A step needs more dispatches than the per-call deterministic work ceiling.",
       "surface": "ApiError.code(); browser API error.code. Server aliases are listed separately.",
       "state_effect": "Rejected requests do not advance the VM; a work-limited step rolls back its interrupted tick.",
-      "code_type": "string"
+      "code_type": "string",
+      "error_number": "4013"
     },
     {
       "layer": "api",
@@ -747,7 +838,8 @@
       "condition": "No new opaque handle can be allocated.",
       "surface": "ApiError.code(); browser API error.code. Server aliases are listed separately.",
       "state_effect": "Rejected requests do not advance the VM; a work-limited step rolls back its interrupted tick.",
-      "code_type": "string"
+      "code_type": "string",
+      "error_number": "4014"
     },
     {
       "layer": "api",
@@ -755,7 +847,8 @@
       "condition": "VM initialization fails; reason identifies InitialThreadIdOverflow.",
       "surface": "ApiError.code(); browser API error.code. Server aliases are listed separately.",
       "state_effect": "Rejected requests do not advance the VM; a work-limited step rolls back its interrupted tick.",
-      "code_type": "string"
+      "code_type": "string",
+      "error_number": "4015"
     },
     {
       "layer": "cli",
@@ -763,7 +856,8 @@
       "condition": "Subcommand, option, option multiplicity, required argument, canonical numeric value or direct byte list is invalid.",
       "surface": "Native stderr: error: [code] message. Source diagnostic messages have their own source/IR code.",
       "state_effect": "Exit categories remain stable; host failures do not produce a run-result JSON.",
-      "code_type": "string"
+      "code_type": "string",
+      "error_number": "5000"
     },
     {
       "layer": "cli",
@@ -771,7 +865,8 @@
       "condition": "Source cannot be read as UTF-8, including unavailable files and invalid UTF-8.",
       "surface": "Native stderr: error: [code] message. Source diagnostic messages have their own source/IR code.",
       "state_effect": "Exit categories remain stable; host failures do not produce a run-result JSON.",
-      "code_type": "string"
+      "code_type": "string",
+      "error_number": "5001"
     },
     {
       "layer": "cli",
@@ -779,7 +874,8 @@
       "condition": "Input JSON file cannot be read.",
       "surface": "Native stderr: error: [code] message. Source diagnostic messages have their own source/IR code.",
       "state_effect": "Exit categories remain stable; host failures do not produce a run-result JSON.",
-      "code_type": "string"
+      "code_type": "string",
+      "error_number": "5002"
     },
     {
       "layer": "cli",
@@ -787,7 +883,8 @@
       "condition": "Input file does not decode as one valid JSON byte array.",
       "surface": "Native stderr: error: [code] message. Source diagnostic messages have their own source/IR code.",
       "state_effect": "Exit categories remain stable; host failures do not produce a run-result JSON.",
-      "code_type": "string"
+      "code_type": "string",
+      "error_number": "5003"
     },
     {
       "layer": "cli",
@@ -795,7 +892,8 @@
       "condition": "Decoded input fails host byte validation.",
       "surface": "Native stderr: error: [code] message. Source diagnostic messages have their own source/IR code.",
       "state_effect": "Exit categories remain stable; host failures do not produce a run-result JSON.",
-      "code_type": "string"
+      "code_type": "string",
+      "error_number": "5004"
     },
     {
       "layer": "cli",
@@ -803,7 +901,8 @@
       "condition": "Initial-memory file cannot be read.",
       "surface": "Native stderr: error: [code] message. Source diagnostic messages have their own source/IR code.",
       "state_effect": "Exit categories remain stable; host failures do not produce a run-result JSON.",
-      "code_type": "string"
+      "code_type": "string",
+      "error_number": "5005"
     },
     {
       "layer": "cli",
@@ -811,7 +910,8 @@
       "condition": "Initial-memory file does not decode as a valid JSON memory array.",
       "surface": "Native stderr: error: [code] message. Source diagnostic messages have their own source/IR code.",
       "state_effect": "Exit categories remain stable; host failures do not produce a run-result JSON.",
-      "code_type": "string"
+      "code_type": "string",
+      "error_number": "5006"
     },
     {
       "layer": "cli",
@@ -819,7 +919,8 @@
       "condition": "Initial-memory addresses or entries fail validation, including duplicates.",
       "surface": "Native stderr: error: [code] message. Source diagnostic messages have their own source/IR code.",
       "state_effect": "Exit categories remain stable; host failures do not produce a run-result JSON.",
-      "code_type": "string"
+      "code_type": "string",
+      "error_number": "5007"
     },
     {
       "layer": "cli",
@@ -827,7 +928,8 @@
       "condition": "A native run-result JSON cannot be serialized.",
       "surface": "Native stderr: error: [code] message. Source diagnostic messages have their own source/IR code.",
       "state_effect": "Exit categories remain stable; host failures do not produce a run-result JSON.",
-      "code_type": "string"
+      "code_type": "string",
+      "error_number": "5008"
     },
     {
       "layer": "cli",
@@ -835,7 +937,8 @@
       "condition": "Verified program cannot initialize its VM.",
       "surface": "Native stderr: error: [code] message. Source diagnostic messages have their own source/IR code.",
       "state_effect": "Exit categories remain stable; host failures do not produce a run-result JSON.",
-      "code_type": "string"
+      "code_type": "string",
+      "error_number": "5009"
     },
     {
       "layer": "cli",
@@ -843,7 +946,8 @@
       "condition": "The internal run boundary rejects a zero tick limit.",
       "surface": "Native stderr: error: [code] message. Source diagnostic messages have their own source/IR code.",
       "state_effect": "Exit categories remain stable; host failures do not produce a run-result JSON.",
-      "code_type": "string"
+      "code_type": "string",
+      "error_number": "5010"
     },
     {
       "layer": "debug",
@@ -851,7 +955,8 @@
       "condition": "JSON-lines request is malformed, has unknown fields, has wrong field types, or names an unsupported command.",
       "surface": "Debug protocol 2: error.code and error.message; transport I/O failures use coded stderr when stdout is unavailable.",
       "state_effect": "State unchanged on invalid requests; work-limit rollback uses the same VM transition; request-size failure terminates the process.",
-      "code_type": "string"
+      "code_type": "string",
+      "error_number": "5100"
     },
     {
       "layer": "debug",
@@ -859,7 +964,8 @@
       "condition": "Seed/limit/boundary configuration is invalid or exceeds u64.",
       "surface": "Debug protocol 2: error.code and error.message; transport I/O failures use coded stderr when stdout is unavailable.",
       "state_effect": "State unchanged on invalid requests; work-limit rollback uses the same VM transition; request-size failure terminates the process.",
-      "code_type": "string"
+      "code_type": "string",
+      "error_number": "5101"
     },
     {
       "layer": "debug",
@@ -867,7 +973,8 @@
       "condition": "A session receives another launch after a successful launch.",
       "surface": "Debug protocol 2: error.code and error.message; transport I/O failures use coded stderr when stdout is unavailable.",
       "state_effect": "State unchanged on invalid requests; work-limit rollback uses the same VM transition; request-size failure terminates the process.",
-      "code_type": "string"
+      "code_type": "string",
+      "error_number": "5102"
     },
     {
       "layer": "debug",
@@ -875,7 +982,8 @@
       "condition": "Step or snapshot occurs before successful launch.",
       "surface": "Debug protocol 2: error.code and error.message; transport I/O failures use coded stderr when stdout is unavailable.",
       "state_effect": "State unchanged on invalid requests; work-limit rollback uses the same VM transition; request-size failure terminates the process.",
-      "code_type": "string"
+      "code_type": "string",
+      "error_number": "5103"
     },
     {
       "layer": "debug",
@@ -883,7 +991,8 @@
       "condition": "The compiled program cannot initialize its VM.",
       "surface": "Debug protocol 2: error.code and error.message; transport I/O failures use coded stderr when stdout is unavailable.",
       "state_effect": "State unchanged on invalid requests; work-limit rollback uses the same VM transition; request-size failure terminates the process.",
-      "code_type": "string"
+      "code_type": "string",
+      "error_number": "5104"
     },
     {
       "layer": "debug",
@@ -891,7 +1000,8 @@
       "condition": "The committed Global Tick count has reached the session maximum before another dispatch.",
       "surface": "Debug protocol 2: error.code and error.message; transport I/O failures use coded stderr when stdout is unavailable.",
       "state_effect": "State unchanged on invalid requests; work-limit rollback uses the same VM transition; request-size failure terminates the process.",
-      "code_type": "string"
+      "code_type": "string",
+      "error_number": "5105"
     },
     {
       "layer": "debug",
@@ -899,7 +1009,8 @@
       "condition": "An atomic Global Tick exceeds its dispatch ceiling and rolls back.",
       "surface": "Debug protocol 2: error.code and error.message; transport I/O failures use coded stderr when stdout is unavailable.",
       "state_effect": "State unchanged on invalid requests; work-limit rollback uses the same VM transition; request-size failure terminates the process.",
-      "code_type": "string"
+      "code_type": "string",
+      "error_number": "5106"
     },
     {
       "layer": "debug",
@@ -907,7 +1018,8 @@
       "condition": "A request line exceeds 4 MiB including its line ending.",
       "surface": "Debug protocol 2: error.code and error.message; transport I/O failures use coded stderr when stdout is unavailable.",
       "state_effect": "State unchanged on invalid requests; work-limit rollback uses the same VM transition; request-size failure terminates the process.",
-      "code_type": "string"
+      "code_type": "string",
+      "error_number": "5107"
     },
     {
       "layer": "debug",
@@ -915,7 +1027,8 @@
       "condition": "The process cannot read a request or write a response.",
       "surface": "Debug protocol 2: error.code and error.message; transport I/O failures use coded stderr when stdout is unavailable.",
       "state_effect": "State unchanged on invalid requests; work-limit rollback uses the same VM transition; request-size failure terminates the process.",
-      "code_type": "string"
+      "code_type": "string",
+      "error_number": "5108"
     },
     {
       "layer": "editor",
@@ -923,7 +1036,8 @@
       "condition": "An otherwise unclassified editor operation fails, including document access or platform exceptions.",
       "surface": "DAP failed response.message is the code; body.error.variables.code is the same code (DAP id 1000 is a generic presentation ID). Stopped host failures include body.code. UI-only errors render [code].",
       "state_effect": "Editor/transport rejection; never substitute these categories for a native source or VM error.",
-      "code_type": "string"
+      "code_type": "string",
+      "error_number": "6000"
     },
     {
       "layer": "editor",
@@ -931,7 +1045,8 @@
       "condition": "Native debug protocol version is not 2.",
       "surface": "DAP failed response.message is the code; body.error.variables.code is the same code (DAP id 1000 is a generic presentation ID). Stopped host failures include body.code. UI-only errors render [code].",
       "state_effect": "Editor/transport rejection; never substitute these categories for a native source or VM error.",
-      "code_type": "string"
+      "code_type": "string",
+      "error_number": "6001"
     },
     {
       "layer": "editor",
@@ -939,7 +1054,8 @@
       "condition": "Native response is malformed JSON or has an invalid structured error.",
       "surface": "DAP failed response.message is the code; body.error.variables.code is the same code (DAP id 1000 is a generic presentation ID). Stopped host failures include body.code. UI-only errors render [code].",
       "state_effect": "Editor/transport rejection; never substitute these categories for a native source or VM error.",
-      "code_type": "string"
+      "code_type": "string",
+      "error_number": "6002"
     },
     {
       "layer": "editor",
@@ -947,7 +1063,8 @@
       "condition": "The executable cannot be spawned.",
       "surface": "DAP failed response.message is the code; body.error.variables.code is the same code (DAP id 1000 is a generic presentation ID). Stopped host failures include body.code. UI-only errors render [code].",
       "state_effect": "Editor/transport rejection; never substitute these categories for a native source or VM error.",
-      "code_type": "string"
+      "code_type": "string",
+      "error_number": "6003"
     },
     {
       "layer": "editor",
@@ -955,7 +1072,8 @@
       "condition": "The runtime process exits while an operation is pending.",
       "surface": "DAP failed response.message is the code; body.error.variables.code is the same code (DAP id 1000 is a generic presentation ID). Stopped host failures include body.code. UI-only errors render [code].",
       "state_effect": "Editor/transport rejection; never substitute these categories for a native source or VM error.",
-      "code_type": "string"
+      "code_type": "string",
+      "error_number": "6004"
     },
     {
       "layer": "editor",
@@ -963,7 +1081,8 @@
       "condition": "Native process pipe read/write fails.",
       "surface": "DAP failed response.message is the code; body.error.variables.code is the same code (DAP id 1000 is a generic presentation ID). Stopped host failures include body.code. UI-only errors render [code].",
       "state_effect": "Editor/transport rejection; never substitute these categories for a native source or VM error.",
-      "code_type": "string"
+      "code_type": "string",
+      "error_number": "6005"
     },
     {
       "layer": "editor",
@@ -971,7 +1090,8 @@
       "condition": "A pending request is cancelled when the session is disposed.",
       "surface": "DAP failed response.message is the code; body.error.variables.code is the same code (DAP id 1000 is a generic presentation ID). Stopped host failures include body.code. UI-only errors render [code].",
       "state_effect": "Editor/transport rejection; never substitute these categories for a native source or VM error.",
-      "code_type": "string"
+      "code_type": "string",
+      "error_number": "6006"
     },
     {
       "layer": "editor",
@@ -979,7 +1099,8 @@
       "condition": "Watch/evaluate expression is not a read-only state path.",
       "surface": "DAP failed response.message is the code; body.error.variables.code is the same code (DAP id 1000 is a generic presentation ID). Stopped host failures include body.code. UI-only errors render [code].",
       "state_effect": "Editor/transport rejection; never substitute these categories for a native source or VM error.",
-      "code_type": "string"
+      "code_type": "string",
+      "error_number": "6007"
     },
     {
       "layer": "editor",
@@ -987,7 +1108,8 @@
       "condition": "A requested read-only property/index does not exist.",
       "surface": "DAP failed response.message is the code; body.error.variables.code is the same code (DAP id 1000 is a generic presentation ID). Stopped host failures include body.code. UI-only errors render [code].",
       "state_effect": "Editor/transport rejection; never substitute these categories for a native source or VM error.",
-      "code_type": "string"
+      "code_type": "string",
+      "error_number": "6008"
     },
     {
       "layer": "editor",
@@ -995,7 +1117,8 @@
       "condition": "Step Out is requested without a selected caller frame.",
       "surface": "DAP failed response.message is the code; body.error.variables.code is the same code (DAP id 1000 is a generic presentation ID). Stopped host failures include body.code. UI-only errors render [code].",
       "state_effect": "Editor/transport rejection; never substitute these categories for a native source or VM error.",
-      "code_type": "string"
+      "code_type": "string",
+      "error_number": "6009"
     },
     {
       "layer": "editor",
@@ -1003,7 +1126,8 @@
       "condition": "The DAP request is not supported.",
       "surface": "DAP failed response.message is the code; body.error.variables.code is the same code (DAP id 1000 is a generic presentation ID). Stopped host failures include body.code. UI-only errors render [code].",
       "state_effect": "Editor/transport rejection; never substitute these categories for a native source or VM error.",
-      "code_type": "string"
+      "code_type": "string",
+      "error_number": "6010"
     },
     {
       "layer": "editor",
@@ -1011,7 +1135,8 @@
       "condition": "Run/debug is attempted in an untrusted workspace.",
       "surface": "DAP failed response.message is the code; body.error.variables.code is the same code (DAP id 1000 is a generic presentation ID). Stopped host failures include body.code. UI-only errors render [code].",
       "state_effect": "Editor/transport rejection; never substitute these categories for a native source or VM error.",
-      "code_type": "string"
+      "code_type": "string",
+      "error_number": "6011"
     },
     {
       "layer": "editor",
@@ -1019,7 +1144,8 @@
       "condition": "Launch does not provide a nonempty source-file path.",
       "surface": "DAP failed response.message is the code; body.error.variables.code is the same code (DAP id 1000 is a generic presentation ID). Stopped host failures include body.code. UI-only errors render [code].",
       "state_effect": "Editor/transport rejection; never substitute these categories for a native source or VM error.",
-      "code_type": "string"
+      "code_type": "string",
+      "error_number": "6012"
     },
     {
       "layer": "editor",
@@ -1027,7 +1153,8 @@
       "condition": "Input is not an array of byte integers in 0 through 255.",
       "surface": "DAP failed response.message is the code; body.error.variables.code is the same code (DAP id 1000 is a generic presentation ID). Stopped host failures include body.code. UI-only errors render [code].",
       "state_effect": "Editor/transport rejection; never substitute these categories for a native source or VM error.",
-      "code_type": "string"
+      "code_type": "string",
+      "error_number": "6013"
     },
     {
       "layer": "editor",
@@ -1035,7 +1162,8 @@
       "condition": "Compilation rejected the source; individual diagnostics retain their source/IR codes.",
       "surface": "DAP failed response.message is the code; body.error.variables.code is the same code (DAP id 1000 is a generic presentation ID). Stopped host failures include body.code. UI-only errors render [code].",
       "state_effect": "Editor/transport rejection; never substitute these categories for a native source or VM error.",
-      "code_type": "string"
+      "code_type": "string",
+      "error_number": "6014"
     },
     {
       "layer": "editor",
@@ -1043,7 +1171,8 @@
       "condition": "Stepping or continuing has no active native runtime.",
       "surface": "DAP failed response.message is the code; body.error.variables.code is the same code (DAP id 1000 is a generic presentation ID). Stopped host failures include body.code. UI-only errors render [code].",
       "state_effect": "Editor/transport rejection; never substitute these categories for a native source or VM error.",
-      "code_type": "string"
+      "code_type": "string",
+      "error_number": "6015"
     },
     {
       "layer": "editor",
@@ -1051,7 +1180,8 @@
       "condition": "A step/continue request occurs while the session is already running.",
       "surface": "DAP failed response.message is the code; body.error.variables.code is the same code (DAP id 1000 is a generic presentation ID). Stopped host failures include body.code. UI-only errors render [code].",
       "state_effect": "Editor/transport rejection; never substitute these categories for a native source or VM error.",
-      "code_type": "string"
+      "code_type": "string",
+      "error_number": "6016"
     },
     {
       "layer": "editor",
@@ -1059,7 +1189,8 @@
       "condition": "Execution is requested after VM halt/error.",
       "surface": "DAP failed response.message is the code; body.error.variables.code is the same code (DAP id 1000 is a generic presentation ID). Stopped host failures include body.code. UI-only errors render [code].",
       "state_effect": "Editor/transport rejection; never substitute these categories for a native source or VM error.",
-      "code_type": "string"
+      "code_type": "string",
+      "error_number": "6017"
     },
     {
       "layer": "editor",
@@ -1067,7 +1198,8 @@
       "condition": "Run/Debug command has no current .cg document.",
       "surface": "DAP failed response.message is the code; body.error.variables.code is the same code (DAP id 1000 is a generic presentation ID). Stopped host failures include body.code. UI-only errors render [code].",
       "state_effect": "Editor/transport rejection; never substitute these categories for a native source or VM error.",
-      "code_type": "string"
+      "code_type": "string",
+      "error_number": "6018"
     },
     {
       "layer": "editor",
@@ -1075,7 +1207,8 @@
       "condition": "The configured language-server executable path is empty.",
       "surface": "DAP failed response.message is the code; body.error.variables.code is the same code (DAP id 1000 is a generic presentation ID). Stopped host failures include body.code. UI-only errors render [code].",
       "state_effect": "Editor/transport rejection; never substitute these categories for a native source or VM error.",
-      "code_type": "string"
+      "code_type": "string",
+      "error_number": "6019"
     },
     {
       "layer": "editor",
@@ -1083,7 +1216,8 @@
       "condition": "The optional language server fails to start.",
       "surface": "DAP failed response.message is the code; body.error.variables.code is the same code (DAP id 1000 is a generic presentation ID). Stopped host failures include body.code. UI-only errors render [code].",
       "state_effect": "Editor/transport rejection; never substitute these categories for a native source or VM error.",
-      "code_type": "string"
+      "code_type": "string",
+      "error_number": "6020"
     },
     {
       "layer": "editor",
@@ -1091,7 +1225,8 @@
       "condition": "New-file command receives an unknown template identifier.",
       "surface": "DAP failed response.message is the code; body.error.variables.code is the same code (DAP id 1000 is a generic presentation ID). Stopped host failures include body.code. UI-only errors render [code].",
       "state_effect": "Editor/transport rejection; never substitute these categories for a native source or VM error.",
-      "code_type": "string"
+      "code_type": "string",
+      "error_number": "6021"
     },
     {
       "layer": "browser",
@@ -1099,7 +1234,8 @@
       "condition": "Source payload is not a JavaScript string.",
       "surface": "Browser adapter error.code (API v3). Runtime API errors also use the API table.",
       "state_effect": "Pre-copy validation failures do not dispatch; oversized retained-state instances are released; response limits produce complete structured errors.",
-      "code_type": "string"
+      "code_type": "string",
+      "error_number": "7000"
     },
     {
       "layer": "browser",
@@ -1107,7 +1243,8 @@
       "condition": "Input is not a Uint8Array.",
       "surface": "Browser adapter error.code (API v3). Runtime API errors also use the API table.",
       "state_effect": "Pre-copy validation failures do not dispatch; oversized retained-state instances are released; response limits produce complete structured errors.",
-      "code_type": "string"
+      "code_type": "string",
+      "error_number": "7001"
     },
     {
       "layer": "browser",
@@ -1115,7 +1252,8 @@
       "condition": "Input buffer cannot be reserved before copying.",
       "surface": "Browser adapter error.code (API v3). Runtime API errors also use the API table.",
       "state_effect": "Pre-copy validation failures do not dispatch; oversized retained-state instances are released; response limits produce complete structured errors.",
-      "code_type": "string"
+      "code_type": "string",
+      "error_number": "7002"
     },
     {
       "layer": "browser",
@@ -1123,7 +1261,8 @@
       "condition": "A request buffer cannot be reserved.",
       "surface": "Browser adapter error.code (API v3). Runtime API errors also use the API table.",
       "state_effect": "Pre-copy validation failures do not dispatch; oversized retained-state instances are released; response limits produce complete structured errors.",
-      "code_type": "string"
+      "code_type": "string",
+      "error_number": "7003"
     },
     {
       "layer": "browser",
@@ -1131,7 +1270,8 @@
       "condition": "Source UTF-8 bytes exceed the adapter payload ceiling.",
       "surface": "Browser adapter error.code (API v3). Runtime API errors also use the API table.",
       "state_effect": "Pre-copy validation failures do not dispatch; oversized retained-state instances are released; response limits produce complete structured errors.",
-      "code_type": "string"
+      "code_type": "string",
+      "error_number": "7004"
     },
     {
       "layer": "browser",
@@ -1139,7 +1279,8 @@
       "condition": "Input bytes exceed the adapter payload ceiling.",
       "surface": "Browser adapter error.code (API v3). Runtime API errors also use the API table.",
       "state_effect": "Pre-copy validation failures do not dispatch; oversized retained-state instances are released; response limits produce complete structured errors.",
-      "code_type": "string"
+      "code_type": "string",
+      "error_number": "7005"
     },
     {
       "layer": "browser",
@@ -1147,7 +1288,8 @@
       "condition": "Request JSON/strings or combined request bytes exceed the adapter ceiling.",
       "surface": "Browser adapter error.code (API v3). Runtime API errors also use the API table.",
       "state_effect": "Pre-copy validation failures do not dispatch; oversized retained-state instances are released; response limits produce complete structured errors.",
-      "code_type": "string"
+      "code_type": "string",
+      "error_number": "7006"
     },
     {
       "layer": "browser",
@@ -1155,7 +1297,8 @@
       "condition": "A required request field has the wrong JavaScript type.",
       "surface": "Browser adapter error.code (API v3). Runtime API errors also use the API table.",
       "state_effect": "Pre-copy validation failures do not dispatch; oversized retained-state instances are released; response limits produce complete structured errors.",
-      "code_type": "string"
+      "code_type": "string",
+      "error_number": "7007"
     },
     {
       "layer": "browser",
@@ -1163,7 +1306,8 @@
       "condition": "Program handle spelling is not a canonical nonzero u64 decimal string.",
       "surface": "Browser adapter error.code (API v3). Runtime API errors also use the API table.",
       "state_effect": "Pre-copy validation failures do not dispatch; oversized retained-state instances are released; response limits produce complete structured errors.",
-      "code_type": "string"
+      "code_type": "string",
+      "error_number": "7008"
     },
     {
       "layer": "browser",
@@ -1171,7 +1315,8 @@
       "condition": "Initial-memory JSON has an invalid shape or invalid entry.",
       "surface": "Browser adapter error.code (API v3). Runtime API errors also use the API table.",
       "state_effect": "Pre-copy validation failures do not dispatch; oversized retained-state instances are released; response limits produce complete structured errors.",
-      "code_type": "string"
+      "code_type": "string",
+      "error_number": "7009"
     },
     {
       "layer": "browser",
@@ -1179,7 +1324,8 @@
       "condition": "Configuration is invalid under the runtime contract.",
       "surface": "Browser adapter error.code (API v3). Runtime API errors also use the API table.",
       "state_effect": "Pre-copy validation failures do not dispatch; oversized retained-state instances are released; response limits produce complete structured errors.",
-      "code_type": "string"
+      "code_type": "string",
+      "error_number": "7010"
     },
     {
       "layer": "browser",
@@ -1187,7 +1333,8 @@
       "condition": "A request value cannot be accepted by the binding.",
       "surface": "Browser adapter error.code (API v3). Runtime API errors also use the API table.",
       "state_effect": "Pre-copy validation failures do not dispatch; oversized retained-state instances are released; response limits produce complete structured errors.",
-      "code_type": "string"
+      "code_type": "string",
+      "error_number": "7011"
     },
     {
       "layer": "browser",
@@ -1195,7 +1342,8 @@
       "condition": "Configuration JSON has an invalid shape or required fields.",
       "surface": "Browser adapter error.code (API v3). Runtime API errors also use the API table.",
       "state_effect": "Pre-copy validation failures do not dispatch; oversized retained-state instances are released; response limits produce complete structured errors.",
-      "code_type": "string"
+      "code_type": "string",
+      "error_number": "7012"
     },
     {
       "layer": "browser",
@@ -1203,7 +1351,8 @@
       "condition": "Instance handle spelling is not a canonical nonzero u64 decimal string.",
       "surface": "Browser adapter error.code (API v3). Runtime API errors also use the API table.",
       "state_effect": "Pre-copy validation failures do not dispatch; oversized retained-state instances are released; response limits produce complete structured errors.",
-      "code_type": "string"
+      "code_type": "string",
+      "error_number": "7013"
     },
     {
       "layer": "browser",
@@ -1211,7 +1360,8 @@
       "condition": "Requested tick budget is not a positive canonical u64 decimal string.",
       "surface": "Browser adapter error.code (API v3). Runtime API errors also use the API table.",
       "state_effect": "Pre-copy validation failures do not dispatch; oversized retained-state instances are released; response limits produce complete structured errors.",
-      "code_type": "string"
+      "code_type": "string",
+      "error_number": "7014"
     },
     {
       "layer": "browser",
@@ -1219,7 +1369,8 @@
       "condition": "Canonical retained snapshot bytes exceed the configured instance quota.",
       "surface": "Browser adapter error.code (API v3). Runtime API errors also use the API table.",
       "state_effect": "Pre-copy validation failures do not dispatch; oversized retained-state instances are released; response limits produce complete structured errors.",
-      "code_type": "string"
+      "code_type": "string",
+      "error_number": "7015"
     },
     {
       "layer": "browser",
@@ -1227,7 +1378,8 @@
       "condition": "An initial-memory address is not a canonical arbitrary-precision signed decimal string.",
       "surface": "Browser adapter error.code (API v3). Runtime API errors also use the API table.",
       "state_effect": "Pre-copy validation failures do not dispatch; oversized retained-state instances are released; response limits produce complete structured errors.",
-      "code_type": "string"
+      "code_type": "string",
+      "error_number": "7016"
     },
     {
       "layer": "browser",
@@ -1235,7 +1387,8 @@
       "condition": "Boundary mode is neither exit nor wrap.",
       "surface": "Browser adapter error.code (API v3). Runtime API errors also use the API table.",
       "state_effect": "Pre-copy validation failures do not dispatch; oversized retained-state instances are released; response limits produce complete structured errors.",
-      "code_type": "string"
+      "code_type": "string",
+      "error_number": "7017"
     },
     {
       "layer": "browser",
@@ -1243,7 +1396,8 @@
       "condition": "Seed or Custom limit is not a valid canonical integer string.",
       "surface": "Browser adapter error.code (API v3). Runtime API errors also use the API table.",
       "state_effect": "Pre-copy validation failures do not dispatch; oversized retained-state instances are released; response limits produce complete structured errors.",
-      "code_type": "string"
+      "code_type": "string",
+      "error_number": "7018"
     },
     {
       "layer": "browser",
@@ -1251,7 +1405,8 @@
       "condition": "The full response cannot fit the configured response ceiling.",
       "surface": "Browser adapter error.code (API v3). Runtime API errors also use the API table.",
       "state_effect": "Pre-copy validation failures do not dispatch; oversized retained-state instances are released; response limits produce complete structured errors.",
-      "code_type": "string"
+      "code_type": "string",
+      "error_number": "7019"
     },
     {
       "layer": "browser",
@@ -1259,7 +1414,8 @@
       "condition": "BrowserRuntime constructor receives invalid numeric/string ceilings or host limits.",
       "surface": "Constructor throws a JavaScript string prefixed [browser.invalid_host_limit].",
       "state_effect": "No BrowserRuntime is created.",
-      "code_type": "string"
+      "code_type": "string",
+      "error_number": "7020"
     },
     {
       "layer": "server",
@@ -1267,7 +1423,8 @@
       "condition": "Input is not a JSON array.",
       "surface": "Server ABI v4 / API v3 JSON error.code. The legacy aliases above remain stable and are not silently renamed.",
       "state_effect": "Invalid/over-limit requests do not execute; work limit rolls back; oversized retained instances are released; shutdown permanently closes the session.",
-      "code_type": "string"
+      "code_type": "string",
+      "error_number": "7500"
     },
     {
       "layer": "server",
@@ -1275,7 +1432,8 @@
       "condition": "An input element is not an exact byte integer.",
       "surface": "Server ABI v4 / API v3 JSON error.code. The legacy aliases above remain stable and are not silently renamed.",
       "state_effect": "Invalid/over-limit requests do not execute; work limit rolls back; oversized retained instances are released; shutdown permanently closes the session.",
-      "code_type": "string"
+      "code_type": "string",
+      "error_number": "7501"
     },
     {
       "layer": "server",
@@ -1283,7 +1441,8 @@
       "condition": "A required host ceiling is invalid or nonpositive where required.",
       "surface": "Server ABI v4 / API v3 JSON error.code. The legacy aliases above remain stable and are not silently renamed.",
       "state_effect": "Invalid/over-limit requests do not execute; work limit rolls back; oversized retained instances are released; shutdown permanently closes the session.",
-      "code_type": "string"
+      "code_type": "string",
+      "error_number": "7502"
     },
     {
       "layer": "server",
@@ -1291,7 +1450,8 @@
       "condition": "A configured host limit exceeds the adapter hard ceiling.",
       "surface": "Server ABI v4 / API v3 JSON error.code. The legacy aliases above remain stable and are not silently renamed.",
       "state_effect": "Invalid/over-limit requests do not execute; work limit rolls back; oversized retained instances are released; shutdown permanently closes the session.",
-      "code_type": "string"
+      "code_type": "string",
+      "error_number": "7503"
     },
     {
       "layer": "server",
@@ -1299,7 +1459,8 @@
       "condition": "A required u64 string is noncanonical or out of range.",
       "surface": "Server ABI v4 / API v3 JSON error.code. The legacy aliases above remain stable and are not silently renamed.",
       "state_effect": "Invalid/over-limit requests do not execute; work limit rolls back; oversized retained instances are released; shutdown permanently closes the session.",
-      "code_type": "string"
+      "code_type": "string",
+      "error_number": "7504"
     },
     {
       "layer": "server",
@@ -1307,7 +1468,8 @@
       "condition": "Initial-memory address spelling is invalid.",
       "surface": "Server ABI v4 / API v3 JSON error.code. The legacy aliases above remain stable and are not silently renamed.",
       "state_effect": "Invalid/over-limit requests do not execute; work limit rolls back; oversized retained instances are released; shutdown permanently closes the session.",
-      "code_type": "string"
+      "code_type": "string",
+      "error_number": "7505"
     },
     {
       "layer": "server",
@@ -1315,7 +1477,8 @@
       "condition": "Required request field is missing or has the wrong type.",
       "surface": "Server ABI v4 / API v3 JSON error.code. The legacy aliases above remain stable and are not silently renamed.",
       "state_effect": "Invalid/over-limit requests do not execute; work limit rolls back; oversized retained instances are released; shutdown permanently closes the session.",
-      "code_type": "string"
+      "code_type": "string",
+      "error_number": "7506"
     },
     {
       "layer": "server",
@@ -1323,7 +1486,8 @@
       "condition": "Request API version differs from 3.",
       "surface": "Server ABI v4 / API v3 JSON error.code. The legacy aliases above remain stable and are not silently renamed.",
       "state_effect": "Invalid/over-limit requests do not execute; work limit rolls back; oversized retained instances are released; shutdown permanently closes the session.",
-      "code_type": "string"
+      "code_type": "string",
+      "error_number": "7507"
     },
     {
       "layer": "server",
@@ -1331,7 +1495,8 @@
       "condition": "Source bytes exceed the runtime source ceiling.",
       "surface": "Server ABI v4 / API v3 JSON error.code. The legacy aliases above remain stable and are not silently renamed.",
       "state_effect": "Invalid/over-limit requests do not execute; work limit rolls back; oversized retained instances are released; shutdown permanently closes the session.",
-      "code_type": "string"
+      "code_type": "string",
+      "error_number": "7508"
     },
     {
       "layer": "server",
@@ -1339,7 +1504,8 @@
       "condition": "Input bytes exceed the configured ceiling.",
       "surface": "Server ABI v4 / API v3 JSON error.code. The legacy aliases above remain stable and are not silently renamed.",
       "state_effect": "Invalid/over-limit requests do not execute; work limit rolls back; oversized retained instances are released; shutdown permanently closes the session.",
-      "code_type": "string"
+      "code_type": "string",
+      "error_number": "7509"
     },
     {
       "layer": "server",
@@ -1347,7 +1513,8 @@
       "condition": "VM initialization fails (server alias of vm_initialization_failed).",
       "surface": "Server ABI v4 / API v3 JSON error.code. The legacy aliases above remain stable and are not silently renamed.",
       "state_effect": "Invalid/over-limit requests do not execute; work limit rolls back; oversized retained instances are released; shutdown permanently closes the session.",
-      "code_type": "string"
+      "code_type": "string",
+      "error_number": "7510"
     },
     {
       "layer": "server",
@@ -1355,7 +1522,8 @@
       "condition": "Initial-memory payload is not an array.",
       "surface": "Server ABI v4 / API v3 JSON error.code. The legacy aliases above remain stable and are not silently renamed.",
       "state_effect": "Invalid/over-limit requests do not execute; work limit rolls back; oversized retained instances are released; shutdown permanently closes the session.",
-      "code_type": "string"
+      "code_type": "string",
+      "error_number": "7511"
     },
     {
       "layer": "server",
@@ -1363,7 +1531,8 @@
       "condition": "Initial-memory payload/entry collection exceeds the adapter ceiling.",
       "surface": "Server ABI v4 / API v3 JSON error.code. The legacy aliases above remain stable and are not silently renamed.",
       "state_effect": "Invalid/over-limit requests do not execute; work limit rolls back; oversized retained instances are released; shutdown permanently closes the session.",
-      "code_type": "string"
+      "code_type": "string",
+      "error_number": "7512"
     },
     {
       "layer": "server",
@@ -1371,7 +1540,8 @@
       "condition": "An initial-memory entry has invalid fields, address, or value.",
       "surface": "Server ABI v4 / API v3 JSON error.code. The legacy aliases above remain stable and are not silently renamed.",
       "state_effect": "Invalid/over-limit requests do not execute; work limit rolls back; oversized retained instances are released; shutdown permanently closes the session.",
-      "code_type": "string"
+      "code_type": "string",
+      "error_number": "7513"
     },
     {
       "layer": "server",
@@ -1379,7 +1549,8 @@
       "condition": "Request bytes exceed the adapter request ceiling.",
       "surface": "Server ABI v4 / API v3 JSON error.code. The legacy aliases above remain stable and are not silently renamed.",
       "state_effect": "Invalid/over-limit requests do not execute; work limit rolls back; oversized retained instances are released; shutdown permanently closes the session.",
-      "code_type": "string"
+      "code_type": "string",
+      "error_number": "7514"
     },
     {
       "layer": "server",
@@ -1387,7 +1558,8 @@
       "condition": "Request bytes are not one valid UTF-8 JSON value.",
       "surface": "Server ABI v4 / API v3 JSON error.code. The legacy aliases above remain stable and are not silently renamed.",
       "state_effect": "Invalid/over-limit requests do not execute; work limit rolls back; oversized retained instances are released; shutdown permanently closes the session.",
-      "code_type": "string"
+      "code_type": "string",
+      "error_number": "7515"
     },
     {
       "layer": "server",
@@ -1395,7 +1567,8 @@
       "condition": "Top-level request is not a valid object.",
       "surface": "Server ABI v4 / API v3 JSON error.code. The legacy aliases above remain stable and are not silently renamed.",
       "state_effect": "Invalid/over-limit requests do not execute; work limit rolls back; oversized retained instances are released; shutdown permanently closes the session.",
-      "code_type": "string"
+      "code_type": "string",
+      "error_number": "7516"
     },
     {
       "layer": "server",
@@ -1403,7 +1576,8 @@
       "condition": "Request ABI version differs from 4.",
       "surface": "Server ABI v4 / API v3 JSON error.code. The legacy aliases above remain stable and are not silently renamed.",
       "state_effect": "Invalid/over-limit requests do not execute; work limit rolls back; oversized retained instances are released; shutdown permanently closes the session.",
-      "code_type": "string"
+      "code_type": "string",
+      "error_number": "7517"
     },
     {
       "layer": "server",
@@ -1411,7 +1585,8 @@
       "condition": "A request targets a permanently shut-down module session.",
       "surface": "Server ABI v4 / API v3 JSON error.code. The legacy aliases above remain stable and are not silently renamed.",
       "state_effect": "Invalid/over-limit requests do not execute; work limit rolls back; oversized retained instances are released; shutdown permanently closes the session.",
-      "code_type": "string"
+      "code_type": "string",
+      "error_number": "7518"
     },
     {
       "layer": "server",
@@ -1419,7 +1594,8 @@
       "condition": "A runtime operation occurs before initialization.",
       "surface": "Server ABI v4 / API v3 JSON error.code. The legacy aliases above remain stable and are not silently renamed.",
       "state_effect": "Invalid/over-limit requests do not execute; work limit rolls back; oversized retained instances are released; shutdown permanently closes the session.",
-      "code_type": "string"
+      "code_type": "string",
+      "error_number": "7519"
     },
     {
       "layer": "server",
@@ -1427,7 +1603,8 @@
       "condition": "The requested operation is not recognized.",
       "surface": "Server ABI v4 / API v3 JSON error.code. The legacy aliases above remain stable and are not silently renamed.",
       "state_effect": "Invalid/over-limit requests do not execute; work limit rolls back; oversized retained instances are released; shutdown permanently closes the session.",
-      "code_type": "string"
+      "code_type": "string",
+      "error_number": "7520"
     },
     {
       "layer": "server",
@@ -1435,7 +1612,8 @@
       "condition": "Initialize is called twice.",
       "surface": "Server ABI v4 / API v3 JSON error.code. The legacy aliases above remain stable and are not silently renamed.",
       "state_effect": "Invalid/over-limit requests do not execute; work limit rolls back; oversized retained instances are released; shutdown permanently closes the session.",
-      "code_type": "string"
+      "code_type": "string",
+      "error_number": "7521"
     },
     {
       "layer": "server",
@@ -1443,7 +1621,8 @@
       "condition": "Program handle spelling is invalid.",
       "surface": "Server ABI v4 / API v3 JSON error.code. The legacy aliases above remain stable and are not silently renamed.",
       "state_effect": "Invalid/over-limit requests do not execute; work limit rolls back; oversized retained instances are released; shutdown permanently closes the session.",
-      "code_type": "string"
+      "code_type": "string",
+      "error_number": "7522"
     },
     {
       "layer": "server",
@@ -1451,7 +1630,8 @@
       "condition": "Boundary mode is neither exit nor wrap.",
       "surface": "Server ABI v4 / API v3 JSON error.code. The legacy aliases above remain stable and are not silently renamed.",
       "state_effect": "Invalid/over-limit requests do not execute; work limit rolls back; oversized retained instances are released; shutdown permanently closes the session.",
-      "code_type": "string"
+      "code_type": "string",
+      "error_number": "7523"
     },
     {
       "layer": "server",
@@ -1459,7 +1639,8 @@
       "condition": "Instance handle spelling is invalid.",
       "surface": "Server ABI v4 / API v3 JSON error.code. The legacy aliases above remain stable and are not silently renamed.",
       "state_effect": "Invalid/over-limit requests do not execute; work limit rolls back; oversized retained instances are released; shutdown permanently closes the session.",
-      "code_type": "string"
+      "code_type": "string",
+      "error_number": "7524"
     },
     {
       "layer": "server",
@@ -1467,7 +1648,8 @@
       "condition": "Initialization host_limits is not an object.",
       "surface": "Server ABI v4 / API v3 JSON error.code. The legacy aliases above remain stable and are not silently renamed.",
       "state_effect": "Invalid/over-limit requests do not execute; work limit rolls back; oversized retained instances are released; shutdown permanently closes the session.",
-      "code_type": "string"
+      "code_type": "string",
+      "error_number": "7525"
     },
     {
       "layer": "server",
@@ -1475,7 +1657,8 @@
       "condition": "The full response exceeds the configured response ceiling.",
       "surface": "Server ABI v4 / API v3 JSON error.code. The legacy aliases above remain stable and are not silently renamed.",
       "state_effect": "Invalid/over-limit requests do not execute; work limit rolls back; oversized retained instances are released; shutdown permanently closes the session.",
-      "code_type": "string"
+      "code_type": "string",
+      "error_number": "7526"
     },
     {
       "layer": "server",
@@ -1483,7 +1666,8 @@
       "condition": "Canonical retained instance state exceeds its configured quota.",
       "surface": "Server ABI v4 / API v3 JSON error.code. The legacy aliases above remain stable and are not silently renamed.",
       "state_effect": "Invalid/over-limit requests do not execute; work limit rolls back; oversized retained instances are released; shutdown permanently closes the session.",
-      "code_type": "string"
+      "code_type": "string",
+      "error_number": "7527"
     },
     {
       "layer": "server",
@@ -1491,7 +1675,8 @@
       "condition": "The runtime compiled-program registry is full.",
       "surface": "Server ABI v4 / API v3 JSON error.code. The legacy aliases above remain stable and are not silently renamed.",
       "state_effect": "Invalid/over-limit requests do not execute; work limit rolls back; oversized retained instances are released; shutdown permanently closes the session.",
-      "code_type": "string"
+      "code_type": "string",
+      "error_number": "7528"
     },
     {
       "layer": "server",
@@ -1499,7 +1684,8 @@
       "condition": "The runtime instance registry is full.",
       "surface": "Server ABI v4 / API v3 JSON error.code. The legacy aliases above remain stable and are not silently renamed.",
       "state_effect": "Invalid/over-limit requests do not execute; work limit rolls back; oversized retained instances are released; shutdown permanently closes the session.",
-      "code_type": "string"
+      "code_type": "string",
+      "error_number": "7529"
     },
     {
       "layer": "server",
@@ -1507,7 +1693,8 @@
       "condition": "Initial-memory entry count exceeds its maximum.",
       "surface": "Server ABI v4 / API v3 JSON error.code. The legacy aliases above remain stable and are not silently renamed.",
       "state_effect": "Invalid/over-limit requests do not execute; work limit rolls back; oversized retained instances are released; shutdown permanently closes the session.",
-      "code_type": "string"
+      "code_type": "string",
+      "error_number": "7530"
     },
     {
       "layer": "server",
@@ -1515,7 +1702,8 @@
       "condition": "Initial memory contains duplicate addresses.",
       "surface": "Server ABI v4 / API v3 JSON error.code. The legacy aliases above remain stable and are not silently renamed.",
       "state_effect": "Invalid/over-limit requests do not execute; work limit rolls back; oversized retained instances are released; shutdown permanently closes the session.",
-      "code_type": "string"
+      "code_type": "string",
+      "error_number": "7531"
     },
     {
       "layer": "server",
@@ -1523,7 +1711,8 @@
       "condition": "An execution setting is invalid; details identify the field.",
       "surface": "Server ABI v4 / API v3 JSON error.code. The legacy aliases above remain stable and are not silently renamed.",
       "state_effect": "Invalid/over-limit requests do not execute; work limit rolls back; oversized retained instances are released; shutdown permanently closes the session.",
-      "code_type": "string"
+      "code_type": "string",
+      "error_number": "7532"
     },
     {
       "layer": "server",
@@ -1531,7 +1720,8 @@
       "condition": "Program handle is unknown, released, foreign or otherwise unavailable.",
       "surface": "Server ABI v4 / API v3 JSON error.code. The legacy aliases above remain stable and are not silently renamed.",
       "state_effect": "Invalid/over-limit requests do not execute; work limit rolls back; oversized retained instances are released; shutdown permanently closes the session.",
-      "code_type": "string"
+      "code_type": "string",
+      "error_number": "7533"
     },
     {
       "layer": "server",
@@ -1539,7 +1729,8 @@
       "condition": "Instance handle is unknown, released, foreign or otherwise unavailable.",
       "surface": "Server ABI v4 / API v3 JSON error.code. The legacy aliases above remain stable and are not silently renamed.",
       "state_effect": "Invalid/over-limit requests do not execute; work limit rolls back; oversized retained instances are released; shutdown permanently closes the session.",
-      "code_type": "string"
+      "code_type": "string",
+      "error_number": "7534"
     },
     {
       "layer": "server",
@@ -1547,7 +1738,8 @@
       "condition": "A bounded run requests zero ticks.",
       "surface": "Server ABI v4 / API v3 JSON error.code. The legacy aliases above remain stable and are not silently renamed.",
       "state_effect": "Invalid/over-limit requests do not execute; work limit rolls back; oversized retained instances are released; shutdown permanently closes the session.",
-      "code_type": "string"
+      "code_type": "string",
+      "error_number": "7535"
     },
     {
       "layer": "server",
@@ -1555,7 +1747,8 @@
       "condition": "The requested per-call tick budget exceeds the host maximum.",
       "surface": "Server ABI v4 / API v3 JSON error.code. The legacy aliases above remain stable and are not silently renamed.",
       "state_effect": "Invalid/over-limit requests do not execute; work limit rolls back; oversized retained instances are released; shutdown permanently closes the session.",
-      "code_type": "string"
+      "code_type": "string",
+      "error_number": "7536"
     },
     {
       "layer": "server",
@@ -1563,7 +1756,8 @@
       "condition": "The requested run exceeds the instance remaining total tick budget.",
       "surface": "Server ABI v4 / API v3 JSON error.code. The legacy aliases above remain stable and are not silently renamed.",
       "state_effect": "Invalid/over-limit requests do not execute; work limit rolls back; oversized retained instances are released; shutdown permanently closes the session.",
-      "code_type": "string"
+      "code_type": "string",
+      "error_number": "7537"
     },
     {
       "layer": "server",
@@ -1571,7 +1765,8 @@
       "condition": "A step needs more dispatches than the per-call deterministic work ceiling.",
       "surface": "Server ABI v4 / API v3 JSON error.code. The legacy aliases above remain stable and are not silently renamed.",
       "state_effect": "Invalid/over-limit requests do not execute; work limit rolls back; oversized retained instances are released; shutdown permanently closes the session.",
-      "code_type": "string"
+      "code_type": "string",
+      "error_number": "7538"
     },
     {
       "layer": "server",
@@ -1579,7 +1774,8 @@
       "condition": "No new opaque handle can be allocated.",
       "surface": "Server ABI v4 / API v3 JSON error.code. The legacy aliases above remain stable and are not silently renamed.",
       "state_effect": "Invalid/over-limit requests do not execute; work limit rolls back; oversized retained instances are released; shutdown permanently closes the session.",
-      "code_type": "string"
+      "code_type": "string",
+      "error_number": "7539"
     },
     {
       "layer": "lsp",
@@ -1587,7 +1783,8 @@
       "condition": "Invalid JSON-RPC request or lifecycle operation.",
       "surface": "JSON-RPC error.code is numeric for protocol errors; native process failures use coded stderr. Source diagnostics use string source/IR codes.",
       "state_effect": "Rejected request or terminal transport failure; no VM execution occurs in LSP.",
-      "code_type": "integer"
+      "code_type": "integer",
+      "error_number": "8000"
     },
     {
       "layer": "lsp",
@@ -1595,7 +1792,8 @@
       "condition": "Unknown/unsupported method.",
       "surface": "JSON-RPC error.code is numeric for protocol errors; native process failures use coded stderr. Source diagnostics use string source/IR codes.",
       "state_effect": "Rejected request or terminal transport failure; no VM execution occurs in LSP.",
-      "code_type": "integer"
+      "code_type": "integer",
+      "error_number": "8001"
     },
     {
       "layer": "lsp",
@@ -1603,7 +1801,8 @@
       "condition": "Method parameters are invalid.",
       "surface": "JSON-RPC error.code is numeric for protocol errors; native process failures use coded stderr. Source diagnostics use string source/IR codes.",
       "state_effect": "Rejected request or terminal transport failure; no VM execution occurs in LSP.",
-      "code_type": "integer"
+      "code_type": "integer",
+      "error_number": "8002"
     },
     {
       "layer": "lsp",
@@ -1611,7 +1810,8 @@
       "condition": "Server is not initialized for the requested operation.",
       "surface": "JSON-RPC error.code is numeric for protocol errors; native process failures use coded stderr. Source diagnostics use string source/IR codes.",
       "state_effect": "Rejected request or terminal transport failure; no VM execution occurs in LSP.",
-      "code_type": "integer"
+      "code_type": "integer",
+      "error_number": "8003"
     },
     {
       "layer": "lsp",
@@ -1619,7 +1819,8 @@
       "condition": "LSP framing, parsing or process I/O fails.",
       "surface": "JSON-RPC error.code is numeric for protocol errors; native process failures use coded stderr. Source diagnostics use string source/IR codes.",
       "state_effect": "Rejected request or terminal transport failure; no VM execution occurs in LSP.",
-      "code_type": "string"
+      "code_type": "string",
+      "error_number": "8004"
     },
     {
       "layer": "lsp",
@@ -1627,7 +1828,8 @@
       "condition": "Exit or EOF occurs without the required shutdown lifecycle.",
       "surface": "JSON-RPC error.code is numeric for protocol errors; native process failures use coded stderr. Source diagnostics use string source/IR codes.",
       "state_effect": "Rejected request or terminal transport failure; no VM execution occurs in LSP.",
-      "code_type": "string"
+      "code_type": "string",
+      "error_number": "8005"
     },
     {
       "layer": "server-abi.alloc_buffer",
@@ -1635,7 +1837,8 @@
       "condition": "Allocation length/pool/resource reservation fails; returned pointer is zero.",
       "surface": "Numeric sentinel 0, interpreted with the called ABI export; no JSON response exists at this boundary.",
       "state_effect": "Pre-dispatch reservation failure does not execute the request. A late response-write failure has no rollback guarantee; do not blindly retry.",
-      "code_type": "integer"
+      "code_type": "integer",
+      "error_number": "8100"
     },
     {
       "layer": "server-abi.free_buffer",
@@ -1643,7 +1846,8 @@
       "condition": "The pointer is unknown; release returns zero.",
       "surface": "Numeric sentinel 0, interpreted with the called ABI export; no JSON response exists at this boundary.",
       "state_effect": "Pre-dispatch reservation failure does not execute the request. A late response-write failure has no rollback guarantee; do not blindly retry.",
-      "code_type": "integer"
+      "code_type": "integer",
+      "error_number": "8101"
     },
     {
       "layer": "server-abi.process_request",
@@ -1651,319 +1855,404 @@
       "condition": "Pointer/length validation or response reservation/write fails; packed response is zero.",
       "surface": "Numeric sentinel 0, interpreted with the called ABI export; no JSON response exists at this boundary.",
       "state_effect": "Pre-dispatch reservation failure does not execute the request. A late response-write failure has no rollback guarantee; do not blindly retry.",
-      "code_type": "integer"
+      "code_type": "integer",
+      "error_number": "8102"
     },
-{
-    "layer": "level",
-    "code": "level.invalid",
-    "condition": "Invalid logical JSON/schema/capability/metric; no validated level is returned. Details are typed reason and field path.",
-    "surface": "Level API v1 coded error or terminal failure, native CLI evaluate, browser binding v1 and portable ABI v1.",
-    "state_effect": "Invalid logical JSON/schema/capability/metric; no validated level is returned. Details are typed reason and field path.",
-    "code_type": "string"
-  },
-  {
-    "layer": "level",
-    "code": "level.unsupported_format_version",
-    "condition": "Unsupported logical format; payload is not interpreted as v1.",
-    "surface": "Level API v1 coded error or terminal failure, native CLI evaluate, browser binding v1 and portable ABI v1.",
-    "state_effect": "Unsupported logical format; payload is not interpreted as v1.",
-    "code_type": "string"
-  },
-  {
-    "layer": "level",
-    "code": "level.unsupported_scene_type",
-    "condition": "No registered production scene; execution never falls back to ExactIO.",
-    "surface": "Level API v1 coded error or terminal failure, native CLI evaluate, browser binding v1 and portable ABI v1.",
-    "state_effect": "No registered production scene; execution never falls back to ExactIO.",
-    "code_type": "string"
-  },
-  {
-    "layer": "level",
-    "code": "level.program_rejected",
-    "condition": "Initial structural or committed generated capability violation; evaluation ends without rating.",
-    "surface": "Level API v1 coded error or terminal failure, native CLI evaluate, browser binding v1 and portable ABI v1.",
-    "state_effect": "Initial structural or committed generated capability violation; evaluation ends without rating.",
-    "code_type": "string"
-  },
-  {
-    "layer": "level",
-    "code": "level.evaluator_fault",
-    "condition": "Reserved umbrella for future or otherwise unclassified evaluator fault categories; known v1 fault kinds use more specific registered codes.",
-    "surface": "Reserved registry identity; no known v1 detection emits this code. Known v1 fault codes appear in Level API result failure.code and native CLI evaluate JSON.",
-    "state_effect": "Infrastructure fault; no final metrics or rating are returned.",
-    "code_type": "string"
-  },
-  {
-    "layer": "level",
-    "code": "level.resource_limit",
-    "condition": "Trusted evaluation tick/work/state/output ceiling prevents completion; no official success.",
-    "surface": "Level API v1 coded error or terminal failure, native CLI evaluate, browser binding v1 and portable ABI v1.",
-    "state_effect": "Trusted evaluation tick/work/state/output ceiling prevents completion; no official success.",
-    "code_type": "string"
-  },
-  {
-    "layer": "level",
-    "code": "level.cancelled",
-    "condition": "Evaluation cancelled; no official success.",
-    "surface": "Level API v1 coded error or terminal failure, native CLI evaluate, browser binding v1 and portable ABI v1.",
-    "state_effect": "Evaluation cancelled; no official success.",
-    "code_type": "string"
-  },
-  {
-    "layer": "level",
-    "code": "level_api.invalid_profile",
-    "condition": "Malformed, duplicate, unknown, zero, or unsupported host numeric/identity data; session not created.",
-    "surface": "Level API v1 coded error or terminal failure, native CLI evaluate, browser binding v1 and portable ABI v1.",
-    "state_effect": "Malformed, duplicate, unknown, zero, or unsupported host numeric/identity data; session not created.",
-    "code_type": "string"
-  },
-  {
-    "layer": "level",
-    "code": "level_api.unsupported_profile_version",
-    "condition": "Unsupported trusted profile version; session not created.",
-    "surface": "Level API v1 coded error or terminal failure, native CLI evaluate, browser binding v1 and portable ABI v1.",
-    "state_effect": "Unsupported trusted profile version; session not created.",
-    "code_type": "string"
-  },
-  {
-    "layer": "level",
-    "code": "level_api.unsupported_version",
-    "condition": "Unsupported API version; no semantic dispatch.",
-    "surface": "Level API v1 coded error or terminal failure, native CLI evaluate, browser binding v1 and portable ABI v1.",
-    "state_effect": "Unsupported API version; no semantic dispatch.",
-    "code_type": "string"
-  },
-  {
-    "layer": "level",
-    "code": "level_api.invalid_request",
-    "condition": "Malformed, duplicate, unknown, incorrect-type request or unsupported operation; no semantic dispatch.",
-    "surface": "Level API v1 coded error or terminal failure, native CLI evaluate, browser binding v1 and portable ABI v1.",
-    "state_effect": "Malformed, duplicate, unknown, incorrect-type request or unsupported operation; no semantic dispatch.",
-    "code_type": "string"
-  },
-  {
-    "layer": "level",
-    "code": "level_api.invalid_configuration",
-    "condition": "Unsupported mode/boundary or noncanonical/zero required integer; no evaluation starts.",
-    "surface": "Level API v1 coded error or terminal failure, native CLI evaluate, browser binding v1 and portable ABI v1.",
-    "state_effect": "Unsupported mode/boundary or noncanonical/zero required integer; no evaluation starts.",
-    "code_type": "string"
-  },
-  {
-    "layer": "level",
-    "code": "level_api.seed_required",
-    "condition": "Seed omitted without an explicit host seed source; no evaluation starts.",
-    "surface": "Level API v1 coded error or terminal failure, native CLI evaluate, browser binding v1 and portable ABI v1.",
-    "state_effect": "Seed omitted without an explicit host seed source; no evaluation starts.",
-    "code_type": "string"
-  },
-  {
-    "layer": "level",
-    "code": "level_api.invalid_handle",
-    "condition": "Released, stale, wrong-kind, or other-session handle; no referenced operation executes.",
-    "surface": "Level API v1 coded error or terminal failure, native CLI evaluate, browser binding v1 and portable ABI v1.",
-    "state_effect": "Released, stale, wrong-kind, or other-session handle; no referenced operation executes.",
-    "code_type": "string"
-  },
-  {
-    "layer": "level",
-    "code": "level_api.handle_exhausted",
-    "condition": "Checked handle/namespace capacity exhausted; no new handle is created.",
-    "surface": "Level API v1 coded error or terminal failure, native CLI evaluate, browser binding v1 and portable ABI v1.",
-    "state_effect": "Checked handle/namespace capacity exhausted; no new handle is created.",
-    "code_type": "string"
-  },
-  {
-    "layer": "level",
-    "code": "level_api.resource_limit",
-    "condition": "Request/source/program/retained-state/handle/per-call ceiling exceeded; no requested operation starts.",
-    "surface": "Level API v1 coded error or terminal failure, native CLI evaluate, browser binding v1 and portable ABI v1.",
-    "state_effect": "Request/source/program/retained-state/handle/per-call ceiling exceeded; no requested operation starts.",
-    "code_type": "string"
-  },
-  {
-    "layer": "level",
-    "code": "level_api.response_too_large",
-    "condition": "A complete result/diagnostic response exceeds the ceiling; return a complete error, never partial JSON. Evaluation may already have advanced.",
-    "surface": "Level API v1 coded error or terminal failure, native CLI evaluate, browser binding v1 and portable ABI v1.",
-    "state_effect": "A complete result/diagnostic response exceeds the ceiling; return a complete error, never partial JSON. Evaluation may already have advanced.",
-    "code_type": "string"
-  },
-  {
-    "layer": "level",
-    "code": "level_api.shutdown",
-    "condition": "Operation attempted after shutdown; state remains released.",
-    "surface": "Level API v1 coded error or terminal failure, native CLI evaluate, browser binding v1 and portable ABI v1.",
-    "state_effect": "Operation attempted after shutdown; state remains released.",
-    "code_type": "string"
-  },
-  {
-    "layer": "level",
-    "code": "level_api.fault",
-    "condition": "Shared API produced an invalid transport response; infrastructure failure, never player success.",
-    "surface": "Level API v1 coded error or terminal failure, native CLI evaluate, browser binding v1 and portable ABI v1.",
-    "state_effect": "Shared API produced an invalid transport response; infrastructure failure, never player success.",
-    "code_type": "string"
-  },
-  {
-    "layer": "level",
-    "code": "level_abi.unsupported_version",
-    "condition": "Unsupported portable ABI version; no dispatch.",
-    "surface": "Level API v1 coded error or terminal failure, native CLI evaluate, browser binding v1 and portable ABI v1.",
-    "state_effect": "Unsupported portable ABI version; no dispatch.",
-    "code_type": "string"
-  },
-  {
-    "layer": "level",
-    "code": "level_abi.already_initialized",
-    "condition": "Attempt to replace an initialized immutable profile; current session unchanged.",
-    "surface": "Level API v1 coded error or terminal failure, native CLI evaluate, browser binding v1 and portable ABI v1.",
-    "state_effect": "Attempt to replace an initialized immutable profile; current session unchanged.",
-    "code_type": "string"
-  },
-  {
-    "layer": "level",
-    "code": "level_abi.not_initialized",
-    "condition": "Semantic request before trusted initialization; no dispatch.",
-    "surface": "Level API v1 coded error or terminal failure, native CLI evaluate, browser binding v1 and portable ABI v1.",
-    "state_effect": "Semantic request before trusted initialization; no dispatch.",
-    "code_type": "string"
-  },
-  {
-    "layer": "level",
-    "code": "level.metric_overflow",
-    "condition": "Checked level metric or aggregate arithmetic overflows during evaluation.",
-    "surface": "Level API v1 result failure.code and native CLI evaluate JSON; the terminal result status is Fault.",
-    "state_effect": "Infrastructure fault; no final metrics or rating are returned.",
-    "code_type": "string"
-  },
-  {
-    "layer": "level",
-    "code": "level.vm_fault",
-    "condition": "The shared VM reports a fault during level evaluation.",
-    "surface": "Level API v1 result failure.code and native CLI evaluate JSON; the terminal result status is Fault.",
-    "state_effect": "Infrastructure fault; no final metrics or rating are returned.",
-    "code_type": "string"
-  },
-  {
-    "layer": "level",
-    "code": "level.vm_initialization_fault",
-    "condition": "The shared VM cannot initialize a standard state for an evaluation test.",
-    "surface": "Level API v1 result failure.code and native CLI evaluate JSON; the terminal result status is Fault.",
-    "state_effect": "Infrastructure fault; no final metrics or rating are returned.",
-    "code_type": "string"
-  },
-  {
-    "layer": "cli",
-    "code": "cli.limits_io",
-    "condition": "The trusted safety profile file cannot be opened or read.",
-    "surface": "Native stderr: error: [code] message.",
-    "state_effect": "Evaluate exits with code 3 before API initialization and emits no JSON envelope.",
-    "code_type": "string"
-  },
-  {
-    "layer": "cli",
-    "code": "cli.profile_too_large",
-    "condition": "The trusted safety profile exceeds the fixed CLI profile-file ceiling.",
-    "surface": "Native stderr: error: [code] message.",
-    "state_effect": "Evaluate exits with code 2 before API initialization and emits no JSON envelope.",
-    "code_type": "string"
-  },
-  {
-    "layer": "cli",
-    "code": "cli.profile_utf8",
-    "condition": "The trusted safety profile file is not valid UTF-8.",
-    "surface": "Native stderr: error: [code] message.",
-    "state_effect": "Evaluate exits with code 2 before API initialization and emits no JSON envelope.",
-    "code_type": "string"
-  },
-  {
-    "layer": "cli",
-    "code": "cli.profile_bom",
-    "condition": "The trusted safety profile begins with a forbidden UTF-8 byte-order mark.",
-    "surface": "Native stderr: error: [code] message.",
-    "state_effect": "Evaluate exits with code 2 before API initialization and emits no JSON envelope.",
-    "code_type": "string"
-  },
-  {
-    "layer": "cli",
-    "code": "cli.level_api_protocol",
-    "condition": "The shared Level API response is invalid JSON or violates the response shape expected by the CLI.",
-    "surface": "Native stderr: error: [code] message.",
-    "state_effect": "Evaluate exits with code 8; malformed responses are never treated as successful results.",
-    "code_type": "string"
-  },
-  {
-    "layer": "cli",
-    "code": "cli.unknown_evaluation_status",
-    "condition": "The shared Level API returned an unrecognized terminal evaluation status.",
-    "surface": "Native stderr: error: [code] message; the parsed API response is also written to JSON stdout when requested.",
-    "state_effect": "Evaluate exits with code 8; an unknown status cannot be treated as success.",
-    "code_type": "string"
-  },
-  {
-    "layer": "cli",
-    "code": "cli.malformed_evaluation_result",
-    "condition": "The shared Level API terminal result omitted its status.",
-    "surface": "Native stderr: error: [code] message; the parsed API response is also written to JSON stdout when requested.",
-    "state_effect": "Evaluate exits with code 8; a result without status cannot be treated as success.",
-    "code_type": "string"
-  },
-  {
-    "layer": "cli",
-    "code": "cli.level_io",
-    "condition": "The evaluate command cannot open or read the level file.",
-    "surface": "Native stderr: error: [code] message.",
-    "state_effect": "Evaluate exits with code 3 before API submission and emits no JSON envelope.",
-    "code_type": "string"
-  },
-  {
-    "layer": "cli",
-    "code": "cli.level_too_large",
-    "condition": "The level JSON exceeds the trusted profile's level-byte ceiling.",
-    "surface": "Native stderr: error: [code] message.",
-    "state_effect": "Evaluate exits with code 11 before API submission and emits no JSON envelope.",
-    "code_type": "string"
-  },
-  {
-    "layer": "cli",
-    "code": "cli.source_too_large",
-    "condition": "The source file exceeds the trusted profile's source-byte ceiling.",
-    "surface": "Native stderr: error: [code] message.",
-    "state_effect": "Evaluate exits with code 11 before API submission and emits no JSON envelope.",
-    "code_type": "string"
-  },
-  {
-    "layer": "cli",
-    "code": "cli.level_utf8",
-    "condition": "The level file is not valid UTF-8.",
-    "surface": "Native stderr: error: [code] message.",
-    "state_effect": "Evaluate exits with code 3 before API submission and emits no JSON envelope.",
-    "code_type": "string"
-  },
-  {
-    "layer": "cli",
-    "code": "cli.source_utf8",
-    "condition": "The evaluate command's source file is not valid UTF-8.",
-    "surface": "Native stderr: error: [code] message.",
-    "state_effect": "Evaluate exits with code 3 before API submission and emits no JSON envelope; existing check/run source reads retain cli.source_io.",
-    "code_type": "string"
-  },
-  {
-    "layer": "cli",
-    "code": "cli.level_bom",
-    "condition": "The level file begins with a forbidden UTF-8 byte-order mark.",
-    "surface": "Native stderr: error: [code] message.",
-    "state_effect": "Evaluate exits with code 3 before API submission and emits no JSON envelope.",
-    "code_type": "string"
-  },
-  {
-    "layer": "cli",
-    "code": "cli.source_bom",
-    "condition": "The evaluate command's source file begins with a forbidden UTF-8 byte-order mark.",
-    "surface": "Native stderr: error: [code] message.",
-    "state_effect": "Evaluate exits with code 3 before API submission and emits no JSON envelope.",
-    "code_type": "string"
-  }
+    {
+      "layer": "level",
+      "code": "level.invalid",
+      "condition": "Invalid logical JSON/schema/capability/metric; no validated level is returned. Details are typed reason and field path.",
+      "surface": "Level API v1 coded error or terminal failure, native CLI evaluate, browser binding v1 and portable ABI v1.",
+      "state_effect": "Invalid logical JSON/schema/capability/metric; no validated level is returned. Details are typed reason and field path.",
+      "code_type": "string",
+      "error_number": "9000"
+    },
+    {
+      "layer": "level",
+      "code": "level.unsupported_format_version",
+      "condition": "Unsupported logical format; payload is not interpreted as v1.",
+      "surface": "Level API v1 coded error or terminal failure, native CLI evaluate, browser binding v1 and portable ABI v1.",
+      "state_effect": "Unsupported logical format; payload is not interpreted as v1.",
+      "code_type": "string",
+      "error_number": "9001"
+    },
+    {
+      "layer": "level",
+      "code": "level.unsupported_scene_type",
+      "condition": "No registered production scene; execution never falls back to ExactIO.",
+      "surface": "Level API v1 coded error or terminal failure, native CLI evaluate, browser binding v1 and portable ABI v1.",
+      "state_effect": "No registered production scene; execution never falls back to ExactIO.",
+      "code_type": "string",
+      "error_number": "9002"
+    },
+    {
+      "layer": "level",
+      "code": "level.program_rejected",
+      "condition": "Initial structural or committed generated capability violation; evaluation ends without rating.",
+      "surface": "Level API v1 coded error or terminal failure, native CLI evaluate, browser binding v1 and portable ABI v1.",
+      "state_effect": "Initial structural or committed generated capability violation; evaluation ends without rating.",
+      "code_type": "string",
+      "error_number": "9003"
+    },
+    {
+      "layer": "level",
+      "code": "level.evaluator_fault",
+      "condition": "Reserved umbrella for future or otherwise unclassified evaluator fault categories; known v1 fault kinds use more specific registered codes.",
+      "surface": "Reserved registry identity; no known v1 detection emits this code. Known v1 fault codes appear in Level API result failure.code and native CLI evaluate JSON.",
+      "state_effect": "Infrastructure fault; no final metrics or rating are returned.",
+      "code_type": "string",
+      "error_number": "9004"
+    },
+    {
+      "layer": "level",
+      "code": "level.resource_limit",
+      "condition": "Trusted evaluation tick/work/state/output ceiling prevents completion; no official success.",
+      "surface": "Level API v1 coded error or terminal failure, native CLI evaluate, browser binding v1 and portable ABI v1.",
+      "state_effect": "Trusted evaluation tick/work/state/output ceiling prevents completion; no official success.",
+      "code_type": "string",
+      "error_number": "9005"
+    },
+    {
+      "layer": "level",
+      "code": "level.cancelled",
+      "condition": "Evaluation cancelled; no official success.",
+      "surface": "Level API v1 coded error or terminal failure, native CLI evaluate, browser binding v1 and portable ABI v1.",
+      "state_effect": "Evaluation cancelled; no official success.",
+      "code_type": "string",
+      "error_number": "9006"
+    },
+    {
+      "layer": "level",
+      "code": "level_api.invalid_profile",
+      "condition": "Malformed, duplicate, unknown, zero, or unsupported host numeric/identity data; session not created.",
+      "surface": "Level API v1 coded error or terminal failure, native CLI evaluate, browser binding v1 and portable ABI v1.",
+      "state_effect": "Malformed, duplicate, unknown, zero, or unsupported host numeric/identity data; session not created.",
+      "code_type": "string",
+      "error_number": "9007"
+    },
+    {
+      "layer": "level",
+      "code": "level_api.unsupported_profile_version",
+      "condition": "Unsupported trusted profile version; session not created.",
+      "surface": "Level API v1 coded error or terminal failure, native CLI evaluate, browser binding v1 and portable ABI v1.",
+      "state_effect": "Unsupported trusted profile version; session not created.",
+      "code_type": "string",
+      "error_number": "9008"
+    },
+    {
+      "layer": "level",
+      "code": "level_api.unsupported_version",
+      "condition": "Unsupported API version; no semantic dispatch.",
+      "surface": "Level API v1 coded error or terminal failure, native CLI evaluate, browser binding v1 and portable ABI v1.",
+      "state_effect": "Unsupported API version; no semantic dispatch.",
+      "code_type": "string",
+      "error_number": "9009"
+    },
+    {
+      "layer": "level",
+      "code": "level_api.invalid_request",
+      "condition": "Malformed, duplicate, unknown, incorrect-type request or unsupported operation; no semantic dispatch.",
+      "surface": "Level API v1 coded error or terminal failure, native CLI evaluate, browser binding v1 and portable ABI v1.",
+      "state_effect": "Malformed, duplicate, unknown, incorrect-type request or unsupported operation; no semantic dispatch.",
+      "code_type": "string",
+      "error_number": "9010"
+    },
+    {
+      "layer": "level",
+      "code": "level_api.invalid_configuration",
+      "condition": "Unsupported mode/boundary or noncanonical/zero required integer; no evaluation starts.",
+      "surface": "Level API v1 coded error or terminal failure, native CLI evaluate, browser binding v1 and portable ABI v1.",
+      "state_effect": "Unsupported mode/boundary or noncanonical/zero required integer; no evaluation starts.",
+      "code_type": "string",
+      "error_number": "9011"
+    },
+    {
+      "layer": "level",
+      "code": "level_api.seed_required",
+      "condition": "Seed omitted without an explicit host seed source; no evaluation starts.",
+      "surface": "Level API v1 coded error or terminal failure, native CLI evaluate, browser binding v1 and portable ABI v1.",
+      "state_effect": "Seed omitted without an explicit host seed source; no evaluation starts.",
+      "code_type": "string",
+      "error_number": "9012"
+    },
+    {
+      "layer": "level",
+      "code": "level_api.invalid_handle",
+      "condition": "Released, stale, wrong-kind, or other-session handle; no referenced operation executes.",
+      "surface": "Level API v1 coded error or terminal failure, native CLI evaluate, browser binding v1 and portable ABI v1.",
+      "state_effect": "Released, stale, wrong-kind, or other-session handle; no referenced operation executes.",
+      "code_type": "string",
+      "error_number": "9013"
+    },
+    {
+      "layer": "level",
+      "code": "level_api.handle_exhausted",
+      "condition": "Checked handle/namespace capacity exhausted; no new handle is created.",
+      "surface": "Level API v1 coded error or terminal failure, native CLI evaluate, browser binding v1 and portable ABI v1.",
+      "state_effect": "Checked handle/namespace capacity exhausted; no new handle is created.",
+      "code_type": "string",
+      "error_number": "9014"
+    },
+    {
+      "layer": "level",
+      "code": "level_api.resource_limit",
+      "condition": "Request/source/program/retained-state/handle/per-call ceiling exceeded; no requested operation starts.",
+      "surface": "Level API v1 coded error or terminal failure, native CLI evaluate, browser binding v1 and portable ABI v1.",
+      "state_effect": "Request/source/program/retained-state/handle/per-call ceiling exceeded; no requested operation starts.",
+      "code_type": "string",
+      "error_number": "9015"
+    },
+    {
+      "layer": "level",
+      "code": "level_api.response_too_large",
+      "condition": "A complete result/diagnostic response exceeds the ceiling; return a complete error, never partial JSON. Evaluation may already have advanced.",
+      "surface": "Level API v1 coded error or terminal failure, native CLI evaluate, browser binding v1 and portable ABI v1.",
+      "state_effect": "A complete result/diagnostic response exceeds the ceiling; return a complete error, never partial JSON. Evaluation may already have advanced.",
+      "code_type": "string",
+      "error_number": "9016"
+    },
+    {
+      "layer": "level",
+      "code": "level_api.shutdown",
+      "condition": "Operation attempted after shutdown; state remains released.",
+      "surface": "Level API v1 coded error or terminal failure, native CLI evaluate, browser binding v1 and portable ABI v1.",
+      "state_effect": "Operation attempted after shutdown; state remains released.",
+      "code_type": "string",
+      "error_number": "9017"
+    },
+    {
+      "layer": "level",
+      "code": "level_api.fault",
+      "condition": "Shared API produced an invalid transport response; infrastructure failure, never player success.",
+      "surface": "Level API v1 coded error or terminal failure, native CLI evaluate, browser binding v1 and portable ABI v1.",
+      "state_effect": "Shared API produced an invalid transport response; infrastructure failure, never player success.",
+      "code_type": "string",
+      "error_number": "9018"
+    },
+    {
+      "layer": "level",
+      "code": "level_abi.unsupported_version",
+      "condition": "Unsupported portable ABI version; no dispatch.",
+      "surface": "Level API v1 coded error or terminal failure, native CLI evaluate, browser binding v1 and portable ABI v1.",
+      "state_effect": "Unsupported portable ABI version; no dispatch.",
+      "code_type": "string",
+      "error_number": "9019"
+    },
+    {
+      "layer": "level",
+      "code": "level_abi.already_initialized",
+      "condition": "Attempt to replace an initialized immutable profile; current session unchanged.",
+      "surface": "Level API v1 coded error or terminal failure, native CLI evaluate, browser binding v1 and portable ABI v1.",
+      "state_effect": "Attempt to replace an initialized immutable profile; current session unchanged.",
+      "code_type": "string",
+      "error_number": "9020"
+    },
+    {
+      "layer": "level",
+      "code": "level_abi.not_initialized",
+      "condition": "Semantic request before trusted initialization; no dispatch.",
+      "surface": "Level API v1 coded error or terminal failure, native CLI evaluate, browser binding v1 and portable ABI v1.",
+      "state_effect": "Semantic request before trusted initialization; no dispatch.",
+      "code_type": "string",
+      "error_number": "9021"
+    },
+    {
+      "layer": "level",
+      "code": "level.metric_overflow",
+      "condition": "Checked level metric or aggregate arithmetic overflows during evaluation.",
+      "surface": "Level API v1 result failure.code and native CLI evaluate JSON; the terminal result status is Fault.",
+      "state_effect": "Infrastructure fault; no final metrics or rating are returned.",
+      "code_type": "string",
+      "error_number": "9022"
+    },
+    {
+      "layer": "level",
+      "code": "level.vm_fault",
+      "condition": "The shared VM reports a fault during level evaluation.",
+      "surface": "Level API v1 result failure.code and native CLI evaluate JSON; the terminal result status is Fault.",
+      "state_effect": "Infrastructure fault; no final metrics or rating are returned.",
+      "code_type": "string",
+      "error_number": "9023"
+    },
+    {
+      "layer": "level",
+      "code": "level.vm_initialization_fault",
+      "condition": "The shared VM cannot initialize a standard state for an evaluation test.",
+      "surface": "Level API v1 result failure.code and native CLI evaluate JSON; the terminal result status is Fault.",
+      "state_effect": "Infrastructure fault; no final metrics or rating are returned.",
+      "code_type": "string",
+      "error_number": "9024"
+    },
+    {
+      "layer": "cli",
+      "code": "cli.limits_io",
+      "condition": "The trusted safety profile file cannot be opened or read.",
+      "surface": "Native stderr: error: [code] message.",
+      "state_effect": "Evaluate exits with code 3 before API initialization and emits no JSON envelope.",
+      "code_type": "string",
+      "error_number": "5011"
+    },
+    {
+      "layer": "cli",
+      "code": "cli.profile_too_large",
+      "condition": "The trusted safety profile exceeds the fixed CLI profile-file ceiling.",
+      "surface": "Native stderr: error: [code] message.",
+      "state_effect": "Evaluate exits with code 2 before API initialization and emits no JSON envelope.",
+      "code_type": "string",
+      "error_number": "5012"
+    },
+    {
+      "layer": "cli",
+      "code": "cli.profile_utf8",
+      "condition": "The trusted safety profile file is not valid UTF-8.",
+      "surface": "Native stderr: error: [code] message.",
+      "state_effect": "Evaluate exits with code 2 before API initialization and emits no JSON envelope.",
+      "code_type": "string",
+      "error_number": "5013"
+    },
+    {
+      "layer": "cli",
+      "code": "cli.profile_bom",
+      "condition": "The trusted safety profile begins with a forbidden UTF-8 byte-order mark.",
+      "surface": "Native stderr: error: [code] message.",
+      "state_effect": "Evaluate exits with code 2 before API initialization and emits no JSON envelope.",
+      "code_type": "string",
+      "error_number": "5014"
+    },
+    {
+      "layer": "cli",
+      "code": "cli.level_api_protocol",
+      "condition": "The shared Level API response is invalid JSON or violates the response shape expected by the CLI.",
+      "surface": "Native stderr: error: [code] message.",
+      "state_effect": "Evaluate exits with code 8; malformed responses are never treated as successful results.",
+      "code_type": "string",
+      "error_number": "5015"
+    },
+    {
+      "layer": "cli",
+      "code": "cli.unknown_evaluation_status",
+      "condition": "The shared Level API returned an unrecognized terminal evaluation status.",
+      "surface": "Native stderr: error: [code] message; the parsed API response is also written to JSON stdout when requested.",
+      "state_effect": "Evaluate exits with code 8; an unknown status cannot be treated as success.",
+      "code_type": "string",
+      "error_number": "5016"
+    },
+    {
+      "layer": "cli",
+      "code": "cli.malformed_evaluation_result",
+      "condition": "The shared Level API terminal result omitted its status.",
+      "surface": "Native stderr: error: [code] message; the parsed API response is also written to JSON stdout when requested.",
+      "state_effect": "Evaluate exits with code 8; a result without status cannot be treated as success.",
+      "code_type": "string",
+      "error_number": "5017"
+    },
+    {
+      "layer": "cli",
+      "code": "cli.level_io",
+      "condition": "The evaluate command cannot open or read the level file.",
+      "surface": "Native stderr: error: [code] message.",
+      "state_effect": "Evaluate exits with code 3 before API submission and emits no JSON envelope.",
+      "code_type": "string",
+      "error_number": "5018"
+    },
+    {
+      "layer": "cli",
+      "code": "cli.level_too_large",
+      "condition": "The level JSON exceeds the trusted profile's level-byte ceiling.",
+      "surface": "Native stderr: error: [code] message.",
+      "state_effect": "Evaluate exits with code 11 before API submission and emits no JSON envelope.",
+      "code_type": "string",
+      "error_number": "5019"
+    },
+    {
+      "layer": "cli",
+      "code": "cli.source_too_large",
+      "condition": "The source file exceeds the trusted profile's source-byte ceiling.",
+      "surface": "Native stderr: error: [code] message.",
+      "state_effect": "Evaluate exits with code 11 before API submission and emits no JSON envelope.",
+      "code_type": "string",
+      "error_number": "5020"
+    },
+    {
+      "layer": "cli",
+      "code": "cli.level_utf8",
+      "condition": "The level file is not valid UTF-8.",
+      "surface": "Native stderr: error: [code] message.",
+      "state_effect": "Evaluate exits with code 3 before API submission and emits no JSON envelope.",
+      "code_type": "string",
+      "error_number": "5021"
+    },
+    {
+      "layer": "cli",
+      "code": "cli.source_utf8",
+      "condition": "The evaluate command's source file is not valid UTF-8.",
+      "surface": "Native stderr: error: [code] message.",
+      "state_effect": "Evaluate exits with code 3 before API submission and emits no JSON envelope; existing check/run source reads retain cli.source_io.",
+      "code_type": "string",
+      "error_number": "5022"
+    },
+    {
+      "layer": "cli",
+      "code": "cli.level_bom",
+      "condition": "The level file begins with a forbidden UTF-8 byte-order mark.",
+      "surface": "Native stderr: error: [code] message.",
+      "state_effect": "Evaluate exits with code 3 before API submission and emits no JSON envelope.",
+      "code_type": "string",
+      "error_number": "5023"
+    },
+    {
+      "layer": "cli",
+      "code": "cli.source_bom",
+      "condition": "The evaluate command's source file begins with a forbidden UTF-8 byte-order mark.",
+      "surface": "Native stderr: error: [code] message.",
+      "state_effect": "Evaluate exits with code 3 before API submission and emits no JSON envelope.",
+      "code_type": "string",
+      "error_number": "5024"
+    },
+    {
+      "layer": "level",
+      "code": "level.wrong_output",
+      "condition": "Committed output differs from the expected byte stream.",
+      "surface": "Level outcome and evaluation result presentation; hidden details remain redacted.",
+      "state_effect": "Evaluation does not award final metrics or rating.",
+      "code_type": "string",
+      "error_number": "9025"
+    },
+    {
+      "layer": "level",
+      "code": "level.incomplete_output",
+      "condition": "Execution terminates before all expected bytes are produced.",
+      "surface": "Level outcome and evaluation result presentation; hidden details remain redacted.",
+      "state_effect": "Evaluation does not award final metrics or rating.",
+      "code_type": "string",
+      "error_number": "9026"
+    },
+    {
+      "layer": "level",
+      "code": "level.test_failed",
+      "condition": "An ExactIO correctness check fails.",
+      "surface": "Level outcome and evaluation result presentation; hidden details remain redacted.",
+      "state_effect": "Evaluation does not award final metrics or rating.",
+      "code_type": "string",
+      "error_number": "9027"
+    },
+    {
+      "layer": "level",
+      "code": "level.runtime_error",
+      "condition": "An ExactIO test encounters a VM runtime error; public details follow visibility rules.",
+      "surface": "Level outcome and evaluation result presentation; hidden details remain redacted.",
+      "state_effect": "Evaluation does not award final metrics or rating.",
+      "code_type": "string",
+      "error_number": "9028"
+    },
+    {
+      "layer": "level",
+      "code": "level.constraint_exceeded",
+      "condition": "A permitted metric exceeds a configured level constraint.",
+      "surface": "Level outcome and evaluation result presentation; hidden details remain redacted.",
+      "state_effect": "Evaluation does not award final metrics or rating.",
+      "code_type": "string",
+      "error_number": "9029"
+    }
   ]
 }

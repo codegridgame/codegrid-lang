@@ -97,6 +97,12 @@ failures, not player test failures.
 
 ## Compatibility
 
+Registry v2 adds four-digit `error_number` strings to errors, rejected-source
+diagnostics, failed test outcomes, and failed evaluation results. Runtime outcome
+arrays retain `codes` and add parallel `error_numbers`; both redact hidden runtime
+details. Original status/code fields retain their meanings. See the
+[complete numeric table](../spec/codegrid-error-numbers.md).
+
 New unsupported operations/versions fail explicitly. Language APIs and adapters
 keep their current versions and contracts. Profile, format, evaluator, API,
 browser binding, portable ABI, and build identities are independent. Clients

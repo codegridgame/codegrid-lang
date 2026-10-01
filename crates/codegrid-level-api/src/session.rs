@@ -143,10 +143,10 @@ impl LevelApi {
             Ok(v) => v,
             Err(e) => envelope(
                 "error",
-                json!({"error":{"code":e.code,"message":e.message}}),
+                json!({"error":{"code":e.code,"error_number":codegrid_model::error_number("level",e.code),"message":e.message}}),
             ),
         };
-        bounded_json(&value,self.profile.max_response_bytes).unwrap_or_else(|| envelope("error",json!({"error":{"code":"level_api.response_too_large","message":"Complete response exceeds trusted byte ceiling"}})).to_string())
+        bounded_json(&value,self.profile.max_response_bytes).unwrap_or_else(|| envelope("error",json!({"error":{"code":"level_api.response_too_large","error_number":codegrid_model::error_number("level","level_api.response_too_large"),"message":"Complete response exceeds trusted byte ceiling"}})).to_string())
     }
     fn request(&mut self, request: Request) -> Result<Value, ApiError> {
         if request.api_version != LEVEL_API_VERSION {
@@ -210,7 +210,7 @@ impl LevelApi {
                         }
                         Ok(envelope(
                             "level_rejected",
-                            json!({"error":{"code":level_code(e.category),"category":e.category,"reason":e.reason,"path":e.path}}),
+                            json!({"error":{"code":level_code(e.category),"error_number":codegrid_model::error_number("level",level_code(e.category)),"category":e.category,"reason":e.reason,"path":e.path}}),
                         ))
                     }
                 }
@@ -258,7 +258,7 @@ impl LevelApi {
                         }
                         Ok(envelope(
                             "source_rejected",
-                            json!({"diagnostics":diagnostics.into_iter().map(|d|json!({"code":d.code,"message":d.message,"severity":format!("{:?}",d.severity),"span":{"start":d.span.start.to_string(),"end":d.span.end.to_string()}})).collect::<Vec<_>>()}),
+                            json!({"diagnostics":diagnostics.into_iter().map(|d|json!({"code":d.code,"error_number":codegrid_model::error_number("source",d.code).or_else(|| codegrid_model::error_number("ir",d.code)),"message":d.message,"severity":format!("{:?}",d.severity),"span":{"start":d.span.start.to_string(),"end":d.span.end.to_string()}})).collect::<Vec<_>>()}),
                         ))
                     }
                 }
@@ -561,9 +561,15 @@ fn metrics_json(metrics: &BTreeMap<String, u64>) -> Value {
 fn outcome_json(outcome: &TestOutcome) -> Value {
     match outcome {
         TestOutcome::Passed => json!({"status":"Passed"}),
-        TestOutcome::WrongOutput => json!({"status":"WrongOutput"}),
-        TestOutcome::IncompleteOutput => json!({"status":"IncompleteOutput"}),
-        TestOutcome::RuntimeError(codes) => json!({"status":"RuntimeError","codes":codes}),
+        TestOutcome::WrongOutput => {
+            json!({"status":"WrongOutput","code":"level.wrong_output","error_number":codegrid_model::error_number("level","level.wrong_output")})
+        }
+        TestOutcome::IncompleteOutput => {
+            json!({"status":"IncompleteOutput","code":"level.incomplete_output","error_number":codegrid_model::error_number("level","level.incomplete_output")})
+        }
+        TestOutcome::RuntimeError(codes) => {
+            json!({"status":"RuntimeError","code":"level.runtime_error","error_number":codegrid_model::error_number("level","level.runtime_error"),"codes":codes,"error_numbers":codes.iter().map(|c|codegrid_model::error_number("vm",c)).collect::<Vec<_>>()})
+        }
     }
 }
 fn sha256(bytes: &[u8]) -> String {
@@ -571,26 +577,40 @@ fn sha256(bytes: &[u8]) -> String {
     format!("{:x}", Sha256::digest(bytes))
 }
 fn result_json(r: &EvaluationResult, provenance: &Value) -> Value {
+    let result_code = match &r.status {
+        EvaluationStatus::Passed => None,
+        EvaluationStatus::ProgramRejected(_) => Some("level.program_rejected"),
+        EvaluationStatus::TestFailed => Some("level.test_failed"),
+        EvaluationStatus::RuntimeError => Some("level.runtime_error"),
+        EvaluationStatus::ConstraintExceeded => Some("level.constraint_exceeded"),
+        EvaluationStatus::ResourceLimitExceeded => Some("level.resource_limit"),
+        EvaluationStatus::Cancelled => Some("level.cancelled"),
+        EvaluationStatus::Fault(reason) => Some(reason.code()),
+    };
+
     let (status, rejection) = match &r.status {
         EvaluationStatus::Passed => ("Passed", Value::Null),
         EvaluationStatus::ProgramRejected(p) => (
             "ProgramRejected",
-            json!({"code":"level.program_rejected","reason":p.reason,"path":p.path}),
+            json!({"code":"level.program_rejected","error_number":codegrid_model::error_number("level","level.program_rejected"),"reason":p.reason,"path":p.path}),
         ),
         EvaluationStatus::TestFailed => ("TestFailed", Value::Null),
         EvaluationStatus::RuntimeError => ("RuntimeError", Value::Null),
         EvaluationStatus::ConstraintExceeded => ("ConstraintExceeded", Value::Null),
         EvaluationStatus::ResourceLimitExceeded => (
             "ResourceLimitExceeded",
-            json!({"code":"level.resource_limit"}),
+            json!({"code":"level.resource_limit","error_number":codegrid_model::error_number("level","level.resource_limit")}),
         ),
-        EvaluationStatus::Cancelled => ("Cancelled", json!({"code":"level.cancelled"})),
+        EvaluationStatus::Cancelled => (
+            "Cancelled",
+            json!({"code":"level.cancelled","error_number":codegrid_model::error_number("level","level.cancelled")}),
+        ),
         EvaluationStatus::Fault(reason) => (
             "Fault",
-            json!({"code":reason.code(),"reason":format!("{reason:?}")}),
+            json!({"code":reason.code(),"error_number":codegrid_model::error_number("level",reason.code()),"reason":format!("{reason:?}")}),
         ),
     };
-    json!({"status":status,"replay":provenance,"failure":rejection,"level_id":r.level_id,"level_version":r.level_version,"evaluator_contract":r.evaluator_contract,"evaluator_build":env!("CODEGRID_LEVEL_BUILD_ID"),"mode":format!("{:?}",r.mode),"configuration":{"boundary_mode":format!("{:?}",r.config.boundary_mode),"shuffle_seed":r.config.shuffle_seed.to_string(),"vm_seed":r.vm_seed.to_string(),"custom_execution_limit":r.config.custom_execution_limit.get().to_string(),"profile_id":r.config.safety.id,"profile_version":r.config.safety.version,"safety":{"max_output_bytes":r.config.safety.max_output_bytes.get().to_string(),"max_state_units":r.config.safety.max_state_units.get().to_string(),"max_feedback_bytes":r.config.safety.max_feedback_bytes.get().to_string(),"max_ticks_per_test":r.config.safety.per_test_ticks.get().to_string(),"max_work_per_call":r.config.safety.per_call_work.get().to_string(),"max_total_work":r.config.safety.cumulative_work.get().to_string()}},"hidden_failure":r.hidden_failure.as_ref().map(|o|json!({"category":"HiddenTestFailed","reason":outcome_json(o)})),"visible_tests":r.visible_tests.iter().map(|t|json!({"source_index":t.source_index.to_string(),"input":t.input,"expected_output":t.expected_output,"actual_output":t.actual_output,"outcome":outcome_json(&t.outcome)})).collect::<Vec<_>>(),"constraints":r.constraints.iter().map(|c|json!({"name":c.name,"limit":c.limit.to_string(),"value":c.value.to_string(),"passed":c.passed})).collect::<Vec<_>>(),"scoring":r.scoring.iter().map(|s|json!({"name":s.name,"target":s.target.map(|t|t.to_string()),"value":s.value.to_string(),"direction":"minimize","rating":s.rating})).collect::<Vec<_>>(),"partial_metrics":metrics_json(&r.partial_metrics),"final_metrics":r.final_metrics.as_ref().map(metrics_json),"rating":r.rating})
+    json!({"status":status,"error_number":result_code.and_then(|c|codegrid_model::error_number("level",c)),"replay":provenance,"failure":rejection,"level_id":r.level_id,"level_version":r.level_version,"evaluator_contract":r.evaluator_contract,"evaluator_build":env!("CODEGRID_LEVEL_BUILD_ID"),"mode":format!("{:?}",r.mode),"configuration":{"boundary_mode":format!("{:?}",r.config.boundary_mode),"shuffle_seed":r.config.shuffle_seed.to_string(),"vm_seed":r.vm_seed.to_string(),"custom_execution_limit":r.config.custom_execution_limit.get().to_string(),"profile_id":r.config.safety.id,"profile_version":r.config.safety.version,"safety":{"max_output_bytes":r.config.safety.max_output_bytes.get().to_string(),"max_state_units":r.config.safety.max_state_units.get().to_string(),"max_feedback_bytes":r.config.safety.max_feedback_bytes.get().to_string(),"max_ticks_per_test":r.config.safety.per_test_ticks.get().to_string(),"max_work_per_call":r.config.safety.per_call_work.get().to_string(),"max_total_work":r.config.safety.cumulative_work.get().to_string()}},"hidden_failure":r.hidden_failure.as_ref().map(|o|json!({"category":"HiddenTestFailed","reason":outcome_json(o)})),"visible_tests":r.visible_tests.iter().map(|t|json!({"source_index":t.source_index.to_string(),"input":t.input,"expected_output":t.expected_output,"actual_output":t.actual_output,"outcome":outcome_json(&t.outcome)})).collect::<Vec<_>>(),"constraints":r.constraints.iter().map(|c|json!({"name":c.name,"limit":c.limit.to_string(),"value":c.value.to_string(),"passed":c.passed})).collect::<Vec<_>>(),"scoring":r.scoring.iter().map(|s|json!({"name":s.name,"target":s.target.map(|t|t.to_string()),"value":s.value.to_string(),"direction":"minimize","rating":s.rating})).collect::<Vec<_>>(),"partial_metrics":metrics_json(&r.partial_metrics),"final_metrics":r.final_metrics.as_ref().map(metrics_json),"rating":r.rating})
 }
 
 fn response_too_large() -> ApiError {

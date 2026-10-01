@@ -1,5 +1,10 @@
 # Native CLI Contract
 
+Every emitted toolchain error includes a stable four-digit presentation number
+from the [complete error table](../spec/codegrid-error-numbers.md). Human messages
+show `[number] [original_code]`; JSON diagnostics/errors/faults add `error_number`.
+Existing textual codes and process exit codes retain their meanings.
+
 The native CLI provides a local process boundary for the Full language and level evaluation. It owns command-line parsing, file access, input conversion, JSON serialization, terminal diagnostics, presentation, and process exit codes. The shared compiler owns source acceptance and verified-program construction under the [source specification](../spec/codegrid-source-spec.md); the shared VM owns execution and snapshots under the [VM specification](../spec/codegrid-vm-spec.md). The `check`, `run`, and `debug` commands compose the compiler and VM directly. The `evaluate` command delegates all level semantics to the shared [Level Host API](level-api-v1.md). No CLI command implements a second parser, validator, instruction table, interpreter, metric calculator, or scoring policy.
 
 This contract describes the local Full target. It does not select deployment authentication, multi-user quotas, or production service policy.

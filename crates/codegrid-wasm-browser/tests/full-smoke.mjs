@@ -169,7 +169,7 @@ function normalizeError(error) {
   const details = { ...error.details };
   if (details.board) details.board = normalizeBoard(details.board);
   if (details.cell) details.cell = normalizeStaticCell(details.cell);
-  return { code: error.code, global_tick: error.global_tick, scope: error.scope, details };
+  return { code: error.code, error_number: error.error_number, global_tick: error.global_tick, scope: error.scope, details };
 }
 
 function normalizeStaticCell(cell) {
@@ -247,6 +247,10 @@ function assertFullSnapshot(snapshot, expected, id, assert, deepEqual) {
     deepEqual(snapshot.metrics[key], expected[key], `${id}: metrics.${key}`);
   }
   deepEqual(snapshot.errors.map((error) => error.code), expected.error_codes, `${id}: error codes`);
+  for (const error of snapshot.errors) {
+    assert(/^3[0-9]{3}$/.test(error.error_number), `${id}: four-digit VM error number`);
+    if (error.code === "ConcurrentOutputConflict") assert(error.error_number === "3006", `${id}: stable output-conflict number`);
+  }
 
   if ("remaining_input" in expected) deepEqual(snapshot.remaining_input, expected.remaining_input, `${id}: remaining input`);
   if ("memory" in expected) deepEqual(snapshot.memory, expected.memory, `${id}: memory`);

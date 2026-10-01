@@ -4,6 +4,7 @@
 //! returns a packed pointer/length pair for a bounded JSON response. Every run
 //! recompiles source inside the adapter; no executable IR crosses the boundary.
 
+use codegrid_runtime_api::error_number;
 use codegrid_runtime_api::{ApiError, MetricCounterOverflow, RUNTIME_API_VERSION};
 use serde_json::{json, Value};
 
@@ -158,7 +159,7 @@ fn error_response(code: &str, message: &str, details: Value) -> Value {
     json!({
         "abi_version": SERVER_ABI_VERSION,
         "api_version": RUNTIME_API_VERSION,
-        "error": {"code": code, "message": message, "details": details},
+        "error": {"code": code, "error_number": error_number("server", code), "message": message, "details": details},
     })
 }
 

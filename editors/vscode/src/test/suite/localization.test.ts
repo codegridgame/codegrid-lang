@@ -3,7 +3,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import * as vscode from 'vscode';
 import { CodedError } from '../../debug/errors';
-import { ERROR_MESSAGES, localizeError, localizeDiagnostic, presentRuntimeErrors } from '../../language/errorMessages';
+import { errorNumber, ERROR_MESSAGES, localizeError, localizeDiagnostic, presentRuntimeErrors } from '../../language/errorMessages';
 
 const root = path.resolve(__dirname, '../../..');
 const read = (file: string): Record<string, string> => JSON.parse(fs.readFileSync(path.join(root, file), 'utf8'));
@@ -55,6 +55,8 @@ suite('Localization', () => {
     const error = new CodedError('debug.work_limit_exceeded', original);
     assert.strictEqual(error.originalMessage, original);
     assert.strictEqual(error.code, 'debug.work_limit_exceeded');
+    assert.strictEqual(error.errorNumber, '5106');
+    assert.strictEqual(errorNumber('ConcurrentOutputConflict'), '3006');
     const english = vscode.env.language.toLowerCase().startsWith('en');
     assert.strictEqual(error.message, english ? original : vscode.l10n.t(ERROR_MESSAGES[error.code]));
     const unknown = new CodedError('future.error', original);
@@ -67,6 +69,7 @@ suite('Localization', () => {
     assert.strictEqual(translated.code, diagnostic.code);
     assert.deepStrictEqual(translated.range, diagnostic.range);
     assert.strictEqual(diagnostic.message, original);
+    assert.ok(translated.message.includes('[1004] [source.invalid_cell]'));
     if (!english) {
       assert.ok(translated.message.includes('[source.invalid_cell]'));
       assert.ok(translated.message.includes(localizeError('source.invalid_cell')));

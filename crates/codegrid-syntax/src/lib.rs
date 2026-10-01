@@ -41,6 +41,12 @@ pub struct Diagnostic {
 }
 
 impl Diagnostic {
+    /// Stable four-digit presentation identity for source or forwarded IR errors.
+    pub fn error_number(&self) -> Option<&'static str> {
+        codegrid_model::error_number("source", self.code)
+            .or_else(|| codegrid_model::error_number("ir", self.code))
+    }
+
     pub fn error(code: &'static str, message: impl Into<String>, span: Span) -> Self {
         Self {
             code,

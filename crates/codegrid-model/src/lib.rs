@@ -4,6 +4,45 @@
 //! textual instruction inventory. It contains no parser, VM, game rules, or
 //! I/O.
 
+mod error_numbers;
+pub use error_numbers::ERROR_NUMBERS;
+
+/// Looks up an append-only four-digit error number without interpreting messages.
+/// Protocol aliases are scoped by layer; unknown identifiers return `None`.
+pub fn error_number(layer: &str, code: &str) -> Option<&'static str> {
+    ERROR_NUMBERS
+        .iter()
+        .find(|(owner, identity, _)| *owner == layer && *identity == code)
+        .map(|(_, _, number)| *number)
+}
+
+#[cfg(test)]
+mod error_number_tests {
+    use super::{error_number, ERROR_NUMBERS};
+    use std::collections::BTreeSet;
+
+    #[test]
+    fn numbers_are_unique_four_digits_and_scoped_by_identity() {
+        let mut numbers = BTreeSet::new();
+        let mut identities = BTreeSet::new();
+        for &(layer, code, number) in ERROR_NUMBERS {
+            assert_eq!(number.len(), 4);
+            assert!(number.bytes().all(|b| b.is_ascii_digit()));
+            assert!(numbers.insert(number));
+            assert!(identities.insert((layer, code)));
+            assert_eq!(error_number(layer, code), Some(number));
+        }
+        assert_eq!(error_number("source", "source.invalid_cell"), Some("1004"));
+        assert_eq!(error_number("cli", "cli.invalid_arguments"), Some("5000"));
+        assert_eq!(error_number("vm", "ConcurrentOutputConflict"), Some("3006"));
+        assert_ne!(
+            error_number("api", "invalid_configuration"),
+            error_number("server", "invalid_configuration")
+        );
+        assert_eq!(error_number("source", "future.error"), None);
+    }
+}
+
 /// The value stored in registers, stacks, input/output, and memory.
 pub type Value = u8;
 

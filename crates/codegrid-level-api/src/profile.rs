@@ -7,6 +7,10 @@ pub struct ApiError {
     pub message: String,
 }
 impl ApiError {
+    pub fn error_number(&self) -> Option<&'static str> {
+        codegrid_model::error_number("level", self.code)
+    }
+
     pub(crate) fn new(code: &'static str, message: impl Into<String>) -> Self {
         Self {
             code,

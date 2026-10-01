@@ -5,6 +5,8 @@ export function runNegativeTransport(createSession,profileText,fixture,assert) {
  const fresh=(overrides={})=>createSession(JSON.stringify({...profile,...overrides}));
  const call=(session,operation,fields={})=>JSON.parse(session.request(JSON.stringify({api_version:1,operation,...fields})));
  const session=fresh();
+ const numbered=JSON.parse(session.request('{'));
+ assert(numbered.error.code==='level_api.invalid_request'&&numbered.error.error_number==='9010','numeric identity on actual transport errors');
  for(const text of ['{','{"api_version":1,"operation":"capabilities","unexpected":0}','{"api_version":1,"api_version":1,"operation":"capabilities"}'])assert(JSON.parse(session.request(text)).error.code==='level_api.invalid_request','strict request rejection');
  assert(call(session,'compile_program',{source:'unknown_token'}).status==='source_rejected','source rejection through actual transport');
  for(const level_json of ['{}',fixture.level.replace('"format_version": 1','"format_version": 2'),fixture.level.replace('"level_id":','"level_id":"duplicate","level_id":')])assert(call(session,'load_level',{level_json}).status==='level_rejected','malformed/version/duplicate logical data');
