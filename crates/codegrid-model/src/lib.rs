@@ -6,6 +6,90 @@
 
 mod error_numbers;
 pub use error_numbers::ERROR_NUMBERS;
+mod error_messages;
+pub use error_messages::ERROR_LOCALES;
+
+/// Normalizes an explicit host locale; unsupported languages fall back to English.
+pub fn normalize_error_locale(locale: &str) -> &'static str {
+    let normalized = locale.to_ascii_lowercase().replace('_', "-");
+    let parts: Vec<_> = normalized.split('-').collect();
+    if parts[0] == "zh" {
+        return if parts
+            .iter()
+            .any(|part| matches!(*part, "hant" | "tw" | "hk" | "mo"))
+        {
+            "zh-tw"
+        } else {
+            "zh-cn"
+        };
+    }
+    if parts[0] == "pt" {
+        return "pt-br";
+    }
+    ERROR_LOCALES
+        .iter()
+        .copied()
+        .find(|language| *language == parts[0])
+        .unwrap_or("en")
+}
+
+/// Looks up a localized summary by stable four-digit number.
+/// Dynamic diagnostic details remain separate; unknown numbers return `None`.
+pub fn error_message(number: &str, locale: &str) -> Option<&'static str> {
+    let language = normalize_error_locale(locale);
+    let index = ERROR_LOCALES.iter().position(|value| *value == language)?;
+    error_messages::ERROR_MESSAGES
+        .iter()
+        .find(|(value, _)| *value == number)
+        .map(|(_, messages)| messages[index])
+}
+
+/// Returns a localized generic message for an unrecognized error identity.
+pub fn fallback_error_message(locale: &str) -> &'static str {
+    let language = normalize_error_locale(locale);
+    let index = ERROR_LOCALES
+        .iter()
+        .position(|value| *value == language)
+        .unwrap_or(0);
+    error_messages::ERROR_FALLBACKS[index]
+}
+
+#[cfg(test)]
+mod error_message_tests {
+    use super::*;
+
+    #[test]
+    fn all_registered_numbers_have_ten_translations() {
+        assert_eq!(error_messages::ERROR_MESSAGES.len(), ERROR_NUMBERS.len());
+        assert_eq!(ERROR_LOCALES.len(), 10);
+        for &(_, _, number) in ERROR_NUMBERS {
+            for locale in ERROR_LOCALES {
+                assert!(!error_message(number, locale).unwrap().trim().is_empty());
+            }
+        }
+        assert_eq!(error_message("9999", "en"), None);
+        assert_eq!(
+            error_message("1004", "unsupported"),
+            error_message("1004", "en")
+        );
+    }
+
+    #[test]
+    fn explicit_locale_aliases_are_portable() {
+        for (input, expected) in [
+            ("EN_us", "en"),
+            ("zh-Hant-HK", "zh-tw"),
+            ("zh-Hans", "zh-cn"),
+            ("zh", "zh-cn"),
+            ("pt-PT", "pt-br"),
+            ("de-DE", "de"),
+            ("", "en"),
+        ] {
+            assert_eq!(normalize_error_locale(input), expected);
+        }
+        assert!(!fallback_error_message("ru").is_empty());
+    }
+}
 
 /// Looks up an append-only four-digit error number without interpreting messages.
 /// Protocol aliases are scoped by layer; unknown identifiers return `None`.

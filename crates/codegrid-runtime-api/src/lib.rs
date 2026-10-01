@@ -12,7 +12,10 @@ pub use codegrid_compiler::{
     BoardView, CellView, CodeGridView, Diagnostic, ProgramView, Severity, Span,
 };
 pub use codegrid_ir::{BoardId, CodeGridId, Program, ScopedProgram, VerifiedProgram};
-pub use codegrid_model::{error_number, Direction};
+pub use codegrid_model::{
+    error_message, error_number, fallback_error_message, normalize_error_locale, Direction,
+    ERROR_LOCALES,
+};
 pub use codegrid_vm::{
     BoundaryMode, CallFrameSnapshot, Coordinate, ExecutionScope, InstructionKind, MemoryAddress,
     MemoryLocationId, MemorySpaceId, MetricCounterOverflow, Page, RunOutcome, RuntimeError,

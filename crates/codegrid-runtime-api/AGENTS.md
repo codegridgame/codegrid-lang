@@ -3,6 +3,8 @@
 ## Responsibility
 
 Define the host-neutral, versioned request/response contract and manage verified programs and isolated VM instance lifecycles.
+Re-export shared model error translation helpers for adapter presentation;
+keep raw request/response error identities and details independent of locale.
 
 ## Allowed dependency and call direction
 

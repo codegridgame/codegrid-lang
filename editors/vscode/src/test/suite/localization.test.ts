@@ -3,7 +3,9 @@ import * as fs from 'fs';
 import * as path from 'path';
 import * as vscode from 'vscode';
 import { CodedError } from '../../debug/errors';
-import { errorNumber, ERROR_MESSAGES, localizeError, localizeDiagnostic, presentRuntimeErrors } from '../../language/errorMessages';
+import { errorNumber, localizeError, localizeDiagnostic, presentRuntimeErrors } from '../../language/errorMessages';
+
+import { errorCatalog, errorMessage, errorMessageByCode, normalizeErrorLocale } from '../../language/errorCatalog';
 
 const root = path.resolve(__dirname, '../../..');
 const read = (file: string): Record<string, string> => JSON.parse(fs.readFileSync(path.join(root, file), 'utf8'));
@@ -39,15 +41,26 @@ suite('Localization', () => {
     }
   });
 
-  test('all native and editor error identities have translations in every locale', () => {
+  test('all registered error numbers have ten shared translations', () => {
     const registry = JSON.parse(fs.readFileSync(path.resolve(root, '../../spec/codegrid-error-codes.json'), 'utf8'));
-    const layers = ['source', 'ir', 'vm', 'fault', 'debug', 'editor', 'cli'];
-    const identities = registry.entries.filter((entry: { layer: string }) => layers.includes(entry.layer)).map((entry: { code: string }) => entry.code);
-    assert.deepStrictEqual(Object.keys(ERROR_MESSAGES).sort(), identities.sort());
-    for (const locale of locales) {
-      const catalog = read(`l10n/bundle.l10n.${locale}.json`);
-      for (const code of identities) assert.ok(catalog[ERROR_MESSAGES[code]], `${locale}: ${code}`);
+    const canonical = JSON.parse(fs.readFileSync(path.resolve(root, '../../resources/codegrid-error-messages.json'), 'utf8'));
+    assert.deepStrictEqual(errorCatalog, canonical);
+    assert.strictEqual(Object.keys(errorCatalog.errors).length, registry.entries.length);
+    for (const entry of registry.entries) {
+      const row = errorCatalog.errors[entry.error_number];
+      assert.strictEqual(row.layer, entry.layer);
+      assert.strictEqual(row.code, entry.code);
+      assert.deepStrictEqual(Object.keys(row.messages).sort(), ['en', ...locales].sort());
+      for (const locale of ['en', ...locales]) {
+        assert.ok(errorMessage(entry.error_number, locale).trim());
+        assert.strictEqual(errorMessageByCode(entry.layer, String(entry.code), locale), row.messages[locale]);
+      }
     }
+    for (const [input, expected] of [['EN_us', 'en'], ['zh-Hant-HK', 'zh-tw'], ['zh-Hans', 'zh-cn'], ['zh', 'zh-cn'], ['pt-PT', 'pt-br'], ['de-DE', 'de'], ['', 'en']]) {
+      assert.strictEqual(normalizeErrorLocale(input), expected);
+    }
+    assert.strictEqual(errorMessage('9999', 'ru'), errorCatalog.fallback.ru);
+    assert.strictEqual(errorMessage('1004', 'unsupported'), errorMessage('1004', 'en'));
   });
 
   test('error translation follows the code and keeps native messages and diagnostic positions', () => {
@@ -58,10 +71,10 @@ suite('Localization', () => {
     assert.strictEqual(error.errorNumber, '5106');
     assert.strictEqual(errorNumber('ConcurrentOutputConflict'), '3006');
     const english = vscode.env.language.toLowerCase().startsWith('en');
-    assert.strictEqual(error.message, english ? original : vscode.l10n.t(ERROR_MESSAGES[error.code]));
+    assert.strictEqual(error.message, english ? original : errorMessage(error.errorNumber, vscode.env.language));
     const unknown = new CodedError('future.error', original);
     assert.strictEqual(unknown.code, 'future.error');
-    assert.strictEqual(unknown.message, english ? original : vscode.l10n.t('An error occurred. Inspect the details for more information.'));
+    assert.strictEqual(unknown.message, english ? original : errorMessage('', vscode.env.language));
     const diagnostic = new vscode.Diagnostic(new vscode.Range(2, 3, 2, 6), original);
     diagnostic.code = 'source.invalid_cell';
     diagnostic.source = 'CodeGrid';
@@ -87,7 +100,7 @@ suite('Localization', () => {
     const original = JSON.stringify(snapshot);
     const issues = presentRuntimeErrors(snapshot);
     assert.deepStrictEqual(issues.map((issue) => issue.code), ['ConcurrentOutputConflict', 'global_tick_overflow']);
-    for (const issue of issues) assert.strictEqual(issue.message, vscode.l10n.t(ERROR_MESSAGES[issue.code]));
+    for (const issue of issues) assert.strictEqual(issue.message, errorMessage(errorNumber(issue.code), vscode.env.language));
     assert.strictEqual(JSON.stringify(snapshot), original);
   });
 
@@ -102,7 +115,7 @@ suite('Localization', () => {
       assert.strictEqual(rejected.diagnostics![0].code, 'source.invalid_entry');
       const diagnostic = rejected.diagnostics![0];
       assert.strictEqual(localizeError(diagnostic.code, diagnostic.message),
-        vscode.env.language.startsWith('en') ? diagnostic.message : vscode.l10n.t(ERROR_MESSAGES[diagnostic.code]));
+        vscode.env.language.startsWith('en') ? diagnostic.message : errorMessage(errorNumber(diagnostic.code), vscode.env.language));
       await runtime.request({ ...configuration, source: '~> ~<\n' });
       await assert.rejects(runtime.request({ command: 'step' }), (failure: unknown) => {
         assert.ok(failure instanceof CodedError);
@@ -119,7 +132,7 @@ suite('Localization', () => {
       assert.strictEqual(result.snapshot!.status, 'error');
       const issues = presentRuntimeErrors(result.snapshot!);
       assert.strictEqual(issues[0].code, 'ConcurrentOutputConflict');
-      assert.strictEqual(issues[0].message, vscode.l10n.t(ERROR_MESSAGES.ConcurrentOutputConflict));
+      assert.strictEqual(issues[0].message, errorMessage('3006', vscode.env.language));
     } finally { conflict.dispose(); }
   });
 
@@ -154,7 +167,7 @@ suite('Localization', () => {
     assert.strictEqual(vscode.l10n.t('Program halted after {0} Global Ticks.', 12), catalog['Program halted after {0} Global Ticks.'].replace('{0}', '12'));
     const error = new CodedError('editor.no_session', 'No active runtime.');
     assert.strictEqual(error.code, 'editor.no_session');
-    assert.strictEqual(error.message, catalog['No active runtime.']);
+    assert.strictEqual(error.message, errorMessage(error.errorNumber, vscode.env.language));
     assert.ok(describeToken('+')!.includes(catalog['Increments R0 with 8-bit wrapping.']));
     assert.ok(describeToken('+')!.includes('`+`'));
     assert.ok(describeToken(',')!.includes('READ'));

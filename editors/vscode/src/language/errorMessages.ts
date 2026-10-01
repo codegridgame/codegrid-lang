@@ -1,5 +1,6 @@
 import * as vscode from 'vscode';
 import { errorNumbers } from './errorNumbers';
+import { errorMessage } from './errorCatalog';
 
 /** Numeric presentation only; source acceptance and VM behavior remain in Rust. */
 export function errorNumber(code: string): string {
@@ -14,13 +15,11 @@ export function errorLabel(code: string): string {
   return `[${errorNumber(code)}] [${code}]`;
 }
 
-/** Presentation keys indexed by published identities, never by message text. */
-export const ERROR_MESSAGES: Readonly<Record<string, string>> = require('../../l10n/error-messages.json');
-
 export function localizeError(code: string, originalMessage?: string): string {
-  const key = ERROR_MESSAGES[code] || 'An error occurred. Inspect the details for more information.';
   if (vscode.env.language.toLowerCase().startsWith('en') && originalMessage) return originalMessage;
-  return vscode.l10n.t(key);
+  const number = ['source', 'ir', 'vm', 'fault', 'debug', 'editor', 'cli', 'level']
+    .map(layer => errorNumbers[`${layer}:${code}`]).find(Boolean);
+  return errorMessage(number || '', vscode.env.language);
 }
 
 export function localizeDiagnostic(uri: vscode.Uri, diagnostic: vscode.Diagnostic): vscode.Diagnostic {

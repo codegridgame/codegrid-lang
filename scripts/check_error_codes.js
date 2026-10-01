@@ -7,6 +7,9 @@ const registry = JSON.parse(fs.readFileSync(path.join(root, 'spec/codegrid-error
 const generated = require('child_process').spawnSync(process.execPath,
   [path.join(__dirname, 'generate_error_numbers.js'), '--check'], { encoding: 'utf8' });
 if (generated.status !== 0) throw new Error(generated.stderr || 'Error-number generation check failed');
+const translations = require('child_process').spawnSync(process.execPath,
+  [path.join(__dirname, 'generate_error_messages.js'), '--check'], { encoding: 'utf8' });
+if (translations.status !== 0) throw new Error(translations.stderr || 'Error-translation generation check failed');
 const scoped = new Set();
 for (const entry of registry.entries) {
   const key = `${entry.layer}:${entry.code}`;

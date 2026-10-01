@@ -4,6 +4,8 @@
 
 Provide Level Host API v1, shared exact JSON projection, trusted resource
 profiles, source compilation, checked handles, and evaluation lifecycle.
+Re-export the shared model error translation helpers for host presentation.
+Translations must not replace structured outcomes or expose hidden test data.
 
 ## Allowed dependencies
 

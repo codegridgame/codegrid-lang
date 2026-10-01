@@ -18,8 +18,13 @@ after restart. No language setting is sent to the compiler or VM.
 
 Translate presentation text only. Preserve instruction spellings and canonical
 names, stable error codes, source examples, configuration properties, watch
-paths, DAP request names, and serialized VM fields. The error catalog `error-messages.json` maps all 119 native/editor error
-identities to translated summaries. Core and transport messages remain unchanged;
+paths, DAP request names, and serialized VM fields. The shared catalog
+[`resources/codegrid-error-messages.json`](../../../resources/codegrid-error-messages.json)
+contains all 249 error numbers in ten languages. `codegrid-error-messages.json`
+in this directory is its generated packaging copy; edit only the shared source
+and run `node scripts/generate_error_messages.js` from the repository root.
+Error summaries use the shared lookup instead of VS Code UI bundles.
+Core and transport messages remain unchanged;
 the editor translates at display boundaries. LSP related information and
 `CodedError.originalMessage` preserve original diagnostic text. Structured VM
 error details remain available for inspection. Never classify an error from its

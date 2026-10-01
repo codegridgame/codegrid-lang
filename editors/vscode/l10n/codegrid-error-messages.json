@@ -1,0 +1,4016 @@
+{
+  "schema": "codegrid.error.messages",
+  "schema_version": 1,
+  "registry_version": 2,
+  "default_locale": "en",
+  "locales": [
+    "en",
+    "de",
+    "fr",
+    "es",
+    "zh-tw",
+    "ja",
+    "zh-cn",
+    "ko",
+    "pt-br",
+    "ru"
+  ],
+  "fallback": {
+    "en": "An error occurred. Inspect the details for more information.",
+    "de": "Ein Fehler ist aufgetreten. Weitere Informationen stehen in den Details.",
+    "fr": "Une erreur s’est produite. Consultez les détails.",
+    "es": "Se ha producido un error. Consulte los detalles.",
+    "zh-tw": "發生錯誤，請查看詳細資訊。",
+    "ja": "エラーが発生しました。詳細を確認してください。",
+    "zh-cn": "发生错误，请查看详细信息。",
+    "ko": "오류가 발생했습니다. 자세한 정보를 확인하세요.",
+    "pt-br": "Ocorreu um erro. Consulte os detalhes.",
+    "ru": "Произошла ошибка. Подробности доступны в деталях."
+  },
+  "errors": {
+    "1000": {
+      "layer": "source",
+      "code": "source.unsupported_line_ending",
+      "messages": {
+        "en": "Bare carriage returns are not supported.",
+        "de": "Einzelne Wagenrückläufe sind nicht erlaubt.",
+        "fr": "Les retours chariot isolés ne sont pas acceptés.",
+        "es": "No se admiten retornos de carro aislados.",
+        "zh-tw": "不支援單獨的歸位字元。",
+        "ja": "単独のキャリッジリターンは未対応です。",
+        "zh-cn": "不支持单独的回车字符。",
+        "ko": "단독 캐리지 리턴은 지원하지 않습니다.",
+        "pt-br": "Retornos de carro isolados não são suportados.",
+        "ru": "Одиночный возврат каретки не поддерживается."
+      }
+    },
+    "1001": {
+      "layer": "source",
+      "code": "source.nested_comment",
+      "messages": {
+        "en": "Block comments cannot be nested.",
+        "de": "Blockkommentare dürfen nicht verschachtelt sein.",
+        "fr": "Les commentaires de bloc ne peuvent pas être imbriqués.",
+        "es": "Los comentarios de bloque no se pueden anidar.",
+        "zh-tw": "區塊註解不可巢狀。",
+        "ja": "ブロックコメントは入れ子にできません。",
+        "zh-cn": "块注释不能嵌套。",
+        "ko": "블록 주석은 중첩할 수 없습니다.",
+        "pt-br": "Comentários de bloco não podem ser aninhados.",
+        "ru": "Блочные комментарии нельзя вкладывать."
+      }
+    },
+    "1002": {
+      "layer": "source",
+      "code": "source.unterminated_comment",
+      "messages": {
+        "en": "The block comment is not closed.",
+        "de": "Der Blockkommentar ist nicht geschlossen.",
+        "fr": "Le commentaire de bloc n’est pas fermé.",
+        "es": "El comentario de bloque no está cerrado.",
+        "zh-tw": "區塊註解未結束。",
+        "ja": "ブロックコメントが閉じられていません。",
+        "zh-cn": "块注释未闭合。",
+        "ko": "블록 주석이 닫히지 않았습니다.",
+        "pt-br": "O comentário de bloco não foi fechado.",
+        "ru": "Блочный комментарий не закрыт."
+      }
+    },
+    "1003": {
+      "layer": "source",
+      "code": "source.invalid_entry",
+      "messages": {
+        "en": "The Entry token is invalid or has an Attachment.",
+        "de": "Entry-Token ist ungültig oder hat einen Anhang.",
+        "fr": "Le jeton Entry est invalide ou possède une pièce jointe.",
+        "es": "El token Entry no es válido o tiene un adjunto.",
+        "zh-tw": "Entry 指令無效或帶有附加指令。",
+        "ja": "Entry トークンが無効か、アタッチメントがあります。",
+        "zh-cn": "Entry 指令无效或带有附加指令。",
+        "ko": "Entry 토큰이 잘못되었거나 첨부가 있습니다.",
+        "pt-br": "O token Entry é inválido ou tem um anexo.",
+        "ru": "Токен Entry недопустим или имеет дополнение."
+      }
+    },
+    "1004": {
+      "layer": "source",
+      "code": "source.invalid_cell",
+      "messages": {
+        "en": "The cell token or Primary/Attachment pairing is invalid.",
+        "de": "Zellentoken oder Primary/Anhang-Paarung ist ungültig.",
+        "fr": "Le jeton de cellule ou la combinaison Primary/pièce jointe est invalide.",
+        "es": "El token de celda o la combinación Primary/adjunto no es válido.",
+        "zh-tw": "儲存格指令或 Primary／Attachment 配對無效。",
+        "ja": "セルのトークンまたは Primary/Attachment の組み合わせが無効です。",
+        "zh-cn": "单元格指令或 Primary／Attachment 配对无效。",
+        "ko": "셀 토큰 또는 Primary/Attachment 조합이 잘못되었습니다.",
+        "pt-br": "O token de célula ou a combinação Primary/Attachment é inválido.",
+        "ru": "Недопустимый токен ячейки или сочетание Primary/Attachment."
+      }
+    },
+    "1005": {
+      "layer": "source",
+      "code": "source.missing_directive_prefix",
+      "messages": {
+        "en": "The directive must start with @.",
+        "de": "Die Direktive muss mit @ beginnen.",
+        "fr": "La directive doit commencer par @.",
+        "es": "La directiva debe comenzar por @.",
+        "zh-tw": "宣告指令必須以 @ 開頭。",
+        "ja": "ディレクティブは @ で始める必要があります。",
+        "zh-cn": "声明指令必须以 @ 开头。",
+        "ko": "지시문은 @로 시작해야 합니다.",
+        "pt-br": "A diretiva deve começar com @.",
+        "ru": "Директива должна начинаться с @."
+      }
+    },
+    "1006": {
+      "layer": "source",
+      "code": "source.invalid_directive_path",
+      "messages": {
+        "en": "The structural path or definition ID is invalid.",
+        "de": "Strukturpfad oder Definitions-ID ist ungültig.",
+        "fr": "Le chemin structurel ou l’identifiant est invalide.",
+        "es": "La ruta estructural o el identificador no es válido.",
+        "zh-tw": "結構路徑或定義 ID 無效。",
+        "ja": "構造パスまたは定義 ID が無効です。",
+        "zh-cn": "结构路径或定义 ID 无效。",
+        "ko": "구조 경로 또는 정의 ID가 잘못되었습니다.",
+        "pt-br": "O caminho estrutural ou ID da definição é inválido.",
+        "ru": "Недопустимый структурный путь или ID определения."
+      }
+    },
+    "1007": {
+      "layer": "source",
+      "code": "source.unknown_directive",
+      "messages": {
+        "en": "The directive is unknown.",
+        "de": "Unbekannte Direktive.",
+        "fr": "La directive est inconnue.",
+        "es": "La directiva es desconocida.",
+        "zh-tw": "未知的宣告指令。",
+        "ja": "不明なディレクティブです。",
+        "zh-cn": "未知的声明指令。",
+        "ko": "알 수 없는 지시문입니다.",
+        "pt-br": "A diretiva é desconhecida.",
+        "ru": "Неизвестная директива."
+      }
+    },
+    "1008": {
+      "layer": "source",
+      "code": "source.size_argument_count",
+      "messages": {
+        "en": "@size requires exactly one dimension argument.",
+        "de": "@size benötigt genau ein Größenargument.",
+        "fr": "@size exige un seul argument de dimensions.",
+        "es": "@size requiere exactamente un argumento de dimensiones.",
+        "zh-tw": "@size 必須只有一個尺寸參數。",
+        "ja": "@size には寸法引数が 1 つだけ必要です。",
+        "zh-cn": "@size 必须只有一个尺寸参数。",
+        "ko": "@size에는 크기 인수가 정확히 하나 필요합니다.",
+        "pt-br": "@size exige exatamente um argumento de dimensões.",
+        "ru": "@size требует ровно один аргумент размера."
+      }
+    },
+    "1009": {
+      "layer": "source",
+      "code": "source.invalid_size",
+      "messages": {
+        "en": "Use positive decimal dimensions in WIDTHxHEIGHT format.",
+        "de": "Positive Dezimalmaße im Format WIDTHxHEIGHT verwenden.",
+        "fr": "Utilisez des dimensions décimales positives au format WIDTHxHEIGHT.",
+        "es": "Use dimensiones decimales positivas en formato WIDTHxHEIGHT.",
+        "zh-tw": "請使用 WIDTHxHEIGHT 格式的正十進位尺寸。",
+        "ja": "WIDTHxHEIGHT 形式の正の十進数寸法を使用してください。",
+        "zh-cn": "请使用 WIDTHxHEIGHT 格式的正十进制尺寸。",
+        "ko": "WIDTHxHEIGHT 형식의 양의 십진수 크기를 사용하세요.",
+        "pt-br": "Use dimensões decimais positivas no formato WIDTHxHEIGHT.",
+        "ru": "Используйте положительные десятичные размеры WIDTHxHEIGHT."
+      }
+    },
+    "1010": {
+      "layer": "source",
+      "code": "source.zero_size",
+      "messages": {
+        "en": "Board dimensions must be greater than zero.",
+        "de": "Board-Maße müssen größer als null sein.",
+        "fr": "Les dimensions doivent être supérieures à zéro.",
+        "es": "Las dimensiones deben ser mayores que cero.",
+        "zh-tw": "棋盤尺寸必須大於零。",
+        "ja": "ボードの寸法はゼロより大きい必要があります。",
+        "zh-cn": "棋盘尺寸必须大于零。",
+        "ko": "보드 크기는 0보다 커야 합니다.",
+        "pt-br": "As dimensões devem ser maiores que zero.",
+        "ru": "Размеры поля должны быть больше нуля."
+      }
+    },
+    "1011": {
+      "layer": "source",
+      "code": "source.geometry_limit",
+      "messages": {
+        "en": "Board geometry exceeds the portable source limits.",
+        "de": "Board-Geometrie überschreitet die portablen Quellgrenzen.",
+        "fr": "La géométrie dépasse les limites portables du langage.",
+        "es": "La geometría supera los límites portables del lenguaje.",
+        "zh-tw": "棋盤大小超出可攜式原始碼限制。",
+        "ja": "ボード形状が移植可能なソース制限を超えています。",
+        "zh-cn": "棋盘大小超出可移植源码限制。",
+        "ko": "보드 크기가 이식 가능한 소스 한도를 초과했습니다.",
+        "pt-br": "A geometria excede os limites portáveis do código.",
+        "ru": "Размер поля превышает переносимые ограничения исходного кода."
+      }
+    },
+    "1012": {
+      "layer": "source",
+      "code": "source.end_argument_count",
+      "messages": {
+        "en": "@end accepts at most one closing name.",
+        "de": "@end akzeptiert höchstens einen Abschlussnamen.",
+        "fr": "@end accepte au plus un nom de fermeture.",
+        "es": "@end admite como máximo un nombre de cierre.",
+        "zh-tw": "@end 最多接受一個結束名稱。",
+        "ja": "@end は終了名を最大 1 つ受け付けます。",
+        "zh-cn": "@end 最多接受一个结束名称。",
+        "ko": "@end에는 종료 이름을 최대 하나 지정할 수 있습니다.",
+        "pt-br": "@end aceita no máximo um nome de fechamento.",
+        "ru": "@end допускает не более одного имени закрытия."
+      }
+    },
+    "1013": {
+      "layer": "source",
+      "code": "source.invalid_end_name",
+      "messages": {
+        "en": "The closing name is not a valid structural path.",
+        "de": "Der Abschlussname ist kein gültiger Strukturpfad.",
+        "fr": "Le nom de fermeture n’est pas un chemin valide.",
+        "es": "El nombre de cierre no es una ruta estructural válida.",
+        "zh-tw": "結束名稱不是有效的結構路徑。",
+        "ja": "終了名が有効な構造パスではありません。",
+        "zh-cn": "结束名称不是有效的结构路径。",
+        "ko": "종료 이름이 유효한 구조 경로가 아닙니다.",
+        "pt-br": "O nome de fechamento não é um caminho estrutural válido.",
+        "ru": "Имя закрытия не является допустимым структурным путём."
+      }
+    },
+    "1014": {
+      "layer": "source",
+      "code": "source.definition_arguments",
+      "messages": {
+        "en": "This definition cannot contain cells on its directive line.",
+        "de": "Diese Definition darf keine Zellen in der Direktivenzeile enthalten.",
+        "fr": "Cette définition ne peut pas contenir de cellules sur sa ligne de directive.",
+        "es": "Esta definición no puede incluir celdas en su línea de directiva.",
+        "zh-tw": "此定義的宣告行不可包含儲存格。",
+        "ja": "この定義のディレクティブ行にセルは置けません。",
+        "zh-cn": "此定义的声明行不能包含单元格。",
+        "ko": "이 정의의 지시문 줄에는 셀을 넣을 수 없습니다.",
+        "pt-br": "Esta definição não pode ter células na linha da diretiva.",
+        "ru": "Строка директивы этого определения не может содержать ячейки."
+      }
+    },
+    "1015": {
+      "layer": "source",
+      "code": "source.folded_structure",
+      "messages": {
+        "en": "Only the closing @end directive is allowed inside a Folded Block.",
+        "de": "Im Folded Block ist nur die abschließende @end-Direktive erlaubt.",
+        "fr": "Seule la directive de fermeture @end est permise dans un Folded Block.",
+        "es": "Dentro de un Folded Block solo se admite @end de cierre.",
+        "zh-tw": "Folded Block 內僅允許結束用的 @end 指令。",
+        "ja": "Folded Block 内は閉じる @end ディレクティブのみ許可されます。",
+        "zh-cn": "Folded Block 内仅允许结束用的 @end 指令。",
+        "ko": "Folded Block 내부에는 종료 @end 지시문만 허용됩니다.",
+        "pt-br": "Dentro de Folded Block, apenas a diretiva @end de fechamento é permitida.",
+        "ru": "Внутри Folded Block разрешена только закрывающая директива @end."
+      }
+    },
+    "1016": {
+      "layer": "source",
+      "code": "source.definition_scope",
+      "messages": {
+        "en": "The definition is outside its permitted owner scope.",
+        "de": "Die Definition liegt außerhalb des erlaubten Besitzerbereichs.",
+        "fr": "La définition est hors de la portée autorisée.",
+        "es": "La definición está fuera del ámbito permitido de su propietario.",
+        "zh-tw": "定義不在允許的所屬範圍內。",
+        "ja": "定義が許可された所有スコープの外にあります。",
+        "zh-cn": "定义不在允许的所属作用域内。",
+        "ko": "정의가 허용된 소유 범위 밖에 있습니다.",
+        "pt-br": "A definição está fora do escopo permitido do proprietário.",
+        "ru": "Определение находится вне допустимой области владельца."
+      }
+    },
+    "1017": {
+      "layer": "source",
+      "code": "source.nested_codegrid",
+      "messages": {
+        "en": "Main and Custom CodeGrid definitions cannot be nested.",
+        "de": "Main- und Custom-CodeGrid-Definitionen dürfen nicht verschachtelt sein.",
+        "fr": "Les définitions Main et Custom CodeGrid ne peuvent pas être imbriquées.",
+        "es": "Las definiciones Main y Custom CodeGrid no se pueden anidar.",
+        "zh-tw": "Main 和 Custom CodeGrid 定義不可巢狀。",
+        "ja": "Main と Custom CodeGrid の定義は入れ子にできません。",
+        "zh-cn": "Main 和 Custom CodeGrid 定义不能嵌套。",
+        "ko": "Main 및 Custom CodeGrid 정의는 중첩할 수 없습니다.",
+        "pt-br": "Definições Main e Custom CodeGrid não podem ser aninhadas.",
+        "ru": "Определения Main и Custom CodeGrid нельзя вкладывать."
+      }
+    },
+    "1018": {
+      "layer": "source",
+      "code": "source.duplicate_definition",
+      "messages": {
+        "en": "The same definition is declared more than once.",
+        "de": "Dieselbe Definition wurde mehrfach deklariert.",
+        "fr": "La même définition est déclarée plusieurs fois.",
+        "es": "La misma definición se ha declarado varias veces.",
+        "zh-tw": "同一定義重複宣告。",
+        "ja": "同じ定義が複数回宣言されています。",
+        "zh-cn": "同一定义重复声明。",
+        "ko": "같은 정의가 여러 번 선언되었습니다.",
+        "pt-br": "A mesma definição foi declarada mais de uma vez.",
+        "ru": "Одно определение объявлено несколько раз."
+      }
+    },
+    "1019": {
+      "layer": "source",
+      "code": "source.mixed_main",
+      "messages": {
+        "en": "Implicit Main rows cannot be mixed with an explicit Main block.",
+        "de": "Implizite Main-Zeilen dürfen nicht mit einem expliziten Main-Block gemischt werden.",
+        "fr": "Les lignes Main implicites ne peuvent pas être mélangées avec un bloc Main explicite.",
+        "es": "No se pueden mezclar filas Main implícitas con un bloque Main explícito.",
+        "zh-tw": "不可混用隱含 Main 列與明確的 Main 區塊。",
+        "ja": "暗黙の Main 行と明示的な Main ブロックは混在できません。",
+        "zh-cn": "不能混用隐式 Main 行与显式 Main 块。",
+        "ko": "암시적 Main 행과 명시적 Main 블록을 혼합할 수 없습니다.",
+        "pt-br": "Linhas Main implícitas não podem ser misturadas com um bloco Main explícito.",
+        "ru": "Нельзя смешивать неявные строки Main с явным блоком Main."
+      }
+    },
+    "1020": {
+      "layer": "source",
+      "code": "source.nested_fold",
+      "messages": {
+        "en": "Folded Blocks cannot be nested.",
+        "de": "Folded Blocks dürfen nicht verschachtelt sein.",
+        "fr": "Les Folded Blocks ne peuvent pas être imbriqués.",
+        "es": "Los Folded Blocks no se pueden anidar.",
+        "zh-tw": "Folded Block 不可巢狀。",
+        "ja": "Folded Block は入れ子にできません。",
+        "zh-cn": "Folded Block 不能嵌套。",
+        "ko": "Folded Block은 중첩할 수 없습니다.",
+        "pt-br": "Folded Blocks não podem ser aninhados.",
+        "ru": "Folded Block нельзя вкладывать."
+      }
+    },
+    "1021": {
+      "layer": "source",
+      "code": "source.fold_row_count",
+      "messages": {
+        "en": "A Folded Block must contain exactly one row.",
+        "de": "Ein Folded Block muss genau eine Zeile enthalten.",
+        "fr": "Un Folded Block doit contenir exactement une ligne.",
+        "es": "Un Folded Block debe contener exactamente una fila.",
+        "zh-tw": "Folded Block 必須恰好包含一列。",
+        "ja": "Folded Block はちょうど 1 行である必要があります。",
+        "zh-cn": "Folded Block 必须恰好包含一行。",
+        "ko": "Folded Block에는 정확히 한 행이 있어야 합니다.",
+        "pt-br": "Um Folded Block deve conter exatamente uma linha.",
+        "ru": "Folded Block должен содержать ровно одну строку."
+      }
+    },
+    "1022": {
+      "layer": "source",
+      "code": "source.grid_scope",
+      "messages": {
+        "en": "The grid row is outside the explicit Main block.",
+        "de": "Die Rasterzeile liegt außerhalb des expliziten Main-Blocks.",
+        "fr": "La ligne de grille est hors du bloc Main explicite.",
+        "es": "La fila de cuadrícula está fuera del bloque Main explícito.",
+        "zh-tw": "棋盤列不在明確的 Main 區塊內。",
+        "ja": "グリッド行が明示的な Main ブロックの外にあります。",
+        "zh-cn": "棋盘行不在显式 Main 块内。",
+        "ko": "격자 행이 명시적 Main 블록 밖에 있습니다.",
+        "pt-br": "A linha da grade está fora do bloco Main explícito.",
+        "ru": "Строка сетки находится вне явного блока Main."
+      }
+    },
+    "1023": {
+      "layer": "source",
+      "code": "source.grid_order",
+      "messages": {
+        "en": "Grid rows must be contiguous and precede nested definitions.",
+        "de": "Rasterzeilen müssen zusammenhängend sein und vor verschachtelten Definitionen stehen.",
+        "fr": "Les lignes doivent être contiguës et précéder les définitions imbriquées.",
+        "es": "Las filas deben ser contiguas y preceder a las definiciones anidadas.",
+        "zh-tw": "棋盤列必須連續，且位於巢狀定義之前。",
+        "ja": "グリッド行は連続し、入れ子の定義より前にある必要があります。",
+        "zh-cn": "棋盘行必须连续，并位于嵌套定义之前。",
+        "ko": "격자 행은 연속되어야 하며 중첩 정의 앞에 있어야 합니다.",
+        "pt-br": "As linhas devem ser contíguas e preceder definições aninhadas.",
+        "ru": "Строки сетки должны быть непрерывными и предшествовать вложенным определениям."
+      }
+    },
+    "1024": {
+      "layer": "source",
+      "code": "source.size_scope",
+      "messages": {
+        "en": "@size is not allowed inside a Folded Block.",
+        "de": "@size ist in einem Folded Block nicht erlaubt.",
+        "fr": "@size est interdit dans un Folded Block.",
+        "es": "@size no se permite dentro de un Folded Block.",
+        "zh-tw": "Folded Block 內不可使用 @size。",
+        "ja": "Folded Block 内で @size は使用できません。",
+        "zh-cn": "Folded Block 内不能使用 @size。",
+        "ko": "Folded Block 내부에서는 @size를 사용할 수 없습니다.",
+        "pt-br": "@size não é permitido dentro de Folded Block.",
+        "ru": "@size запрещён внутри Folded Block."
+      }
+    },
+    "1025": {
+      "layer": "source",
+      "code": "source.invalid_span",
+      "messages": {
+        "en": "The source location cannot be read from this document.",
+        "de": "Die Quellposition kann aus diesem Dokument nicht gelesen werden.",
+        "fr": "L’emplacement source ne peut pas être lu dans ce document.",
+        "es": "No se puede leer la ubicación del código en este documento.",
+        "zh-tw": "無法從此文件讀取原始碼位置。",
+        "ja": "この文書からソース位置を読み取れません。",
+        "zh-cn": "无法从此文档读取源码位置。",
+        "ko": "이 문서에서 소스 위치를 읽을 수 없습니다.",
+        "pt-br": "Não é possível ler a posição do código neste documento.",
+        "ru": "Не удалось прочитать позицию в этом документе."
+      }
+    },
+    "1026": {
+      "layer": "source",
+      "code": "source.duplicate_size",
+      "messages": {
+        "en": "The scope has more than one @size declaration.",
+        "de": "Der Bereich hat mehrere @size-Deklarationen.",
+        "fr": "La portée contient plusieurs déclarations @size.",
+        "es": "El ámbito tiene varias declaraciones @size.",
+        "zh-tw": "同一範圍內重複宣告 @size。",
+        "ja": "同じスコープに複数の @size 宣言があります。",
+        "zh-cn": "同一作用域内重复声明 @size。",
+        "ko": "같은 범위에 @size 선언이 여러 개 있습니다.",
+        "pt-br": "O escopo tem mais de uma declaração @size.",
+        "ru": "В области несколько объявлений @size."
+      }
+    },
+    "1027": {
+      "layer": "source",
+      "code": "source.unexpected_end",
+      "messages": {
+        "en": "@end has no open definition to close.",
+        "de": "@end hat keine offene Definition zum Schließen.",
+        "fr": "@end n’a aucune définition ouverte à fermer.",
+        "es": "@end no tiene ninguna definición abierta que cerrar.",
+        "zh-tw": "@end 沒有可結束的開放定義。",
+        "ja": "@end に対応する開いた定義がありません。",
+        "zh-cn": "@end 没有可结束的开放定义。",
+        "ko": "@end로 닫을 열린 정의가 없습니다.",
+        "pt-br": "@end não tem uma definição aberta para fechar.",
+        "ru": "Для @end нет открытого определения."
+      }
+    },
+    "1028": {
+      "layer": "source",
+      "code": "source.end_mismatch",
+      "messages": {
+        "en": "The closing name does not match the open definition.",
+        "de": "Der Abschlussname passt nicht zur offenen Definition.",
+        "fr": "Le nom de fermeture ne correspond pas à la définition ouverte.",
+        "es": "El nombre de cierre no coincide con la definición abierta.",
+        "zh-tw": "結束名稱與開放定義不符。",
+        "ja": "終了名が開いた定義と一致しません。",
+        "zh-cn": "结束名称与开放定义不符。",
+        "ko": "종료 이름이 열린 정의와 일치하지 않습니다.",
+        "pt-br": "O nome de fechamento não corresponde à definição aberta.",
+        "ru": "Имя закрытия не соответствует открытому определению."
+      }
+    },
+    "1029": {
+      "layer": "source",
+      "code": "source.missing_end",
+      "messages": {
+        "en": "The definition is missing its closing @end.",
+        "de": "Der Definition fehlt das abschließende @end.",
+        "fr": "La définition n’a pas de @end de fermeture.",
+        "es": "Falta el @end de cierre de la definición.",
+        "zh-tw": "定義缺少結束用的 @end。",
+        "ja": "定義を閉じる @end がありません。",
+        "zh-cn": "定义缺少结束用的 @end。",
+        "ko": "정의에 종료 @end가 없습니다.",
+        "pt-br": "Falta o @end de fechamento da definição.",
+        "ru": "В определении отсутствует закрывающий @end."
+      }
+    },
+    "1030": {
+      "layer": "source",
+      "code": "source.explicit_main_required",
+      "messages": {
+        "en": "Function and Custom definitions require an explicit Main block.",
+        "de": "Function- und Custom-Definitionen benötigen einen expliziten Main-Block.",
+        "fr": "Les définitions Function et Custom exigent un bloc Main explicite.",
+        "es": "Las definiciones Function y Custom requieren un bloque Main explícito.",
+        "zh-tw": "Function 和 Custom 定義需要明確的 Main 區塊。",
+        "ja": "Function と Custom の定義には明示的な Main ブロックが必要です。",
+        "zh-cn": "Function 和 Custom 定义需要显式 Main 块。",
+        "ko": "Function 및 Custom 정의에는 명시적 Main 블록이 필요합니다.",
+        "pt-br": "Definições Function e Custom exigem um bloco Main explícito.",
+        "ru": "Для определений Function и Custom требуется явный блок Main."
+      }
+    },
+    "1031": {
+      "layer": "source",
+      "code": "source.undefined_custom",
+      "messages": {
+        "en": "The referenced Custom CodeGrid is not declared.",
+        "de": "Das referenzierte Custom CodeGrid ist nicht deklariert.",
+        "fr": "Le Custom CodeGrid référencé n’est pas déclaré.",
+        "es": "El Custom CodeGrid referenciado no está declarado.",
+        "zh-tw": "參照的 Custom CodeGrid 未宣告。",
+        "ja": "参照された Custom CodeGrid が宣言されていません。",
+        "zh-cn": "引用的 Custom CodeGrid 未声明。",
+        "ko": "참조된 Custom CodeGrid가 선언되지 않았습니다.",
+        "pt-br": "O Custom CodeGrid referenciado não foi declarado.",
+        "ru": "Указанный Custom CodeGrid не объявлен."
+      }
+    },
+    "1032": {
+      "layer": "source",
+      "code": "source.missing_grid",
+      "messages": {
+        "en": "A required Main or Function grid is missing.",
+        "de": "Ein erforderliches Main- oder Function-Raster fehlt.",
+        "fr": "Une grille Main ou Function requise est absente.",
+        "es": "Falta una cuadrícula Main o Function obligatoria.",
+        "zh-tw": "缺少必要的 Main 或 Function 棋盤。",
+        "ja": "必要な Main または Function グリッドがありません。",
+        "zh-cn": "缺少必要的 Main 或 Function 棋盘。",
+        "ko": "필수 Main 또는 Function 격자가 없습니다.",
+        "pt-br": "Falta uma grade Main ou Function obrigatória.",
+        "ru": "Отсутствует обязательная сетка Main или Function."
+      }
+    },
+    "1033": {
+      "layer": "source",
+      "code": "source.height_mismatch",
+      "messages": {
+        "en": "The row count does not match the board height.",
+        "de": "Die Zeilenanzahl passt nicht zur Board-Höhe.",
+        "fr": "Le nombre de lignes ne correspond pas à la hauteur.",
+        "es": "El número de filas no coincide con la altura.",
+        "zh-tw": "列數與棋盤高度不符。",
+        "ja": "行数がボードの高さと一致しません。",
+        "zh-cn": "行数与棋盘高度不符。",
+        "ko": "행 수가 보드 높이와 일치하지 않습니다.",
+        "pt-br": "A quantidade de linhas não corresponde à altura.",
+        "ru": "Число строк не соответствует высоте поля."
+      }
+    },
+    "1034": {
+      "layer": "source",
+      "code": "source.width_mismatch",
+      "messages": {
+        "en": "The row width does not match the board width.",
+        "de": "Die Zeilenbreite passt nicht zur Board-Breite.",
+        "fr": "La largeur de ligne ne correspond pas au plateau.",
+        "es": "El ancho de la fila no coincide con el tablero.",
+        "zh-tw": "列寬與棋盤寬度不符。",
+        "ja": "行の幅がボードの幅と一致しません。",
+        "zh-cn": "行宽与棋盘宽度不符。",
+        "ko": "행 너비가 보드 너비와 일치하지 않습니다.",
+        "pt-br": "A largura da linha não corresponde ao tabuleiro.",
+        "ru": "Ширина строки не соответствует ширине поля."
+      }
+    },
+    "1035": {
+      "layer": "source",
+      "code": "source.main_entry_count",
+      "messages": {
+        "en": "A Main board requires at least one Entry.",
+        "de": "Ein Main-Board benötigt mindestens einen Entry.",
+        "fr": "Un plateau Main exige au moins une Entry.",
+        "es": "Un tablero Main requiere al menos una Entry.",
+        "zh-tw": "Main 棋盤至少需要一個 Entry。",
+        "ja": "Main ボードには Entry が少なくとも 1 つ必要です。",
+        "zh-cn": "Main 棋盘至少需要一个 Entry。",
+        "ko": "Main 보드에는 Entry가 하나 이상 필요합니다.",
+        "pt-br": "Um tabuleiro Main exige pelo menos uma Entry.",
+        "ru": "Поле Main требует хотя бы одну Entry."
+      }
+    },
+    "1036": {
+      "layer": "source",
+      "code": "source.function_entry_count",
+      "messages": {
+        "en": "A Function board requires exactly one Entry.",
+        "de": "Ein Function-Board benötigt genau einen Entry.",
+        "fr": "Un plateau Function exige exactement une Entry.",
+        "es": "Un tablero Function requiere exactamente una Entry.",
+        "zh-tw": "Function 棋盤必須恰好有一個 Entry。",
+        "ja": "Function ボードには Entry がちょうど 1 つ必要です。",
+        "zh-cn": "Function 棋盘必须恰好有一个 Entry。",
+        "ko": "Function 보드에는 Entry가 정확히 하나 필요합니다.",
+        "pt-br": "Um tabuleiro Function exige exatamente uma Entry.",
+        "ru": "Поле Function требует ровно одну Entry."
+      }
+    },
+    "1037": {
+      "layer": "source",
+      "code": "source.fold_width",
+      "messages": {
+        "en": "The Folded Block width must match its owner board.",
+        "de": "Die Folded Block-Breite muss zum Besitzer-Board passen.",
+        "fr": "La largeur du Folded Block doit correspondre au plateau propriétaire.",
+        "es": "El ancho del Folded Block debe coincidir con su tablero propietario.",
+        "zh-tw": "Folded Block 寬度必須與所屬棋盤相同。",
+        "ja": "Folded Block の幅は所有ボードと一致する必要があります。",
+        "zh-cn": "Folded Block 宽度必须与所属棋盘相同。",
+        "ko": "Folded Block 너비는 소유 보드와 같아야 합니다.",
+        "pt-br": "A largura de Folded Block deve corresponder ao tabuleiro proprietário.",
+        "ru": "Ширина Folded Block должна совпадать с полем владельца."
+      }
+    },
+    "1038": {
+      "layer": "source",
+      "code": "source.fold_entry",
+      "messages": {
+        "en": "Entry is not allowed inside a Folded Block.",
+        "de": "Entry ist in einem Folded Block nicht erlaubt.",
+        "fr": "Entry est interdit dans un Folded Block.",
+        "es": "Entry no se permite dentro de un Folded Block.",
+        "zh-tw": "Folded Block 內不可使用 Entry。",
+        "ja": "Folded Block 内で Entry は使用できません。",
+        "zh-cn": "Folded Block 内不能使用 Entry。",
+        "ko": "Folded Block 내부에서는 Entry를 사용할 수 없습니다.",
+        "pt-br": "Entry não é permitido dentro de Folded Block.",
+        "ru": "Entry запрещена внутри Folded Block."
+      }
+    },
+    "1039": {
+      "layer": "source",
+      "code": "source.fold_attachment",
+      "messages": {
+        "en": "Attachments are not allowed inside a Folded Block.",
+        "de": "Anhänge sind in einem Folded Block nicht erlaubt.",
+        "fr": "Les pièces jointes sont interdites dans un Folded Block.",
+        "es": "Los adjuntos no se permiten dentro de un Folded Block.",
+        "zh-tw": "Folded Block 內不可使用附加指令。",
+        "ja": "Folded Block 内でアタッチメントは使用できません。",
+        "zh-cn": "Folded Block 内不能使用附加指令。",
+        "ko": "Folded Block 내부에서는 첨부를 사용할 수 없습니다.",
+        "pt-br": "Anexos não são permitidos dentro de Folded Block.",
+        "ru": "Дополнения запрещены внутри Folded Block."
+      }
+    },
+    "1040": {
+      "layer": "source",
+      "code": "source.fold_primary",
+      "messages": {
+        "en": "The instruction is not allowed in this Folded Block context.",
+        "de": "Die Anweisung ist in diesem Folded Block-Kontext nicht erlaubt.",
+        "fr": "L’instruction est interdite dans ce contexte Folded Block.",
+        "es": "La instrucción no se permite en este contexto Folded Block.",
+        "zh-tw": "此 Folded Block 範圍不可使用該指令。",
+        "ja": "この Folded Block コンテキストでは命令を使用できません。",
+        "zh-cn": "此 Folded Block 上下文不能使用该指令。",
+        "ko": "이 Folded Block 문맥에서는 해당 명령을 사용할 수 없습니다.",
+        "pt-br": "A instrução não é permitida neste contexto Folded Block.",
+        "ru": "Инструкция запрещена в этом контексте Folded Block."
+      }
+    },
+    "1041": {
+      "layer": "source",
+      "code": "source.return_scope",
+      "messages": {
+        "en": "RETURN is only allowed inside a Function.",
+        "de": "RETURN ist nur in einer Function erlaubt.",
+        "fr": "RETURN est permis uniquement dans une Function.",
+        "es": "RETURN solo se permite dentro de una Function.",
+        "zh-tw": "RETURN 僅可用於 Function 內。",
+        "ja": "RETURN は Function 内でのみ使用できます。",
+        "zh-cn": "RETURN 仅可用于 Function 内。",
+        "ko": "RETURN은 Function 내부에서만 사용할 수 있습니다.",
+        "pt-br": "RETURN só é permitido dentro de uma Function.",
+        "ru": "RETURN разрешён только внутри Function."
+      }
+    },
+    "1042": {
+      "layer": "source",
+      "code": "source.custom_return_scope",
+      "messages": {
+        "en": "CUSTOM_RETURN requires a Custom Main board.",
+        "de": "CUSTOM_RETURN benötigt ein Custom Main-Board.",
+        "fr": "CUSTOM_RETURN exige un plateau Custom Main.",
+        "es": "CUSTOM_RETURN requiere un tablero Custom Main.",
+        "zh-tw": "CUSTOM_RETURN 必須位於 Custom Main 棋盤。",
+        "ja": "CUSTOM_RETURN は Custom Main ボードが必要です。",
+        "zh-cn": "CUSTOM_RETURN 必须位于 Custom Main 棋盘。",
+        "ko": "CUSTOM_RETURN은 Custom Main 보드가 필요합니다.",
+        "pt-br": "CUSTOM_RETURN exige um tabuleiro Custom Main.",
+        "ru": "CUSTOM_RETURN требует поле Custom Main."
+      }
+    },
+    "1043": {
+      "layer": "source",
+      "code": "source.custom_call_scope",
+      "messages": {
+        "en": "Custom definitions cannot call Custom instructions.",
+        "de": "Custom-Definitionen dürfen keine Custom-Anweisungen aufrufen.",
+        "fr": "Les définitions Custom ne peuvent pas appeler d’instructions Custom.",
+        "es": "Las definiciones Custom no pueden llamar a instrucciones Custom.",
+        "zh-tw": "Custom 定義不可呼叫 Custom 指令。",
+        "ja": "Custom 定義から Custom 命令は呼び出せません。",
+        "zh-cn": "Custom 定义不能调用 Custom 指令。",
+        "ko": "Custom 정의에서 Custom 명령을 호출할 수 없습니다.",
+        "pt-br": "Definições Custom não podem chamar instruções Custom.",
+        "ru": "Определения Custom не могут вызывать инструкции Custom."
+      }
+    },
+    "1044": {
+      "layer": "source",
+      "code": "source.missing_program",
+      "messages": {
+        "en": "Compilation did not produce an executable program.",
+        "de": "Die Kompilierung hat kein ausführbares Programm erzeugt.",
+        "fr": "La compilation n’a pas produit de programme exécutable.",
+        "es": "La compilación no produjo un programa ejecutable.",
+        "zh-tw": "編譯未產生可執行程式。",
+        "ja": "コンパイルで実行可能なプログラムが生成されませんでした。",
+        "zh-cn": "编译未产生可执行程序。",
+        "ko": "컴파일이 실행 가능한 프로그램을 생성하지 못했습니다.",
+        "pt-br": "A compilação não produziu um programa executável.",
+        "ru": "Компиляция не создала исполняемую программу."
+      }
+    },
+    "2000": {
+      "layer": "ir",
+      "code": "ir.unsupported_version",
+      "messages": {
+        "en": "The executable IR version is unsupported.",
+        "de": "Die ausführbare IR-Version wird nicht unterstützt.",
+        "fr": "La version IR exécutable n’est pas prise en charge.",
+        "es": "La versión del IR ejecutable no está admitida.",
+        "zh-tw": "不支援此可執行 IR 版本。",
+        "ja": "実行可能 IR のバージョンは未対応です。",
+        "zh-cn": "不支持此可执行 IR 版本。",
+        "ko": "실행 가능한 IR 버전을 지원하지 않습니다.",
+        "pt-br": "A versão do IR executável não é suportada.",
+        "ru": "Версия исполняемого IR не поддерживается."
+      }
+    },
+    "2001": {
+      "layer": "ir",
+      "code": "ir.geometry_overflow",
+      "messages": {
+        "en": "Board dimensions overflow the address space.",
+        "de": "Board-Maße überschreiten den Adressraum.",
+        "fr": "Les dimensions dépassent l’espace d’adressage.",
+        "es": "Las dimensiones desbordan el espacio de direcciones.",
+        "zh-tw": "棋盤尺寸超出位址空間。",
+        "ja": "ボードの寸法がアドレス空間を超えています。",
+        "zh-cn": "棋盘尺寸超出地址空间。",
+        "ko": "보드 크기가 주소 공간을 초과했습니다.",
+        "pt-br": "As dimensões excedem o espaço de endereçamento.",
+        "ru": "Размеры поля превышают адресное пространство."
+      }
+    },
+    "2002": {
+      "layer": "ir",
+      "code": "ir.geometry_limit",
+      "messages": {
+        "en": "Board geometry exceeds the portable source limits.",
+        "de": "Board-Geometrie überschreitet die portablen Quellgrenzen.",
+        "fr": "La géométrie dépasse les limites portables du langage.",
+        "es": "La geometría supera los límites portables del lenguaje.",
+        "zh-tw": "棋盤大小超出可攜式原始碼限制。",
+        "ja": "ボード形状が移植可能なソース制限を超えています。",
+        "zh-cn": "棋盘大小超出可移植源码限制。",
+        "ko": "보드 크기가 이식 가능한 소스 한도를 초과했습니다.",
+        "pt-br": "A geometria excede os limites portáveis do código.",
+        "ru": "Размер поля превышает переносимые ограничения исходного кода."
+      }
+    },
+    "2003": {
+      "layer": "ir",
+      "code": "ir.invalid_layout",
+      "messages": {
+        "en": "Board dimensions are zero or do not match the cell count.",
+        "de": "Board-Maße sind null oder passen nicht zur Zellenanzahl.",
+        "fr": "Les dimensions sont nulles ou ne correspondent pas au nombre de cellules.",
+        "es": "Las dimensiones son cero o no coinciden con el número de celdas.",
+        "zh-tw": "棋盤尺寸為零或與儲存格數量不符。",
+        "ja": "ボードの寸法がゼロかセル数と一致しません。",
+        "zh-cn": "棋盘尺寸为零或与单元格数量不符。",
+        "ko": "보드 크기가 0이거나 셀 수와 일치하지 않습니다.",
+        "pt-br": "As dimensões são zero ou não correspondem ao número de células.",
+        "ru": "Размеры поля равны нулю или не соответствуют числу ячеек."
+      }
+    },
+    "2004": {
+      "layer": "ir",
+      "code": "ir.main_entry_count",
+      "messages": {
+        "en": "A Main board requires at least one Entry.",
+        "de": "Ein Main-Board benötigt mindestens einen Entry.",
+        "fr": "Un plateau Main exige au moins une Entry.",
+        "es": "Un tablero Main requiere al menos una Entry.",
+        "zh-tw": "Main 棋盤至少需要一個 Entry。",
+        "ja": "Main ボードには Entry が少なくとも 1 つ必要です。",
+        "zh-cn": "Main 棋盘至少需要一个 Entry。",
+        "ko": "Main 보드에는 Entry가 하나 이상 필요합니다.",
+        "pt-br": "Um tabuleiro Main exige pelo menos uma Entry.",
+        "ru": "Поле Main требует хотя бы одну Entry."
+      }
+    },
+    "2005": {
+      "layer": "ir",
+      "code": "ir.function_entry_count",
+      "messages": {
+        "en": "A Function board requires exactly one Entry.",
+        "de": "Ein Function-Board benötigt genau einen Entry.",
+        "fr": "Un plateau Function exige exactement une Entry.",
+        "es": "Un tablero Function requiere exactamente una Entry.",
+        "zh-tw": "Function 棋盤必須恰好有一個 Entry。",
+        "ja": "Function ボードには Entry がちょうど 1 つ必要です。",
+        "zh-cn": "Function 棋盘必须恰好有一个 Entry。",
+        "ko": "Function 보드에는 Entry가 정확히 하나 필요합니다.",
+        "pt-br": "Um tabuleiro Function exige exatamente uma Entry.",
+        "ru": "Поле Function требует ровно одну Entry."
+      }
+    },
+    "2006": {
+      "layer": "ir",
+      "code": "ir.fold_width",
+      "messages": {
+        "en": "The Folded Block width must match its owner board.",
+        "de": "Die Folded Block-Breite muss zum Besitzer-Board passen.",
+        "fr": "La largeur du Folded Block doit correspondre au plateau propriétaire.",
+        "es": "El ancho del Folded Block debe coincidir con su tablero propietario.",
+        "zh-tw": "Folded Block 寬度必須與所屬棋盤相同。",
+        "ja": "Folded Block の幅は所有ボードと一致する必要があります。",
+        "zh-cn": "Folded Block 宽度必须与所属棋盘相同。",
+        "ko": "Folded Block 너비는 소유 보드와 같아야 합니다.",
+        "pt-br": "A largura de Folded Block deve corresponder ao tabuleiro proprietário.",
+        "ru": "Ширина Folded Block должна совпадать с полем владельца."
+      }
+    },
+    "2007": {
+      "layer": "ir",
+      "code": "ir.fold_primary",
+      "messages": {
+        "en": "The instruction is not allowed in this Folded Block context.",
+        "de": "Die Anweisung ist in diesem Folded Block-Kontext nicht erlaubt.",
+        "fr": "L’instruction est interdite dans ce contexte Folded Block.",
+        "es": "La instrucción no se permite en este contexto Folded Block.",
+        "zh-tw": "此 Folded Block 範圍不可使用該指令。",
+        "ja": "この Folded Block コンテキストでは命令を使用できません。",
+        "zh-cn": "此 Folded Block 上下文不能使用该指令。",
+        "ko": "이 Folded Block 문맥에서는 해당 명령을 사용할 수 없습니다.",
+        "pt-br": "A instrução não é permitida neste contexto Folded Block.",
+        "ru": "Инструкция запрещена в этом контексте Folded Block."
+      }
+    },
+    "2008": {
+      "layer": "ir",
+      "code": "ir.entry_instruction",
+      "messages": {
+        "en": "An Entry cell cannot also contain a Primary or Attachment.",
+        "de": "Eine Entry-Zelle darf keinen Primary oder Anhang enthalten.",
+        "fr": "Une cellule Entry ne peut pas contenir de Primary ou de pièce jointe.",
+        "es": "Una celda Entry no puede contener también Primary o un adjunto.",
+        "zh-tw": "Entry 儲存格不可同時含有 Primary 或 Attachment。",
+        "ja": "Entry セルに Primary や Attachment は同居できません。",
+        "zh-cn": "Entry 单元格不能同时含有 Primary 或 Attachment。",
+        "ko": "Entry 셀에는 Primary 또는 Attachment가 함께 있을 수 없습니다.",
+        "pt-br": "Uma célula Entry não pode conter também Primary ou Attachment.",
+        "ru": "Ячейка Entry не может также содержать Primary или Attachment."
+      }
+    },
+    "2009": {
+      "layer": "ir",
+      "code": "ir.detached_attachment",
+      "messages": {
+        "en": "An Attachment requires a Primary instruction.",
+        "de": "Ein Anhang benötigt eine Primary-Anweisung.",
+        "fr": "Une pièce jointe exige une instruction Primary.",
+        "es": "Un adjunto requiere una instrucción Primary.",
+        "zh-tw": "Attachment 必須附屬於 Primary 指令。",
+        "ja": "Attachment には Primary 命令が必要です。",
+        "zh-cn": "Attachment 必须附属于 Primary 指令。",
+        "ko": "Attachment에는 Primary 명령이 필요합니다.",
+        "pt-br": "Attachment exige uma instrução Primary.",
+        "ru": "Attachment требует инструкцию Primary."
+      }
+    },
+    "2010": {
+      "layer": "ir",
+      "code": "ir.repeat_count",
+      "messages": {
+        "en": "The Repeat count must be between 2 and 5.",
+        "de": "Die Repeat-Anzahl muss zwischen 2 und 5 liegen.",
+        "fr": "Le nombre Repeat doit être compris entre 2 et 5.",
+        "es": "El número de Repeat debe estar entre 2 y 5.",
+        "zh-tw": "Repeat 次數必須介於 2 到 5。",
+        "ja": "Repeat 回数は 2 から 5 である必要があります。",
+        "zh-cn": "Repeat 次数必须在 2 到 5 之间。",
+        "ko": "Repeat 횟수는 2~5여야 합니다.",
+        "pt-br": "A contagem Repeat deve estar entre 2 e 5.",
+        "ru": "Число Repeat должно быть от 2 до 5."
+      }
+    },
+    "2011": {
+      "layer": "ir",
+      "code": "ir.attachment_primary",
+      "messages": {
+        "en": "This Primary cannot encode an Attachment.",
+        "de": "Dieser Primary kann keinen Anhang codieren.",
+        "fr": "Ce Primary ne peut pas encoder de pièce jointe.",
+        "es": "Este Primary no puede codificar un adjunto.",
+        "zh-tw": "此 Primary 不可編碼 Attachment。",
+        "ja": "この Primary に Attachment はエンコードできません。",
+        "zh-cn": "此 Primary 不能编码 Attachment。",
+        "ko": "이 Primary에는 Attachment를 인코딩할 수 없습니다.",
+        "pt-br": "Este Primary não pode codificar Attachment.",
+        "ru": "Этот Primary не может кодировать Attachment."
+      }
+    },
+    "2012": {
+      "layer": "ir",
+      "code": "ir.repeat_call_return",
+      "messages": {
+        "en": "Repeat is not allowed on CALL or RETURN.",
+        "de": "Repeat ist bei CALL und RETURN nicht erlaubt.",
+        "fr": "Repeat est interdit sur CALL et RETURN.",
+        "es": "Repeat no se permite en CALL ni RETURN.",
+        "zh-tw": "CALL 和 RETURN 不可附加 Repeat。",
+        "ja": "CALL と RETURN に Repeat は使用できません。",
+        "zh-cn": "CALL 和 RETURN 不能附加 Repeat。",
+        "ko": "CALL 또는 RETURN에는 Repeat를 사용할 수 없습니다.",
+        "pt-br": "Repeat não é permitido em CALL ou RETURN.",
+        "ru": "Repeat запрещён для CALL и RETURN."
+      }
+    },
+    "2013": {
+      "layer": "ir",
+      "code": "ir.return_scope",
+      "messages": {
+        "en": "RETURN is only allowed inside a Function.",
+        "de": "RETURN ist nur in einer Function erlaubt.",
+        "fr": "RETURN est permis uniquement dans une Function.",
+        "es": "RETURN solo se permite dentro de una Function.",
+        "zh-tw": "RETURN 僅可用於 Function 內。",
+        "ja": "RETURN は Function 内でのみ使用できます。",
+        "zh-cn": "RETURN 仅可用于 Function 内。",
+        "ko": "RETURN은 Function 내부에서만 사용할 수 있습니다.",
+        "pt-br": "RETURN só é permitido dentro de uma Function.",
+        "ru": "RETURN разрешён только внутри Function."
+      }
+    },
+    "2014": {
+      "layer": "ir",
+      "code": "ir.custom_return_scope",
+      "messages": {
+        "en": "CUSTOM_RETURN requires a Custom Main board.",
+        "de": "CUSTOM_RETURN benötigt ein Custom Main-Board.",
+        "fr": "CUSTOM_RETURN exige un plateau Custom Main.",
+        "es": "CUSTOM_RETURN requiere un tablero Custom Main.",
+        "zh-tw": "CUSTOM_RETURN 必須位於 Custom Main 棋盤。",
+        "ja": "CUSTOM_RETURN は Custom Main ボードが必要です。",
+        "zh-cn": "CUSTOM_RETURN 必须位于 Custom Main 棋盘。",
+        "ko": "CUSTOM_RETURN은 Custom Main 보드가 필요합니다.",
+        "pt-br": "CUSTOM_RETURN exige um tabuleiro Custom Main.",
+        "ru": "CUSTOM_RETURN требует поле Custom Main."
+      }
+    },
+    "2015": {
+      "layer": "ir",
+      "code": "ir.undefined_function",
+      "messages": {
+        "en": "The referenced Function is not declared.",
+        "de": "Die referenzierte Function ist nicht deklariert.",
+        "fr": "La Function référencée n’est pas déclarée.",
+        "es": "La Function referenciada no está declarada.",
+        "zh-tw": "參照的 Function 未宣告。",
+        "ja": "参照された Function が宣言されていません。",
+        "zh-cn": "引用的 Function 未声明。",
+        "ko": "참조된 Function이 선언되지 않았습니다.",
+        "pt-br": "A Function referenciada não foi declarada.",
+        "ru": "Указанная Function не объявлена."
+      }
+    },
+    "2016": {
+      "layer": "ir",
+      "code": "ir.undefined_fold",
+      "messages": {
+        "en": "The referenced Folded Block does not exist on its owner board.",
+        "de": "Der referenzierte Folded Block fehlt auf seinem Besitzer-Board.",
+        "fr": "Le Folded Block référencé est absent du plateau propriétaire.",
+        "es": "El Folded Block referenciado no existe en su tablero propietario.",
+        "zh-tw": "所屬棋盤不存在參照的 Folded Block。",
+        "ja": "所有ボードに参照された Folded Block がありません。",
+        "zh-cn": "所属棋盘不存在引用的 Folded Block。",
+        "ko": "소유 보드에 참조된 Folded Block이 없습니다.",
+        "pt-br": "O Folded Block referenciado não existe no tabuleiro proprietário.",
+        "ru": "Указанный Folded Block отсутствует в поле владельца."
+      }
+    },
+    "2017": {
+      "layer": "ir",
+      "code": "ir.custom_reference",
+      "messages": {
+        "en": "The Custom reference is missing or forbidden in this context.",
+        "de": "Die Custom-Referenz fehlt oder ist in diesem Kontext verboten.",
+        "fr": "La référence Custom est absente ou interdite dans ce contexte.",
+        "es": "La referencia Custom no existe o está prohibida en este contexto.",
+        "zh-tw": "Custom 參照不存在或不允許用於此範圍。",
+        "ja": "Custom 参照がないか、このコンテキストでは禁止されています。",
+        "zh-cn": "Custom 引用不存在或不允许用于此上下文。",
+        "ko": "Custom 참조가 없거나 이 문맥에서 금지됩니다.",
+        "pt-br": "A referência Custom está ausente ou é proibida neste contexto.",
+        "ru": "Ссылка Custom отсутствует или запрещена в этом контексте."
+      }
+    },
+    "3000": {
+      "layer": "vm",
+      "code": "ConcurrentCallerStackReadConflict",
+      "messages": {
+        "en": "Concurrent Custom threads conflict while reading the caller stack.",
+        "de": "Gleichzeitige Custom-Threads kollidieren beim Lesen des Aufruferstapels.",
+        "fr": "Des fils Custom concurrents sont en conflit lors de la lecture de la pile appelante.",
+        "es": "Los hilos Custom concurrentes entran en conflicto al leer la pila llamante.",
+        "zh-tw": "Custom 執行緒並行讀取呼叫者堆疊時發生衝突。",
+        "ja": "Custom スレッドによる呼び出し元スタックの同時読み取りが競合しています。",
+        "zh-cn": "Custom 线程并发读取调用者栈时发生冲突。",
+        "ko": "Custom 스레드의 호출자 스택 동시 읽기가 충돌했습니다.",
+        "pt-br": "Threads Custom concorrentes conflitam ao ler a pilha chamadora.",
+        "ru": "Конфликт одновременного чтения стека вызывающего потоками Custom."
+      }
+    },
+    "3001": {
+      "layer": "vm",
+      "code": "ConcurrentCallerStackReadWriteConflict",
+      "messages": {
+        "en": "Concurrent Custom reads and writes conflict on the caller stack.",
+        "de": "Gleichzeitiges Custom-Lesen und -Schreiben kollidiert im Aufruferstapel.",
+        "fr": "Lectures et écritures Custom concurrentes en conflit sur la pile appelante.",
+        "es": "Lecturas y escrituras Custom concurrentes en conflicto en la pila llamante.",
+        "zh-tw": "Custom 並行讀寫呼叫者堆疊時發生衝突。",
+        "ja": "Custom による呼び出し元スタックの同時読み書きが競合しています。",
+        "zh-cn": "Custom 并发读写调用者栈时发生冲突。",
+        "ko": "Custom의 호출자 스택 동시 읽기와 쓰기가 충돌했습니다.",
+        "pt-br": "Leituras e escritas Custom concorrentes conflitam na pilha chamadora.",
+        "ru": "Конфликт одновременного чтения и записи стека вызывающего в Custom."
+      }
+    },
+    "3002": {
+      "layer": "vm",
+      "code": "ConcurrentCallerStackWriteConflict",
+      "messages": {
+        "en": "Concurrent Custom outputs write the caller stack in the same internal tick.",
+        "de": "Gleichzeitige Custom-Ausgaben schreiben im selben internen Tick in den Aufruferstapel.",
+        "fr": "Des sorties Custom concurrentes écrivent la pile appelante dans le même tick interne.",
+        "es": "Salidas Custom concurrentes escriben en la pila llamante en el mismo tick interno.",
+        "zh-tw": "Custom 並行輸出在同一內部 Tick 寫入呼叫者堆疊。",
+        "ja": "同じ内部 Tick で Custom の同時出力が呼び出し元スタックに書き込んでいます。",
+        "zh-cn": "Custom 并发输出在同一内部 Tick 写入调用者栈。",
+        "ko": "같은 내부 Tick에서 Custom 동시 출력이 호출자 스택에 쓰고 있습니다.",
+        "pt-br": "Saídas Custom concorrentes escrevem na pilha chamadora no mesmo tick interno.",
+        "ru": "Несколько выходов Custom записывают стек вызывающего в одном внутреннем Tick."
+      }
+    },
+    "3003": {
+      "layer": "vm",
+      "code": "ConcurrentCodeWriteConflict",
+      "messages": {
+        "en": "Concurrent writes target the same code cell.",
+        "de": "Gleichzeitige Schreibzugriffe auf dieselbe Codezelle.",
+        "fr": "Écritures concurrentes sur la même cellule de code.",
+        "es": "Escrituras concurrentes en la misma celda de código.",
+        "zh-tw": "並行寫入同一程式碼儲存格。",
+        "ja": "同じコードセルへの同時書き込みが競合しています。",
+        "zh-cn": "并发写入同一代码单元格。",
+        "ko": "동일 코드 셀에 동시 쓰기가 발생했습니다.",
+        "pt-br": "Escritas concorrentes na mesma célula de código.",
+        "ru": "Одновременная запись одной ячейки кода."
+      }
+    },
+    "3004": {
+      "layer": "vm",
+      "code": "ConcurrentInputConflict",
+      "messages": {
+        "en": "Concurrent threads consume the same available input.",
+        "de": "Gleichzeitige Threads verbrauchen dieselbe verfügbare Eingabe.",
+        "fr": "Des fils concurrents consomment la même entrée disponible.",
+        "es": "Los hilos concurrentes consumen la misma entrada disponible.",
+        "zh-tw": "並行執行緒消耗同一可用輸入。",
+        "ja": "複数スレッドが同じ利用可能な入力を同時に消費しています。",
+        "zh-cn": "并发线程消耗同一可用输入。",
+        "ko": "동시 스레드가 동일한 입력을 소비하고 있습니다.",
+        "pt-br": "Threads concorrentes consomem a mesma entrada disponível.",
+        "ru": "Потоки одновременно используют одни входные данные."
+      }
+    },
+    "3005": {
+      "layer": "vm",
+      "code": "ConcurrentMemoryWriteConflict",
+      "messages": {
+        "en": "Concurrent writes target the same memory address.",
+        "de": "Gleichzeitige Schreibzugriffe auf dieselbe Speicheradresse.",
+        "fr": "Écritures concurrentes à la même adresse mémoire.",
+        "es": "Escrituras concurrentes en la misma dirección de memoria.",
+        "zh-tw": "並行寫入同一記憶體位址。",
+        "ja": "同じメモリアドレスへの同時書き込みが競合しています。",
+        "zh-cn": "并发写入同一内存地址。",
+        "ko": "동일 메모리 주소에 동시 쓰기가 발생했습니다.",
+        "pt-br": "Escritas concorrentes no mesmo endereço de memória.",
+        "ru": "Одновременная запись по одному адресу памяти."
+      }
+    },
+    "3006": {
+      "layer": "vm",
+      "code": "ConcurrentOutputConflict",
+      "messages": {
+        "en": "Concurrent outputs conflict in the same tick.",
+        "de": "Gleichzeitige Ausgaben kollidieren im selben Tick.",
+        "fr": "Des sorties concurrentes sont en conflit dans le même tick.",
+        "es": "Salidas concurrentes en conflicto en el mismo tick.",
+        "zh-tw": "同一 Tick 的並行輸出發生衝突。",
+        "ja": "同じ Tick の同時出力が競合しています。",
+        "zh-cn": "同一 Tick 的并发输出发生冲突。",
+        "ko": "동일 Tick의 동시 출력이 충돌했습니다.",
+        "pt-br": "Saídas concorrentes conflitam no mesmo tick.",
+        "ru": "Конфликт одновременного вывода в одном Tick."
+      }
+    },
+    "3007": {
+      "layer": "vm",
+      "code": "ConcurrentWriteConflict",
+      "messages": {
+        "en": "Concurrent writes target the same register.",
+        "de": "Gleichzeitige Schreibzugriffe auf dasselbe Register.",
+        "fr": "Écritures concurrentes sur le même registre.",
+        "es": "Escrituras concurrentes en el mismo registro.",
+        "zh-tw": "並行寫入同一暫存器。",
+        "ja": "同じレジスタへの同時書き込みが競合しています。",
+        "zh-cn": "并发写入同一寄存器。",
+        "ko": "동일 레지스터에 동시 쓰기가 발생했습니다.",
+        "pt-br": "Escritas concorrentes no mesmo registrador.",
+        "ru": "Одновременная запись одного регистра."
+      }
+    },
+    "3008": {
+      "layer": "vm",
+      "code": "CustomExecutionLimitExceeded",
+      "messages": {
+        "en": "Custom execution exceeded its configured limit.",
+        "de": "Custom-Ausführung hat ihr konfiguriertes Limit überschritten.",
+        "fr": "L’exécution Custom a dépassé sa limite configurée.",
+        "es": "La ejecución Custom ha superado su límite configurado.",
+        "zh-tw": "Custom 執行超出設定上限。",
+        "ja": "Custom の実行が設定された上限を超えました。",
+        "zh-cn": "Custom 执行超出设置上限。",
+        "ko": "Custom 실행이 설정된 한도를 초과했습니다.",
+        "pt-br": "A execução Custom excedeu o limite configurado.",
+        "ru": "Выполнение Custom превысило заданный лимит."
+      }
+    },
+    "3009": {
+      "layer": "vm",
+      "code": "OutOfBounds",
+      "messages": {
+        "en": "Execution reached an invalid board position.",
+        "de": "Die Ausführung hat eine ungültige Board-Position erreicht.",
+        "fr": "L’exécution a atteint une position de plateau invalide.",
+        "es": "La ejecución alcanzó una posición del tablero no válida.",
+        "zh-tw": "執行到達無效的棋盤位置。",
+        "ja": "実行が無効なボード位置に到達しました。",
+        "zh-cn": "执行到达无效的棋盘位置。",
+        "ko": "실행이 잘못된 보드 위치에 도달했습니다.",
+        "pt-br": "A execução chegou a uma posição inválida do tabuleiro.",
+        "ru": "Выполнение достигло недопустимой позиции поля."
+      }
+    },
+    "3010": {
+      "layer": "vm",
+      "code": "ReturnWithoutCall",
+      "messages": {
+        "en": "RETURN has no caller frame.",
+        "de": "RETURN hat keinen Aufrufer-Frame.",
+        "fr": "RETURN n’a pas de cadre appelant.",
+        "es": "RETURN no tiene un marco llamante.",
+        "zh-tw": "RETURN 沒有呼叫者堆疊框架。",
+        "ja": "RETURN に呼び出し元フレームがありません。",
+        "zh-cn": "RETURN 没有调用者栈帧。",
+        "ko": "RETURN에 호출자 프레임이 없습니다.",
+        "pt-br": "RETURN não tem quadro chamador.",
+        "ru": "Для RETURN нет кадра вызывающего."
+      }
+    },
+    "3100": {
+      "layer": "fault",
+      "code": "metric_counter_overflow",
+      "messages": {
+        "en": "A runtime metric counter overflowed.",
+        "de": "Ein Laufzeit-Metrikzähler ist übergelaufen.",
+        "fr": "Un compteur de métrique a débordé.",
+        "es": "Un contador de métricas ha desbordado.",
+        "zh-tw": "執行指標計數器溢位。",
+        "ja": "実行時メトリクスカウンターがオーバーフローしました。",
+        "zh-cn": "运行指标计数器溢出。",
+        "ko": "런타임 지표 카운터가 넘쳤습니다.",
+        "pt-br": "Um contador de métricas excedeu sua capacidade.",
+        "ru": "Переполнение счётчика метрик выполнения."
+      }
+    },
+    "3101": {
+      "layer": "fault",
+      "code": "global_tick_overflow",
+      "messages": {
+        "en": "The Global Tick counter overflowed.",
+        "de": "Der Global Tick-Zähler ist übergelaufen.",
+        "fr": "Le compteur Global Tick a débordé.",
+        "es": "El contador Global Tick ha desbordado.",
+        "zh-tw": "Global Tick 計數器溢位。",
+        "ja": "Global Tick カウンターがオーバーフローしました。",
+        "zh-cn": "Global Tick 计数器溢出。",
+        "ko": "Global Tick 카운터가 넘쳤습니다.",
+        "pt-br": "O contador Global Tick excedeu sua capacidade.",
+        "ru": "Переполнение счётчика Global Tick."
+      }
+    },
+    "3102": {
+      "layer": "fault",
+      "code": "internal_invariant_violation",
+      "messages": {
+        "en": "The VM encountered an internal invariant violation.",
+        "de": "Die VM hat eine interne Invariantenverletzung festgestellt.",
+        "fr": "La VM a rencontré une violation d’invariant interne.",
+        "es": "La VM detectó una infracción de una invariante interna.",
+        "zh-tw": "VM 發生內部不變條件違反。",
+        "ja": "VM で内部不変条件の違反が発生しました。",
+        "zh-cn": "VM 发生内部不变条件违反。",
+        "ko": "VM 내부 불변 조건 위반이 발생했습니다.",
+        "pt-br": "A VM encontrou uma violação de invariante interna.",
+        "ru": "Нарушено внутреннее инвариантное условие VM."
+      }
+    },
+    "4000": {
+      "layer": "api",
+      "code": "unsupported_version",
+      "messages": {
+        "en": "The API version is not supported.",
+        "de": "Die API-Version wird nicht unterstützt.",
+        "fr": "La version de l’API n’est pas prise en charge.",
+        "es": "La versión de la API no es compatible.",
+        "zh-tw": "不支援此 API 版本。",
+        "ja": "この API バージョンはサポートされていません。",
+        "zh-cn": "不支持此 API 版本。",
+        "ko": "지원되지 않는 API 버전입니다.",
+        "pt-br": "A versão da API não é compatível.",
+        "ru": "Эта версия API не поддерживается."
+      }
+    },
+    "4001": {
+      "layer": "api",
+      "code": "source_limit_exceeded",
+      "messages": {
+        "en": "The source exceeds the configured size limit.",
+        "de": "Der Quelltext überschreitet die konfigurierte Größenbegrenzung.",
+        "fr": "Le code source dépasse la taille maximale configurée.",
+        "es": "El código fuente supera el límite de tamaño configurado.",
+        "zh-tw": "原始碼超過設定的大小上限。",
+        "ja": "ソースが設定されたサイズ上限を超えています。",
+        "zh-cn": "源代码超过配置的大小上限。",
+        "ko": "소스가 설정된 크기 제한을 초과했습니다.",
+        "pt-br": "O código-fonte excede o limite de tamanho configurado.",
+        "ru": "Исходный код превышает заданный предел размера."
+      }
+    },
+    "4002": {
+      "layer": "api",
+      "code": "program_limit_reached",
+      "messages": {
+        "en": "The compiled-program limit has been reached.",
+        "de": "Die Höchstzahl kompilierter Programme wurde erreicht.",
+        "fr": "La limite de programmes compilés est atteinte.",
+        "es": "Se ha alcanzado el límite de programas compilados.",
+        "zh-tw": "已達編譯程式數量上限。",
+        "ja": "コンパイル済みプログラム数が上限に達しました。",
+        "zh-cn": "已达到编译程序数量上限。",
+        "ko": "컴파일된 프로그램 수가 제한에 도달했습니다.",
+        "pt-br": "O limite de programas compilados foi atingido.",
+        "ru": "Достигнут предел числа скомпилированных программ."
+      }
+    },
+    "4003": {
+      "layer": "api",
+      "code": "instance_limit_reached",
+      "messages": {
+        "en": "The execution-instance limit has been reached.",
+        "de": "Die Höchstzahl der Ausführungsinstanzen wurde erreicht.",
+        "fr": "La limite d’instances d’exécution est atteinte.",
+        "es": "Se ha alcanzado el límite de instancias de ejecución.",
+        "zh-tw": "已達執行實例數量上限。",
+        "ja": "実行インスタンス数が上限に達しました。",
+        "zh-cn": "已达到执行实例数量上限。",
+        "ko": "실행 인스턴스 수가 제한에 도달했습니다.",
+        "pt-br": "O limite de instâncias de execução foi atingido.",
+        "ru": "Достигнут предел числа экземпляров выполнения."
+      }
+    },
+    "4004": {
+      "layer": "api",
+      "code": "input_limit_exceeded",
+      "messages": {
+        "en": "The input exceeds the configured size limit.",
+        "de": "Die Eingabe überschreitet die konfigurierte Größenbegrenzung.",
+        "fr": "L’entrée dépasse la taille maximale configurée.",
+        "es": "La entrada supera el límite de tamaño configurado.",
+        "zh-tw": "輸入超過設定的大小上限。",
+        "ja": "入力が設定されたサイズ上限を超えています。",
+        "zh-cn": "输入超过配置的大小上限。",
+        "ko": "입력이 설정된 크기 제한을 초과했습니다.",
+        "pt-br": "A entrada excede o limite de tamanho configurado.",
+        "ru": "Входные данные превышают заданный предел размера."
+      }
+    },
+    "4005": {
+      "layer": "api",
+      "code": "initial_memory_limit_exceeded",
+      "messages": {
+        "en": "The initial-memory limit has been exceeded.",
+        "de": "Die Begrenzung des Anfangsspeichers wurde überschritten.",
+        "fr": "La limite de mémoire initiale est dépassée.",
+        "es": "Se ha superado el límite de memoria inicial.",
+        "zh-tw": "初始記憶體超過上限。",
+        "ja": "初期メモリの上限を超えています。",
+        "zh-cn": "初始内存超过上限。",
+        "ko": "초기 메모리 제한을 초과했습니다.",
+        "pt-br": "O limite de memória inicial foi excedido.",
+        "ru": "Превышен предел начальной памяти."
+      }
+    },
+    "4006": {
+      "layer": "api",
+      "code": "duplicate_initial_memory_address",
+      "messages": {
+        "en": "Initial memory contains duplicate addresses.",
+        "de": "Der Anfangsspeicher enthält doppelte Adressen.",
+        "fr": "La mémoire initiale contient des adresses en double.",
+        "es": "La memoria inicial contiene direcciones duplicadas.",
+        "zh-tw": "初始記憶體包含重複位址。",
+        "ja": "初期メモリに重複したアドレスがあります。",
+        "zh-cn": "初始内存包含重复地址。",
+        "ko": "초기 메모리에 중복 주소가 있습니다.",
+        "pt-br": "A memória inicial contém endereços duplicados.",
+        "ru": "Начальная память содержит повторяющиеся адреса."
+      }
+    },
+    "4007": {
+      "layer": "api",
+      "code": "invalid_configuration",
+      "messages": {
+        "en": "The execution configuration is invalid.",
+        "de": "Die Ausführungskonfiguration ist ungültig.",
+        "fr": "La configuration d’exécution est invalide.",
+        "es": "La configuración de ejecución no es válida.",
+        "zh-tw": "執行設定無效。",
+        "ja": "実行設定が無効です。",
+        "zh-cn": "执行配置无效。",
+        "ko": "실행 설정이 올바르지 않습니다.",
+        "pt-br": "A configuração de execução é inválida.",
+        "ru": "Недопустимая конфигурация выполнения."
+      }
+    },
+    "4008": {
+      "layer": "api",
+      "code": "unknown_program_handle",
+      "messages": {
+        "en": "The program handle is unknown, released, or belongs to another session.",
+        "de": "Das Programm-Handle ist unbekannt, freigegeben oder gehört zu einer anderen Sitzung.",
+        "fr": "Le handle du programme est inconnu, libéré ou appartient à une autre session.",
+        "es": "El identificador del programa es desconocido, se ha liberado o pertenece a otra sesión.",
+        "zh-tw": "程式控制代碼未知、已釋放或屬於其他工作階段。",
+        "ja": "プログラムハンドルが不明、解放済み、または別のセッションに属しています。",
+        "zh-cn": "程序句柄未知、已释放或属于其他会话。",
+        "ko": "프로그램 핸들이 알 수 없거나 해제되었거나 다른 세션에 속합니다.",
+        "pt-br": "O identificador do programa é desconhecido, foi liberado ou pertence a outra sessão.",
+        "ru": "Дескриптор программы неизвестен, освобождён или принадлежит другому сеансу."
+      }
+    },
+    "4009": {
+      "layer": "api",
+      "code": "unknown_instance_handle",
+      "messages": {
+        "en": "The instance handle is unknown, released, or belongs to another session.",
+        "de": "Das Instanz-Handle ist unbekannt, freigegeben oder gehört zu einer anderen Sitzung.",
+        "fr": "Le handle de l’instance est inconnu, libéré ou appartient à une autre session.",
+        "es": "El identificador de la instancia es desconocido, se ha liberado o pertenece a otra sesión.",
+        "zh-tw": "實例控制代碼未知、已釋放或屬於其他工作階段。",
+        "ja": "インスタンスハンドルが不明、解放済み、または別のセッションに属しています。",
+        "zh-cn": "实例句柄未知、已释放或属于其他会话。",
+        "ko": "인스턴스 핸들이 알 수 없거나 해제되었거나 다른 세션에 속합니다.",
+        "pt-br": "O identificador da instância é desconhecido, foi liberado ou pertence a outra sessão.",
+        "ru": "Дескриптор экземпляра неизвестен, освобождён или принадлежит другому сеансу."
+      }
+    },
+    "4010": {
+      "layer": "api",
+      "code": "zero_tick_budget",
+      "messages": {
+        "en": "The tick budget must be greater than zero.",
+        "de": "Das Tick-Budget muss größer als null sein.",
+        "fr": "Le budget de ticks doit être supérieur à zéro.",
+        "es": "El presupuesto de ticks debe ser mayor que cero.",
+        "zh-tw": "Tick 預算必須大於零。",
+        "ja": "Tick の予算はゼロより大きい必要があります。",
+        "zh-cn": "Tick 预算必须大于零。",
+        "ko": "Tick 예산은 0보다 커야 합니다.",
+        "pt-br": "O orçamento de ticks deve ser maior que zero.",
+        "ru": "Бюджет тиков должен быть больше нуля."
+      }
+    },
+    "4011": {
+      "layer": "api",
+      "code": "run_tick_budget_exceeded",
+      "messages": {
+        "en": "The requested tick budget exceeds the per-call limit.",
+        "de": "Das angeforderte Tick-Budget überschreitet die Begrenzung pro Aufruf.",
+        "fr": "Le budget de ticks demandé dépasse la limite par appel.",
+        "es": "El presupuesto de ticks solicitado supera el límite por llamada.",
+        "zh-tw": "要求的 Tick 預算超過單次呼叫上限。",
+        "ja": "要求された Tick 予算が呼び出しごとの上限を超えています。",
+        "zh-cn": "请求的 Tick 预算超过单次调用上限。",
+        "ko": "요청한 Tick 예산이 호출당 제한을 초과했습니다.",
+        "pt-br": "O orçamento de ticks solicitado excede o limite por chamada.",
+        "ru": "Запрошенный бюджет тиков превышает предел на один вызов."
+      }
+    },
+    "4012": {
+      "layer": "api",
+      "code": "instance_tick_budget_exceeded",
+      "messages": {
+        "en": "The requested tick budget exceeds the instance’s remaining budget.",
+        "de": "Das angeforderte Tick-Budget überschreitet das verbleibende Budget der Instanz.",
+        "fr": "Le budget de ticks demandé dépasse le budget restant de l’instance.",
+        "es": "El presupuesto de ticks solicitado supera el presupuesto restante de la instancia.",
+        "zh-tw": "要求的 Tick 預算超過實例剩餘預算。",
+        "ja": "要求された Tick 予算がインスタンスの残りの予算を超えています。",
+        "zh-cn": "请求的 Tick 预算超过实例剩余预算。",
+        "ko": "요청한 Tick 예산이 인스턴스의 남은 예산을 초과했습니다.",
+        "pt-br": "O orçamento de ticks solicitado excede o orçamento restante da instância.",
+        "ru": "Запрошенный бюджет тиков превышает оставшийся бюджет экземпляра."
+      }
+    },
+    "4013": {
+      "layer": "api",
+      "code": "work_unit_budget_exceeded",
+      "messages": {
+        "en": "The tick requires more work units than the per-call limit allows.",
+        "de": "Der Tick benötigt mehr Arbeitseinheiten als pro Aufruf zulässig sind.",
+        "fr": "Le tick nécessite plus d’unités de travail que la limite par appel n’en autorise.",
+        "es": "El tick requiere más unidades de trabajo de las permitidas por llamada.",
+        "zh-tw": "此 Tick 所需工作單位超過單次呼叫上限。",
+        "ja": "この Tick に必要な作業単位数が呼び出しごとの上限を超えています。",
+        "zh-cn": "此 Tick 所需工作单位超过单次调用上限。",
+        "ko": "이 Tick에 필요한 작업 단위가 호출당 제한을 초과했습니다.",
+        "pt-br": "O tick exige mais unidades de trabalho do que o limite por chamada permite.",
+        "ru": "Для тика требуется больше единиц работы, чем допускает предел на один вызов."
+      }
+    },
+    "4014": {
+      "layer": "api",
+      "code": "handle_space_exhausted",
+      "messages": {
+        "en": "No new handle can be allocated.",
+        "de": "Es kann kein neues Handle zugewiesen werden.",
+        "fr": "Aucun nouveau handle ne peut être alloué.",
+        "es": "No se puede asignar un nuevo identificador.",
+        "zh-tw": "無法配置新的控制代碼。",
+        "ja": "新しいハンドルを割り当てられません。",
+        "zh-cn": "无法分配新句柄。",
+        "ko": "새 핸들을 할당할 수 없습니다.",
+        "pt-br": "Não é possível alocar um novo identificador.",
+        "ru": "Невозможно выделить новый дескриптор."
+      }
+    },
+    "4015": {
+      "layer": "api",
+      "code": "vm_initialization_failed",
+      "messages": {
+        "en": "The VM could not be initialized.",
+        "de": "Die VM konnte nicht initialisiert werden.",
+        "fr": "Impossible d’initialiser la VM.",
+        "es": "No se pudo inicializar la VM.",
+        "zh-tw": "無法初始化 VM。",
+        "ja": "VM を初期化できませんでした。",
+        "zh-cn": "无法初始化 VM。",
+        "ko": "VM을 초기화할 수 없습니다.",
+        "pt-br": "Não foi possível inicializar a VM.",
+        "ru": "Не удалось инициализировать VM."
+      }
+    },
+    "5000": {
+      "layer": "cli",
+      "code": "cli.invalid_arguments",
+      "messages": {
+        "en": "The command-line arguments are invalid.",
+        "de": "Die Befehlszeilenargumente sind ungültig.",
+        "fr": "Les arguments de ligne de commande sont invalides.",
+        "es": "Los argumentos de línea de comandos no son válidos.",
+        "zh-tw": "命令列參數無效。",
+        "ja": "コマンドライン引数が無効です。",
+        "zh-cn": "命令行参数无效。",
+        "ko": "명령줄 인수가 잘못되었습니다.",
+        "pt-br": "Os argumentos de linha de comando são inválidos.",
+        "ru": "Недопустимые аргументы командной строки."
+      }
+    },
+    "5001": {
+      "layer": "cli",
+      "code": "cli.source_io",
+      "messages": {
+        "en": "The source file could not be read as UTF-8.",
+        "de": "Die Quelldatei konnte nicht als UTF-8 gelesen werden.",
+        "fr": "Impossible de lire le fichier source en UTF-8.",
+        "es": "No se pudo leer el archivo fuente como UTF-8.",
+        "zh-tw": "無法以 UTF-8 讀取原始碼檔案。",
+        "ja": "ソースファイルを UTF-8 として読み取れませんでした。",
+        "zh-cn": "无法以 UTF-8 读取源文件。",
+        "ko": "소스 파일을 UTF-8로 읽을 수 없습니다.",
+        "pt-br": "Não foi possível ler o arquivo-fonte como UTF-8.",
+        "ru": "Не удалось прочитать исходный файл в UTF-8."
+      }
+    },
+    "5002": {
+      "layer": "cli",
+      "code": "cli.input_io",
+      "messages": {
+        "en": "The input file could not be read.",
+        "de": "Die Eingabedatei konnte nicht gelesen werden.",
+        "fr": "Impossible de lire le fichier d’entrée.",
+        "es": "No se pudo leer el archivo de entrada.",
+        "zh-tw": "無法讀取輸入檔案。",
+        "ja": "入力ファイルを読み取れませんでした。",
+        "zh-cn": "无法读取输入文件。",
+        "ko": "입력 파일을 읽을 수 없습니다.",
+        "pt-br": "Não foi possível ler o arquivo de entrada.",
+        "ru": "Не удалось прочитать входной файл."
+      }
+    },
+    "5003": {
+      "layer": "cli",
+      "code": "cli.input_json",
+      "messages": {
+        "en": "The input file is not a valid JSON byte array.",
+        "de": "Die Eingabedatei ist kein gültiges JSON-Bytearray.",
+        "fr": "Le fichier d’entrée n’est pas un tableau d’octets JSON valide.",
+        "es": "El archivo de entrada no es una matriz de bytes JSON válida.",
+        "zh-tw": "輸入檔案不是有效的 JSON 位元組陣列。",
+        "ja": "入力ファイルが有効な JSON バイト配列ではありません。",
+        "zh-cn": "输入文件不是有效的 JSON 字节数组。",
+        "ko": "입력 파일이 유효한 JSON 바이트 배열이 아닙니다.",
+        "pt-br": "O arquivo de entrada não é um vetor válido de bytes JSON.",
+        "ru": "Входной файл не является допустимым JSON-массивом байтов."
+      }
+    },
+    "5004": {
+      "layer": "cli",
+      "code": "cli.input_data",
+      "messages": {
+        "en": "input must be an array of byte integers (0..255).",
+        "de": "input muss ein Array ganzer Bytes (0..255) sein.",
+        "fr": "input doit être un tableau d’octets entiers (0..255).",
+        "es": "input debe ser una matriz de enteros de byte (0..255).",
+        "zh-tw": "input 必須是位元組整數陣列（0..255）。",
+        "ja": "input はバイト整数（0..255）の配列である必要があります。",
+        "zh-cn": "input 必须是字节整数数组（0..255）。",
+        "ko": "input은 바이트 정수(0..255) 배열이어야 합니다.",
+        "pt-br": "input deve ser um vetor de bytes inteiros (0..255).",
+        "ru": "input должен быть массивом целых байтов (0..255)."
+      }
+    },
+    "5005": {
+      "layer": "cli",
+      "code": "cli.memory_io",
+      "messages": {
+        "en": "The initial-memory file could not be read.",
+        "de": "Die Anfangsspeicherdatei konnte nicht gelesen werden.",
+        "fr": "Impossible de lire le fichier mémoire initiale.",
+        "es": "No se pudo leer el archivo de memoria inicial.",
+        "zh-tw": "無法讀取初始記憶體檔案。",
+        "ja": "初期メモリファイルを読み取れませんでした。",
+        "zh-cn": "无法读取初始内存文件。",
+        "ko": "초기 메모리 파일을 읽을 수 없습니다.",
+        "pt-br": "Não foi possível ler o arquivo de memória inicial.",
+        "ru": "Не удалось прочитать файл начальной памяти."
+      }
+    },
+    "5006": {
+      "layer": "cli",
+      "code": "cli.memory_json",
+      "messages": {
+        "en": "The initial-memory file is not a valid JSON memory array.",
+        "de": "Die Anfangsspeicherdatei ist kein gültiges JSON-Speicherarray.",
+        "fr": "Le fichier mémoire initiale n’est pas un tableau mémoire JSON valide.",
+        "es": "El archivo de memoria inicial no es una matriz de memoria JSON válida.",
+        "zh-tw": "初始記憶體檔案不是有效的 JSON 記憶體陣列。",
+        "ja": "初期メモリファイルが有効な JSON メモリ配列ではありません。",
+        "zh-cn": "初始内存文件不是有效的 JSON 内存数组。",
+        "ko": "초기 메모리 파일이 유효한 JSON 메모리 배열이 아닙니다.",
+        "pt-br": "O arquivo de memória inicial não é um vetor JSON de memória válido.",
+        "ru": "Файл начальной памяти не является допустимым JSON-массивом памяти."
+      }
+    },
+    "5007": {
+      "layer": "cli",
+      "code": "cli.memory_data",
+      "messages": {
+        "en": "Initial-memory addresses or entries are invalid or duplicated.",
+        "de": "Anfangsspeicheradressen oder -einträge sind ungültig oder doppelt.",
+        "fr": "Les adresses ou entrées mémoire initiale sont invalides ou dupliquées.",
+        "es": "Las direcciones o entradas de memoria inicial no son válidas o están duplicadas.",
+        "zh-tw": "初始記憶體位址或項目無效或重複。",
+        "ja": "初期メモリのアドレスやエントリが無効か重複しています。",
+        "zh-cn": "初始内存地址或条目无效或重复。",
+        "ko": "초기 메모리 주소 또는 항목이 잘못되었거나 중복되었습니다.",
+        "pt-br": "Os endereços ou entradas da memória inicial são inválidos ou duplicados.",
+        "ru": "Недопустимые или повторяющиеся адреса либо записи начальной памяти."
+      }
+    },
+    "5008": {
+      "layer": "cli",
+      "code": "cli.serialization_failed",
+      "messages": {
+        "en": "The native result could not be serialized.",
+        "de": "Das native Ergebnis konnte nicht serialisiert werden.",
+        "fr": "Impossible de sérialiser le résultat natif.",
+        "es": "No se pudo serializar el resultado nativo.",
+        "zh-tw": "無法序列化原生結果。",
+        "ja": "ネイティブ結果をシリアライズできませんでした。",
+        "zh-cn": "无法序列化原生结果。",
+        "ko": "네이티브 결과를 직렬화할 수 없습니다.",
+        "pt-br": "Não foi possível serializar o resultado nativo.",
+        "ru": "Не удалось сериализовать результат."
+      }
+    },
+    "5009": {
+      "layer": "cli",
+      "code": "cli.vm_initialization_failed",
+      "messages": {
+        "en": "The VM could not be initialized.",
+        "de": "Die VM konnte nicht initialisiert werden.",
+        "fr": "Impossible d’initialiser la VM.",
+        "es": "No se pudo inicializar la VM.",
+        "zh-tw": "無法初始化 VM。",
+        "ja": "VM を初期化できませんでした。",
+        "zh-cn": "无法初始化 VM。",
+        "ko": "VM을 초기화할 수 없습니다.",
+        "pt-br": "Não foi possível inicializar a VM.",
+        "ru": "Не удалось инициализировать VM."
+      }
+    },
+    "5010": {
+      "layer": "cli",
+      "code": "cli.invalid_tick_limit",
+      "messages": {
+        "en": "The tick limit must be greater than zero.",
+        "de": "Das Tick-Limit muss größer als null sein.",
+        "fr": "La limite de ticks doit être supérieure à zéro.",
+        "es": "El límite de ticks debe ser mayor que cero.",
+        "zh-tw": "Tick 上限必須大於零。",
+        "ja": "Tick の上限はゼロより大きい必要があります。",
+        "zh-cn": "Tick 上限必须大于零。",
+        "ko": "Tick 한도는 0보다 커야 합니다.",
+        "pt-br": "O limite de ticks deve ser maior que zero.",
+        "ru": "Лимит Tick должен быть больше нуля."
+      }
+    },
+    "5011": {
+      "layer": "cli",
+      "code": "cli.limits_io",
+      "messages": {
+        "en": "The trusted safety profile file could not be read.",
+        "de": "Die Datei des vertrauenswürdigen Sicherheitsprofils konnte nicht gelesen werden.",
+        "fr": "Le fichier du profil de sécurité de confiance n’a pas pu être lu.",
+        "es": "No se pudo leer el archivo del perfil de seguridad de confianza.",
+        "zh-tw": "無法讀取受信任安全性設定檔。",
+        "ja": "信頼された安全プロファイルのファイルを読み込めませんでした。",
+        "zh-cn": "无法读取可信安全配置文件。",
+        "ko": "신뢰할 수 있는 안전 프로필 파일을 읽지 못했습니다.",
+        "pt-br": "Não foi possível ler o arquivo do perfil de segurança confiável.",
+        "ru": "Не удалось прочитать файл доверенного профиля безопасности."
+      }
+    },
+    "5012": {
+      "layer": "cli",
+      "code": "cli.profile_too_large",
+      "messages": {
+        "en": "The safety profile file exceeds the size limit.",
+        "de": "Die Sicherheitsprofildatei überschreitet die Größenbegrenzung.",
+        "fr": "Le fichier du profil de sécurité dépasse la taille maximale.",
+        "es": "El archivo del perfil de seguridad supera el límite de tamaño.",
+        "zh-tw": "安全性設定檔超過大小上限。",
+        "ja": "安全プロファイルのファイルがサイズ上限を超えています。",
+        "zh-cn": "安全配置文件超过大小上限。",
+        "ko": "안전 프로필 파일이 크기 제한을 초과했습니다.",
+        "pt-br": "O arquivo do perfil de segurança excede o limite de tamanho.",
+        "ru": "Файл профиля безопасности превышает предел размера."
+      }
+    },
+    "5013": {
+      "layer": "cli",
+      "code": "cli.profile_utf8",
+      "messages": {
+        "en": "The safety profile file must contain valid UTF-8 text.",
+        "de": "Die Sicherheitsprofildatei muss gültigen UTF-8-Text enthalten.",
+        "fr": "Le fichier du profil de sécurité doit contenir du texte UTF-8 valide.",
+        "es": "El archivo del perfil de seguridad debe contener texto UTF-8 válido.",
+        "zh-tw": "安全性設定檔必須包含有效的 UTF-8 文字。",
+        "ja": "安全プロファイルのファイルには有効な UTF-8 テキストが必要です。",
+        "zh-cn": "安全配置文件必须包含有效的 UTF-8 文本。",
+        "ko": "안전 프로필 파일에는 유효한 UTF-8 텍스트가 있어야 합니다.",
+        "pt-br": "O arquivo do perfil de segurança deve conter texto UTF-8 válido.",
+        "ru": "Файл профиля безопасности должен содержать допустимый текст UTF-8."
+      }
+    },
+    "5014": {
+      "layer": "cli",
+      "code": "cli.profile_bom",
+      "messages": {
+        "en": "The safety profile file must not start with a UTF-8 BOM.",
+        "de": "Die Sicherheitsprofildatei darf nicht mit einer UTF-8-BOM beginnen.",
+        "fr": "Le fichier du profil de sécurité ne doit pas commencer par une BOM UTF-8.",
+        "es": "El archivo del perfil de seguridad no debe empezar con una BOM UTF-8.",
+        "zh-tw": "安全性設定檔不得以 UTF-8 BOM 開頭。",
+        "ja": "安全プロファイルのファイルを UTF-8 BOM で始めることはできません。",
+        "zh-cn": "安全配置文件不得以 UTF-8 BOM 开头。",
+        "ko": "안전 프로필 파일은 UTF-8 BOM으로 시작하면 안 됩니다.",
+        "pt-br": "O arquivo do perfil de segurança não deve começar com uma BOM UTF-8.",
+        "ru": "Файл профиля безопасности не должен начинаться с UTF-8 BOM."
+      }
+    },
+    "5015": {
+      "layer": "cli",
+      "code": "cli.level_api_protocol",
+      "messages": {
+        "en": "The Level API returned an invalid response.",
+        "de": "Die Level-API hat eine ungültige Antwort zurückgegeben.",
+        "fr": "L’API de niveau a renvoyé une réponse invalide.",
+        "es": "La API de nivel ha devuelto una respuesta no válida.",
+        "zh-tw": "關卡 API 傳回無效回應。",
+        "ja": "レベル API が無効な応答を返しました。",
+        "zh-cn": "关卡 API 返回无效响应。",
+        "ko": "레벨 API가 올바르지 않은 응답을 반환했습니다.",
+        "pt-br": "A API de nível retornou uma resposta inválida.",
+        "ru": "API уровня вернул недопустимый ответ."
+      }
+    },
+    "5016": {
+      "layer": "cli",
+      "code": "cli.unknown_evaluation_status",
+      "messages": {
+        "en": "The evaluator returned an unknown status.",
+        "de": "Der Auswerter hat einen unbekannten Status zurückgegeben.",
+        "fr": "L’évaluateur a renvoyé un statut inconnu.",
+        "es": "El evaluador ha devuelto un estado desconocido.",
+        "zh-tw": "評估器傳回未知狀態。",
+        "ja": "評価器が不明な状態を返しました。",
+        "zh-cn": "评估器返回未知状态。",
+        "ko": "평가기에서 알 수 없는 상태를 반환했습니다.",
+        "pt-br": "O avaliador retornou um status desconhecido.",
+        "ru": "Средство оценки вернуло неизвестный статус."
+      }
+    },
+    "5017": {
+      "layer": "cli",
+      "code": "cli.malformed_evaluation_result",
+      "messages": {
+        "en": "The evaluation result is missing its status.",
+        "de": "Im Auswertungsergebnis fehlt der Status.",
+        "fr": "Le statut est absent du résultat d’évaluation.",
+        "es": "Falta el estado en el resultado de la evaluación.",
+        "zh-tw": "評估結果缺少狀態。",
+        "ja": "評価結果に状態がありません。",
+        "zh-cn": "评估结果缺少状态。",
+        "ko": "평가 결과에 상태가 없습니다.",
+        "pt-br": "O resultado da avaliação não contém o status.",
+        "ru": "В результате оценки отсутствует статус."
+      }
+    },
+    "5018": {
+      "layer": "cli",
+      "code": "cli.level_io",
+      "messages": {
+        "en": "The level file could not be read.",
+        "de": "Die Leveldatei konnte nicht gelesen werden.",
+        "fr": "Le fichier du niveau n’a pas pu être lu.",
+        "es": "No se pudo leer el archivo del nivel.",
+        "zh-tw": "無法讀取關卡檔案。",
+        "ja": "レベルファイルを読み込めませんでした。",
+        "zh-cn": "无法读取关卡文件。",
+        "ko": "레벨 파일을 읽지 못했습니다.",
+        "pt-br": "Não foi possível ler o arquivo do nível.",
+        "ru": "Не удалось прочитать файл уровня."
+      }
+    },
+    "5019": {
+      "layer": "cli",
+      "code": "cli.level_too_large",
+      "messages": {
+        "en": "The level data exceeds the configured size limit.",
+        "de": "Die Leveldaten überschreiten die konfigurierte Größenbegrenzung.",
+        "fr": "Les données du niveau dépassent la taille maximale configurée.",
+        "es": "Los datos del nivel superan el límite de tamaño configurado.",
+        "zh-tw": "關卡資料超過設定的大小上限。",
+        "ja": "レベルのデータが設定されたサイズ上限を超えています。",
+        "zh-cn": "关卡数据超过配置的大小上限。",
+        "ko": "레벨 데이터가 설정된 크기 제한을 초과했습니다.",
+        "pt-br": "Os dados do nível excedem o limite de tamanho configurado.",
+        "ru": "Данные уровня превышают заданный предел размера."
+      }
+    },
+    "5020": {
+      "layer": "cli",
+      "code": "cli.source_too_large",
+      "messages": {
+        "en": "The source exceeds the configured size limit.",
+        "de": "Der Quelltext überschreitet die konfigurierte Größenbegrenzung.",
+        "fr": "Le code source dépasse la taille maximale configurée.",
+        "es": "El código fuente supera el límite de tamaño configurado.",
+        "zh-tw": "原始碼超過設定的大小上限。",
+        "ja": "ソースが設定されたサイズ上限を超えています。",
+        "zh-cn": "源代码超过配置的大小上限。",
+        "ko": "소스가 설정된 크기 제한을 초과했습니다.",
+        "pt-br": "O código-fonte excede o limite de tamanho configurado.",
+        "ru": "Исходный код превышает заданный предел размера."
+      }
+    },
+    "5021": {
+      "layer": "cli",
+      "code": "cli.level_utf8",
+      "messages": {
+        "en": "The level file must contain valid UTF-8 text.",
+        "de": "Die Leveldatei muss gültigen UTF-8-Text enthalten.",
+        "fr": "Le fichier du niveau doit contenir du texte UTF-8 valide.",
+        "es": "El archivo del nivel debe contener texto UTF-8 válido.",
+        "zh-tw": "關卡檔案必須包含有效的 UTF-8 文字。",
+        "ja": "レベルファイルには有効な UTF-8 テキストが必要です。",
+        "zh-cn": "关卡文件必须包含有效的 UTF-8 文本。",
+        "ko": "레벨 파일에는 유효한 UTF-8 텍스트가 있어야 합니다.",
+        "pt-br": "O arquivo do nível deve conter texto UTF-8 válido.",
+        "ru": "Файл уровня должен содержать допустимый текст UTF-8."
+      }
+    },
+    "5022": {
+      "layer": "cli",
+      "code": "cli.source_utf8",
+      "messages": {
+        "en": "The source file must contain valid UTF-8 text.",
+        "de": "Die Quelldatei muss gültigen UTF-8-Text enthalten.",
+        "fr": "Le fichier source doit contenir du texte UTF-8 valide.",
+        "es": "El archivo fuente debe contener texto UTF-8 válido.",
+        "zh-tw": "原始碼檔案必須包含有效的 UTF-8 文字。",
+        "ja": "ソースファイルには有効な UTF-8 テキストが必要です。",
+        "zh-cn": "源代码文件必须包含有效的 UTF-8 文本。",
+        "ko": "소스 파일에는 유효한 UTF-8 텍스트가 있어야 합니다.",
+        "pt-br": "O arquivo-fonte deve conter texto UTF-8 válido.",
+        "ru": "Исходный файл должен содержать допустимый текст UTF-8."
+      }
+    },
+    "5023": {
+      "layer": "cli",
+      "code": "cli.level_bom",
+      "messages": {
+        "en": "The level file must not start with a UTF-8 BOM.",
+        "de": "Die Leveldatei darf nicht mit einer UTF-8-BOM beginnen.",
+        "fr": "Le fichier du niveau ne doit pas commencer par une BOM UTF-8.",
+        "es": "El archivo del nivel no debe empezar con una BOM UTF-8.",
+        "zh-tw": "關卡檔案不得以 UTF-8 BOM 開頭。",
+        "ja": "レベルファイルを UTF-8 BOM で始めることはできません。",
+        "zh-cn": "关卡文件不得以 UTF-8 BOM 开头。",
+        "ko": "레벨 파일은 UTF-8 BOM으로 시작하면 안 됩니다.",
+        "pt-br": "O arquivo do nível não deve começar com uma BOM UTF-8.",
+        "ru": "Файл уровня не должен начинаться с UTF-8 BOM."
+      }
+    },
+    "5024": {
+      "layer": "cli",
+      "code": "cli.source_bom",
+      "messages": {
+        "en": "The source file must not start with a UTF-8 BOM.",
+        "de": "Die Quelldatei darf nicht mit einer UTF-8-BOM beginnen.",
+        "fr": "Le fichier source ne doit pas commencer par une BOM UTF-8.",
+        "es": "El archivo fuente no debe empezar con una BOM UTF-8.",
+        "zh-tw": "原始碼檔案不得以 UTF-8 BOM 開頭。",
+        "ja": "ソースファイルを UTF-8 BOM で始めることはできません。",
+        "zh-cn": "源代码文件不得以 UTF-8 BOM 开头。",
+        "ko": "소스 파일은 UTF-8 BOM으로 시작하면 안 됩니다.",
+        "pt-br": "O arquivo-fonte não deve começar com uma BOM UTF-8.",
+        "ru": "Исходный файл не должен начинаться с UTF-8 BOM."
+      }
+    },
+    "5100": {
+      "layer": "debug",
+      "code": "debug.invalid_request",
+      "messages": {
+        "en": "The debug request is malformed or unsupported.",
+        "de": "Die Debuganfrage ist ungültig oder nicht unterstützt.",
+        "fr": "La requête de débogage est mal formée ou non prise en charge.",
+        "es": "La solicitud de depuración no es válida o no está admitida.",
+        "zh-tw": "偵錯要求格式錯誤或不受支援。",
+        "ja": "デバッグ要求の形式が不正か未対応です。",
+        "zh-cn": "调试请求格式错误或不受支持。",
+        "ko": "디버그 요청 형식이 잘못되었거나 지원하지 않습니다.",
+        "pt-br": "A solicitação de depuração é inválida ou não suportada.",
+        "ru": "Неверный или неподдерживаемый запрос отладки."
+      }
+    },
+    "5101": {
+      "layer": "debug",
+      "code": "debug.invalid_configuration",
+      "messages": {
+        "en": "The seed, limit, or boundary configuration is invalid.",
+        "de": "Seed-, Limit- oder Grenzkonfiguration ist ungültig.",
+        "fr": "La configuration de graine, limite ou frontière est invalide.",
+        "es": "La configuración de semilla, límite o frontera no es válida.",
+        "zh-tw": "種子、上限或邊界設定無效。",
+        "ja": "シード、上限、境界の設定が無効です。",
+        "zh-cn": "种子、上限或边界配置无效。",
+        "ko": "시드, 한도 또는 경계 설정이 잘못되었습니다.",
+        "pt-br": "A configuração de semente, limite ou fronteira é inválida.",
+        "ru": "Недопустимые настройки начального значения, лимита или границы."
+      }
+    },
+    "5102": {
+      "layer": "debug",
+      "code": "debug.already_loaded",
+      "messages": {
+        "en": "A program is already loaded in this session.",
+        "de": "In dieser Sitzung ist bereits ein Programm geladen.",
+        "fr": "Un programme est déjà chargé dans cette session.",
+        "es": "Ya hay un programa cargado en esta sesión.",
+        "zh-tw": "此工作階段已載入程式。",
+        "ja": "このセッションには既にプログラムが読み込まれています。",
+        "zh-cn": "此会话已加载程序。",
+        "ko": "이 세션에 이미 프로그램이 로드되어 있습니다.",
+        "pt-br": "Um programa já está carregado nesta sessão.",
+        "ru": "В этом сеансе уже загружена программа."
+      }
+    },
+    "5103": {
+      "layer": "debug",
+      "code": "debug.no_program",
+      "messages": {
+        "en": "No program has been loaded.",
+        "de": "Es wurde kein Programm geladen.",
+        "fr": "Aucun programme n’a été chargé.",
+        "es": "No se ha cargado ningún programa.",
+        "zh-tw": "尚未載入程式。",
+        "ja": "プログラムが読み込まれていません。",
+        "zh-cn": "尚未加载程序。",
+        "ko": "프로그램이 로드되지 않았습니다.",
+        "pt-br": "Nenhum programa foi carregado.",
+        "ru": "Программа не загружена."
+      }
+    },
+    "5104": {
+      "layer": "debug",
+      "code": "debug.vm_initialization_failed",
+      "messages": {
+        "en": "The VM could not be initialized.",
+        "de": "Die VM konnte nicht initialisiert werden.",
+        "fr": "Impossible d’initialiser la VM.",
+        "es": "No se pudo inicializar la VM.",
+        "zh-tw": "無法初始化 VM。",
+        "ja": "VM を初期化できませんでした。",
+        "zh-cn": "无法初始化 VM。",
+        "ko": "VM을 초기화할 수 없습니다.",
+        "pt-br": "Não foi possível inicializar a VM.",
+        "ru": "Не удалось инициализировать VM."
+      }
+    },
+    "5105": {
+      "layer": "debug",
+      "code": "debug.tick_limit_exceeded",
+      "messages": {
+        "en": "The session reached its Global Tick limit.",
+        "de": "Die Sitzung hat ihr Global Tick-Limit erreicht.",
+        "fr": "La session a atteint sa limite de Global Ticks.",
+        "es": "La sesión alcanzó su límite de Global Ticks.",
+        "zh-tw": "工作階段已達 Global Tick 上限。",
+        "ja": "セッションが Global Tick の上限に達しました。",
+        "zh-cn": "会话已达 Global Tick 上限。",
+        "ko": "세션이 Global Tick 한도에 도달했습니다.",
+        "pt-br": "A sessão atingiu seu limite de Global Ticks.",
+        "ru": "Сеанс достиг лимита Global Tick."
+      }
+    },
+    "5106": {
+      "layer": "debug",
+      "code": "debug.work_limit_exceeded",
+      "messages": {
+        "en": "The Global Tick exceeded the work-unit limit and was rolled back.",
+        "de": "Der Global Tick hat das Arbeitseinheitenlimit überschritten und wurde zurückgerollt.",
+        "fr": "Le Global Tick a dépassé la limite de travail et a été annulé.",
+        "es": "El Global Tick superó el límite de trabajo y se revirtió.",
+        "zh-tw": "Global Tick 超出工作單位上限，已回復至執行前狀態。",
+        "ja": "Global Tick が作業単位の上限を超え、ロールバックされました。",
+        "zh-cn": "Global Tick 超出工作单位上限，已回滚至执行前状态。",
+        "ko": "Global Tick이 작업 단위 한도를 초과하여 롤백되었습니다.",
+        "pt-br": "O Global Tick excedeu o limite de trabalho e foi revertido.",
+        "ru": "Global Tick превысил лимит единиц работы и был отменён."
+      }
+    },
+    "5107": {
+      "layer": "debug",
+      "code": "debug.request_limit_exceeded",
+      "messages": {
+        "en": "The debug request exceeds the 4 MiB transport limit.",
+        "de": "Die Debuganfrage überschreitet das Transportlimit von 4 MiB.",
+        "fr": "La requête dépasse la limite de transport de 4 Mio.",
+        "es": "La solicitud supera el límite de transporte de 4 MiB.",
+        "zh-tw": "偵錯要求超出 4 MiB 傳輸上限。",
+        "ja": "デバッグ要求が 4 MiB の転送上限を超えています。",
+        "zh-cn": "调试请求超出 4 MiB 传输上限。",
+        "ko": "디버그 요청이 4 MiB 전송 한도를 초과했습니다.",
+        "pt-br": "A solicitação excede o limite de transporte de 4 MiB.",
+        "ru": "Запрос отладки превышает лимит передачи 4 MiB."
+      }
+    },
+    "5108": {
+      "layer": "debug",
+      "code": "debug.transport_io",
+      "messages": {
+        "en": "The debug process could not read or write a transport message.",
+        "de": "Der Debugprozess konnte eine Transportnachricht nicht lesen oder schreiben.",
+        "fr": "Le processus ne peut pas lire ou écrire un message de transport.",
+        "es": "El proceso no puede leer o escribir un mensaje de transporte.",
+        "zh-tw": "偵錯程序無法讀寫傳輸訊息。",
+        "ja": "デバッグプロセスで転送メッセージを読み書きできません。",
+        "zh-cn": "调试进程无法读写传输消息。",
+        "ko": "디버그 프로세스에서 전송 메시지를 읽거나 쓸 수 없습니다.",
+        "pt-br": "O processo não pôde ler ou escrever uma mensagem de transporte.",
+        "ru": "Процесс отладки не смог прочитать или записать сообщение."
+      }
+    },
+    "6000": {
+      "layer": "editor",
+      "code": "editor.operation_failed",
+      "messages": {
+        "en": "The editor operation failed.",
+        "de": "Die Editoroperation ist fehlgeschlagen.",
+        "fr": "L’opération de l’éditeur a échoué.",
+        "es": "La operación del editor ha fallado.",
+        "zh-tw": "編輯器操作失敗。",
+        "ja": "エディターの操作に失敗しました。",
+        "zh-cn": "编辑器操作失败。",
+        "ko": "편집기 작업에 실패했습니다.",
+        "pt-br": "A operação do editor falhou.",
+        "ru": "Операция редактора завершилась ошибкой."
+      }
+    },
+    "6001": {
+      "layer": "editor",
+      "code": "editor.unsupported_debug_protocol",
+      "messages": {
+        "en": "This extension requires CodeGrid debug protocol 2.",
+        "de": "Diese Erweiterung benötigt CodeGrid-Debugprotokoll 2.",
+        "fr": "Cette extension nécessite le protocole de débogage CodeGrid 2.",
+        "es": "Esta extensión requiere el protocolo de depuración CodeGrid 2.",
+        "zh-tw": "此擴充套件需要 CodeGrid 偵錯協定 2。",
+        "ja": "この拡張機能には CodeGrid デバッグプロトコル 2 が必要です。",
+        "zh-cn": "此扩展需要 CodeGrid 调试协议 2。",
+        "ko": "이 확장은 CodeGrid 디버그 프로토콜 2가 필요합니다.",
+        "pt-br": "Esta extensão requer o protocolo de depuração CodeGrid 2.",
+        "ru": "Расширению требуется протокол отладки CodeGrid 2."
+      }
+    },
+    "6002": {
+      "layer": "editor",
+      "code": "editor.invalid_debug_response",
+      "messages": {
+        "en": "Malformed CodeGrid debug error.",
+        "de": "Ungültiger CodeGrid-Debugfehler.",
+        "fr": "Erreur de débogage CodeGrid mal formée.",
+        "es": "Error de depuración CodeGrid mal formado.",
+        "zh-tw": "CodeGrid 偵錯錯誤格式不正確。",
+        "ja": "CodeGrid デバッグエラーの形式が不正です。",
+        "zh-cn": "CodeGrid 调试错误格式不正确。",
+        "ko": "CodeGrid 디버그 오류 형식이 잘못되었습니다.",
+        "pt-br": "Erro de depuração CodeGrid malformado.",
+        "ru": "Некорректный формат ошибки отладки CodeGrid."
+      }
+    },
+    "6003": {
+      "layer": "editor",
+      "code": "editor.runtime_start_failed",
+      "messages": {
+        "en": "The CodeGrid runtime could not be started.",
+        "de": "Die CodeGrid-Laufzeit konnte nicht gestartet werden.",
+        "fr": "Impossible de démarrer le moteur CodeGrid.",
+        "es": "No se pudo iniciar el motor CodeGrid.",
+        "zh-tw": "無法啟動 CodeGrid 執行環境。",
+        "ja": "CodeGrid ランタイムを起動できませんでした。",
+        "zh-cn": "无法启动 CodeGrid 运行环境。",
+        "ko": "CodeGrid 런타임을 시작할 수 없습니다.",
+        "pt-br": "Não foi possível iniciar o runtime CodeGrid.",
+        "ru": "Не удалось запустить среду CodeGrid."
+      }
+    },
+    "6004": {
+      "layer": "editor",
+      "code": "editor.runtime_exited",
+      "messages": {
+        "en": "The CodeGrid runtime exited unexpectedly.",
+        "de": "Die CodeGrid-Laufzeit wurde unerwartet beendet.",
+        "fr": "Le moteur CodeGrid s’est arrêté de manière inattendue.",
+        "es": "El motor CodeGrid finalizó inesperadamente.",
+        "zh-tw": "CodeGrid 執行環境意外結束。",
+        "ja": "CodeGrid ランタイムが予期せず終了しました。",
+        "zh-cn": "CodeGrid 运行环境意外退出。",
+        "ko": "CodeGrid 런타임이 예기치 않게 종료되었습니다.",
+        "pt-br": "O runtime CodeGrid terminou inesperadamente.",
+        "ru": "Среда CodeGrid неожиданно завершилась."
+      }
+    },
+    "6005": {
+      "layer": "editor",
+      "code": "editor.transport_io",
+      "messages": {
+        "en": "The connection to the CodeGrid runtime failed.",
+        "de": "Die Verbindung zur CodeGrid-Laufzeit ist fehlgeschlagen.",
+        "fr": "La connexion au moteur CodeGrid a échoué.",
+        "es": "La conexión al motor CodeGrid ha fallado.",
+        "zh-tw": "與 CodeGrid 執行環境的連線失敗。",
+        "ja": "CodeGrid ランタイムへの接続に失敗しました。",
+        "zh-cn": "与 CodeGrid 运行环境的连接失败。",
+        "ko": "CodeGrid 런타임 연결에 실패했습니다.",
+        "pt-br": "A conexão com o runtime CodeGrid falhou.",
+        "ru": "Ошибка соединения со средой CodeGrid."
+      }
+    },
+    "6006": {
+      "layer": "editor",
+      "code": "editor.session_closed",
+      "messages": {
+        "en": "CodeGrid session closed.",
+        "de": "CodeGrid-Sitzung geschlossen.",
+        "fr": "Session CodeGrid fermée.",
+        "es": "Sesión CodeGrid cerrada.",
+        "zh-tw": "CodeGrid 工作階段已關閉。",
+        "ja": "CodeGrid セッションが終了しました。",
+        "zh-cn": "CodeGrid 会话已关闭。",
+        "ko": "CodeGrid 세션이 닫혔습니다.",
+        "pt-br": "Sessão CodeGrid encerrada.",
+        "ru": "Сеанс CodeGrid закрыт."
+      }
+    },
+    "6007": {
+      "layer": "editor",
+      "code": "editor.invalid_expression",
+      "messages": {
+        "en": "Use a state path such as registers[0], thread.data_stack or metrics.global_tick.",
+        "de": "Zustandspfad verwenden, z. B. registers[0], thread.data_stack oder metrics.global_tick.",
+        "fr": "Utilisez un chemin comme registers[0], thread.data_stack ou metrics.global_tick.",
+        "es": "Use una ruta como registers[0], thread.data_stack o metrics.global_tick.",
+        "zh-tw": "請使用 registers[0]、thread.data_stack 或 metrics.global_tick 等狀態路徑。",
+        "ja": "registers[0]、thread.data_stack、metrics.global_tick などの状態パスを使用してください。",
+        "zh-cn": "请使用 registers[0]、thread.data_stack 或 metrics.global_tick 等状态路径。",
+        "ko": "registers[0], thread.data_stack 또는 metrics.global_tick 같은 상태 경로를 사용하세요.",
+        "pt-br": "Use um caminho como registers[0], thread.data_stack ou metrics.global_tick.",
+        "ru": "Используйте путь вроде registers[0], thread.data_stack или metrics.global_tick."
+      }
+    },
+    "6008": {
+      "layer": "editor",
+      "code": "editor.unknown_state_path",
+      "messages": {
+        "en": "The requested state path does not exist.",
+        "de": "Der angeforderte Zustandspfad existiert nicht.",
+        "fr": "Le chemin d’état demandé n’existe pas.",
+        "es": "La ruta de estado solicitada no existe.",
+        "zh-tw": "要求的狀態路徑不存在。",
+        "ja": "要求された状態パスが存在しません。",
+        "zh-cn": "请求的状态路径不存在。",
+        "ko": "요청한 상태 경로가 없습니다.",
+        "pt-br": "O caminho de estado solicitado não existe.",
+        "ru": "Запрошенный путь состояния не существует."
+      }
+    },
+    "6009": {
+      "layer": "editor",
+      "code": "editor.no_caller_frame",
+      "messages": {
+        "en": "The selected thread has no caller frame.",
+        "de": "Der ausgewählte Thread hat keinen Aufrufer-Frame.",
+        "fr": "Le fil sélectionné n’a pas de cadre appelant.",
+        "es": "El hilo seleccionado no tiene un marco llamante.",
+        "zh-tw": "選取的執行緒沒有呼叫者堆疊框架。",
+        "ja": "選択したスレッドに呼び出し元フレームがありません。",
+        "zh-cn": "选中的线程没有调用者栈帧。",
+        "ko": "선택한 스레드에 호출자 프레임이 없습니다.",
+        "pt-br": "A thread selecionada não tem quadro chamador.",
+        "ru": "У выбранного потока нет кадра вызывающего."
+      }
+    },
+    "6010": {
+      "layer": "editor",
+      "code": "editor.unsupported_debug_request",
+      "messages": {
+        "en": "The debugger does not support this request.",
+        "de": "Der Debugger unterstützt diese Anfrage nicht.",
+        "fr": "Le débogueur ne prend pas en charge cette requête.",
+        "es": "El depurador no admite esta solicitud.",
+        "zh-tw": "偵錯工具不支援此要求。",
+        "ja": "デバッガーはこの要求に対応していません。",
+        "zh-cn": "调试器不支持此请求。",
+        "ko": "디버거가 이 요청을 지원하지 않습니다.",
+        "pt-br": "O depurador não suporta esta solicitação.",
+        "ru": "Отладчик не поддерживает этот запрос."
+      }
+    },
+    "6011": {
+      "layer": "editor",
+      "code": "editor.workspace_untrusted",
+      "messages": {
+        "en": "Trust this workspace before running CodeGrid.",
+        "de": "Diesem Arbeitsbereich vor dem Ausführen von CodeGrid vertrauen.",
+        "fr": "Faites confiance à cet espace avant d’exécuter CodeGrid.",
+        "es": "Confíe en este espacio antes de ejecutar CodeGrid.",
+        "zh-tw": "請先信任此工作區，再執行 CodeGrid。",
+        "ja": "CodeGrid を実行する前にワークスペースを信頼してください。",
+        "zh-cn": "请先信任此工作区，再运行 CodeGrid。",
+        "ko": "CodeGrid를 실행하기 전에 작업 영역을 신뢰하세요.",
+        "pt-br": "Confie neste espaço de trabalho antes de executar CodeGrid.",
+        "ru": "Доверьтесь рабочей области перед запуском CodeGrid."
+      }
+    },
+    "6012": {
+      "layer": "editor",
+      "code": "editor.invalid_program",
+      "messages": {
+        "en": "program must be a source file path.",
+        "de": "program muss ein Quelldateipfad sein.",
+        "fr": "program doit être un chemin de fichier source.",
+        "es": "program debe ser una ruta de archivo fuente.",
+        "zh-tw": "program 必須是原始碼檔案路徑。",
+        "ja": "program はソースファイルのパスである必要があります。",
+        "zh-cn": "program 必须是源文件路径。",
+        "ko": "program은 소스 파일 경로여야 합니다.",
+        "pt-br": "program deve ser um caminho de arquivo-fonte.",
+        "ru": "program должен быть путём к исходному файлу."
+      }
+    },
+    "6013": {
+      "layer": "editor",
+      "code": "editor.invalid_input",
+      "messages": {
+        "en": "input must be an array of byte integers (0..255).",
+        "de": "input muss ein Array ganzer Bytes (0..255) sein.",
+        "fr": "input doit être un tableau d’octets entiers (0..255).",
+        "es": "input debe ser una matriz de enteros de byte (0..255).",
+        "zh-tw": "input 必須是位元組整數陣列（0..255）。",
+        "ja": "input はバイト整数（0..255）の配列である必要があります。",
+        "zh-cn": "input 必须是字节整数数组（0..255）。",
+        "ko": "input은 바이트 정수(0..255) 배열이어야 합니다.",
+        "pt-br": "input deve ser um vetor de bytes inteiros (0..255).",
+        "ru": "input должен быть массивом целых байтов (0..255)."
+      }
+    },
+    "6014": {
+      "layer": "editor",
+      "code": "editor.source_errors",
+      "messages": {
+        "en": "The program has source errors. See the Debug Console.",
+        "de": "Das Programm hat Quellfehler. Siehe Debugkonsole.",
+        "fr": "Le programme contient des erreurs. Consultez la console de débogage.",
+        "es": "El programa tiene errores de código. Consulte la consola de depuración.",
+        "zh-tw": "程式原始碼有錯誤。請查看偵錯主控台。",
+        "ja": "ソースにエラーがあります。デバッグコンソールを確認してください。",
+        "zh-cn": "程序源码有错误。请查看调试控制台。",
+        "ko": "소스에 오류가 있습니다. 디버그 콘솔을 확인하세요.",
+        "pt-br": "O programa tem erros de código. Veja o console de depuração.",
+        "ru": "В исходном коде есть ошибки. См. консоль отладки."
+      }
+    },
+    "6015": {
+      "layer": "editor",
+      "code": "editor.no_session",
+      "messages": {
+        "en": "No active runtime.",
+        "de": "Keine aktive Laufzeit.",
+        "fr": "Aucun moteur actif.",
+        "es": "No hay ningún motor activo.",
+        "zh-tw": "沒有執行中的執行環境。",
+        "ja": "有効なランタイムがありません。",
+        "zh-cn": "没有活动的运行环境。",
+        "ko": "활성 런타임이 없습니다.",
+        "pt-br": "Nenhum runtime ativo.",
+        "ru": "Нет активной среды выполнения."
+      }
+    },
+    "6016": {
+      "layer": "editor",
+      "code": "editor.session_running",
+      "messages": {
+        "en": "Pause execution before stepping.",
+        "de": "Vor dem schrittweisen Ausführen pausieren.",
+        "fr": "Suspendez l’exécution avant le pas à pas.",
+        "es": "Pause la ejecución antes de avanzar paso a paso.",
+        "zh-tw": "請先暫停，再逐步執行。",
+        "ja": "ステップ実行の前に一時停止してください。",
+        "zh-cn": "请先暂停，再单步执行。",
+        "ko": "단계 실행 전에 일시 중지하세요.",
+        "pt-br": "Pause a execução antes de avançar passo a passo.",
+        "ru": "Приостановите выполнение перед пошаговой отладкой."
+      }
+    },
+    "6017": {
+      "layer": "editor",
+      "code": "editor.vm_terminal",
+      "messages": {
+        "en": "The VM is terminal. Restart the session to execute again.",
+        "de": "Die VM ist beendet. Zum erneuten Ausführen Sitzung neu starten.",
+        "fr": "La VM est terminée. Redémarrez la session pour exécuter à nouveau.",
+        "es": "La VM ha terminado. Reinicie la sesión para volver a ejecutar.",
+        "zh-tw": "VM 已終止。請重新啟動工作階段以再次執行。",
+        "ja": "VM は終了しています。再実行にはセッションを再起動してください。",
+        "zh-cn": "VM 已终止。请重新启动会话以再次执行。",
+        "ko": "VM이 종료되었습니다. 다시 실행하려면 세션을 재시작하세요.",
+        "pt-br": "A VM terminou. Reinicie a sessão para executar novamente.",
+        "ru": "VM завершена. Для повторного запуска перезапустите сеанс."
+      }
+    },
+    "6018": {
+      "layer": "editor",
+      "code": "editor.no_codegrid_file",
+      "messages": {
+        "en": "Open a CodeGrid (.cg) file first.",
+        "de": "Zuerst eine CodeGrid-Datei (.cg) öffnen.",
+        "fr": "Ouvrez d’abord un fichier CodeGrid (.cg).",
+        "es": "Abra primero un archivo CodeGrid (.cg).",
+        "zh-tw": "請先開啟 CodeGrid (.cg) 檔案。",
+        "ja": "先に CodeGrid（.cg）ファイルを開いてください。",
+        "zh-cn": "请先打开 CodeGrid (.cg) 文件。",
+        "ko": "먼저 CodeGrid(.cg) 파일을 여세요.",
+        "pt-br": "Abra primeiro um arquivo CodeGrid (.cg).",
+        "ru": "Сначала откройте файл CodeGrid (.cg)."
+      }
+    },
+    "6019": {
+      "layer": "editor",
+      "code": "editor.lsp_path_empty",
+      "messages": {
+        "en": "CodeGrid language server path is empty. Standalone editor features remain available.",
+        "de": "Der Sprachserverpfad ist leer. Eigenständige Editorfunktionen bleiben verfügbar.",
+        "fr": "Le chemin du serveur est vide. Les fonctions autonomes restent disponibles.",
+        "es": "La ruta del servidor está vacía. Las funciones independientes siguen disponibles.",
+        "zh-tw": "語言伺服器路徑為空。仍可使用獨立編輯功能。",
+        "ja": "言語サーバーのパスが空です。単独の編集機能は利用できます。",
+        "zh-cn": "语言服务器路径为空。仍可使用独立编辑功能。",
+        "ko": "언어 서버 경로가 비어 있습니다. 독립 편집 기능은 계속 사용할 수 있습니다.",
+        "pt-br": "O caminho do servidor está vazio. As funções independentes continuam disponíveis.",
+        "ru": "Путь к серверу пуст. Автономные функции доступны."
+      }
+    },
+    "6020": {
+      "layer": "editor",
+      "code": "editor.lsp_start_failed",
+      "messages": {
+        "en": "The CodeGrid language server could not be started.",
+        "de": "Der CodeGrid-Sprachserver konnte nicht gestartet werden.",
+        "fr": "Impossible de démarrer le serveur de langage CodeGrid.",
+        "es": "No se pudo iniciar el servidor de lenguaje CodeGrid.",
+        "zh-tw": "無法啟動 CodeGrid 語言伺服器。",
+        "ja": "CodeGrid 言語サーバーを起動できませんでした。",
+        "zh-cn": "无法启动 CodeGrid 语言服务器。",
+        "ko": "CodeGrid 언어 서버를 시작할 수 없습니다.",
+        "pt-br": "Não foi possível iniciar o servidor de linguagem CodeGrid.",
+        "ru": "Не удалось запустить языковой сервер CodeGrid."
+      }
+    },
+    "6021": {
+      "layer": "editor",
+      "code": "editor.invalid_template",
+      "messages": {
+        "en": "The CodeGrid template is unknown.",
+        "de": "Die CodeGrid-Vorlage ist unbekannt.",
+        "fr": "Le modèle CodeGrid est inconnu.",
+        "es": "La plantilla CodeGrid es desconocida.",
+        "zh-tw": "未知的 CodeGrid 範本。",
+        "ja": "不明な CodeGrid テンプレートです。",
+        "zh-cn": "未知的 CodeGrid 模板。",
+        "ko": "알 수 없는 CodeGrid 템플릿입니다.",
+        "pt-br": "O modelo CodeGrid é desconhecido.",
+        "ru": "Неизвестный шаблон CodeGrid."
+      }
+    },
+    "7000": {
+      "layer": "browser",
+      "code": "invalid_source",
+      "messages": {
+        "en": "The source must be a JavaScript string.",
+        "de": "Der Quelltext muss eine JavaScript-Zeichenfolge sein.",
+        "fr": "Le code source doit être une chaîne JavaScript.",
+        "es": "El código fuente debe ser una cadena JavaScript.",
+        "zh-tw": "原始碼必須是 JavaScript 字串。",
+        "ja": "ソースは JavaScript の文字列である必要があります。",
+        "zh-cn": "源代码必须是 JavaScript 字符串。",
+        "ko": "소스는 JavaScript 문자열이어야 합니다.",
+        "pt-br": "O código-fonte deve ser uma string JavaScript.",
+        "ru": "Исходный код должен быть строкой JavaScript."
+      }
+    },
+    "7001": {
+      "layer": "browser",
+      "code": "invalid_input",
+      "messages": {
+        "en": "The input must be a Uint8Array.",
+        "de": "Die Eingabe muss ein Uint8Array sein.",
+        "fr": "L’entrée doit être un Uint8Array.",
+        "es": "La entrada debe ser un Uint8Array.",
+        "zh-tw": "輸入必須是 Uint8Array。",
+        "ja": "入力は Uint8Array である必要があります。",
+        "zh-cn": "输入必须是 Uint8Array。",
+        "ko": "입력은 Uint8Array여야 합니다.",
+        "pt-br": "A entrada deve ser um Uint8Array.",
+        "ru": "Входные данные должны быть Uint8Array."
+      }
+    },
+    "7002": {
+      "layer": "browser",
+      "code": "input_allocation_failed",
+      "messages": {
+        "en": "There is not enough memory to allocate the requested buffer.",
+        "de": "Für den angeforderten Puffer steht nicht genügend Speicher zur Verfügung.",
+        "fr": "La mémoire disponible ne suffit pas pour allouer le tampon demandé.",
+        "es": "No hay memoria suficiente para asignar el búfer solicitado.",
+        "zh-tw": "記憶體不足，無法配置要求的緩衝區。",
+        "ja": "要求されたバッファを確保するためのメモリが不足しています。",
+        "zh-cn": "内存不足，无法分配请求的缓冲区。",
+        "ko": "요청한 버퍼를 할당할 메모리가 부족합니다.",
+        "pt-br": "Não há memória suficiente para alocar o buffer solicitado.",
+        "ru": "Недостаточно памяти для выделения запрошенного буфера."
+      }
+    },
+    "7003": {
+      "layer": "browser",
+      "code": "request_allocation_failed",
+      "messages": {
+        "en": "There is not enough memory to allocate the requested buffer.",
+        "de": "Für den angeforderten Puffer steht nicht genügend Speicher zur Verfügung.",
+        "fr": "La mémoire disponible ne suffit pas pour allouer le tampon demandé.",
+        "es": "No hay memoria suficiente para asignar el búfer solicitado.",
+        "zh-tw": "記憶體不足，無法配置要求的緩衝區。",
+        "ja": "要求されたバッファを確保するためのメモリが不足しています。",
+        "zh-cn": "内存不足，无法分配请求的缓冲区。",
+        "ko": "요청한 버퍼를 할당할 메모리가 부족합니다.",
+        "pt-br": "Não há memória suficiente para alocar o buffer solicitado.",
+        "ru": "Недостаточно памяти для выделения запрошенного буфера."
+      }
+    },
+    "7004": {
+      "layer": "browser",
+      "code": "source_payload_limit_exceeded",
+      "messages": {
+        "en": "The source exceeds the configured size limit.",
+        "de": "Der Quelltext überschreitet die konfigurierte Größenbegrenzung.",
+        "fr": "Le code source dépasse la taille maximale configurée.",
+        "es": "El código fuente supera el límite de tamaño configurado.",
+        "zh-tw": "原始碼超過設定的大小上限。",
+        "ja": "ソースが設定されたサイズ上限を超えています。",
+        "zh-cn": "源代码超过配置的大小上限。",
+        "ko": "소스가 설정된 크기 제한을 초과했습니다.",
+        "pt-br": "O código-fonte excede o limite de tamanho configurado.",
+        "ru": "Исходный код превышает заданный предел размера."
+      }
+    },
+    "7005": {
+      "layer": "browser",
+      "code": "input_payload_limit_exceeded",
+      "messages": {
+        "en": "The input exceeds the configured size limit.",
+        "de": "Die Eingabe überschreitet die konfigurierte Größenbegrenzung.",
+        "fr": "L’entrée dépasse la taille maximale configurée.",
+        "es": "La entrada supera el límite de tamaño configurado.",
+        "zh-tw": "輸入超過設定的大小上限。",
+        "ja": "入力が設定されたサイズ上限を超えています。",
+        "zh-cn": "输入超过配置的大小上限。",
+        "ko": "입력이 설정된 크기 제한을 초과했습니다.",
+        "pt-br": "A entrada excede o limite de tamanho configurado.",
+        "ru": "Входные данные превышают заданный предел размера."
+      }
+    },
+    "7006": {
+      "layer": "browser",
+      "code": "request_payload_limit_exceeded",
+      "messages": {
+        "en": "The request exceeds the configured size limit.",
+        "de": "Die Anfrage überschreitet die konfigurierte Größenbegrenzung.",
+        "fr": "La requête dépasse la taille maximale configurée.",
+        "es": "La solicitud supera el límite de tamaño configurado.",
+        "zh-tw": "請求超過設定的大小上限。",
+        "ja": "リクエストが設定されたサイズ上限を超えています。",
+        "zh-cn": "请求超过配置的大小上限。",
+        "ko": "요청이 설정된 크기 제한을 초과했습니다.",
+        "pt-br": "A solicitação excede o limite de tamanho configurado.",
+        "ru": "Запрос превышает заданный предел размера."
+      }
+    },
+    "7007": {
+      "layer": "browser",
+      "code": "invalid_request_field",
+      "messages": {
+        "en": "A required request field is missing or has an invalid type.",
+        "de": "Ein erforderliches Anfragefeld fehlt oder hat einen ungültigen Typ.",
+        "fr": "Un champ obligatoire de la requête est absent ou de type invalide.",
+        "es": "Falta un campo obligatorio de la solicitud o su tipo no es válido.",
+        "zh-tw": "缺少必要的請求欄位，或欄位類型無效。",
+        "ja": "必須のリクエストフィールドがないか、型が無効です。",
+        "zh-cn": "缺少必要的请求字段，或字段类型无效。",
+        "ko": "필수 요청 필드가 없거나 형식이 올바르지 않습니다.",
+        "pt-br": "Um campo obrigatório da solicitação está ausente ou tem um tipo inválido.",
+        "ru": "Обязательное поле запроса отсутствует или имеет недопустимый тип."
+      }
+    },
+    "7008": {
+      "layer": "browser",
+      "code": "invalid_program_handle",
+      "messages": {
+        "en": "The program handle is invalid.",
+        "de": "Das Programm-Handle ist ungültig.",
+        "fr": "Le handle du programme est invalide.",
+        "es": "El identificador del programa no es válido.",
+        "zh-tw": "程式控制代碼無效。",
+        "ja": "プログラムハンドルが無効です。",
+        "zh-cn": "程序句柄无效。",
+        "ko": "프로그램 핸들이 올바르지 않습니다.",
+        "pt-br": "O identificador do programa é inválido.",
+        "ru": "Недопустимый дескриптор программы."
+      }
+    },
+    "7009": {
+      "layer": "browser",
+      "code": "invalid_initial_memory",
+      "messages": {
+        "en": "The initial-memory data is invalid.",
+        "de": "Die Anfangsspeicherdaten sind ungültig.",
+        "fr": "Les données de mémoire initiale sont invalides.",
+        "es": "Los datos de memoria inicial no son válidos.",
+        "zh-tw": "初始記憶體資料無效。",
+        "ja": "初期メモリのデータが無効です。",
+        "zh-cn": "初始内存数据无效。",
+        "ko": "초기 메모리 데이터가 올바르지 않습니다.",
+        "pt-br": "Os dados de memória inicial são inválidos.",
+        "ru": "Недопустимые данные начальной памяти."
+      }
+    },
+    "7010": {
+      "layer": "browser",
+      "code": "invalid_configuration",
+      "messages": {
+        "en": "The execution configuration is invalid.",
+        "de": "Die Ausführungskonfiguration ist ungültig.",
+        "fr": "La configuration d’exécution est invalide.",
+        "es": "La configuración de ejecución no es válida.",
+        "zh-tw": "執行設定無效。",
+        "ja": "実行設定が無効です。",
+        "zh-cn": "执行配置无效。",
+        "ko": "실행 설정이 올바르지 않습니다.",
+        "pt-br": "A configuração de execução é inválida.",
+        "ru": "Недопустимая конфигурация выполнения."
+      }
+    },
+    "7011": {
+      "layer": "browser",
+      "code": "invalid_request",
+      "messages": {
+        "en": "The request is invalid.",
+        "de": "Die Anfrage ist ungültig.",
+        "fr": "La requête est invalide.",
+        "es": "La solicitud no es válida.",
+        "zh-tw": "請求無效。",
+        "ja": "リクエストが無効です。",
+        "zh-cn": "请求无效。",
+        "ko": "요청이 올바르지 않습니다.",
+        "pt-br": "A solicitação é inválida.",
+        "ru": "Недопустимый запрос."
+      }
+    },
+    "7012": {
+      "layer": "browser",
+      "code": "invalid_instance_configuration",
+      "messages": {
+        "en": "The execution configuration is invalid.",
+        "de": "Die Ausführungskonfiguration ist ungültig.",
+        "fr": "La configuration d’exécution est invalide.",
+        "es": "La configuración de ejecución no es válida.",
+        "zh-tw": "執行設定無效。",
+        "ja": "実行設定が無効です。",
+        "zh-cn": "执行配置无效。",
+        "ko": "실행 설정이 올바르지 않습니다.",
+        "pt-br": "A configuração de execução é inválida.",
+        "ru": "Недопустимая конфигурация выполнения."
+      }
+    },
+    "7013": {
+      "layer": "browser",
+      "code": "invalid_instance_handle",
+      "messages": {
+        "en": "The instance handle is invalid.",
+        "de": "Das Instanz-Handle ist ungültig.",
+        "fr": "Le handle de l’instance est invalide.",
+        "es": "El identificador de la instancia no es válido.",
+        "zh-tw": "實例控制代碼無效。",
+        "ja": "インスタンスハンドルが無効です。",
+        "zh-cn": "实例句柄无效。",
+        "ko": "인스턴스 핸들이 올바르지 않습니다.",
+        "pt-br": "O identificador da instância é inválido.",
+        "ru": "Недопустимый дескриптор экземпляра."
+      }
+    },
+    "7014": {
+      "layer": "browser",
+      "code": "invalid_tick_limit",
+      "messages": {
+        "en": "The tick budget must be a positive canonical decimal integer string.",
+        "de": "Das Tick-Budget muss eine positive kanonische dezimale Ganzzahlzeichenfolge sein.",
+        "fr": "Le budget de ticks doit être une chaîne décimale canonique représentant un entier positif.",
+        "es": "El presupuesto de ticks debe ser una cadena decimal canónica de un entero positivo.",
+        "zh-tw": "Tick 預算必須是正整數的標準十進位字串。",
+        "ja": "Tick の予算は正の整数を表す正規の十進数文字列である必要があります。",
+        "zh-cn": "Tick 预算必须是正整数的规范十进制字符串。",
+        "ko": "Tick 예산은 양의 정수를 나타내는 정규 십진수 문자열이어야 합니다.",
+        "pt-br": "O orçamento de ticks deve ser uma string decimal canônica de um inteiro positivo.",
+        "ru": "Бюджет тиков должен быть канонической десятичной строкой положительного целого числа."
+      }
+    },
+    "7015": {
+      "layer": "browser",
+      "code": "instance_state_limit_exceeded",
+      "messages": {
+        "en": "The retained instance state exceeds the configured limit.",
+        "de": "Der gespeicherte Instanzzustand überschreitet die konfigurierte Begrenzung.",
+        "fr": "L’état conservé de l’instance dépasse la limite configurée.",
+        "es": "El estado retenido de la instancia supera el límite configurado.",
+        "zh-tw": "保留的實例狀態超過設定上限。",
+        "ja": "保持されているインスタンス状態が設定された上限を超えています。",
+        "zh-cn": "保留的实例状态超过配置上限。",
+        "ko": "보존된 인스턴스 상태가 설정된 제한을 초과했습니다.",
+        "pt-br": "O estado retido da instância excede o limite configurado.",
+        "ru": "Сохранённое состояние экземпляра превышает заданный предел."
+      }
+    },
+    "7016": {
+      "layer": "browser",
+      "code": "invalid_memory_address",
+      "messages": {
+        "en": "The memory address is not a valid canonical signed decimal integer string.",
+        "de": "Die Speicheradresse ist keine gültige kanonische dezimale Ganzzahlzeichenfolge mit Vorzeichen.",
+        "fr": "L’adresse mémoire n’est pas une chaîne décimale canonique valide représentant un entier signé.",
+        "es": "La dirección de memoria no es una cadena decimal canónica válida de un entero con signo.",
+        "zh-tw": "記憶體位址不是有效的有號整數標準十進位字串。",
+        "ja": "メモリアドレスが符号付き整数を表す有効な正規十進数文字列ではありません。",
+        "zh-cn": "内存地址不是有效的有符号整数规范十进制字符串。",
+        "ko": "메모리 주소가 부호 있는 정수를 나타내는 유효한 정규 십진수 문자열이 아닙니다.",
+        "pt-br": "O endereço de memória não é uma string decimal canônica válida de um inteiro com sinal.",
+        "ru": "Адрес памяти не является допустимой канонической десятичной строкой целого числа со знаком."
+      }
+    },
+    "7017": {
+      "layer": "browser",
+      "code": "invalid_boundary_mode",
+      "messages": {
+        "en": "The boundary mode must be exit or wrap.",
+        "de": "Der Randmodus muss exit oder wrap sein.",
+        "fr": "Le mode de bord doit être exit ou wrap.",
+        "es": "El modo de borde debe ser exit o wrap.",
+        "zh-tw": "邊界模式必須是 exit 或 wrap。",
+        "ja": "境界モードは exit または wrap である必要があります。",
+        "zh-cn": "边界模式必须是 exit 或 wrap。",
+        "ko": "경계 모드는 exit 또는 wrap이어야 합니다.",
+        "pt-br": "O modo de borda deve ser exit ou wrap.",
+        "ru": "Режим границы должен быть exit или wrap."
+      }
+    },
+    "7018": {
+      "layer": "browser",
+      "code": "invalid_configuration_integer",
+      "messages": {
+        "en": "The value must be a canonical decimal integer string within the allowed range.",
+        "de": "Der Wert muss eine kanonische dezimale Ganzzahlzeichenfolge im zulässigen Bereich sein.",
+        "fr": "La valeur doit être une chaîne décimale canonique représentant un entier dans la plage autorisée.",
+        "es": "El valor debe ser una cadena decimal canónica de un entero dentro del rango permitido.",
+        "zh-tw": "值必須是允許範圍內整數的標準十進位字串。",
+        "ja": "値は許容範囲内の整数を表す正規の十進数文字列である必要があります。",
+        "zh-cn": "值必须是允许范围内整数的规范十进制字符串。",
+        "ko": "값은 허용 범위 내의 정수를 나타내는 정규 십진수 문자열이어야 합니다.",
+        "pt-br": "O valor deve ser uma string decimal canônica de um inteiro dentro do intervalo permitido.",
+        "ru": "Значение должно быть канонической десятичной строкой целого числа в допустимом диапазоне."
+      }
+    },
+    "7019": {
+      "layer": "browser",
+      "code": "response_payload_limit_exceeded",
+      "messages": {
+        "en": "The complete response exceeds the configured size limit.",
+        "de": "Die vollständige Antwort überschreitet die konfigurierte Größenbegrenzung.",
+        "fr": "La réponse complète dépasse la taille maximale configurée.",
+        "es": "La respuesta completa supera el límite de tamaño configurado.",
+        "zh-tw": "完整回應超過設定的大小上限。",
+        "ja": "完全な応答が設定されたサイズ上限を超えています。",
+        "zh-cn": "完整响应超过配置的大小上限。",
+        "ko": "전체 응답이 설정된 크기 제한을 초과했습니다.",
+        "pt-br": "A resposta completa excede o limite de tamanho configurado.",
+        "ru": "Полный ответ превышает заданный предел размера."
+      }
+    },
+    "7020": {
+      "layer": "browser",
+      "code": "browser.invalid_host_limit",
+      "messages": {
+        "en": "The host resource limits are invalid.",
+        "de": "Die Ressourcenbegrenzungen des Hosts sind ungültig.",
+        "fr": "Les limites de ressources de l’hôte sont invalides.",
+        "es": "Los límites de recursos del anfitrión no son válidos.",
+        "zh-tw": "宿主資源限制無效。",
+        "ja": "ホストのリソース制限が無効です。",
+        "zh-cn": "宿主资源限制无效。",
+        "ko": "호스트 리소스 제한이 올바르지 않습니다.",
+        "pt-br": "Os limites de recursos do host são inválidos.",
+        "ru": "Недопустимые ограничения ресурсов хоста."
+      }
+    },
+    "7500": {
+      "layer": "server",
+      "code": "invalid_input",
+      "messages": {
+        "en": "The input must be a JSON array of byte integers.",
+        "de": "Die Eingabe muss ein JSON-Array von Byte-Ganzzahlen sein.",
+        "fr": "L’entrée doit être un tableau JSON d’entiers représentant des octets.",
+        "es": "La entrada debe ser una matriz JSON de enteros de byte.",
+        "zh-tw": "輸入必須是位元組整數的 JSON 陣列。",
+        "ja": "入力はバイト整数の JSON 配列である必要があります。",
+        "zh-cn": "输入必须是字节整数的 JSON 数组。",
+        "ko": "입력은 바이트 정수로 구성된 JSON 배열이어야 합니다.",
+        "pt-br": "A entrada deve ser um array JSON de inteiros de byte.",
+        "ru": "Входные данные должны быть JSON-массивом целых байтовых значений."
+      }
+    },
+    "7501": {
+      "layer": "server",
+      "code": "invalid_input_byte",
+      "messages": {
+        "en": "An input value is not an integer from 0 to 255.",
+        "de": "Ein Eingabewert ist keine Ganzzahl von 0 bis 255.",
+        "fr": "Une valeur d’entrée n’est pas un entier compris entre 0 et 255.",
+        "es": "Un valor de entrada no es un entero entre 0 y 255.",
+        "zh-tw": "輸入值不是 0 到 255 之間的整數。",
+        "ja": "入力値が 0 から 255 までの整数ではありません。",
+        "zh-cn": "输入值不是 0 到 255 之间的整数。",
+        "ko": "입력값이 0부터 255 사이의 정수가 아닙니다.",
+        "pt-br": "Um valor de entrada não é um inteiro entre 0 e 255.",
+        "ru": "Входное значение не является целым числом от 0 до 255."
+      }
+    },
+    "7502": {
+      "layer": "server",
+      "code": "invalid_host_limit",
+      "messages": {
+        "en": "The host resource limits are invalid.",
+        "de": "Die Ressourcenbegrenzungen des Hosts sind ungültig.",
+        "fr": "Les limites de ressources de l’hôte sont invalides.",
+        "es": "Los límites de recursos del anfitrión no son válidos.",
+        "zh-tw": "宿主資源限制無效。",
+        "ja": "ホストのリソース制限が無効です。",
+        "zh-cn": "宿主资源限制无效。",
+        "ko": "호스트 리소스 제한이 올바르지 않습니다.",
+        "pt-br": "Os limites de recursos do host são inválidos.",
+        "ru": "Недопустимые ограничения ресурсов хоста."
+      }
+    },
+    "7503": {
+      "layer": "server",
+      "code": "host_limit_exceeds_adapter_ceiling",
+      "messages": {
+        "en": "A host limit exceeds the adapter’s maximum.",
+        "de": "Eine Host-Begrenzung überschreitet das Maximum des Adapters.",
+        "fr": "Une limite de l’hôte dépasse le maximum de l’adaptateur.",
+        "es": "Un límite del anfitrión supera el máximo del adaptador.",
+        "zh-tw": "宿主限制超過介面卡上限。",
+        "ja": "ホストの制限がアダプターの上限を超えています。",
+        "zh-cn": "宿主限制超过适配器上限。",
+        "ko": "호스트 제한이 어댑터의 최댓값을 초과했습니다.",
+        "pt-br": "Um limite do host excede o máximo do adaptador.",
+        "ru": "Ограничение хоста превышает максимум адаптера."
+      }
+    },
+    "7504": {
+      "layer": "server",
+      "code": "invalid_decimal_integer",
+      "messages": {
+        "en": "The value must be a canonical decimal integer string within the allowed range.",
+        "de": "Der Wert muss eine kanonische dezimale Ganzzahlzeichenfolge im zulässigen Bereich sein.",
+        "fr": "La valeur doit être une chaîne décimale canonique représentant un entier dans la plage autorisée.",
+        "es": "El valor debe ser una cadena decimal canónica de un entero dentro del rango permitido.",
+        "zh-tw": "值必須是允許範圍內整數的標準十進位字串。",
+        "ja": "値は許容範囲内の整数を表す正規の十進数文字列である必要があります。",
+        "zh-cn": "值必须是允许范围内整数的规范十进制字符串。",
+        "ko": "값은 허용 범위 내의 정수를 나타내는 정규 십진수 문자열이어야 합니다.",
+        "pt-br": "O valor deve ser uma string decimal canônica de um inteiro dentro do intervalo permitido.",
+        "ru": "Значение должно быть канонической десятичной строкой целого числа в допустимом диапазоне."
+      }
+    },
+    "7505": {
+      "layer": "server",
+      "code": "invalid_memory_address",
+      "messages": {
+        "en": "The memory address is not a valid canonical signed decimal integer string.",
+        "de": "Die Speicheradresse ist keine gültige kanonische dezimale Ganzzahlzeichenfolge mit Vorzeichen.",
+        "fr": "L’adresse mémoire n’est pas une chaîne décimale canonique valide représentant un entier signé.",
+        "es": "La dirección de memoria no es una cadena decimal canónica válida de un entero con signo.",
+        "zh-tw": "記憶體位址不是有效的有號整數標準十進位字串。",
+        "ja": "メモリアドレスが符号付き整数を表す有効な正規十進数文字列ではありません。",
+        "zh-cn": "内存地址不是有效的有符号整数规范十进制字符串。",
+        "ko": "메모리 주소가 부호 있는 정수를 나타내는 유효한 정규 십진수 문자열이 아닙니다.",
+        "pt-br": "O endereço de memória não é uma string decimal canônica válida de um inteiro com sinal.",
+        "ru": "Адрес памяти не является допустимой канонической десятичной строкой целого числа со знаком."
+      }
+    },
+    "7506": {
+      "layer": "server",
+      "code": "invalid_request_field",
+      "messages": {
+        "en": "A required request field is missing or has an invalid type.",
+        "de": "Ein erforderliches Anfragefeld fehlt oder hat einen ungültigen Typ.",
+        "fr": "Un champ obligatoire de la requête est absent ou de type invalide.",
+        "es": "Falta un campo obligatorio de la solicitud o su tipo no es válido.",
+        "zh-tw": "缺少必要的請求欄位，或欄位類型無效。",
+        "ja": "必須のリクエストフィールドがないか、型が無効です。",
+        "zh-cn": "缺少必要的请求字段，或字段类型无效。",
+        "ko": "필수 요청 필드가 없거나 형식이 올바르지 않습니다.",
+        "pt-br": "Um campo obrigatório da solicitação está ausente ou tem um tipo inválido.",
+        "ru": "Обязательное поле запроса отсутствует или имеет недопустимый тип."
+      }
+    },
+    "7507": {
+      "layer": "server",
+      "code": "unsupported_api_version",
+      "messages": {
+        "en": "The API version is not supported.",
+        "de": "Die API-Version wird nicht unterstützt.",
+        "fr": "La version de l’API n’est pas prise en charge.",
+        "es": "La versión de la API no es compatible.",
+        "zh-tw": "不支援此 API 版本。",
+        "ja": "この API バージョンはサポートされていません。",
+        "zh-cn": "不支持此 API 版本。",
+        "ko": "지원되지 않는 API 버전입니다.",
+        "pt-br": "A versão da API não é compatível.",
+        "ru": "Эта версия API не поддерживается."
+      }
+    },
+    "7508": {
+      "layer": "server",
+      "code": "source_payload_limit_exceeded",
+      "messages": {
+        "en": "The source exceeds the configured size limit.",
+        "de": "Der Quelltext überschreitet die konfigurierte Größenbegrenzung.",
+        "fr": "Le code source dépasse la taille maximale configurée.",
+        "es": "El código fuente supera el límite de tamaño configurado.",
+        "zh-tw": "原始碼超過設定的大小上限。",
+        "ja": "ソースが設定されたサイズ上限を超えています。",
+        "zh-cn": "源代码超过配置的大小上限。",
+        "ko": "소스가 설정된 크기 제한을 초과했습니다.",
+        "pt-br": "O código-fonte excede o limite de tamanho configurado.",
+        "ru": "Исходный код превышает заданный предел размера."
+      }
+    },
+    "7509": {
+      "layer": "server",
+      "code": "input_payload_limit_exceeded",
+      "messages": {
+        "en": "The input exceeds the configured size limit.",
+        "de": "Die Eingabe überschreitet die konfigurierte Größenbegrenzung.",
+        "fr": "L’entrée dépasse la taille maximale configurée.",
+        "es": "La entrada supera el límite de tamaño configurado.",
+        "zh-tw": "輸入超過設定的大小上限。",
+        "ja": "入力が設定されたサイズ上限を超えています。",
+        "zh-cn": "输入超过配置的大小上限。",
+        "ko": "입력이 설정된 크기 제한을 초과했습니다.",
+        "pt-br": "A entrada excede o limite de tamanho configurado.",
+        "ru": "Входные данные превышают заданный предел размера."
+      }
+    },
+    "7510": {
+      "layer": "server",
+      "code": "vm_initialization_error",
+      "messages": {
+        "en": "The VM could not be initialized.",
+        "de": "Die VM konnte nicht initialisiert werden.",
+        "fr": "Impossible d’initialiser la VM.",
+        "es": "No se pudo inicializar la VM.",
+        "zh-tw": "無法初始化 VM。",
+        "ja": "VM を初期化できませんでした。",
+        "zh-cn": "无法初始化 VM。",
+        "ko": "VM을 초기화할 수 없습니다.",
+        "pt-br": "Não foi possível inicializar a VM.",
+        "ru": "Не удалось инициализировать VM."
+      }
+    },
+    "7511": {
+      "layer": "server",
+      "code": "invalid_initial_memory",
+      "messages": {
+        "en": "The initial-memory data is invalid.",
+        "de": "Die Anfangsspeicherdaten sind ungültig.",
+        "fr": "Les données de mémoire initiale sont invalides.",
+        "es": "Los datos de memoria inicial no son válidos.",
+        "zh-tw": "初始記憶體資料無效。",
+        "ja": "初期メモリのデータが無効です。",
+        "zh-cn": "初始内存数据无效。",
+        "ko": "초기 메모리 데이터가 올바르지 않습니다.",
+        "pt-br": "Os dados de memória inicial são inválidos.",
+        "ru": "Недопустимые данные начальной памяти."
+      }
+    },
+    "7512": {
+      "layer": "server",
+      "code": "initial_memory_payload_limit_exceeded",
+      "messages": {
+        "en": "The initial-memory limit has been exceeded.",
+        "de": "Die Begrenzung des Anfangsspeichers wurde überschritten.",
+        "fr": "La limite de mémoire initiale est dépassée.",
+        "es": "Se ha superado el límite de memoria inicial.",
+        "zh-tw": "初始記憶體超過上限。",
+        "ja": "初期メモリの上限を超えています。",
+        "zh-cn": "初始内存超过上限。",
+        "ko": "초기 메모리 제한을 초과했습니다.",
+        "pt-br": "O limite de memória inicial foi excedido.",
+        "ru": "Превышен предел начальной памяти."
+      }
+    },
+    "7513": {
+      "layer": "server",
+      "code": "invalid_initial_memory_entry",
+      "messages": {
+        "en": "The initial-memory data is invalid.",
+        "de": "Die Anfangsspeicherdaten sind ungültig.",
+        "fr": "Les données de mémoire initiale sont invalides.",
+        "es": "Los datos de memoria inicial no son válidos.",
+        "zh-tw": "初始記憶體資料無效。",
+        "ja": "初期メモリのデータが無効です。",
+        "zh-cn": "初始内存数据无效。",
+        "ko": "초기 메모리 데이터가 올바르지 않습니다.",
+        "pt-br": "Os dados de memória inicial são inválidos.",
+        "ru": "Недопустимые данные начальной памяти."
+      }
+    },
+    "7514": {
+      "layer": "server",
+      "code": "request_payload_limit_exceeded",
+      "messages": {
+        "en": "The request exceeds the configured size limit.",
+        "de": "Die Anfrage überschreitet die konfigurierte Größenbegrenzung.",
+        "fr": "La requête dépasse la taille maximale configurée.",
+        "es": "La solicitud supera el límite de tamaño configurado.",
+        "zh-tw": "請求超過設定的大小上限。",
+        "ja": "リクエストが設定されたサイズ上限を超えています。",
+        "zh-cn": "请求超过配置的大小上限。",
+        "ko": "요청이 설정된 크기 제한을 초과했습니다.",
+        "pt-br": "A solicitação excede o limite de tamanho configurado.",
+        "ru": "Запрос превышает заданный предел размера."
+      }
+    },
+    "7515": {
+      "layer": "server",
+      "code": "invalid_request_json",
+      "messages": {
+        "en": "The request is not valid UTF-8 JSON.",
+        "de": "Die Anfrage ist kein gültiges UTF-8-JSON.",
+        "fr": "La requête n’est pas un JSON UTF-8 valide.",
+        "es": "La solicitud no es un JSON UTF-8 válido.",
+        "zh-tw": "請求不是有效的 UTF-8 JSON。",
+        "ja": "リクエストが有効な UTF-8 JSON ではありません。",
+        "zh-cn": "请求不是有效的 UTF-8 JSON。",
+        "ko": "요청이 유효한 UTF-8 JSON이 아닙니다.",
+        "pt-br": "A solicitação não é um JSON UTF-8 válido.",
+        "ru": "Запрос не является допустимым JSON в UTF-8."
+      }
+    },
+    "7516": {
+      "layer": "server",
+      "code": "invalid_request",
+      "messages": {
+        "en": "The request is invalid.",
+        "de": "Die Anfrage ist ungültig.",
+        "fr": "La requête est invalide.",
+        "es": "La solicitud no es válida.",
+        "zh-tw": "請求無效。",
+        "ja": "リクエストが無効です。",
+        "zh-cn": "请求无效。",
+        "ko": "요청이 올바르지 않습니다.",
+        "pt-br": "A solicitação é inválida.",
+        "ru": "Недопустимый запрос."
+      }
+    },
+    "7517": {
+      "layer": "server",
+      "code": "unsupported_abi_version",
+      "messages": {
+        "en": "The ABI version is not supported.",
+        "de": "Die ABI-Version wird nicht unterstützt.",
+        "fr": "La version de l’ABI n’est pas prise en charge.",
+        "es": "La versión de la ABI no es compatible.",
+        "zh-tw": "不支援此 ABI 版本。",
+        "ja": "この ABI バージョンはサポートされていません。",
+        "zh-cn": "不支持此 ABI 版本。",
+        "ko": "지원되지 않는 ABI 버전입니다.",
+        "pt-br": "A versão da ABI não é compatível.",
+        "ru": "Эта версия ABI не поддерживается."
+      }
+    },
+    "7518": {
+      "layer": "server",
+      "code": "runtime_closed",
+      "messages": {
+        "en": "The session has been shut down.",
+        "de": "Die Sitzung wurde beendet.",
+        "fr": "La session a été arrêtée.",
+        "es": "La sesión se ha cerrado.",
+        "zh-tw": "工作階段已關閉。",
+        "ja": "セッションは終了しています。",
+        "zh-cn": "会话已关闭。",
+        "ko": "세션이 종료되었습니다.",
+        "pt-br": "A sessão foi encerrada.",
+        "ru": "Сеанс завершён."
+      }
+    },
+    "7519": {
+      "layer": "server",
+      "code": "runtime_not_initialized",
+      "messages": {
+        "en": "Initialize the session before requesting this operation.",
+        "de": "Initialisieren Sie die Sitzung, bevor Sie diesen Vorgang anfordern.",
+        "fr": "Initialisez la session avant de demander cette opération.",
+        "es": "Inicialice la sesión antes de solicitar esta operación.",
+        "zh-tw": "請先初始化工作階段，再要求此操作。",
+        "ja": "この操作を要求する前にセッションを初期化してください。",
+        "zh-cn": "请先初始化会话，再请求此操作。",
+        "ko": "이 작업을 요청하기 전에 세션을 초기화하세요.",
+        "pt-br": "Inicialize a sessão antes de solicitar esta operação.",
+        "ru": "Перед запросом этой операции инициализируйте сеанс."
+      }
+    },
+    "7520": {
+      "layer": "server",
+      "code": "unsupported_operation",
+      "messages": {
+        "en": "The requested operation is not supported.",
+        "de": "Der angeforderte Vorgang wird nicht unterstützt.",
+        "fr": "L’opération demandée n’est pas prise en charge.",
+        "es": "La operación solicitada no es compatible.",
+        "zh-tw": "不支援要求的操作。",
+        "ja": "要求された操作はサポートされていません。",
+        "zh-cn": "不支持请求的操作。",
+        "ko": "요청한 작업은 지원되지 않습니다.",
+        "pt-br": "A operação solicitada não é compatível.",
+        "ru": "Запрошенная операция не поддерживается."
+      }
+    },
+    "7521": {
+      "layer": "server",
+      "code": "runtime_already_initialized",
+      "messages": {
+        "en": "The session is already initialized; its trusted limits cannot be replaced.",
+        "de": "Die Sitzung ist bereits initialisiert; ihre vertrauenswürdigen Begrenzungen können nicht ersetzt werden.",
+        "fr": "La session est déjà initialisée ; ses limites de confiance ne peuvent pas être remplacées.",
+        "es": "La sesión ya está inicializada; sus límites de confianza no se pueden sustituir.",
+        "zh-tw": "工作階段已初始化，無法替換其受信任限制。",
+        "ja": "セッションは初期化済みで、信頼された制限を置き換えることはできません。",
+        "zh-cn": "会话已初始化，无法替换其可信限制。",
+        "ko": "세션이 이미 초기화되어 신뢰할 수 있는 제한을 바꿀 수 없습니다.",
+        "pt-br": "A sessão já foi inicializada; seus limites confiáveis não podem ser substituídos.",
+        "ru": "Сеанс уже инициализирован; его доверенные ограничения нельзя заменить."
+      }
+    },
+    "7522": {
+      "layer": "server",
+      "code": "invalid_program_handle",
+      "messages": {
+        "en": "The program handle is invalid.",
+        "de": "Das Programm-Handle ist ungültig.",
+        "fr": "Le handle du programme est invalide.",
+        "es": "El identificador del programa no es válido.",
+        "zh-tw": "程式控制代碼無效。",
+        "ja": "プログラムハンドルが無効です。",
+        "zh-cn": "程序句柄无效。",
+        "ko": "프로그램 핸들이 올바르지 않습니다.",
+        "pt-br": "O identificador do programa é inválido.",
+        "ru": "Недопустимый дескриптор программы."
+      }
+    },
+    "7523": {
+      "layer": "server",
+      "code": "invalid_boundary",
+      "messages": {
+        "en": "The boundary mode must be exit or wrap.",
+        "de": "Der Randmodus muss exit oder wrap sein.",
+        "fr": "Le mode de bord doit être exit ou wrap.",
+        "es": "El modo de borde debe ser exit o wrap.",
+        "zh-tw": "邊界模式必須是 exit 或 wrap。",
+        "ja": "境界モードは exit または wrap である必要があります。",
+        "zh-cn": "边界模式必须是 exit 或 wrap。",
+        "ko": "경계 모드는 exit 또는 wrap이어야 합니다.",
+        "pt-br": "O modo de borda deve ser exit ou wrap.",
+        "ru": "Режим границы должен быть exit или wrap."
+      }
+    },
+    "7524": {
+      "layer": "server",
+      "code": "invalid_instance_handle",
+      "messages": {
+        "en": "The instance handle is invalid.",
+        "de": "Das Instanz-Handle ist ungültig.",
+        "fr": "Le handle de l’instance est invalide.",
+        "es": "El identificador de la instancia no es válido.",
+        "zh-tw": "實例控制代碼無效。",
+        "ja": "インスタンスハンドルが無効です。",
+        "zh-cn": "实例句柄无效。",
+        "ko": "인스턴스 핸들이 올바르지 않습니다.",
+        "pt-br": "O identificador da instância é inválido.",
+        "ru": "Недопустимый дескриптор экземпляра."
+      }
+    },
+    "7525": {
+      "layer": "server",
+      "code": "invalid_host_limits",
+      "messages": {
+        "en": "The host resource limits are invalid.",
+        "de": "Die Ressourcenbegrenzungen des Hosts sind ungültig.",
+        "fr": "Les limites de ressources de l’hôte sont invalides.",
+        "es": "Los límites de recursos del anfitrión no son válidos.",
+        "zh-tw": "宿主資源限制無效。",
+        "ja": "ホストのリソース制限が無効です。",
+        "zh-cn": "宿主资源限制无效。",
+        "ko": "호스트 리소스 제한이 올바르지 않습니다.",
+        "pt-br": "Os limites de recursos do host são inválidos.",
+        "ru": "Недопустимые ограничения ресурсов хоста."
+      }
+    },
+    "7526": {
+      "layer": "server",
+      "code": "response_payload_limit_exceeded",
+      "messages": {
+        "en": "The complete response exceeds the configured size limit.",
+        "de": "Die vollständige Antwort überschreitet die konfigurierte Größenbegrenzung.",
+        "fr": "La réponse complète dépasse la taille maximale configurée.",
+        "es": "La respuesta completa supera el límite de tamaño configurado.",
+        "zh-tw": "完整回應超過設定的大小上限。",
+        "ja": "完全な応答が設定されたサイズ上限を超えています。",
+        "zh-cn": "完整响应超过配置的大小上限。",
+        "ko": "전체 응답이 설정된 크기 제한을 초과했습니다.",
+        "pt-br": "A resposta completa excede o limite de tamanho configurado.",
+        "ru": "Полный ответ превышает заданный предел размера."
+      }
+    },
+    "7527": {
+      "layer": "server",
+      "code": "instance_state_limit_exceeded",
+      "messages": {
+        "en": "The retained instance state exceeds the configured limit.",
+        "de": "Der gespeicherte Instanzzustand überschreitet die konfigurierte Begrenzung.",
+        "fr": "L’état conservé de l’instance dépasse la limite configurée.",
+        "es": "El estado retenido de la instancia supera el límite configurado.",
+        "zh-tw": "保留的實例狀態超過設定上限。",
+        "ja": "保持されているインスタンス状態が設定された上限を超えています。",
+        "zh-cn": "保留的实例状态超过配置上限。",
+        "ko": "보존된 인스턴스 상태가 설정된 제한을 초과했습니다.",
+        "pt-br": "O estado retido da instância excede o limite configurado.",
+        "ru": "Сохранённое состояние экземпляра превышает заданный предел."
+      }
+    },
+    "7528": {
+      "layer": "server",
+      "code": "program_limit_reached",
+      "messages": {
+        "en": "The compiled-program limit has been reached.",
+        "de": "Die Höchstzahl kompilierter Programme wurde erreicht.",
+        "fr": "La limite de programmes compilés est atteinte.",
+        "es": "Se ha alcanzado el límite de programas compilados.",
+        "zh-tw": "已達編譯程式數量上限。",
+        "ja": "コンパイル済みプログラム数が上限に達しました。",
+        "zh-cn": "已达到编译程序数量上限。",
+        "ko": "컴파일된 프로그램 수가 제한에 도달했습니다.",
+        "pt-br": "O limite de programas compilados foi atingido.",
+        "ru": "Достигнут предел числа скомпилированных программ."
+      }
+    },
+    "7529": {
+      "layer": "server",
+      "code": "instance_limit_reached",
+      "messages": {
+        "en": "The execution-instance limit has been reached.",
+        "de": "Die Höchstzahl der Ausführungsinstanzen wurde erreicht.",
+        "fr": "La limite d’instances d’exécution est atteinte.",
+        "es": "Se ha alcanzado el límite de instancias de ejecución.",
+        "zh-tw": "已達執行實例數量上限。",
+        "ja": "実行インスタンス数が上限に達しました。",
+        "zh-cn": "已达到执行实例数量上限。",
+        "ko": "실행 인스턴스 수가 제한에 도달했습니다.",
+        "pt-br": "O limite de instâncias de execução foi atingido.",
+        "ru": "Достигнут предел числа экземпляров выполнения."
+      }
+    },
+    "7530": {
+      "layer": "server",
+      "code": "initial_memory_limit_exceeded",
+      "messages": {
+        "en": "The initial-memory limit has been exceeded.",
+        "de": "Die Begrenzung des Anfangsspeichers wurde überschritten.",
+        "fr": "La limite de mémoire initiale est dépassée.",
+        "es": "Se ha superado el límite de memoria inicial.",
+        "zh-tw": "初始記憶體超過上限。",
+        "ja": "初期メモリの上限を超えています。",
+        "zh-cn": "初始内存超过上限。",
+        "ko": "초기 메모리 제한을 초과했습니다.",
+        "pt-br": "O limite de memória inicial foi excedido.",
+        "ru": "Превышен предел начальной памяти."
+      }
+    },
+    "7531": {
+      "layer": "server",
+      "code": "duplicate_initial_memory_address",
+      "messages": {
+        "en": "Initial memory contains duplicate addresses.",
+        "de": "Der Anfangsspeicher enthält doppelte Adressen.",
+        "fr": "La mémoire initiale contient des adresses en double.",
+        "es": "La memoria inicial contiene direcciones duplicadas.",
+        "zh-tw": "初始記憶體包含重複位址。",
+        "ja": "初期メモリに重複したアドレスがあります。",
+        "zh-cn": "初始内存包含重复地址。",
+        "ko": "초기 메모리에 중복 주소가 있습니다.",
+        "pt-br": "A memória inicial contém endereços duplicados.",
+        "ru": "Начальная память содержит повторяющиеся адреса."
+      }
+    },
+    "7532": {
+      "layer": "server",
+      "code": "invalid_configuration",
+      "messages": {
+        "en": "The execution configuration is invalid.",
+        "de": "Die Ausführungskonfiguration ist ungültig.",
+        "fr": "La configuration d’exécution est invalide.",
+        "es": "La configuración de ejecución no es válida.",
+        "zh-tw": "執行設定無效。",
+        "ja": "実行設定が無効です。",
+        "zh-cn": "执行配置无效。",
+        "ko": "실행 설정이 올바르지 않습니다.",
+        "pt-br": "A configuração de execução é inválida.",
+        "ru": "Недопустимая конфигурация выполнения."
+      }
+    },
+    "7533": {
+      "layer": "server",
+      "code": "unknown_program_handle",
+      "messages": {
+        "en": "The program handle is unknown, released, or belongs to another session.",
+        "de": "Das Programm-Handle ist unbekannt, freigegeben oder gehört zu einer anderen Sitzung.",
+        "fr": "Le handle du programme est inconnu, libéré ou appartient à une autre session.",
+        "es": "El identificador del programa es desconocido, se ha liberado o pertenece a otra sesión.",
+        "zh-tw": "程式控制代碼未知、已釋放或屬於其他工作階段。",
+        "ja": "プログラムハンドルが不明、解放済み、または別のセッションに属しています。",
+        "zh-cn": "程序句柄未知、已释放或属于其他会话。",
+        "ko": "프로그램 핸들이 알 수 없거나 해제되었거나 다른 세션에 속합니다.",
+        "pt-br": "O identificador do programa é desconhecido, foi liberado ou pertence a outra sessão.",
+        "ru": "Дескриптор программы неизвестен, освобождён или принадлежит другому сеансу."
+      }
+    },
+    "7534": {
+      "layer": "server",
+      "code": "unknown_instance_handle",
+      "messages": {
+        "en": "The instance handle is unknown, released, or belongs to another session.",
+        "de": "Das Instanz-Handle ist unbekannt, freigegeben oder gehört zu einer anderen Sitzung.",
+        "fr": "Le handle de l’instance est inconnu, libéré ou appartient à une autre session.",
+        "es": "El identificador de la instancia es desconocido, se ha liberado o pertenece a otra sesión.",
+        "zh-tw": "實例控制代碼未知、已釋放或屬於其他工作階段。",
+        "ja": "インスタンスハンドルが不明、解放済み、または別のセッションに属しています。",
+        "zh-cn": "实例句柄未知、已释放或属于其他会话。",
+        "ko": "인스턴스 핸들이 알 수 없거나 해제되었거나 다른 세션에 속합니다.",
+        "pt-br": "O identificador da instância é desconhecido, foi liberado ou pertence a outra sessão.",
+        "ru": "Дескриптор экземпляра неизвестен, освобождён или принадлежит другому сеансу."
+      }
+    },
+    "7535": {
+      "layer": "server",
+      "code": "zero_tick_budget",
+      "messages": {
+        "en": "The tick budget must be greater than zero.",
+        "de": "Das Tick-Budget muss größer als null sein.",
+        "fr": "Le budget de ticks doit être supérieur à zéro.",
+        "es": "El presupuesto de ticks debe ser mayor que cero.",
+        "zh-tw": "Tick 預算必須大於零。",
+        "ja": "Tick の予算はゼロより大きい必要があります。",
+        "zh-cn": "Tick 预算必须大于零。",
+        "ko": "Tick 예산은 0보다 커야 합니다.",
+        "pt-br": "O orçamento de ticks deve ser maior que zero.",
+        "ru": "Бюджет тиков должен быть больше нуля."
+      }
+    },
+    "7536": {
+      "layer": "server",
+      "code": "run_tick_budget_exceeded",
+      "messages": {
+        "en": "The requested tick budget exceeds the per-call limit.",
+        "de": "Das angeforderte Tick-Budget überschreitet die Begrenzung pro Aufruf.",
+        "fr": "Le budget de ticks demandé dépasse la limite par appel.",
+        "es": "El presupuesto de ticks solicitado supera el límite por llamada.",
+        "zh-tw": "要求的 Tick 預算超過單次呼叫上限。",
+        "ja": "要求された Tick 予算が呼び出しごとの上限を超えています。",
+        "zh-cn": "请求的 Tick 预算超过单次调用上限。",
+        "ko": "요청한 Tick 예산이 호출당 제한을 초과했습니다.",
+        "pt-br": "O orçamento de ticks solicitado excede o limite por chamada.",
+        "ru": "Запрошенный бюджет тиков превышает предел на один вызов."
+      }
+    },
+    "7537": {
+      "layer": "server",
+      "code": "instance_tick_budget_exceeded",
+      "messages": {
+        "en": "The requested tick budget exceeds the instance’s remaining budget.",
+        "de": "Das angeforderte Tick-Budget überschreitet das verbleibende Budget der Instanz.",
+        "fr": "Le budget de ticks demandé dépasse le budget restant de l’instance.",
+        "es": "El presupuesto de ticks solicitado supera el presupuesto restante de la instancia.",
+        "zh-tw": "要求的 Tick 預算超過實例剩餘預算。",
+        "ja": "要求された Tick 予算がインスタンスの残りの予算を超えています。",
+        "zh-cn": "请求的 Tick 预算超过实例剩余预算。",
+        "ko": "요청한 Tick 예산이 인스턴스의 남은 예산을 초과했습니다.",
+        "pt-br": "O orçamento de ticks solicitado excede o orçamento restante da instância.",
+        "ru": "Запрошенный бюджет тиков превышает оставшийся бюджет экземпляра."
+      }
+    },
+    "7538": {
+      "layer": "server",
+      "code": "work_unit_budget_exceeded",
+      "messages": {
+        "en": "The tick requires more work units than the per-call limit allows.",
+        "de": "Der Tick benötigt mehr Arbeitseinheiten als pro Aufruf zulässig sind.",
+        "fr": "Le tick nécessite plus d’unités de travail que la limite par appel n’en autorise.",
+        "es": "El tick requiere más unidades de trabajo de las permitidas por llamada.",
+        "zh-tw": "此 Tick 所需工作單位超過單次呼叫上限。",
+        "ja": "この Tick に必要な作業単位数が呼び出しごとの上限を超えています。",
+        "zh-cn": "此 Tick 所需工作单位超过单次调用上限。",
+        "ko": "이 Tick에 필요한 작업 단위가 호출당 제한을 초과했습니다.",
+        "pt-br": "O tick exige mais unidades de trabalho do que o limite por chamada permite.",
+        "ru": "Для тика требуется больше единиц работы, чем допускает предел на один вызов."
+      }
+    },
+    "7539": {
+      "layer": "server",
+      "code": "handle_space_exhausted",
+      "messages": {
+        "en": "No new handle can be allocated.",
+        "de": "Es kann kein neues Handle zugewiesen werden.",
+        "fr": "Aucun nouveau handle ne peut être alloué.",
+        "es": "No se puede asignar un nuevo identificador.",
+        "zh-tw": "無法配置新的控制代碼。",
+        "ja": "新しいハンドルを割り当てられません。",
+        "zh-cn": "无法分配新句柄。",
+        "ko": "새 핸들을 할당할 수 없습니다.",
+        "pt-br": "Não é possível alocar um novo identificador.",
+        "ru": "Невозможно выделить новый дескриптор."
+      }
+    },
+    "8000": {
+      "layer": "lsp",
+      "code": -32600,
+      "messages": {
+        "en": "The request is invalid.",
+        "de": "Die Anfrage ist ungültig.",
+        "fr": "La requête est invalide.",
+        "es": "La solicitud no es válida.",
+        "zh-tw": "請求無效。",
+        "ja": "リクエストが無効です。",
+        "zh-cn": "请求无效。",
+        "ko": "요청이 올바르지 않습니다.",
+        "pt-br": "A solicitação é inválida.",
+        "ru": "Недопустимый запрос."
+      }
+    },
+    "8001": {
+      "layer": "lsp",
+      "code": -32601,
+      "messages": {
+        "en": "The requested operation is not supported.",
+        "de": "Der angeforderte Vorgang wird nicht unterstützt.",
+        "fr": "L’opération demandée n’est pas prise en charge.",
+        "es": "La operación solicitada no es compatible.",
+        "zh-tw": "不支援要求的操作。",
+        "ja": "要求された操作はサポートされていません。",
+        "zh-cn": "不支持请求的操作。",
+        "ko": "요청한 작업은 지원되지 않습니다.",
+        "pt-br": "A operação solicitada não é compatível.",
+        "ru": "Запрошенная операция не поддерживается."
+      }
+    },
+    "8002": {
+      "layer": "lsp",
+      "code": -32602,
+      "messages": {
+        "en": "A required request field is missing or has an invalid type.",
+        "de": "Ein erforderliches Anfragefeld fehlt oder hat einen ungültigen Typ.",
+        "fr": "Un champ obligatoire de la requête est absent ou de type invalide.",
+        "es": "Falta un campo obligatorio de la solicitud o su tipo no es válido.",
+        "zh-tw": "缺少必要的請求欄位，或欄位類型無效。",
+        "ja": "必須のリクエストフィールドがないか、型が無効です。",
+        "zh-cn": "缺少必要的请求字段，或字段类型无效。",
+        "ko": "필수 요청 필드가 없거나 형식이 올바르지 않습니다.",
+        "pt-br": "Um campo obrigatório da solicitação está ausente ou tem um tipo inválido.",
+        "ru": "Обязательное поле запроса отсутствует или имеет недопустимый тип."
+      }
+    },
+    "8003": {
+      "layer": "lsp",
+      "code": -32002,
+      "messages": {
+        "en": "Initialize the session before requesting this operation.",
+        "de": "Initialisieren Sie die Sitzung, bevor Sie diesen Vorgang anfordern.",
+        "fr": "Initialisez la session avant de demander cette opération.",
+        "es": "Inicialice la sesión antes de solicitar esta operación.",
+        "zh-tw": "請先初始化工作階段，再要求此操作。",
+        "ja": "この操作を要求する前にセッションを初期化してください。",
+        "zh-cn": "请先初始化会话，再请求此操作。",
+        "ko": "이 작업을 요청하기 전에 세션을 초기화하세요.",
+        "pt-br": "Inicialize a sessão antes de solicitar esta operação.",
+        "ru": "Перед запросом этой операции инициализируйте сеанс."
+      }
+    },
+    "8004": {
+      "layer": "lsp",
+      "code": "lsp.transport_io",
+      "messages": {
+        "en": "Transport input or output failed.",
+        "de": "Die Ein- oder Ausgabe des Transports ist fehlgeschlagen.",
+        "fr": "L’entrée ou la sortie du transport a échoué.",
+        "es": "Ha fallado la entrada o salida del transporte.",
+        "zh-tw": "傳輸輸入或輸出失敗。",
+        "ja": "通信の入出力に失敗しました。",
+        "zh-cn": "传输输入或输出失败。",
+        "ko": "전송 입력 또는 출력에 실패했습니다.",
+        "pt-br": "A entrada ou saída do transporte falhou.",
+        "ru": "Ошибка ввода или вывода транспорта."
+      }
+    },
+    "8005": {
+      "layer": "lsp",
+      "code": "lsp.abnormal_exit",
+      "messages": {
+        "en": "The language server exited before a normal shutdown.",
+        "de": "Der Sprachserver wurde vor dem regulären Herunterfahren beendet.",
+        "fr": "Le serveur de langage s’est arrêté avant une fermeture normale.",
+        "es": "El servidor de lenguaje terminó antes de un cierre normal.",
+        "zh-tw": "語言伺服器在正常關閉前退出。",
+        "ja": "言語サーバーが正常に終了する前に停止しました。",
+        "zh-cn": "语言服务器在正常关闭前退出。",
+        "ko": "언어 서버가 정상 종료 전에 종료되었습니다.",
+        "pt-br": "O servidor de linguagem encerrou antes de um desligamento normal.",
+        "ru": "Языковой сервер завершился до штатного отключения."
+      }
+    },
+    "8100": {
+      "layer": "server-abi.alloc_buffer",
+      "code": 0,
+      "messages": {
+        "en": "The ABI buffer allocation was rejected.",
+        "de": "Die ABI-Pufferzuweisung wurde abgelehnt.",
+        "fr": "L’allocation du tampon ABI a été refusée.",
+        "es": "Se ha rechazado la asignación del búfer ABI.",
+        "zh-tw": "ABI 緩衝區配置遭拒。",
+        "ja": "ABI バッファの割り当てが拒否されました。",
+        "zh-cn": "ABI 缓冲区分配被拒绝。",
+        "ko": "ABI 버퍼 할당이 거부되었습니다.",
+        "pt-br": "A alocação do buffer ABI foi rejeitada.",
+        "ru": "Выделение буфера ABI отклонено."
+      }
+    },
+    "8101": {
+      "layer": "server-abi.free_buffer",
+      "code": 0,
+      "messages": {
+        "en": "The ABI buffer handle is invalid or already released.",
+        "de": "Das ABI-Puffer-Handle ist ungültig oder bereits freigegeben.",
+        "fr": "Le handle du tampon ABI est invalide ou déjà libéré.",
+        "es": "El identificador del búfer ABI no es válido o ya se ha liberado.",
+        "zh-tw": "ABI 緩衝區控制代碼無效或已釋放。",
+        "ja": "ABI バッファハンドルが無効か、解放済みです。",
+        "zh-cn": "ABI 缓冲区句柄无效或已释放。",
+        "ko": "ABI 버퍼 핸들이 올바르지 않거나 이미 해제되었습니다.",
+        "pt-br": "O identificador do buffer ABI é inválido ou já foi liberado.",
+        "ru": "Дескриптор буфера ABI недопустим или уже освобождён."
+      }
+    },
+    "8102": {
+      "layer": "server-abi.process_request",
+      "code": 0,
+      "messages": {
+        "en": "The ABI could not process the request; no response is available.",
+        "de": "Die ABI konnte die Anfrage nicht verarbeiten; es ist keine Antwort verfügbar.",
+        "fr": "L’ABI n’a pas pu traiter la requête ; aucune réponse n’est disponible.",
+        "es": "La ABI no pudo procesar la solicitud; no hay respuesta disponible.",
+        "zh-tw": "ABI 無法處理請求，沒有可用回應。",
+        "ja": "ABI がリクエストを処理できず、応答はありません。",
+        "zh-cn": "ABI 无法处理请求，没有可用响应。",
+        "ko": "ABI가 요청을 처리하지 못해 응답이 없습니다.",
+        "pt-br": "A ABI não pôde processar a solicitação; nenhuma resposta está disponível.",
+        "ru": "ABI не смог обработать запрос; ответ недоступен."
+      }
+    },
+    "9000": {
+      "layer": "level",
+      "code": "level.invalid",
+      "messages": {
+        "en": "The level data is invalid.",
+        "de": "Die Leveldaten sind ungültig.",
+        "fr": "Les données du niveau sont invalides.",
+        "es": "Los datos del nivel no son válidos.",
+        "zh-tw": "關卡資料無效。",
+        "ja": "レベルのデータが無効です。",
+        "zh-cn": "关卡数据无效。",
+        "ko": "레벨 데이터가 올바르지 않습니다.",
+        "pt-br": "Os dados do nível são inválidos.",
+        "ru": "Недопустимые данные уровня."
+      }
+    },
+    "9001": {
+      "layer": "level",
+      "code": "level.unsupported_format_version",
+      "messages": {
+        "en": "The level format version is not supported.",
+        "de": "Die Level-Formatversion wird nicht unterstützt.",
+        "fr": "La version du format de niveau n’est pas prise en charge.",
+        "es": "La versión del formato de nivel no es compatible.",
+        "zh-tw": "不支援此關卡格式版本。",
+        "ja": "このレベル形式のバージョンはサポートされていません。",
+        "zh-cn": "不支持此关卡格式版本。",
+        "ko": "지원되지 않는 레벨 형식 버전입니다.",
+        "pt-br": "A versão do formato de nível não é compatível.",
+        "ru": "Эта версия формата уровня не поддерживается."
+      }
+    },
+    "9002": {
+      "layer": "level",
+      "code": "level.unsupported_scene_type",
+      "messages": {
+        "en": "The requested scene type is not supported.",
+        "de": "Der angeforderte Szenentyp wird nicht unterstützt.",
+        "fr": "Le type de scène demandé n’est pas pris en charge.",
+        "es": "El tipo de escena solicitado no es compatible.",
+        "zh-tw": "不支援要求的場景類型。",
+        "ja": "要求されたシーンの種類はサポートされていません。",
+        "zh-cn": "不支持请求的场景类型。",
+        "ko": "요청한 장면 유형은 지원되지 않습니다.",
+        "pt-br": "O tipo de cena solicitado não é compatível.",
+        "ru": "Запрошенный тип сцены не поддерживается."
+      }
+    },
+    "9003": {
+      "layer": "level",
+      "code": "level.program_rejected",
+      "messages": {
+        "en": "The program violates the level’s program restrictions.",
+        "de": "Das Programm verletzt die Programmbeschränkungen des Levels.",
+        "fr": "Le programme enfreint les restrictions du niveau.",
+        "es": "El programa incumple las restricciones del nivel.",
+        "zh-tw": "程式違反關卡的程式限制。",
+        "ja": "プログラムがレベルのプログラム制約に違反しています。",
+        "zh-cn": "程序违反关卡的程序限制。",
+        "ko": "프로그램이 레벨의 프로그램 제한을 위반했습니다.",
+        "pt-br": "O programa viola as restrições de programa do nível.",
+        "ru": "Программа нарушает ограничения программы для уровня."
+      }
+    },
+    "9004": {
+      "layer": "level",
+      "code": "level.evaluator_fault",
+      "messages": {
+        "en": "An internal evaluator fault prevented completion.",
+        "de": "Ein interner Auswerterfehler verhinderte den Abschluss.",
+        "fr": "Une erreur interne de l’évaluateur a empêché la fin de l’évaluation.",
+        "es": "Un fallo interno del evaluador impidió completar la evaluación.",
+        "zh-tw": "評估器內部故障導致無法完成。",
+        "ja": "評価器の内部障害により処理を完了できませんでした。",
+        "zh-cn": "评估器内部故障导致无法完成。",
+        "ko": "평가기 내부 오류로 완료하지 못했습니다.",
+        "pt-br": "Uma falha interna do avaliador impediu a conclusão.",
+        "ru": "Внутренний сбой средства оценки помешал завершению."
+      }
+    },
+    "9005": {
+      "layer": "level",
+      "code": "level.resource_limit",
+      "messages": {
+        "en": "Evaluation reached a trusted resource limit.",
+        "de": "Die Auswertung hat eine vertrauenswürdige Ressourcenbegrenzung erreicht.",
+        "fr": "L’évaluation a atteint une limite de ressources de confiance.",
+        "es": "La evaluación ha alcanzado un límite de recursos de confianza.",
+        "zh-tw": "評估已達受信任資源上限。",
+        "ja": "評価が信頼されたリソース上限に達しました。",
+        "zh-cn": "评估已达到可信资源上限。",
+        "ko": "평가가 신뢰할 수 있는 리소스 제한에 도달했습니다.",
+        "pt-br": "A avaliação atingiu um limite de recursos confiável.",
+        "ru": "Оценка достигла доверенного ограничения ресурсов."
+      }
+    },
+    "9006": {
+      "layer": "level",
+      "code": "level.cancelled",
+      "messages": {
+        "en": "Evaluation was cancelled.",
+        "de": "Die Auswertung wurde abgebrochen.",
+        "fr": "L’évaluation a été annulée.",
+        "es": "La evaluación se ha cancelado.",
+        "zh-tw": "評估已取消。",
+        "ja": "評価がキャンセルされました。",
+        "zh-cn": "评估已取消。",
+        "ko": "평가가 취소되었습니다.",
+        "pt-br": "A avaliação foi cancelada.",
+        "ru": "Оценка отменена."
+      }
+    },
+    "9007": {
+      "layer": "level",
+      "code": "level_api.invalid_profile",
+      "messages": {
+        "en": "The trusted safety profile is invalid.",
+        "de": "Das vertrauenswürdige Sicherheitsprofil ist ungültig.",
+        "fr": "Le profil de sécurité de confiance est invalide.",
+        "es": "El perfil de seguridad de confianza no es válido.",
+        "zh-tw": "受信任安全性設定檔無效。",
+        "ja": "信頼された安全プロファイルが無効です。",
+        "zh-cn": "可信安全配置无效。",
+        "ko": "신뢰할 수 있는 안전 프로필이 올바르지 않습니다.",
+        "pt-br": "O perfil de segurança confiável é inválido.",
+        "ru": "Недопустимый доверенный профиль безопасности."
+      }
+    },
+    "9008": {
+      "layer": "level",
+      "code": "level_api.unsupported_profile_version",
+      "messages": {
+        "en": "The safety-profile version is not supported.",
+        "de": "Die Sicherheitsprofilversion wird nicht unterstützt.",
+        "fr": "La version du profil de sécurité n’est pas prise en charge.",
+        "es": "La versión del perfil de seguridad no es compatible.",
+        "zh-tw": "不支援此安全性設定檔版本。",
+        "ja": "この安全プロファイルのバージョンはサポートされていません。",
+        "zh-cn": "不支持此安全配置版本。",
+        "ko": "지원되지 않는 안전 프로필 버전입니다.",
+        "pt-br": "A versão do perfil de segurança não é compatível.",
+        "ru": "Эта версия профиля безопасности не поддерживается."
+      }
+    },
+    "9009": {
+      "layer": "level",
+      "code": "level_api.unsupported_version",
+      "messages": {
+        "en": "The API version is not supported.",
+        "de": "Die API-Version wird nicht unterstützt.",
+        "fr": "La version de l’API n’est pas prise en charge.",
+        "es": "La versión de la API no es compatible.",
+        "zh-tw": "不支援此 API 版本。",
+        "ja": "この API バージョンはサポートされていません。",
+        "zh-cn": "不支持此 API 版本。",
+        "ko": "지원되지 않는 API 버전입니다.",
+        "pt-br": "A versão da API não é compatível.",
+        "ru": "Эта версия API не поддерживается."
+      }
+    },
+    "9010": {
+      "layer": "level",
+      "code": "level_api.invalid_request",
+      "messages": {
+        "en": "The request is invalid.",
+        "de": "Die Anfrage ist ungültig.",
+        "fr": "La requête est invalide.",
+        "es": "La solicitud no es válida.",
+        "zh-tw": "請求無效。",
+        "ja": "リクエストが無効です。",
+        "zh-cn": "请求无效。",
+        "ko": "요청이 올바르지 않습니다.",
+        "pt-br": "A solicitação é inválida.",
+        "ru": "Недопустимый запрос."
+      }
+    },
+    "9011": {
+      "layer": "level",
+      "code": "level_api.invalid_configuration",
+      "messages": {
+        "en": "The execution configuration is invalid.",
+        "de": "Die Ausführungskonfiguration ist ungültig.",
+        "fr": "La configuration d’exécution est invalide.",
+        "es": "La configuración de ejecución no es válida.",
+        "zh-tw": "執行設定無效。",
+        "ja": "実行設定が無効です。",
+        "zh-cn": "执行配置无效。",
+        "ko": "실행 설정이 올바르지 않습니다.",
+        "pt-br": "A configuração de execução é inválida.",
+        "ru": "Недопустимая конфигурация выполнения."
+      }
+    },
+    "9012": {
+      "layer": "level",
+      "code": "level_api.seed_required",
+      "messages": {
+        "en": "Provide an explicit shuffle seed or a trusted host seed source.",
+        "de": "Geben Sie einen expliziten Shuffle-Seed oder eine vertrauenswürdige Seed-Quelle des Hosts an.",
+        "fr": "Fournissez une graine de mélange explicite ou une source de graines de confiance de l’hôte.",
+        "es": "Proporcione una semilla de mezcla explícita o una fuente de semillas de confianza del anfitrión.",
+        "zh-tw": "請提供明確的洗牌種子，或受信任的宿主種子來源。",
+        "ja": "シャッフル用シードを明示するか、信頼されたホストのシード供給元を指定してください。",
+        "zh-cn": "请提供明确的洗牌种子，或可信的宿主种子来源。",
+        "ko": "명시적인 셔플 시드 또는 신뢰할 수 있는 호스트 시드 공급원을 제공하세요.",
+        "pt-br": "Forneça uma semente de embaralhamento explícita ou uma fonte de sementes confiável do host.",
+        "ru": "Укажите явное начальное значение для перемешивания или доверенный источник такого значения на хосте."
+      }
+    },
+    "9013": {
+      "layer": "level",
+      "code": "level_api.invalid_handle",
+      "messages": {
+        "en": "The handle is invalid, released, or belongs to another session.",
+        "de": "Das Handle ist ungültig, freigegeben oder gehört zu einer anderen Sitzung.",
+        "fr": "Le handle est invalide, libéré ou appartient à une autre session.",
+        "es": "El identificador no es válido, se ha liberado o pertenece a otra sesión.",
+        "zh-tw": "控制代碼無效、已釋放或屬於其他工作階段。",
+        "ja": "ハンドルが無効、解放済み、または別のセッションに属しています。",
+        "zh-cn": "句柄无效、已释放或属于其他会话。",
+        "ko": "핸들이 올바르지 않거나 해제되었거나 다른 세션에 속합니다.",
+        "pt-br": "O identificador é inválido, foi liberado ou pertence a outra sessão.",
+        "ru": "Дескриптор недопустим, освобождён или принадлежит другому сеансу."
+      }
+    },
+    "9014": {
+      "layer": "level",
+      "code": "level_api.handle_exhausted",
+      "messages": {
+        "en": "No new handle can be allocated.",
+        "de": "Es kann kein neues Handle zugewiesen werden.",
+        "fr": "Aucun nouveau handle ne peut être alloué.",
+        "es": "No se puede asignar un nuevo identificador.",
+        "zh-tw": "無法配置新的控制代碼。",
+        "ja": "新しいハンドルを割り当てられません。",
+        "zh-cn": "无法分配新句柄。",
+        "ko": "새 핸들을 할당할 수 없습니다.",
+        "pt-br": "Não é possível alocar um novo identificador.",
+        "ru": "Невозможно выделить новый дескриптор."
+      }
+    },
+    "9015": {
+      "layer": "level",
+      "code": "level_api.resource_limit",
+      "messages": {
+        "en": "Evaluation reached a trusted resource limit.",
+        "de": "Die Auswertung hat eine vertrauenswürdige Ressourcenbegrenzung erreicht.",
+        "fr": "L’évaluation a atteint une limite de ressources de confiance.",
+        "es": "La evaluación ha alcanzado un límite de recursos de confianza.",
+        "zh-tw": "評估已達受信任資源上限。",
+        "ja": "評価が信頼されたリソース上限に達しました。",
+        "zh-cn": "评估已达到可信资源上限。",
+        "ko": "평가가 신뢰할 수 있는 리소스 제한에 도달했습니다.",
+        "pt-br": "A avaliação atingiu um limite de recursos confiável.",
+        "ru": "Оценка достигла доверенного ограничения ресурсов."
+      }
+    },
+    "9016": {
+      "layer": "level",
+      "code": "level_api.response_too_large",
+      "messages": {
+        "en": "The complete response exceeds the configured size limit.",
+        "de": "Die vollständige Antwort überschreitet die konfigurierte Größenbegrenzung.",
+        "fr": "La réponse complète dépasse la taille maximale configurée.",
+        "es": "La respuesta completa supera el límite de tamaño configurado.",
+        "zh-tw": "完整回應超過設定的大小上限。",
+        "ja": "完全な応答が設定されたサイズ上限を超えています。",
+        "zh-cn": "完整响应超过配置的大小上限。",
+        "ko": "전체 응답이 설정된 크기 제한을 초과했습니다.",
+        "pt-br": "A resposta completa excede o limite de tamanho configurado.",
+        "ru": "Полный ответ превышает заданный предел размера."
+      }
+    },
+    "9017": {
+      "layer": "level",
+      "code": "level_api.shutdown",
+      "messages": {
+        "en": "The session has been shut down.",
+        "de": "Die Sitzung wurde beendet.",
+        "fr": "La session a été arrêtée.",
+        "es": "La sesión se ha cerrado.",
+        "zh-tw": "工作階段已關閉。",
+        "ja": "セッションは終了しています。",
+        "zh-cn": "会话已关闭。",
+        "ko": "세션이 종료되었습니다.",
+        "pt-br": "A sessão foi encerrada.",
+        "ru": "Сеанс завершён."
+      }
+    },
+    "9018": {
+      "layer": "level",
+      "code": "level_api.fault",
+      "messages": {
+        "en": "An internal evaluator fault prevented completion.",
+        "de": "Ein interner Auswerterfehler verhinderte den Abschluss.",
+        "fr": "Une erreur interne de l’évaluateur a empêché la fin de l’évaluation.",
+        "es": "Un fallo interno del evaluador impidió completar la evaluación.",
+        "zh-tw": "評估器內部故障導致無法完成。",
+        "ja": "評価器の内部障害により処理を完了できませんでした。",
+        "zh-cn": "评估器内部故障导致无法完成。",
+        "ko": "평가기 내부 오류로 완료하지 못했습니다.",
+        "pt-br": "Uma falha interna do avaliador impediu a conclusão.",
+        "ru": "Внутренний сбой средства оценки помешал завершению."
+      }
+    },
+    "9019": {
+      "layer": "level",
+      "code": "level_abi.unsupported_version",
+      "messages": {
+        "en": "The ABI version is not supported.",
+        "de": "Die ABI-Version wird nicht unterstützt.",
+        "fr": "La version de l’ABI n’est pas prise en charge.",
+        "es": "La versión de la ABI no es compatible.",
+        "zh-tw": "不支援此 ABI 版本。",
+        "ja": "この ABI バージョンはサポートされていません。",
+        "zh-cn": "不支持此 ABI 版本。",
+        "ko": "지원되지 않는 ABI 버전입니다.",
+        "pt-br": "A versão da ABI não é compatível.",
+        "ru": "Эта версия ABI не поддерживается."
+      }
+    },
+    "9020": {
+      "layer": "level",
+      "code": "level_abi.already_initialized",
+      "messages": {
+        "en": "The session is already initialized; its trusted limits cannot be replaced.",
+        "de": "Die Sitzung ist bereits initialisiert; ihre vertrauenswürdigen Begrenzungen können nicht ersetzt werden.",
+        "fr": "La session est déjà initialisée ; ses limites de confiance ne peuvent pas être remplacées.",
+        "es": "La sesión ya está inicializada; sus límites de confianza no se pueden sustituir.",
+        "zh-tw": "工作階段已初始化，無法替換其受信任限制。",
+        "ja": "セッションは初期化済みで、信頼された制限を置き換えることはできません。",
+        "zh-cn": "会话已初始化，无法替换其可信限制。",
+        "ko": "세션이 이미 초기화되어 신뢰할 수 있는 제한을 바꿀 수 없습니다.",
+        "pt-br": "A sessão já foi inicializada; seus limites confiáveis não podem ser substituídos.",
+        "ru": "Сеанс уже инициализирован; его доверенные ограничения нельзя заменить."
+      }
+    },
+    "9021": {
+      "layer": "level",
+      "code": "level_abi.not_initialized",
+      "messages": {
+        "en": "Initialize the session before requesting this operation.",
+        "de": "Initialisieren Sie die Sitzung, bevor Sie diesen Vorgang anfordern.",
+        "fr": "Initialisez la session avant de demander cette opération.",
+        "es": "Inicialice la sesión antes de solicitar esta operación.",
+        "zh-tw": "請先初始化工作階段，再要求此操作。",
+        "ja": "この操作を要求する前にセッションを初期化してください。",
+        "zh-cn": "请先初始化会话，再请求此操作。",
+        "ko": "이 작업을 요청하기 전에 세션을 초기화하세요.",
+        "pt-br": "Inicialize a sessão antes de solicitar esta operação.",
+        "ru": "Перед запросом этой операции инициализируйте сеанс."
+      }
+    },
+    "9022": {
+      "layer": "level",
+      "code": "level.metric_overflow",
+      "messages": {
+        "en": "A level metric or aggregate overflowed its numeric range.",
+        "de": "Eine Levelmetrik oder ein Aggregat hat den Zahlenbereich überschritten.",
+        "fr": "Une métrique du niveau ou un agrégat a dépassé sa plage numérique.",
+        "es": "Una métrica del nivel o un agregado ha superado su rango numérico.",
+        "zh-tw": "關卡指標或彙總值超出數值範圍。",
+        "ja": "レベルの指標または集計値が数値範囲を超えました。",
+        "zh-cn": "关卡指标或汇总值超出数值范围。",
+        "ko": "레벨 지표 또는 집계값이 숫자 범위를 초과했습니다.",
+        "pt-br": "Uma métrica do nível ou um agregado excedeu seu intervalo numérico.",
+        "ru": "Метрика уровня или агрегат вышли за числовой диапазон."
+      }
+    },
+    "9023": {
+      "layer": "level",
+      "code": "level.vm_fault",
+      "messages": {
+        "en": "The VM reported an internal fault during evaluation.",
+        "de": "Die VM meldete während der Auswertung einen internen Fehler.",
+        "fr": "La VM a signalé une erreur interne pendant l’évaluation.",
+        "es": "La VM ha informado de un fallo interno durante la evaluación.",
+        "zh-tw": "VM 在評估期間回報內部故障。",
+        "ja": "評価中に VM が内部障害を報告しました。",
+        "zh-cn": "VM 在评估期间报告内部故障。",
+        "ko": "평가 중 VM이 내부 오류를 보고했습니다.",
+        "pt-br": "A VM relatou uma falha interna durante a avaliação.",
+        "ru": "VM сообщила о внутреннем сбое во время оценки."
+      }
+    },
+    "9024": {
+      "layer": "level",
+      "code": "level.vm_initialization_fault",
+      "messages": {
+        "en": "The VM could not be initialized.",
+        "de": "Die VM konnte nicht initialisiert werden.",
+        "fr": "Impossible d’initialiser la VM.",
+        "es": "No se pudo inicializar la VM.",
+        "zh-tw": "無法初始化 VM。",
+        "ja": "VM を初期化できませんでした。",
+        "zh-cn": "无法初始化 VM。",
+        "ko": "VM을 초기화할 수 없습니다.",
+        "pt-br": "Não foi possível inicializar a VM.",
+        "ru": "Не удалось инициализировать VM."
+      }
+    },
+    "9025": {
+      "layer": "level",
+      "code": "level.wrong_output",
+      "messages": {
+        "en": "The output does not match the expected bytes.",
+        "de": "Die Ausgabe stimmt nicht mit den erwarteten Bytes überein.",
+        "fr": "La sortie ne correspond pas aux octets attendus.",
+        "es": "La salida no coincide con los bytes esperados.",
+        "zh-tw": "輸出與預期位元組不符。",
+        "ja": "出力が期待されるバイト列と一致しません。",
+        "zh-cn": "输出与预期字节不符。",
+        "ko": "출력이 예상 바이트와 일치하지 않습니다.",
+        "pt-br": "A saída não corresponde aos bytes esperados.",
+        "ru": "Выходные данные не совпадают с ожидаемыми байтами."
+      }
+    },
+    "9026": {
+      "layer": "level",
+      "code": "level.incomplete_output",
+      "messages": {
+        "en": "Execution ended before all expected output bytes were produced.",
+        "de": "Die Ausführung endete, bevor alle erwarteten Ausgabebytes erzeugt wurden.",
+        "fr": "L’exécution s’est terminée avant de produire tous les octets de sortie attendus.",
+        "es": "La ejecución terminó antes de producir todos los bytes de salida esperados.",
+        "zh-tw": "執行在產生全部預期輸出位元組前結束。",
+        "ja": "期待される出力バイトをすべて生成する前に実行が終了しました。",
+        "zh-cn": "执行在生成全部预期输出字节前结束。",
+        "ko": "예상 출력 바이트를 모두 생성하기 전에 실행이 끝났습니다.",
+        "pt-br": "A execução terminou antes de produzir todos os bytes de saída esperados.",
+        "ru": "Выполнение завершилось до получения всех ожидаемых выходных байтов."
+      }
+    },
+    "9027": {
+      "layer": "level",
+      "code": "level.test_failed",
+      "messages": {
+        "en": "The program failed a correctness test.",
+        "de": "Das Programm hat einen Korrektheitstest nicht bestanden.",
+        "fr": "Le programme a échoué à un test de correction.",
+        "es": "El programa no ha superado una prueba de corrección.",
+        "zh-tw": "程式未通過正確性測試。",
+        "ja": "プログラムが正しさのテストに失敗しました。",
+        "zh-cn": "程序未通过正确性测试。",
+        "ko": "프로그램이 정확성 테스트에 실패했습니다.",
+        "pt-br": "O programa falhou em um teste de correção.",
+        "ru": "Программа не прошла проверку корректности."
+      }
+    },
+    "9028": {
+      "layer": "level",
+      "code": "level.runtime_error",
+      "messages": {
+        "en": "A VM runtime error occurred during the test.",
+        "de": "Während des Tests ist ein VM-Laufzeitfehler aufgetreten.",
+        "fr": "Une erreur d’exécution de la VM s’est produite pendant le test.",
+        "es": "Se ha producido un error de ejecución de la VM durante la prueba.",
+        "zh-tw": "測試期間發生 VM 執行階段錯誤。",
+        "ja": "テスト中に VM の実行時エラーが発生しました。",
+        "zh-cn": "测试期间发生 VM 运行时错误。",
+        "ko": "테스트 중 VM 런타임 오류가 발생했습니다.",
+        "pt-br": "Ocorreu um erro de execução da VM durante o teste.",
+        "ru": "Во время теста возникла ошибка выполнения VM."
+      }
+    },
+    "9029": {
+      "layer": "level",
+      "code": "level.constraint_exceeded",
+      "messages": {
+        "en": "A level metric exceeded its configured constraint.",
+        "de": "Eine Levelmetrik hat ihre konfigurierte Beschränkung überschritten.",
+        "fr": "Une métrique du niveau a dépassé sa contrainte configurée.",
+        "es": "Una métrica del nivel ha superado su restricción configurada.",
+        "zh-tw": "關卡指標超過設定的約束。",
+        "ja": "レベルの指標が設定された制約を超えました。",
+        "zh-cn": "关卡指标超过配置的约束。",
+        "ko": "레벨 지표가 설정된 제약을 초과했습니다.",
+        "pt-br": "Uma métrica do nível excedeu sua restrição configurada.",
+        "ru": "Метрика уровня превысила заданное ограничение."
+      }
+    }
+  }
+}

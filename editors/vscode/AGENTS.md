@@ -10,6 +10,9 @@ Provide CodeGrid file association, TextMate syntax highlighting, language config
 - The extension may launch `codegrid debug --stdio` without a shell and project compiler source locations and VM snapshots into DAP threads, stack frames, variables, watches, and breakpoints. Global Tick stepping and all language behavior remain in Rust. Custom execution is atomic within an outer tick; do not advertise independently pausable Custom instructions.
 - Keep UI/editor lifecycle in the extension; keep authoritative source validation and symbol resolution in shared Rust compiler/LSP APIs when available.
 - Static metadata may describe presentation, snippets, and instruction help, but must stay consistent with the normative specs and canonical instruction inventory.
+- Resolve localized error summaries by stable number from the generated shared
+  catalog. Author translations only in `resources/codegrid-error-messages.json`;
+  preserve original diagnostic messages and structured details separately.
 
 ## Prohibited
 

@@ -5,6 +5,9 @@
 Own the canonical language-level values, identifiers, enums, and instruction inventory shared by the compiler, VM, and adapters.
 
 Own the generated, data-only four-digit error identity lookup shared by hosts.
+Own generated error translation data and pure explicit-locale lookup helpers.
+`resources/codegrid-error-messages.json` is the single authored translation catalog.
+Do not discover host locales or replace structured diagnostic details here.
 The JSON error registry defines these identities; this module does not detect
 host errors or implement transport, editor, or level policy.
 
