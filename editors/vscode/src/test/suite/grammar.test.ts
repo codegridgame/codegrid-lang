@@ -47,6 +47,8 @@ suite('TextMate grammar', () => {
   }
 
   const VALID: [string, string, string][] = [
+    ['.0 .9', '.0', 'keyword.operator.output.codegrid'],
+    ['.0 .9', '.9', 'keyword.operator.output.codegrid'],
     ['@main', '@main', 'keyword.directive.main.codegrid'],
     ['@END main.F0.M1', '@END', 'keyword.directive.end.codegrid'],
     ['@END main.F0.M1', 'main.F0.M1', 'entity.name.definition.codegrid'],
@@ -81,6 +83,7 @@ suite('TextMate grammar', () => {
   ];
 
   const INVALID: [string, string][] = [
+    ['.10', '.10'], ['.00', '.00'], ['.3*', '.3*'], ['.3=', '.3='], ['.3x2', '.3x2'],
     ['@foo', '@foo'], ['@C10', '@C10'], ['@C00', '@C00'], ['@end unknown', 'unknown'], ['@', '@'],
     ['x?', '?'], ['#00', '#00'], ['[10', '[10'], ['$10', '$10'],
     ['&x0', '&x0'], ['+x0', '+x0'], ['+x1', '+x1'], ['+x6', '+x6'], ['+x2x3', '+x2x3'],

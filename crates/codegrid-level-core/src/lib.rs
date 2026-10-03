@@ -2,6 +2,7 @@
 pub mod evaluate;
 pub mod metrics;
 pub mod result;
+pub mod scenes;
 pub mod schema;
 pub mod validate;
 pub use evaluate::*;

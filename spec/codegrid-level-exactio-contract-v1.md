@@ -29,7 +29,8 @@ constraints or scoring metrics are empty. Require every capability field:
 `allowed_instructions`, `allowed_attachments`, `main_board`, `function_board`,
 `max_functions`, `max_custom`, `max_threads`, and `memory_enabled`.
 Empty capability arrays are legal; reject duplicate capability identifiers.
-Do not supply implicit capability defaults.
+Direction Primaries, OUTPUT, and HALT are always allowed. Other permissions
+are explicit, including the grouped capabilities below.
 
 Board dimensions are positive `u32` values within the existing portable board
 geometry bounds. They are upper bounds, not exact required dimensions.
@@ -61,7 +62,33 @@ saturation, `TestFailed`, or `ConstraintExceeded`.
 
 ## 2. Fixed capability vocabulary
 
-Use the following fixed v1 names. Match the canonical Rust model variants,
+Following the explicit 2026-10-02 user decision, grouped names are accepted:
+
+| Group | Allowed Primaries |
+| --- | --- |
+| IF_ZERO | IF_ZERO_UP, IF_ZERO_DOWN, IF_ZERO_LEFT, IF_ZERO_RIGHT |
+| READ | READ_UP, READ_DOWN, READ_LEFT, READ_RIGHT |
+| REGISTER_POINTER | POINTER_LEFT, POINTER_RIGHT |
+| STACK | PUSH, POP_ADD |
+| CODEC | DECODE, ENCODE |
+| MEMORY | MEMORY_LOAD, MEMORY_STORE |
+| PAGE | PAGE_INCREMENT, PAGE_DECREMENT |
+| SHIFT | SHIFT_LEFT, SHIFT_RIGHT |
+| CALL | Every valid Function Slot invocation and RETURN |
+| CUSTOM | Every valid Custom Slot invocation and CUSTOM_RETURN |
+
+The four MOVE directions, OUTPUT, and HALT are always permitted, even with an
+empty whitelist. RANDOM_DIRECTION remains explicit. CLEAR, ADD, SUB, and
+FOLDED_BLOCK remain independent capabilities. Existing individual names below
+remain accepted for compatibility and precise permissions. Groups and individual
+names form a union; an explicitly listed default permission is redundant but
+valid. `memory_enabled: false` still prohibits MEMORY and PAGE operations.
+NAND remains an independent capability, separate from STACK. Attachments remain
+independent. Apply the same permissions to initial and committed generated code.
+This changes permission grouping only; static `instruction_kinds` measurement
+and VM dynamic Instruction Variety remain unchanged.
+
+Use the following fixed v1 individual names. Match the canonical Rust model variants,
 not a second token parser. Parameterized family names permit every valid Slot;
 the compiler still verifies references. Future instructions are forbidden
 until explicitly added to a later capability contract.
@@ -76,11 +103,15 @@ until explicitly added to a later capability contract.
 | CLEAR, ADD, SUB | Clear, Add, Sub |
 | POINTER_LEFT, POINTER_RIGHT | MoveRegisterPointer of the named orientation |
 | OUTPUT, PUSH, POP_ADD, DECODE, ENCODE | Corresponding model variants |
+
 | CALL, RETURN | Call of any valid Slot, Return |
 | NAND, MEMORY_LOAD, MEMORY_STORE | Nand, MemoryLoad, MemoryStore |
 | PAGE_INCREMENT, PAGE_DECREMENT | MovePage of the named orientation |
 | SHIFT_LEFT, SHIFT_RIGHT | Shift of the named orientation |
 | FOLDED_BLOCK, CUSTOM, CUSTOM_RETURN, HALT | Corresponding model variants; Slot families allow any valid Slot |
+
+OUTPUT includes both register output `.` and immediate outputs `.0` through
+`.9`. These forms share the OUTPUT permission and one static instruction kind.
 
 `READ` and directional READ names may coexist; membership is the union of
 their permitted variants. Empty and Entry are structural cells and need no

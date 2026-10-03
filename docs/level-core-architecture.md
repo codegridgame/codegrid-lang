@@ -19,6 +19,11 @@ check/run/debug commands retain their current composition and contracts.
 
 ## Ownership and dependencies
 
+The [five-scene architecture](level-scenes-architecture.md) maps the selected
+ExactIO, Baudot, QualityControl, Elevator, and Robot product scenes to shared
+evaluation engines. The implemented Rust catalog records design selection;
+it does not enable planned scenes or change executable capabilities.
+
 Keep the language workspace independent of game policy. The following
 additional layers are implemented in this repository without changing the
 existing language runtime adapters' contracts.

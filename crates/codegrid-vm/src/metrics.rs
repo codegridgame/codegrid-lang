@@ -80,7 +80,9 @@ impl InstructionKind {
             PrimaryInstruction::Add => Some(Self::Add),
             PrimaryInstruction::Sub => Some(Self::Sub),
             PrimaryInstruction::MoveRegisterPointer(_) => Some(Self::MoveRegisterPointer),
-            PrimaryInstruction::Output => Some(Self::Output),
+            PrimaryInstruction::Output | PrimaryInstruction::OutputImmediate(_) => {
+                Some(Self::Output)
+            }
             PrimaryInstruction::Push => Some(Self::Push),
             PrimaryInstruction::PopAdd => Some(Self::PopAdd),
             PrimaryInstruction::Decode => Some(Self::Decode),
@@ -411,7 +413,9 @@ mod tests {
                 PrimaryInstruction::Read(_) => Some(InstructionKind::Read),
                 PrimaryInstruction::Add => Some(InstructionKind::Add),
                 PrimaryInstruction::Sub => Some(InstructionKind::Sub),
-                PrimaryInstruction::Output => Some(InstructionKind::Output),
+                PrimaryInstruction::Output | PrimaryInstruction::OutputImmediate(_) => {
+                    Some(InstructionKind::Output)
+                }
                 PrimaryInstruction::Shift(_) => Some(InstructionKind::Shift),
                 PrimaryInstruction::Halt => Some(InstructionKind::Halt),
                 _ => panic!("{token} is outside the MVP source inventory"),

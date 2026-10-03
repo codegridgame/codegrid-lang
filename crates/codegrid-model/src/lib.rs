@@ -189,6 +189,24 @@ impl Slot {
     }
 }
 
+/// A bounded raw-byte immediate in the inclusive range 0 through 9.
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+pub struct ImmediateDigit(u8);
+
+impl ImmediateDigit {
+    pub const fn new(value: u8) -> Option<Self> {
+        if value <= 9 {
+            Some(Self(value))
+        } else {
+            None
+        }
+    }
+
+    pub const fn get(self) -> u8 {
+        self.0
+    }
+}
+
 /// A Primary instruction value in the complete CodeGrid language.
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub enum PrimaryInstruction {
@@ -201,6 +219,7 @@ pub enum PrimaryInstruction {
     Sub,
     MoveRegisterPointer(PointerDirection),
     Output,
+    OutputImmediate(ImmediateDigit),
     Push,
     PopAdd,
     Decode,
@@ -284,6 +303,7 @@ impl PrimaryInstruction {
             forms.push(Self::Call(slot));
             forms.push(Self::FoldedBlock(slot));
             forms.push(Self::Custom(slot));
+            forms.push(Self::OutputImmediate(ImmediateDigit(value)));
         }
         forms
     }
@@ -359,6 +379,7 @@ impl PrimaryInstruction {
             Self::MoveRegisterPointer(PointerDirection::Left) => "{".to_owned(),
             Self::MoveRegisterPointer(PointerDirection::Right) => "}".to_owned(),
             Self::Output => ".".to_owned(),
+            Self::OutputImmediate(digit) => format!(".{}", digit.get()),
             Self::Push => "(".to_owned(),
             Self::PopAdd => ")".to_owned(),
             Self::Decode => "&".to_owned(),
@@ -382,7 +403,11 @@ impl PrimaryInstruction {
     pub const fn is_encodable(self) -> bool {
         !matches!(
             self,
-            Self::FoldedBlock(_) | Self::Custom(_) | Self::CustomReturn | Self::Halt
+            Self::OutputImmediate(_)
+                | Self::FoldedBlock(_)
+                | Self::Custom(_)
+                | Self::CustomReturn
+                | Self::Halt
         )
     }
 
@@ -421,7 +446,11 @@ impl PrimaryInstruction {
             Self::MovePage(PageDirection::Decrement) => Some(81),
             Self::Shift(ShiftDirection::Left) => Some(96),
             Self::Shift(ShiftDirection::Right) => Some(98),
-            Self::FoldedBlock(_) | Self::Custom(_) | Self::CustomReturn | Self::Halt => None,
+            Self::OutputImmediate(_)
+            | Self::FoldedBlock(_)
+            | Self::Custom(_)
+            | Self::CustomReturn
+            | Self::Halt => None,
         }
     }
 
@@ -474,6 +503,9 @@ fn parse_slot_instruction(token: &str) -> Option<PrimaryInstruction> {
     }
     let slot = Slot::new(bytes[1] - b'0')?;
     match bytes[0] {
+        b'.' => Some(PrimaryInstruction::OutputImmediate(ImmediateDigit::new(
+            bytes[1] - b'0',
+        )?)),
         b'[' => Some(PrimaryInstruction::Call(slot)),
         b'$' => Some(PrimaryInstruction::FoldedBlock(slot)),
         b'#' => Some(PrimaryInstruction::Custom(slot)),
@@ -600,6 +632,22 @@ mod tests {
     }
 
     #[test]
+    fn immediate_digits_are_bounded_and_never_encodable() {
+        assert!(super::ImmediateDigit::new(10).is_none());
+        assert!(super::ImmediateDigit::new(255).is_none());
+        for value in 0..10 {
+            let primary =
+                PrimaryInstruction::OutputImmediate(super::ImmediateDigit::new(value).unwrap());
+            assert_eq!(
+                PrimaryInstruction::from_token(&primary.token()),
+                Some(primary)
+            );
+            assert!(super::EncodablePrimary::new(primary).is_none());
+            assert_eq!(primary.instruction_code(), None);
+        }
+    }
+
+    #[test]
     fn instruction_stack_codes_round_trip() {
         let valid_codes = [
             32, 33, 37, 38, 40, 41, 43, 45, 46, 60, 62, 63, 74, 76, 77, 79, 81, 93, 94, 95, 96, 97,
@@ -665,7 +713,7 @@ mod tests {
     #[test]
     fn complete_primary_tokens_round_trip_without_duplicates() {
         let forms = PrimaryInstruction::source_forms();
-        assert_eq!(forms.len(), 63);
+        assert_eq!(forms.len(), 73);
         let mut tokens = std::collections::BTreeSet::new();
 
         for form in forms {

@@ -1,0 +1,246 @@
+{
+    "format_version": 1,
+    "level_id": "6bee674e03ac57d5",
+    "level_version": 1,
+    "evaluation_type": "ExactIO",
+    "program_rules": {
+      "allowed_instructions": [
+        "MOVE_UP",
+        "MOVE_DOWN",
+        "MOVE_LEFT",
+        "MOVE_RIGHT",
+        "READ",
+        "POINTER_LEFT",
+        "OUTPUT",
+        "ADD",
+        "SUB",
+        "CLEAR",
+        "HALT",
+        "IF_ZERO_UP",
+        "IF_ZERO_DOWN",
+        "IF_ZERO_LEFT",
+        "IF_ZERO_RIGHT"
+      ],
+      "allowed_attachments": [],
+      "main_board": {
+        "width": 5,
+        "height": 5
+      },
+      "function_board": {
+        "width": 5,
+        "height": 5
+      },
+      "max_functions": 0,
+      "max_custom": 0,
+      "max_threads": 1,
+      "memory_enabled": false
+    },
+    "constraints": {},
+    "scoring": {
+      "metrics": {}
+    },
+    "evaluation": {
+      "tests": [
+        {
+          "visible": true,
+          "input": [
+            0,
+            0
+          ],
+          "expected_output": [
+            0
+          ]
+        },
+        {
+          "visible": true,
+          "input": [
+            0,
+            9
+          ],
+          "expected_output": [
+            9
+          ]
+        },
+        {
+          "visible": true,
+          "input": [
+            9,
+            0
+          ],
+          "expected_output": [
+            9
+          ]
+        },
+        {
+          "visible": true,
+          "input": [
+            1,
+            0
+          ],
+          "expected_output": [
+            1
+          ]
+        },
+        {
+          "visible": true,
+          "input": [
+            0,
+            1
+          ],
+          "expected_output": [
+            1
+          ]
+        },
+        {
+          "visible": true,
+          "input": [
+            1,
+            8
+          ],
+          "expected_output": [
+            9
+          ]
+        },
+        {
+          "visible": true,
+          "input": [
+            8,
+            1
+          ],
+          "expected_output": [
+            9
+          ]
+        },
+        {
+          "visible": true,
+          "input": [
+            2,
+            7
+          ],
+          "expected_output": [
+            9
+          ]
+        },
+        {
+          "visible": true,
+          "input": [
+            7,
+            2
+          ],
+          "expected_output": [
+            9
+          ]
+        },
+        {
+          "visible": true,
+          "input": [
+            3,
+            6
+          ],
+          "expected_output": [
+            9
+          ]
+        },
+        {
+          "visible": true,
+          "input": [
+            6,
+            3
+          ],
+          "expected_output": [
+            9
+          ]
+        },
+        {
+          "visible": true,
+          "input": [
+            4,
+            5
+          ],
+          "expected_output": [
+            9
+          ]
+        },
+        {
+          "visible": true,
+          "input": [
+            5,
+            4
+          ],
+          "expected_output": [
+            9
+          ]
+        },
+        {
+          "visible": true,
+          "input": [
+            1,
+            9
+          ],
+          "expected_output": [
+            10
+          ]
+        },
+        {
+          "visible": true,
+          "input": [
+            9,
+            1
+          ],
+          "expected_output": [
+            10
+          ]
+        },
+        {
+          "visible": true,
+          "input": [
+            5,
+            5
+          ],
+          "expected_output": [
+            10
+          ]
+        },
+        {
+          "visible": true,
+          "input": [
+            8,
+            8
+          ],
+          "expected_output": [
+            16
+          ]
+        },
+        {
+          "visible": true,
+          "input": [
+            9,
+            8
+          ],
+          "expected_output": [
+            17
+          ]
+        },
+        {
+          "visible": true,
+          "input": [
+            8,
+            9
+          ],
+          "expected_output": [
+            17
+          ]
+        },
+        {
+          "visible": true,
+          "input": [
+            9,
+            9
+          ],
+          "expected_output": [
+            18
+          ]
+        }
+      ]
+    }
+}

@@ -202,6 +202,12 @@
           }
         },
         {
+          "match": "(\\.[0-9])(?=$|\\s)",
+          "captures": {
+            "1": { "name": "keyword.operator.output.codegrid" }
+          }
+        },
+        {
           "match": "(\\.)([*=]|x[2-5])?(?=$|\\s)",
           "captures": {
             "1": { "name": "keyword.operator.output.codegrid" },

@@ -4,7 +4,7 @@
   "level_version": 1,
   "evaluation_type": "ExactIO",
   "program_rules": {
-    "allowed_instructions": ["READ", "OUTPUT", "HALT"],
+    "allowed_instructions": ["READ"],
     "allowed_attachments": [],
     "main_board": {"width": 8, "height": 8},
     "function_board": {"width": 8, "height": 8},

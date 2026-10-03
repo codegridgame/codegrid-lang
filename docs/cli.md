@@ -188,6 +188,16 @@ validate, execute, score, or rate levels independently. The command requires
 Each option may appear exactly once. `--format <json|human>` is optional and
 defaults to `json`.
 
+Level `allowed_instructions` accepts group names: `IF_ZERO`, `READ`,
+`REGISTER_POINTER`, `STACK` (PUSH and POP_ADD), `CODEC` (DECODE and ENCODE),
+`MEMORY`, `PAGE`, and `SHIFT`. The four direction Primaries, OUTPUT, and HALT
+are always allowed. `CALL` includes RETURN; `CUSTOM` includes CUSTOM_RETURN.
+NAND, RANDOM_DIRECTION, CLEAR, ADD, SUB, and FOLDED_BLOCK are independent.
+Existing individual names remain valid; permissions form a union. MEMORY/PAGE
+still require `memory_enabled: true`, and Attachments need their own whitelist.
+These groups apply to generated code too and do not change metric counting.
+For example, the echo level needs only `"allowed_instructions": ["READ"]`.
+
 `--seed` is a canonical unsigned decimal value in `0..=u64::MAX` and is passed
 as the API's explicit `shuffle_seed`, preserving reproducibility. The boundary
 and positive Custom limit are passed as resolved evaluation configuration.

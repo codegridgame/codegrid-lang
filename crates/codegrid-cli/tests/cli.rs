@@ -759,6 +759,83 @@ fn evaluate_cli_result_matches_the_direct_shared_level_api() {
 }
 
 #[test]
+fn evaluate_grouped_permissions_and_default_instructions() {
+    let profile = TempFile::new(
+        "json",
+        include_str!("../../../fixtures/levels/profiles/local-v1.json").as_bytes(),
+    );
+    let cases = [
+        (
+            include_str!("../../../fixtures/levels/echo.json"),
+            include_str!("../../../fixtures/levels/echo.cg"),
+        ),
+        (
+            include_str!("../../../fixtures/levels/functions.json"),
+            include_str!("../../../fixtures/levels/functions.cg"),
+        ),
+        (
+            include_str!("../../../fixtures/levels/custom-memory.json"),
+            include_str!("../../../fixtures/levels/custom-memory.cg"),
+        ),
+        (
+            include_str!("../../../fixtures/levels/memory.json"),
+            include_str!("../../../fixtures/levels/memory.cg"),
+        ),
+        (
+            include_str!("../../../fixtures/levels/instruction-stack.json"),
+            include_str!("../../../fixtures/levels/instruction-stack.cg"),
+        ),
+    ];
+    for (level_text, source_text) in cases {
+        let mut value: Value = serde_json::from_str(level_text).unwrap();
+        value["program_rules"]["allowed_instructions"] = json!([
+            "IF_ZERO",
+            "READ",
+            "REGISTER_POINTER",
+            "STACK",
+            "CODEC",
+            "MEMORY",
+            "PAGE",
+            "SHIFT",
+            "CALL",
+            "CUSTOM",
+            "CLEAR",
+            "ADD",
+            "SUB",
+            "NAND",
+            "FOLDED_BLOCK",
+            "RANDOM_DIRECTION"
+        ]);
+        let level = TempFile::new("json", value.to_string().as_bytes());
+        let source = TempFile::new("cg", source_text.as_bytes());
+        let output = run_cli(&evaluate_args(
+            level.text_path(),
+            source.text_path(),
+            profile.text_path(),
+        ));
+        assert_eq!(
+            output.status.code(),
+            Some(0),
+            "{} {}",
+            String::from_utf8_lossy(&output.stdout),
+            String::from_utf8_lossy(&output.stderr)
+        );
+        assert_eq!(parse_result(&output)["result"]["status"], "Passed");
+    }
+    let mut value: Value = serde_json::from_str(&exact_io_level(&[0])).unwrap();
+    value["program_rules"]["allowed_instructions"] = json!([]);
+    let level = TempFile::new("json", value.to_string().as_bytes());
+    let source = TempFile::new("cg", b"~> > . ;\n");
+    let output = run_cli(&evaluate_args(
+        level.text_path(),
+        source.text_path(),
+        profile.text_path(),
+    ));
+    assert_eq!(output.status.code(), Some(0));
+    assert_eq!(parse_result(&output)["result"]["status"], "Passed");
+}
+
+#[test]
 fn evaluate_official_echo_u64_max_matches_the_direct_level_api() {
     let mut level_value: Value = serde_json::from_str(&exact_io_level(&[42])).unwrap();
     level_value["program_rules"]["allowed_instructions"] = json!(["HALT", "OUTPUT", "READ_RIGHT"]);
@@ -891,7 +968,7 @@ fn evaluate_maps_player_rejection_failure_constraints_and_hidden_redaction() {
     generated_value["program_rules"]["allowed_instructions"] =
         json!(["READ_RIGHT", "DECODE", "MOVE_RIGHT", "HALT"]);
     generated_value["program_rules"]["allowed_attachments"] = json!(["WRITE_CODE"]);
-    generated_value["evaluation"]["tests"][0]["input"] = json!([94]);
+    generated_value["evaluation"]["tests"][0]["input"] = json!([43]);
     let generated_level = TempFile::new("json", generated_value.to_string().as_bytes());
     let generated_source = TempFile::new("cg", b"@main\n~> ,> & >= ;\n@end main\n");
     let args = evaluate_args(
@@ -913,6 +990,17 @@ fn evaluate_maps_player_rejection_failure_constraints_and_hidden_redaction() {
         generated_result["result"]["failure"]["reason"],
         "GeneratedInstructionNotAllowed"
     );
+
+    // A generated direction is permitted by default even when not listed.
+    generated_value["evaluation"]["tests"][0]["input"] = json!([94]);
+    let default_generated_level = TempFile::new("json", generated_value.to_string().as_bytes());
+    let allowed = run_cli(&evaluate_args(
+        default_generated_level.text_path(),
+        generated_source.text_path(),
+        profile.text_path(),
+    ));
+    assert_eq!(allowed.status.code(), Some(0));
+    assert_eq!(parse_result(&allowed)["result"]["status"], "Passed");
 
     let wrong_level = TempFile::new("json", exact_io_level(&[1]).as_bytes());
     let output_source = TempFile::new("cg", b"~> . ;\n");

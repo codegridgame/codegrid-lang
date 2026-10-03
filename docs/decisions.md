@@ -243,6 +243,20 @@ internally; only permitted privacy-safe reasons are projected to clients. These
 changes refine host safety and diagnostics without changing source acceptance,
 VM transitions, work units, correctness, metrics, or scoring.
 
+## Level grouped permissions and defaults (2026-10-02)
+
+An explicit user request adds Level whitelist groups IF_ZERO, READ,
+REGISTER_POINTER, STACK, CODEC, MEMORY, PAGE, and SHIFT. STACK permits PUSH and
+POP_ADD only; the user explicitly keeps NAND independent. The four direction
+Primaries, OUTPUT, and HALT are always permitted. CALL includes RETURN and
+CUSTOM includes CUSTOM_RETURN. RANDOM_DIRECTION, CLEAR, ADD, SUB, NAND, and
+FOLDED_BLOCK remain independent. Existing individual identifiers remain accepted
+for compatibility; groups and individuals form a union. Memory gating,
+Attachment permissions, structural limits, source acceptance, and VM semantics
+are unchanged. Initial and committed generated code share these permissions.
+This recorded permission change retains format version 1 and does not change
+static instruction_kinds scoring or VM dynamic Instruction Variety.
+
 ## Four-digit error identities (2026-10-01)
 
 An explicit user request assigns stable four-digit decimal strings to all
@@ -255,3 +269,30 @@ error ID. Numbers are never inferred from message wording, reassigned, or
 recycled. Generated Rust/TypeScript lookup data and the Markdown table use
 the JSON registry. Existing ExactIO failure outcomes also gain registered
 presentation identities without changing execution, priority, or privacy.
+
+## Five selected product scenes (2026-10-03)
+
+The user selects ExactIO, Baudot, QualityControl, Elevator, and Robot from the
+referenced design discussion; Terminal is excluded. ExactIO, Baudot, and
+QualityControl share ExactIO correctness; Elevator and Robot require Environment
+world-state evaluation. The Rust product catalog records selection separately
+from executable registration. This does not add loader acceptance, change API
+v1 capabilities, register MaintenanceRobot as an alias, or approve scene wire
+protocols. See [five-scene architecture](level-scenes-architecture.md).
+
+The conversation's proposed memory across Robot actions conflicts with the
+normative fresh-VM-per-decision Environment contract. That lifecycle question
+remains open; the current reset contract applies until explicitly revised.
+
+## Immediate output Primaries (2026-10-03)
+
+The user explicitly approves .0 through .9 as non-encodable Primaries that
+output raw byte values 0 through 9 without changing registers or the register
+pointer. They have no Instruction Codes and accept no Attachments, including
+ReadCode, WriteCode, and Repeat. Ordinary . retains its existing behavior.
+Immediate output uses ordinary output movement, tick/work accounting,
+transactional effects, concurrent conflicts, and Custom caller-stack routing.
+All forms share OUTPUT permissions and the Output metric kind; immediate
+values do not create distinct instruction kinds. Existing Instruction Codes,
+IR format version, and host envelope versions are unchanged. Malformed forms
+and illegal Attachments retain existing structured validation identities.

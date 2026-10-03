@@ -161,6 +161,7 @@ Every ordinary Primary except Halt is followed by its defined movement or contro
 | Add / Sub | Increment / decrement the selected register modulo 256. |
 | MoveRegisterPointer(left/right) | Move the thread pointer one slot in the encoded direction, wrapping between R0 and R9. |
 | Output | Outer context: stage the selected byte into the shared output sequence. Custom context: stage a push onto the caller's data stack. |
+| OutputImmediate(digit 0 through 9) | Stage the literal raw byte into outer output, or onto the Custom caller's data stack. Preserve all registers and the register pointer. Use ordinary Output movement, conflicts, rollback, tick and work accounting. |
 | Push | Push the selected register byte onto the current thread's data stack. |
 | PopAdd | Pop a data byte and add modulo 256 when present; on empty, perform the counted no-op specified in Section 6.2. |
 | Decode / Encode | Convert between selected register byte and Instruction Stack according to Section 6.3. |
@@ -245,6 +246,11 @@ These encodable Primaries have canonical byte Instruction Codes and may be store
 FoldedBlock, Custom, CustomReturn, and Halt have no Instruction Code. EMPTY has code 32 but is not a Primary. Attachment tokens are not Instruction Codes.
 
 ## 10. Concurrent effects and conflicts
+
+OutputImmediate has no Instruction Code and accepts no Attachment. It cannot
+be represented on the Instruction Stack. Existing Instruction Codes remain
+unchanged. All immediate forms count as the existing Output metric kind, not
+as separate kinds for each digit.
 
 Threads within one context read that context's shared register, memory, input, and code snapshots from the beginning of the context tick. Reads do not see sibling writes from that tick. An overlapping memory or code read and write is not itself a conflict; the read sees the old value.
 

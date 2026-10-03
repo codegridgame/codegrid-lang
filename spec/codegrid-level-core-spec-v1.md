@@ -253,9 +253,13 @@ Example:
 
 ### 6.1 Instruction whitelist
 
-`allowed_instructions` is an explicit whitelist.
+`allowed_instructions` is a whitelist with default permission for the four
+direction Primaries, OUTPUT, and HALT. Group names and individual identifiers
+are defined by the ExactIO implementation contract. CALL includes RETURN;
+CUSTOM includes CUSTOM_RETURN. All other capabilities require explicit permission.
 
-Anything not listed is forbidden.
+Anything outside the default permissions and explicitly selected capabilities
+is forbidden. NAND remains independent of STACK.
 
 This guarantees that adding a new language instruction in a future game version does not silently make that instruction available in old levels.
 

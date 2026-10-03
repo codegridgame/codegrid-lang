@@ -627,6 +627,9 @@ fn primary_description(primary: PrimaryInstruction) -> String {
         PrimaryInstruction::Output => {
             "Append the selected byte to outer output, or push it onto the Custom caller's data stack.".to_owned()
         }
+        PrimaryInstruction::OutputImmediate(digit) => format!(
+            "Output the raw byte {} without changing registers or the register pointer; in Custom code, push it onto the caller's data stack. No Instruction Code or Attachments.", digit.get()
+        ),
         PrimaryInstruction::Push => {
             "Push the selected register byte onto this thread's data stack.".to_owned()
         }

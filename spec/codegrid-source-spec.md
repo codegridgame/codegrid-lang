@@ -121,6 +121,7 @@ Every Primary token in the canonical language inventory is listed here. Instruct
 | `+`, `-` | Add to or subtract from the current register. |
 | `{`, `}` | Move the register pointer left or right. |
 | `.` | Output the current register. |
+| `.0`–`.9` | Output the raw byte 0–9 without changing registers or the register pointer. |
 | `(`, `)` | Push the current register; pop and add. |
 | `&`, `%` | Decode or encode the instruction stack. |
 | `[0`–`[9` | Call Function `0`–`9` in the current CodeGrid. |
@@ -151,6 +152,10 @@ Examples of complete attached cells are `+x3`, `,<*`, and `[0=`. An Attachment s
 ReadCode and WriteCode may be attached to any encodable Primary, defined as a Primary with a normative Instruction Code. Repeat may be attached to any encodable Primary except CALL and RETURN. Folded Block calls, Custom calls, Custom returns, and HALT are not encodable and cannot carry Attachments. No other Primary-Attachment combination is valid.
 
 ## 7. Contextual placement and name resolution
+
+Immediate output Primaries `.0`–`.9` have no Instruction Code and cannot carry
+any Attachment. Forms such as `.3*`, `.3=`, `.3x2`, `.10`, `.00`, and `.-1`
+are rejected as whole atoms. Ordinary `.` retains its encoding and Attachments.
 
 Static validation checks each Primary against its owning CodeGrid and Board:
 

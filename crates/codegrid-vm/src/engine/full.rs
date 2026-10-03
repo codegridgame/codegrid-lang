@@ -495,7 +495,11 @@ fn execute_primary(
                 PointerDirection::Right => (thread.register_pointer + 1) % 10,
             };
         }
-        PrimaryInstruction::Output => {
+        PrimaryInstruction::Output | PrimaryInstruction::OutputImmediate(_) => {
+            let value = match primary {
+                PrimaryInstruction::OutputImmediate(digit) => digit.get(),
+                _ => value,
+            };
             if mode.scope == ExecutionScope::Outer {
                 draft.effects.output_writes.push(OutputWrite {
                     thread_id: thread.id,

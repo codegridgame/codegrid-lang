@@ -20,6 +20,13 @@ pub fn attachment_identifiers() -> &'static [&'static str] {
 }
 pub fn instruction_identifiers() -> &'static [&'static str] {
     &[
+        "IF_ZERO",
+        "REGISTER_POINTER",
+        "STACK",
+        "CODEC",
+        "MEMORY",
+        "PAGE",
+        "SHIFT",
         "MOVE_UP",
         "MOVE_DOWN",
         "MOVE_LEFT",
@@ -76,7 +83,7 @@ pub fn instruction_kind(p: PrimaryInstruction) -> &'static str {
         PrimaryInstruction::Sub => "SUB",
         PrimaryInstruction::MoveRegisterPointer(PointerDirection::Left) => "POINTER_LEFT",
         PrimaryInstruction::MoveRegisterPointer(PointerDirection::Right) => "POINTER_RIGHT",
-        PrimaryInstruction::Output => "OUTPUT",
+        PrimaryInstruction::Output | PrimaryInstruction::OutputImmediate(_) => "OUTPUT",
         PrimaryInstruction::Push => "PUSH",
         PrimaryInstruction::PopAdd => "POP_ADD",
         PrimaryInstruction::Decode => "DECODE",
@@ -133,7 +140,29 @@ pub fn validate_primary(
         PrimaryInstruction::Read(Direction::Right) => Some("READ_RIGHT"),
         _ => None,
     };
-    if !r.allowed_instructions.contains(instruction_kind(p))
+    let default_allowed = matches!(
+        p,
+        PrimaryInstruction::Direction(_)
+            | PrimaryInstruction::Output
+            | PrimaryInstruction::OutputImmediate(_)
+            | PrimaryInstruction::Halt
+    );
+    let group = match p {
+        PrimaryInstruction::IfZero(_) => Some("IF_ZERO"),
+        PrimaryInstruction::Read(_) => Some("READ"),
+        PrimaryInstruction::MoveRegisterPointer(_) => Some("REGISTER_POINTER"),
+        PrimaryInstruction::Push | PrimaryInstruction::PopAdd => Some("STACK"),
+        PrimaryInstruction::Decode | PrimaryInstruction::Encode => Some("CODEC"),
+        PrimaryInstruction::MemoryLoad | PrimaryInstruction::MemoryStore => Some("MEMORY"),
+        PrimaryInstruction::MovePage(_) => Some("PAGE"),
+        PrimaryInstruction::Shift(_) => Some("SHIFT"),
+        PrimaryInstruction::Return => Some("CALL"),
+        PrimaryInstruction::CustomReturn => Some("CUSTOM"),
+        _ => None,
+    };
+    if !default_allowed
+        && !group.is_some_and(|name| r.allowed_instructions.contains(name))
+        && !r.allowed_instructions.contains(instruction_kind(p))
         && !directional.is_some_and(|name| r.allowed_instructions.contains(name))
     {
         return Err(reject(
@@ -265,6 +294,135 @@ mod tests {
             super::board(&r, &b, true, "main").unwrap_err().reason,
             "AttachmentNotAllowed"
         );
+    }
+    #[test]
+    fn grouped_permissions_defaults_returns_and_generated_code() {
+        let mut r = rules();
+        r.allowed_instructions.clear();
+        for p in PrimaryInstruction::source_forms() {
+            let default = matches!(
+                p,
+                PrimaryInstruction::Direction(_)
+                    | PrimaryInstruction::Output
+                    | PrimaryInstruction::OutputImmediate(_)
+                    | PrimaryInstruction::Halt
+            );
+            for generated in [false, true] {
+                assert_eq!(
+                    validate_primary(&r, Some(p), generated).is_ok(),
+                    default,
+                    "{p:?}, generated={generated}"
+                );
+            }
+        }
+        let slot = Slot::new(0).unwrap();
+        let groups = [
+            (
+                "IF_ZERO",
+                vec![
+                    PrimaryInstruction::IfZero(Direction::Up),
+                    PrimaryInstruction::IfZero(Direction::Down),
+                    PrimaryInstruction::IfZero(Direction::Left),
+                    PrimaryInstruction::IfZero(Direction::Right),
+                ],
+            ),
+            (
+                "READ",
+                vec![
+                    PrimaryInstruction::Read(Direction::Up),
+                    PrimaryInstruction::Read(Direction::Down),
+                    PrimaryInstruction::Read(Direction::Left),
+                    PrimaryInstruction::Read(Direction::Right),
+                ],
+            ),
+            (
+                "REGISTER_POINTER",
+                vec![
+                    PrimaryInstruction::MoveRegisterPointer(PointerDirection::Left),
+                    PrimaryInstruction::MoveRegisterPointer(PointerDirection::Right),
+                ],
+            ),
+            (
+                "STACK",
+                vec![PrimaryInstruction::Push, PrimaryInstruction::PopAdd],
+            ),
+            (
+                "CODEC",
+                vec![PrimaryInstruction::Decode, PrimaryInstruction::Encode],
+            ),
+            (
+                "MEMORY",
+                vec![
+                    PrimaryInstruction::MemoryLoad,
+                    PrimaryInstruction::MemoryStore,
+                ],
+            ),
+            (
+                "PAGE",
+                vec![
+                    PrimaryInstruction::MovePage(PageDirection::Increment),
+                    PrimaryInstruction::MovePage(PageDirection::Decrement),
+                ],
+            ),
+            (
+                "SHIFT",
+                vec![
+                    PrimaryInstruction::Shift(ShiftDirection::Left),
+                    PrimaryInstruction::Shift(ShiftDirection::Right),
+                ],
+            ),
+            (
+                "CALL",
+                vec![PrimaryInstruction::Call(slot), PrimaryInstruction::Return],
+            ),
+            (
+                "CUSTOM",
+                vec![
+                    PrimaryInstruction::Custom(slot),
+                    PrimaryInstruction::CustomReturn,
+                ],
+            ),
+        ];
+        for (name, members) in groups {
+            r.allowed_instructions = BTreeSet::from([name.into()]);
+            for p in PrimaryInstruction::source_forms() {
+                let default = matches!(
+                    p,
+                    PrimaryInstruction::Direction(_)
+                        | PrimaryInstruction::Output
+                        | PrimaryInstruction::OutputImmediate(_)
+                        | PrimaryInstruction::Halt
+                );
+                let member = members.contains(&p)
+                    || matches!(
+                        (name, p),
+                        ("CALL", PrimaryInstruction::Call(_))
+                            | ("CUSTOM", PrimaryInstruction::Custom(_))
+                    );
+                for generated in [false, true] {
+                    assert_eq!(
+                        validate_primary(&r, Some(p), generated).is_ok(),
+                        default || member,
+                        "group={name}, {p:?}, generated={generated}"
+                    );
+                }
+            }
+        }
+        for group in ["MEMORY", "PAGE"] {
+            r.allowed_instructions = BTreeSet::from([group.into()]);
+            r.memory_enabled = false;
+            for p in [
+                PrimaryInstruction::MemoryLoad,
+                PrimaryInstruction::MemoryStore,
+                PrimaryInstruction::MovePage(PageDirection::Increment),
+                PrimaryInstruction::MovePage(PageDirection::Decrement),
+            ] {
+                assert_eq!(
+                    validate_primary(&r, Some(p), true).unwrap_err().reason,
+                    "GeneratedMemoryNotAllowed"
+                );
+            }
+        }
     }
     #[test]
     fn folded_unreachable_and_custom_bodies_are_checked() {

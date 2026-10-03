@@ -54,6 +54,10 @@ export const PRIMARIES: PrimaryInfo[] = [
   primary('{', 'MOVE_REGISTER_POINTER_LEFT', 123, 'pointer'),
   primary('}', 'MOVE_REGISTER_POINTER_RIGHT', 125, 'pointer'),
   primary('.', 'OUTPUT', 46, 'output', 'Appends the current R0 byte to output.'),
+  ...Array.from({ length: 10 }, (_, digit) =>
+    primary(`.${digit}`, `Immediate Output ${digit}`, null, 'output',
+      'Outputs a literal byte without changing registers or the register pointer. In Custom code, pushes onto the caller stack. No Instruction Code or Attachments.')
+  ),
   primary('(', 'PUSH', 40, 'stack'),
   primary(')', 'POP_ADD', 41, 'stack'),
   primary('&', 'DECODE', 38, 'encoding'),

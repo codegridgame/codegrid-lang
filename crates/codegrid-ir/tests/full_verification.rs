@@ -25,6 +25,21 @@ mod tests {
         }
     }
 
+    #[test]
+    fn immediate_output_rejects_all_attachments_at_ir_boundary() {
+        let primary = PrimaryInstruction::from_token(".3").unwrap();
+        for attachment in AttachmentInstruction::ALL {
+            let result = VerifiedProgram::new(program(
+                vec![
+                    Cell::entry(Direction::Right),
+                    Cell::instruction(primary, Some(attachment)),
+                ],
+                2,
+            ));
+            assert!(result.is_err(), "{attachment:?}");
+        }
+    }
+
     fn program_with_function(function: Board) -> Program {
         let function_id = Slot::new(0).expect("zero is a valid function ID");
         Program {

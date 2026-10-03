@@ -4,6 +4,18 @@ use codegrid_model::{AttachmentInstruction, BoundaryMode, Direction, PrimaryInst
 use codegrid_syntax::{BoardPath, CodeGridPath};
 
 #[test]
+fn immediate_outputs_are_complete_atoms_without_attachments() {
+    compile("~> .0 .1 .2 .3 .4 .5 .6 .7 .8 .9 . ;\n").unwrap();
+    for atom in [".10", ".00", ".-1", ".９", ".3*", ".3=", ".3x2"] {
+        let errors = compile(&format!("~> {atom} ;\n")).unwrap_err();
+        assert!(
+            errors.iter().any(|e| e.code == "source.invalid_cell"),
+            "{atom}: {errors:?}"
+        );
+    }
+}
+
+#[test]
 fn stable_diagnostic_codes_are_assigned_at_validation_origins() {
     let cases = [
         ("~x\n", "source.invalid_entry"),

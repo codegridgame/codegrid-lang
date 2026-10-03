@@ -9,3 +9,7 @@ network, host randomness, editor APIs, or platform bindings. Keep scene policy
 out of language crates. Hidden test details must not enter public results.
 The level specifications and recorded decisions define behavior; report genuine
 gaps before choosing semantics. Validate generated instructions after commit.
+
+The `scenes` module owns the selected product scene catalog and evaluation
+family metadata. Planned catalog entries are not executable registrations and
+must not be advertised as supported host capabilities.

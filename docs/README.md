@@ -16,6 +16,7 @@
 - [Rust level evaluation task book](../tasks/level-core-exactio-v1.md): ExactIO implementation, Environment extension design, native CLI evaluation, WASM delivery, and actual-host parity acceptance.
 - [Level Host API v1](level-api-v1.md), [WASM transports v1](level-wasm-v1.md), and [safety accounting](level-safety-accounting.md): versioned integration and trusted local profiles.
 - [Environment extension design](level-environment-extension.md): future Rust scene interfaces and author checklist; no production scenes are supported.
+- [Five-scene architecture](level-scenes-architecture.md): selected product scenes, shared engines, Rust catalog, protocol gaps, and delivery sequence.
 - [Level implementation traceability](level-traceability.md): normative rules, test coverage, reproducible host comparisons, and remaining integration dependencies.
 - [Level build provenance](level-build-provenance.md): pinned local toolchain, exact evaluator source identity, and artifact/toolchain reports.
 - [Level host integration readiness](level-host-integration-readiness.md): candidate Steam/backend workspace, existing ABI boundaries, and required actual-host acceptance.
