@@ -64,9 +64,14 @@ fn lower_board(
                 hir::Cell::Empty => ir::Cell::empty(),
                 hir::Cell::Entry(direction) => ir::Cell::entry(direction),
                 hir::Cell::Instruction {
+                    prefix,
                     primary,
                     attachment,
-                } => ir::Cell::instruction(primary, attachment),
+                } => {
+                    let mut cell = ir::Cell::instruction(primary, attachment);
+                    cell.prefix = prefix;
+                    cell
+                }
             });
         }
     }
@@ -84,6 +89,7 @@ fn lower_board(
             slot,
             ir::FoldedBlock {
                 cells: folded_cells,
+                prefixes: folded.value.prefixes,
             },
         );
     }

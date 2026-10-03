@@ -322,7 +322,7 @@ assert.equal(unsupportedAbi.error.code, "unsupported_abi_version");
 
 const suite = JSON.parse(await readFile(fixturePath, "utf8"));
 assert.equal(suite.schema_version, 1);
-assert(suite.cases.length === 63, "the Full shared conformance suite must include all 63 runtime cases");
+assert(suite.cases.length === 75, "the Full shared conformance suite must include all 75 runtime cases");
 const simpleWrapSource = suite.cases.find((fixture) => fixture.id === "wrap-boundary-yields-after-bounded-run").source;
 
 function assertPresentExpectedFields(fixture, result) {

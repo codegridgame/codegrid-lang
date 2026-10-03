@@ -521,18 +521,12 @@ fn hover_cell(source: &str, index: &LineIndex, offset: usize) -> Value {
             "Main Board Entry facing {}. It initializes the VM position and direction and behaves as empty when execution visits it.",
             direction_name(direction)
         ),
-        Ok(CellToken::Instruction {
-            primary,
-            attachment: None,
-        }) => primary_description(primary),
-        Ok(CellToken::Instruction {
-            primary,
-            attachment: Some(attachment),
-        }) => format!(
-            "{}\n\nAttachment: {}.",
-            primary_description(primary),
-            attachment_description(attachment)
-        ),
+        Ok(CellToken::Instruction { prefix, primary, attachment }) => {
+            let mut description = primary_description(primary);
+            if let Some(prefix) = prefix { description.push_str(&format!("\n\nPrefix: execute only when the selected tick-start register equals {}; otherwise skip the complete cell.", prefix.value())); }
+            if let Some(attachment) = attachment { description.push_str(&format!("\n\nAttachment: {}.", attachment_description(attachment))); }
+            description
+        },
         Err(_) => match parse_directive_head(token) {
             Ok(DirectiveKind::Definition(DefinitionTarget::Main)) => {
                 "Defines the program’s outer Main CodeGrid and Main Board.".to_owned()
@@ -606,10 +600,7 @@ fn primary_description(primary: PrimaryInstruction) -> String {
         PrimaryInstruction::RandomDirection => {
             "Choose a direction from the thread's deterministic random stream.".to_owned()
         }
-        PrimaryInstruction::IfZero(direction) => format!(
-            "Set the direction to {} when the selected register is zero; otherwise keep the current direction.",
-            direction_name(direction)
-        ),
+        PrimaryInstruction::Compare => "Compare Data Stack top A without popping with selected register B; write 0 for equality, 1 for A > B, or 2 for A < B. An empty stack leaves the register unchanged.".to_owned(),
         PrimaryInstruction::Read(direction) => format!(
             "Read from the outer input or the Custom caller's data stack into the selected register. If the source is empty, keep the register and set direction to {}.",
             direction_name(direction)
@@ -737,12 +728,26 @@ fn completion_items(source: &str, index: &LineIndex, offset: usize) -> Vec<Value
         .find(|(_, character)| character.is_whitespace())
         .map_or(0, |(position, character)| position + character.len_utf8());
     let prefix = &source[prefix_start..end];
-    let candidates = if prefix.starts_with('@') {
+    let mut candidates = if prefix.starts_with('@') {
         directive_candidates(source, offset)
     } else {
-        cell_candidates(prefix)
+        cell_candidates("")
     };
 
+    let guarded: Vec<_> = candidates
+        .iter()
+        .filter(|candidate| {
+            parse_cell_token(&candidate.label)
+                .is_ok_and(|cell| matches!(cell, CellToken::Instruction { prefix: None, .. }))
+        })
+        .flat_map(|candidate| {
+            codegrid_model::ConditionPrefix::ALL.map(|condition| CompletionCandidate {
+                label: format!("{}{}", condition.token(), candidate.label),
+                detail: "Conditional Primary instruction",
+            })
+        })
+        .collect();
+    candidates.extend(guarded);
     candidates
         .into_iter()
         .filter(|candidate| candidate.label.starts_with(prefix))
@@ -1108,29 +1113,19 @@ mod tests {
 
     #[test]
     fn completions_expose_full_directives_primary_tokens_and_attachments() {
-        let source = "@main
-@size 3x1
-~> #
-@end
-";
+        let source = "@main\n@size 3x1\n~> \n@end\n";
         let index = LineIndex::new(source);
-        let completion_offset = source
-            .find(
-                "#
-",
-            )
-            .expect("source includes a partial IF_ZERO")
-            + 1;
+        let completion_offset = source.find("~> \n").expect("grid insertion position") + 3;
         let items = completion_items(source, &index, completion_offset);
         let labels = items
             .iter()
             .filter_map(|item| item["label"].as_str())
             .collect::<Vec<_>>();
 
-        assert!(labels.contains(&"#^"));
-        assert!(labels.contains(&"#v"));
-        assert!(labels.contains(&"#<"));
-        assert!(labels.contains(&"#>"));
+        assert!(labels.contains(&"?0^"));
+        assert!(labels.contains(&"?0v"));
+        assert!(labels.contains(&"?0<"));
+        assert!(labels.contains(&"?0>"));
         for supported in ["#0", "#]"] {
             assert!(labels.contains(&supported), "missing {supported}");
         }
@@ -1141,7 +1136,7 @@ mod tests {
             .into_iter()
             .map(|candidate| candidate.label)
             .collect::<Vec<_>>();
-        for supported in ["[0", "$0", "?", "!", ",^*", "+x2"] {
+        for supported in ["[0", "$0", "??", "!", ",^*", "+x2"] {
             assert!(all_labels.iter().any(|label| label == supported));
         }
 
@@ -1192,14 +1187,14 @@ mod tests {
 
     #[test]
     fn hover_identifies_full_primary_instructions_and_attachments() {
-        let source = "~> ,> #^ $> + - . ;
+        let source = "~> ,> ?0^ $> + - . ;
 ";
         let index = LineIndex::new(source);
         let hover = |token: &str| {
             let offset = source.find(token).expect("source contains the token");
             super::hover_cell(source, &index, offset + 1)
         };
-        for token in [",>", "#^", "$>", "+", ";"] {
+        for token in [",>", "?0^", "$>", "+", ";"] {
             assert!(hover(token)["contents"]["value"]
                 .as_str()
                 .unwrap()
@@ -1501,7 +1496,7 @@ mod tests {
     #[test]
     fn protocol_formatting_leaves_rejected_source_unchanged() {
         let uri = "file:///workspace/unsupported.cg";
-        let source = "@main\n~> ?\n@end\n";
+        let source = "@main\n~> ??\n@end\n";
         let mut input = Vec::new();
         append_message(
             &mut input,

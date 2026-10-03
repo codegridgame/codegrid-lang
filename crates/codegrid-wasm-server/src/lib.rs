@@ -585,7 +585,7 @@ mod tests {
         compile["source"] = json!(source);
         let compiled = dispatch(&mut adapter, compile);
         assert_eq!(compiled["status"], "compiled");
-        assert_eq!(compiled["view"]["ir_format_version"], 1);
+        assert_eq!(compiled["view"]["ir_format_version"], 2);
         let program = compiled["program"].as_str().unwrap().to_owned();
         let mut program_view_request = operation("program_view");
         program_view_request["program"] = json!(program.clone());
@@ -680,7 +680,7 @@ mod tests {
         let cases = suite["cases"]
             .as_array()
             .expect("suite cases must be an array");
-        assert_eq!(cases.len(), 63);
+        assert_eq!(cases.len(), 75);
 
         let mut adapter = ServerAdapter::new();
         let mut initialize = operation("initialize");

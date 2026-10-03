@@ -31,6 +31,7 @@ pub struct BoardView {
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct CellView {
+    pub prefix: Option<String>,
     pub entry: Option<String>,
     pub primary: Option<String>,
     pub attachment: Option<String>,
@@ -85,7 +86,18 @@ fn board_view(board: &Board) -> BoardView {
                     slot.get(),
                     fold.cells
                         .iter()
-                        .map(|primary| primary.as_ref().map(|instruction| (*instruction).token()))
+                        .enumerate()
+                        .map(|(index, primary)| {
+                            primary.as_ref().map(|instruction| {
+                                format!(
+                                    "{}{}",
+                                    fold.prefixes
+                                        .get(&index)
+                                        .map_or("", |prefix| prefix.token()),
+                                    instruction.token()
+                                )
+                            })
+                        })
                         .collect(),
                 )
             })
@@ -95,6 +107,7 @@ fn board_view(board: &Board) -> BoardView {
 
 fn cell_view(cell: &codegrid_ir::Cell) -> CellView {
     CellView {
+        prefix: cell.prefix.map(|prefix| prefix.token().to_owned()),
         entry: cell.entry.map(entry_token),
         primary: cell.primary.map(PrimaryInstruction::token),
         attachment: cell.attachment.map(AttachmentInstruction::token),
@@ -125,7 +138,7 @@ mod tests {
         let program = compile(source).expect("Full view fixture must compile");
         let view = ProgramView::from_verified(&program);
 
-        assert_eq!(view.ir_format_version, 1);
+        assert_eq!(view.ir_format_version, 2);
         assert_eq!(view.outer.main.width, 4);
         assert_eq!(view.outer.main.height, 1);
         assert_eq!(view.outer.main.cells[0].entry.as_deref(), Some("~>"));

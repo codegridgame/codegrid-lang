@@ -22,6 +22,12 @@ suite('Full standalone providers', () => {
     const extension = vscode.extensions.getExtension(EXT_ID)!;
     await extension.activate();
     await vscode.workspace.getConfiguration('editor').update('wordBasedSuggestions', 'off', vscode.ConfigurationTarget.Global);
+    await vscode.workspace.getConfiguration('codegrid.languageServer').update('enabled', false, vscode.ConfigurationTarget.Global);
+    const probe = await openDoc('~> ');
+    for (let attempt = 0; attempt < 50; attempt++) {
+      if (!(await complete(probe, 0, 3)).includes('#lsp-only')) break;
+      await new Promise((resolve) => setTimeout(resolve, 100));
+    }
   });
 
   test('completion offers the Full Primary, Entry, and Empty inventories', async () => {
@@ -56,7 +62,7 @@ suite('Full standalone providers', () => {
 
   test('prefix completion returns matching Full instruction tokens', async () => {
     const hash = await complete(await openDoc('~> #'), 0, 4);
-    for (const token of ['#^', '#v', '#<', '#>', '#0', '#9', '#]']) {
+    for (const token of ['#0', '#9', '#]']) {
       assert.ok(hash.includes(token), `missing ${token}`);
     }
     const shift = await complete(await openDoc('~> $'), 0, 4);
@@ -117,7 +123,7 @@ suite('Full standalone providers', () => {
   });
 
   test('hover explains known instructions and incomplete prefixes', async () => {
-    const document = await openDoc('~> ,> #^ $> + ; #');
+    const document = await openDoc('~> ,> ?0^ $> + ; #');
     const hoverAt = async (character: number): Promise<string> => {
       const hovers = await vscode.commands.executeCommand<vscode.Hover[]>(
         'vscode.executeHoverProvider', document.uri, new vscode.Position(0, character)
@@ -127,11 +133,11 @@ suite('Full standalone providers', () => {
       ).join('\n');
     };
     assert.ok((await hoverAt(4)).includes('input is exhausted'));
-    assert.ok((await hoverAt(7)).includes('R0 is zero'));
-    assert.ok((await hoverAt(10)).includes('logically'));
-    assert.ok((await hoverAt(12)).includes('8-bit wrapping'));
-    assert.ok((await hoverAt(14)).includes('does not move'));
-    assert.ok((await hoverAt(16)).includes('must be completed'));
+    assert.ok((await hoverAt(7)).includes('register equals 0'));
+    assert.ok((await hoverAt(11)).includes('logically'));
+    assert.ok((await hoverAt(13)).includes('8-bit wrapping'));
+    assert.ok((await hoverAt(15)).includes('does not move'));
+    assert.ok((await hoverAt(17)).includes('must be completed'));
   });
 
   test('hover describes Main directives and Entry markers', async () => {

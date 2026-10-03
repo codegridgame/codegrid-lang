@@ -192,6 +192,10 @@ fn execute_normal(
     };
     let id = cell_id(mode.code_grid, thread.board, None, thread.position);
     record_cell_visit(metrics, draft, thread, id, mode.scope);
+    if !condition_matches(cell.prefix, thread, registers, metrics, draft) {
+        move_normal_cell(thread, tick, runtime, config, draft, mode);
+        return;
+    }
     let Some(primary) = cell.primary else {
         if let Some(
             attachment @ (AttachmentInstruction::ReadCode | AttachmentInstruction::WriteCode),
@@ -288,6 +292,11 @@ fn execute_repeat(
         cell_id(mode.code_grid, thread.board, None, thread.position),
         mode.scope,
     );
+    if !condition_matches(cell.prefix, thread, registers, metrics, draft) {
+        thread.phase = ExecutionPhase::Normal;
+        move_normal_cell(thread, tick, runtime, config, draft, mode);
+        return;
+    }
     record_primary(primary, metrics, draft);
     if draft.fault.is_some() {
         return;
@@ -391,7 +400,14 @@ fn execute_fold_cell(
         cell_id(mode.code_grid, thread.board, Some(fold_id), position),
         mode.scope,
     );
-    let flow = if let Some(primary) = primary {
+    let matched = condition_matches(
+        block.prefixes.get(&position.x).copied(),
+        thread,
+        registers,
+        metrics,
+        draft,
+    );
+    let flow = if let Some(primary) = primary.filter(|_| matched) {
         record_primary(primary, metrics, draft);
         if draft.fault.is_some() {
             return;
@@ -458,9 +474,14 @@ fn execute_primary(
     match primary {
         PrimaryInstruction::Direction(direction) => thread.direction = direction,
         PrimaryInstruction::RandomDirection => thread.direction = thread.rng.next_direction(),
-        PrimaryInstruction::IfZero(direction) => {
-            if value == 0 {
-                thread.direction = direction;
+        PrimaryInstruction::Compare => {
+            if let Some(a) = thread.data_stack.last().copied() {
+                let result = match a.cmp(&value) {
+                    std::cmp::Ordering::Equal => 0,
+                    std::cmp::Ordering::Greater => 1,
+                    std::cmp::Ordering::Less => 2,
+                };
+                stage_register(thread, result, draft);
             }
         }
         PrimaryInstruction::Read(direction) => {
@@ -1069,4 +1090,18 @@ fn move_normal_cell(
             },
         ));
     }
+}
+
+fn condition_matches(
+    prefix: Option<codegrid_model::ConditionPrefix>,
+    thread: &ThreadState,
+    registers: &[Value; 10],
+    metrics: &mut crate::RuntimeMetrics,
+    draft: &mut TickDraft,
+) -> bool {
+    let Some(prefix) = prefix else {
+        return true;
+    };
+    record_operation(metrics, InstructionKind::Condition, draft);
+    registers[usize::from(thread.register_pointer)] == prefix.value()
 }

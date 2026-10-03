@@ -22,6 +22,7 @@
 - [Level host integration readiness](level-host-integration-readiness.md): candidate Steam/backend workspace, existing ABI boundaries, and required actual-host acceptance.
 
 - [Full language task book](../tasks/spec-completion.md): local implementation and verification scope derived from the source, VM, and Runtime API specifications.
+- [Conditional prefix migration manual](conditional-prefix-migration.md): approved `?0`/`?1`/`?2`, `??`, and non-consuming CMP `?=` design, implementation sequence, and acceptance matrix.
 - [Native CLI](cli.md): decided local Full `check`/`run` contract, including arguments, JSON schema, and exit codes.
 - [Architecture](architecture.md): crate dependencies, shared semantic core, and host boundaries.
 - [Implementation roadmap](roadmap.md): local Full delivery status and acceptance gates.

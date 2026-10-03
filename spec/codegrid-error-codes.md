@@ -106,7 +106,7 @@ State effect: Compilation rejection: no executable IR or VM instance.
 | `source.function_entry_count` | A Function board does not have exactly one Entry. |
 | `source.fold_width` | A Folded Block width differs from its owner board width. |
 | `source.fold_entry` | An Entry appears in a Folded Block. |
-| `source.fold_attachment` | An Attachment appears in a Folded Block. |
+| `source.fold_attachment` | A suffix Attachment appears in a Folded Block; conditional prefixes are allowed. |
 | `source.fold_primary` | A Primary is forbidden in its Folded Block context. |
 | `source.return_scope` | RETURN appears on a Main board. |
 | `source.custom_return_scope` | CUSTOM_RETURN appears outside a Custom Main board. |
@@ -130,9 +130,9 @@ State effect: IR verification fails; unchecked IR cannot execute.
 | `ir.fold_width` | Folded Block length differs from board width. |
 | `ir.fold_primary` | A Folded Block contains a forbidden instruction. |
 | `ir.entry_instruction` | An Entry shares its cell with a Primary or Attachment. |
-| `ir.detached_attachment` | An Attachment has no Primary. |
+| `ir.detached_attachment` | A prefix or suffix Attachment has no initial Primary (including an invalid folded prefix coordinate). |
 | `ir.repeat_count` | Repeat count is outside 2 through 5. |
-| `ir.attachment_primary` | An Attachment is attached to a nonencodable Primary. |
+| `ir.attachment_primary` | A suffix Attachment is attached to a nonencodable Primary; conditional prefixes have independent eligibility. |
 | `ir.repeat_call_return` | Repeat is attached to CALL or RETURN. |
 | `ir.return_scope` | RETURN is outside a Function. |
 | `ir.custom_return_scope` | CUSTOM_RETURN is outside a Custom Main. |
@@ -471,3 +471,7 @@ These classify existing outcomes without changing correctness or failure priorit
 | `level.test_failed` | An ExactIO correctness check fails. |
 | `level.runtime_error` | An ExactIO test encounters a VM error; hidden details remain redacted. |
 | `level.constraint_exceeded` | A permitted metric exceeds a level constraint. |
+
+## Conditional prefix migration diagnostics
+
+Malformed, detached, repeated, out-of-range, or obsolete conditional source atoms use source.invalid_cell. Prefixes do not suppress contextual source/reference diagnostics. IR Entry sharing a cell with a prefix uses ir.entry_instruction; detached normal or folded prefixes use ir.detached_attachment. Unsupported executable format 1 uses ir.unsupported_version. No new error identity or number is introduced; published spellings and transport aliases remain unchanged. Invalid DECODE bytes, including retired instruction numbers, remain counted no-ops and are not errors.

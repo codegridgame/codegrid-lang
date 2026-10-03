@@ -159,7 +159,7 @@ staging, serializer formatting, total process memory, or wall-clock duration.
 ## Local validation
 
 Native tests exercise ABI v4 request validation, lifecycle, wide integer and
-initial-memory conversion, and all 63 shared Full conformance cases. The
+initial-memory conversion, and all 75 shared Full conformance cases. The
 `server-smoke.mjs` runner additionally exercises the no-import Wasm exports,
 buffer lifecycle, configured memory maximum, ABI v4 operations, Full fixture
 fields, and resource ceilings in Node's WebAssembly host. These local tests do

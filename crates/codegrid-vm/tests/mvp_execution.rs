@@ -97,7 +97,12 @@ fn zero_test_changes_direction_only_when_the_register_is_zero() {
     let mut zero_case = vm(
         vec![
             Cell::entry(Direction::Right),
-            Cell::instruction(PrimaryInstruction::IfZero(Direction::Down), None),
+            {
+                let mut cell =
+                    Cell::instruction(PrimaryInstruction::Direction(Direction::Down), None);
+                cell.prefix = Some(codegrid_model::ConditionPrefix::Zero);
+                cell
+            },
             Cell::empty(),
             Cell::instruction(PrimaryInstruction::Halt, None),
         ],
@@ -114,7 +119,12 @@ fn zero_test_changes_direction_only_when_the_register_is_zero() {
         vec![
             Cell::entry(Direction::Right),
             Cell::instruction(PrimaryInstruction::Add, None),
-            Cell::instruction(PrimaryInstruction::IfZero(Direction::Down), None),
+            {
+                let mut cell =
+                    Cell::instruction(PrimaryInstruction::Direction(Direction::Down), None);
+                cell.prefix = Some(codegrid_model::ConditionPrefix::Zero);
+                cell
+            },
             Cell::instruction(PrimaryInstruction::Halt, None),
         ],
         4,

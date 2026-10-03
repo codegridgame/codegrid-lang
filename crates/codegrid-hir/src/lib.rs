@@ -5,7 +5,7 @@
 
 use std::collections::BTreeMap;
 
-use codegrid_model::{AttachmentInstruction, Direction, PrimaryInstruction, Slot};
+use codegrid_model::{AttachmentInstruction, ConditionPrefix, Direction, PrimaryInstruction, Slot};
 use codegrid_syntax::Span;
 
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
@@ -42,6 +42,7 @@ pub struct Board {
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct FoldedBlock {
+    pub prefixes: BTreeMap<usize, ConditionPrefix>,
     pub cells: Vec<Spanned<Option<PrimaryInstruction>>>,
 }
 
@@ -50,6 +51,7 @@ pub enum Cell {
     Empty,
     Entry(Direction),
     Instruction {
+        prefix: Option<ConditionPrefix>,
         primary: PrimaryInstruction,
         attachment: Option<AttachmentInstruction>,
     },

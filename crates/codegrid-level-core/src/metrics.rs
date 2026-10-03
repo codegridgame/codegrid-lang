@@ -1,4 +1,4 @@
-use crate::validate::{attachment_kind, instruction_kind};
+use crate::validate::{attachment_kind, condition_kind, instruction_kind};
 use codegrid_ir::{ScopedProgram, VerifiedProgram};
 use codegrid_vm::RuntimeMetricSummary;
 use std::collections::{BTreeMap, BTreeSet};
@@ -39,11 +39,17 @@ fn measure_scope(
             if let Some(p) = cell.primary {
                 kinds.insert(instruction_kind(p));
             }
+            if let Some(prefix) = cell.prefix {
+                kinds.insert(condition_kind(prefix));
+            }
             if let Some(a) = cell.attachment {
                 kinds.insert(attachment_kind(a));
             }
         }
         for folded in board.folded_blocks.values() {
+            for prefix in folded.prefixes.values() {
+                kinds.insert(condition_kind(*prefix));
+            }
             for p in folded.cells.iter().flatten() {
                 *cells += 1;
                 kinds.insert(instruction_kind(*p));

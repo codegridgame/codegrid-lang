@@ -151,7 +151,7 @@ The object above illustrates field types and names; its abbreviated arrays are n
 - `configuration` contains `boundary_mode` (`exit` or `wrap`), decimal-string `seed`, `custom_execution_limit`, `max_ticks`, and `max_work_units`, plus the ordered input byte array and effective initial Outer memory sorted by numeric address. The memory list omits zero-valued entries.
 - `diagnostics` contains `{code, severity, message, span}` objects. Severity is `error` or `warning`; span is `{start, end}` with decimal-string half-open UTF-8 byte offsets. Code is assigned by the compiler/verifier at the validation origin and follows the error registry. For `source_error`, `events` and `newly_emitted_output` are empty and `snapshot` is `null`.
 - `snapshot` contains the VM status (`running`, `halted`, or `error`), decimal-string `committed_ticks`, ten register bytes, normalized sparse Outer memory, remaining input, cumulative output, the mutable Outer `runtime_program`, every Outer thread, cumulative raw metrics, structured runtime errors, and an optional fault.
-- `runtime_program` is a `CodeGridView`: `main` and `functions`. Each board contains exact numeric `width` and `height`, row-major `cells` (each with nullable canonical source-token strings `entry`, `primary`, and `attachment`), and `folded_blocks` keyed by numeric Folded Block ID with row token arrays. The mutable Outer program view contains no Custom definitions.
+- `runtime_program` is a `CodeGridView`: `main` and `functions`. Each board contains exact numeric `width` and `height`, row-major `cells` (each with nullable canonical source-token strings `prefix`, `entry`, `primary`, and `attachment`), and `folded_blocks` keyed by numeric Folded Block ID with row token arrays that include any conditional prefix before the Primary. The mutable Outer program view contains no Custom definitions.
 - An Outer snapshot thread object contains `code_grid`, `id`, `board`, `position`, `direction`, `register_pointer`, `page`, `data_stack`, `instruction_stack`, `call_stack`, `phase`, and `random_state`. `code_grid` is `{kind:"outer"}`; `board` is `{kind:"main"}` or `{kind:"function", "id":<slot>}`. Position is `{x,y}`. Directions are `up`, `down`, `left`, or `right`. `page` is a canonical signed decimal string. Stack bytes are JSON integers. Instruction-stack items are `{kind:"empty"}` or `{kind:"primary", "token":<canonical token>, "instruction_code":<byte>}`. Call frames contain `caller_board`, `call_position`, and `saved_direction`. Phases are `{kind:"normal"}`, `{kind:"after_call"}`, `{kind:"repeat", "total":<byte>, "completed":<byte>}`, `{kind:"fold", "fold_id":<slot>, "internal_position":{x,y}, "internal_direction":<direction>, "saved_outer_direction":<direction>}`, `{kind:"fold_resume", "saved_outer_direction":<direction>}`, or `{kind:"terminated"}`. Thread arrays are ordered by thread ID.
 - `metrics` exposes the full raw VM metric set: `global_tick`, `operation_count`, sorted `used_cells` and its `used_cell_count`, sorted `used_memory_addresses` and its `used_memory_address_count`, all three stack high-water counters, and sorted `instruction_variety`. A used cell contains `code_grid` (`{kind:"outer"}` or `{kind:"custom", "id":<slot>}`), `board` (`{kind:"main"}` or `{kind:"function", "id":<slot>}`), nullable `folded_block`, and `position:{x,y}`. A used-memory identity contains `space` (`{kind:"outer"}` or `{kind:"custom_invocation", "global_tick":<decimal string>, "caller_thread_id":<decimal string>, "custom_id":<slot>}`) and arbitrary-precision `address`. Set arrays use canonical VM identity order; count fields equal the corresponding array lengths.
 - Each event is an object with a `kind` tag and the corresponding VM data: `cell_reached` has `scope`, `thread_id`, and `cell`; `input_consumed` has `scope`, `thread_id`, and `value`; `register_changed` has `scope`, `register`, `old`, and `new`; `memory_changed` has `scope`, `location`, `old`, and `new`; `code_changed` has `scope`, `cell`, and nullable canonical-token `old`/`new`; `thread_changed` has `scope`, `before`, and `after` VM thread snapshots. Event thread snapshots have the thread fields above except `code_grid`; the event `scope` identifies Outer or the Custom invocation. A scope is `{kind:"outer"}` or `{kind:"custom", "caller_thread_id":<decimal string>, "custom_id":<slot>, "internal_tick":<decimal string>}`. Event order is exactly the VM event order.
@@ -188,14 +188,16 @@ validate, execute, score, or rate levels independently. The command requires
 Each option may appear exactly once. `--format <json|human>` is optional and
 defaults to `json`.
 
-Level `allowed_instructions` accepts group names: `IF_ZERO`, `READ`,
+Level `allowed_instructions` accepts group names: `READ`,
 `REGISTER_POINTER`, `STACK` (PUSH and POP_ADD), `CODEC` (DECODE and ENCODE),
 `MEMORY`, `PAGE`, and `SHIFT`. The four direction Primaries, OUTPUT, and HALT
 are always allowed. `CALL` includes RETURN; `CUSTOM` includes CUSTOM_RETURN.
-NAND, RANDOM_DIRECTION, CLEAR, ADD, SUB, and FOLDED_BLOCK are independent.
+CMP, NAND, RANDOM_DIRECTION, CLEAR, ADD, SUB, and FOLDED_BLOCK are independent.
 Existing individual names remain valid; permissions form a union. MEMORY/PAGE
 still require `memory_enabled: true`, and Attachments need their own whitelist.
-These groups apply to generated code too and do not change metric counting.
+Conditional prefixes require independent `CONDITION_0`, `CONDITION_1`, or
+`CONDITION_2` entries in `allowed_attachments`. The removed `IF_ZERO` names
+are rejected. These groups apply to generated code too and do not change metric counting.
 For example, the echo level needs only `"allowed_instructions": ["READ"]`.
 
 `--seed` is a canonical unsigned decimal value in `0..=u64::MAX` and is passed
@@ -270,3 +272,9 @@ Local acceptance covers Full compiler diagnostics, each documented option and in
 ## Stable errors
 
 See the [complete error specification](../spec/codegrid-error-codes.md). Host/argument/file errors render `error: [cli.code] message` on stderr while retaining the documented exit categories. Diagnostic `code` is an additive JSON field; stable runtime codes and schema version 1 remain unchanged. Debug protocol 2 replaces protocol 1 string errors with `{code,message}`. Oversized requests return `debug.request_limit_exceeded` when the response can be written, then exit 2; broken transports report `debug.transport_io` on stderr.
+
+## Conditional prefix and CMP migration (2026-10-03)
+
+The approved source/VM migration uses executable IR format 2, RandomDirection `??` (126), CMP `?=` (124), and fixed conditional prefixes `?0`–`?2`. Normal code-view cells expose an additive nullable `prefix` field containing the canonical prefix spelling. This field survives Primary mutation and clearing. Folded Block views keep their existing arrays of nullable strings; nonempty strings include any prefix followed by the Primary token. These are read-only projections, not executable interchange data.
+
+The Runtime API v3, browser binding envelope, server ABI v4, CLI JSON schema 1, and debug protocol 2 remain unchanged; existing lifecycle and transport fields are preserved. Language source acceptance, IR version, capability vocabulary, and new code-view fields follow the recorded migration decision. Removed source forms and obsolete instruction bytes are not compatibility aliases. Consumers displaying cells should include the prefix.

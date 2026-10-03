@@ -1,8 +1,8 @@
 use crate::{ProgramRules, ValidatedLevel};
 use codegrid_ir::{Board, ScopedProgram, VerifiedProgram};
 use codegrid_model::{
-    AttachmentInstruction, Direction, PageDirection, PointerDirection, PrimaryInstruction,
-    ShiftDirection,
+    AttachmentInstruction, ConditionPrefix, Direction, PageDirection, PointerDirection,
+    PrimaryInstruction, ShiftDirection,
 };
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct ProgramRejection {
@@ -16,11 +16,17 @@ fn reject(reason: &'static str, path: &str) -> ProgramRejection {
     }
 }
 pub fn attachment_identifiers() -> &'static [&'static str] {
-    &["READ_CODE", "WRITE_CODE", "REPEAT"]
+    &[
+        "READ_CODE",
+        "WRITE_CODE",
+        "REPEAT",
+        "CONDITION_0",
+        "CONDITION_1",
+        "CONDITION_2",
+    ]
 }
 pub fn instruction_identifiers() -> &'static [&'static str] {
     &[
-        "IF_ZERO",
         "REGISTER_POINTER",
         "STACK",
         "CODEC",
@@ -32,10 +38,7 @@ pub fn instruction_identifiers() -> &'static [&'static str] {
         "MOVE_LEFT",
         "MOVE_RIGHT",
         "RANDOM_DIRECTION",
-        "IF_ZERO_UP",
-        "IF_ZERO_DOWN",
-        "IF_ZERO_LEFT",
-        "IF_ZERO_RIGHT",
+        "CMP",
         "READ",
         "READ_UP",
         "READ_DOWN",
@@ -73,10 +76,7 @@ pub fn instruction_kind(p: PrimaryInstruction) -> &'static str {
         PrimaryInstruction::Direction(Direction::Left) => "MOVE_LEFT",
         PrimaryInstruction::Direction(Direction::Right) => "MOVE_RIGHT",
         PrimaryInstruction::RandomDirection => "RANDOM_DIRECTION",
-        PrimaryInstruction::IfZero(Direction::Up) => "IF_ZERO_UP",
-        PrimaryInstruction::IfZero(Direction::Down) => "IF_ZERO_DOWN",
-        PrimaryInstruction::IfZero(Direction::Left) => "IF_ZERO_LEFT",
-        PrimaryInstruction::IfZero(Direction::Right) => "IF_ZERO_RIGHT",
+        PrimaryInstruction::Compare => "CMP",
         PrimaryInstruction::Read(_) => "READ",
         PrimaryInstruction::Clear => "CLEAR",
         PrimaryInstruction::Add => "ADD",
@@ -101,6 +101,13 @@ pub fn instruction_kind(p: PrimaryInstruction) -> &'static str {
         PrimaryInstruction::Custom(_) => "CUSTOM",
         PrimaryInstruction::CustomReturn => "CUSTOM_RETURN",
         PrimaryInstruction::Halt => "HALT",
+    }
+}
+pub fn condition_kind(prefix: ConditionPrefix) -> &'static str {
+    match prefix {
+        ConditionPrefix::Zero => "CONDITION_0",
+        ConditionPrefix::One => "CONDITION_1",
+        ConditionPrefix::Two => "CONDITION_2",
     }
 }
 pub fn attachment_kind(a: AttachmentInstruction) -> &'static str {
@@ -148,7 +155,6 @@ pub fn validate_primary(
             | PrimaryInstruction::Halt
     );
     let group = match p {
-        PrimaryInstruction::IfZero(_) => Some("IF_ZERO"),
         PrimaryInstruction::Read(_) => Some("READ"),
         PrimaryInstruction::MoveRegisterPointer(_) => Some("REGISTER_POINTER"),
         PrimaryInstruction::Push | PrimaryInstruction::PopAdd => Some("STACK"),
@@ -219,6 +225,11 @@ fn board(r: &ProgramRules, b: &Board, main: bool, path: &str) -> Result<(), Prog
             e.path = path.clone();
             e
         })?;
+        if let Some(prefix) = c.prefix {
+            if !r.allowed_attachments.contains(condition_kind(prefix)) {
+                return Err(reject("AttachmentNotAllowed", &path));
+            }
+        }
         if let Some(a) = c.attachment {
             if !r.allowed_attachments.contains(attachment_kind(a)) {
                 return Err(reject("AttachmentNotAllowed", &path));
@@ -226,6 +237,14 @@ fn board(r: &ProgramRules, b: &Board, main: bool, path: &str) -> Result<(), Prog
         }
     }
     for (slot, f) in &b.folded_blocks {
+        for (i, prefix) in &f.prefixes {
+            if !r.allowed_attachments.contains(condition_kind(*prefix)) {
+                return Err(reject(
+                    "AttachmentNotAllowed",
+                    &format!("{path}.folded_blocks[{}].cells[{i}]", slot.get()),
+                ));
+            }
+        }
         for (i, p) in f.cells.iter().enumerate() {
             validate_primary(r, *p, false).map_err(|mut e| {
                 e.path = format!("{path}.folded_blocks[{}].cells[{i}]", slot.get());
@@ -317,15 +336,7 @@ mod tests {
         }
         let slot = Slot::new(0).unwrap();
         let groups = [
-            (
-                "IF_ZERO",
-                vec![
-                    PrimaryInstruction::IfZero(Direction::Up),
-                    PrimaryInstruction::IfZero(Direction::Down),
-                    PrimaryInstruction::IfZero(Direction::Left),
-                    PrimaryInstruction::IfZero(Direction::Right),
-                ],
-            ),
+            ("CMP", vec![PrimaryInstruction::Compare]),
             (
                 "READ",
                 vec![
@@ -432,6 +443,7 @@ mod tests {
         b.folded_blocks.insert(
             Slot::new(0).unwrap(),
             FoldedBlock {
+                prefixes: Default::default(),
                 cells: vec![Some(PrimaryInstruction::Add), None],
             },
         );
@@ -579,5 +591,44 @@ mod tests {
                 .reason,
             "ThreadCountExceeded"
         );
+    }
+
+    #[test]
+    fn conditional_permissions_are_independent_and_do_not_hide_primaries() {
+        let mut r = rules();
+        let mut b = board(PrimaryInstruction::Compare);
+        b.cells[1].prefix = Some(codegrid_model::ConditionPrefix::One);
+        r.allowed_attachments.clear();
+        assert_eq!(
+            super::board(&r, &b, true, "main").unwrap_err().reason,
+            "AttachmentNotAllowed"
+        );
+        r.allowed_attachments.insert("CONDITION_0".into());
+        assert!(super::board(&r, &b, true, "main").is_err());
+        r.allowed_attachments.insert("CONDITION_1".into());
+        assert!(super::board(&r, &b, true, "main").is_ok());
+        r.allowed_instructions.remove("CMP");
+        r.allowed_instructions.insert("STACK".into());
+        assert_eq!(
+            super::board(&r, &b, true, "main").unwrap_err().reason,
+            "InstructionNotAllowed"
+        );
+        assert_eq!(
+            validate_primary(&r, Some(PrimaryInstruction::Compare), true)
+                .unwrap_err()
+                .reason,
+            "GeneratedInstructionNotAllowed"
+        );
+        let mut folded = board(PrimaryInstruction::Halt);
+        folded.folded_blocks.insert(
+            Slot::new(0).unwrap(),
+            FoldedBlock {
+                prefixes: BTreeMap::from([(1, codegrid_model::ConditionPrefix::Two)]),
+                cells: vec![None, Some(PrimaryInstruction::Direction(Direction::Up))],
+            },
+        );
+        let rejection = super::board(&r, &folded, true, "main").unwrap_err();
+        assert_eq!(rejection.reason, "AttachmentNotAllowed");
+        assert_eq!(rejection.path, "main.folded_blocks[0].cells[1]");
     }
 }

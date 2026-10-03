@@ -66,7 +66,6 @@ Following the explicit 2026-10-02 user decision, grouped names are accepted:
 
 | Group | Allowed Primaries |
 | --- | --- |
-| IF_ZERO | IF_ZERO_UP, IF_ZERO_DOWN, IF_ZERO_LEFT, IF_ZERO_RIGHT |
 | READ | READ_UP, READ_DOWN, READ_LEFT, READ_RIGHT |
 | REGISTER_POINTER | POINTER_LEFT, POINTER_RIGHT |
 | STACK | PUSH, POP_ADD |
@@ -96,8 +95,8 @@ until explicitly added to a later capability contract.
 | Identifier | Canonical Primary |
 | --- | --- |
 | MOVE_UP, MOVE_DOWN, MOVE_LEFT, MOVE_RIGHT | Direction of the named orientation |
-| RANDOM_DIRECTION | RandomDirection |
-| IF_ZERO_UP, IF_ZERO_DOWN, IF_ZERO_LEFT, IF_ZERO_RIGHT | IfZero of the named orientation |
+| RANDOM_DIRECTION | RandomDirection (`??`, code 126) |
+| CMP | Non-consuming comparison (`?=`, code 124) |
 | READ | All four Read orientations |
 | READ_UP, READ_DOWN, READ_LEFT, READ_RIGHT | Only the named Read orientation |
 | CLEAR, ADD, SUB | Clear, Add, Sub |
@@ -119,10 +118,14 @@ instruction permission. Folded Block and Custom invocation shells do require
 their named permissions. Function/Custom definitions remain subject to counts
 and their bodies are checked regardless of invocation permissions.
 
-`allowed_attachments` independently permits `READ_CODE`, `WRITE_CODE`, and
-`REPEAT`. REPEAT permits only counts accepted by the source/IR specification.
-Primary permission never implies Attachment permission. Attachments still
-obey the existing Primary compatibility matrix. Validation is purely structural;
+`allowed_attachments` independently permits `READ_CODE`, `WRITE_CODE`,
+`REPEAT`, `CONDITION_0`, `CONDITION_1`, and `CONDITION_2`. The three conditional
+capabilities permit only the corresponding fixed prefix and are counted
+separately in static instruction kinds. All evaluated prefixes, including
+false ones, cost one VM operation and share the Condition runtime kind. CMP
+has independent CMP permission and costs one operation per execution, even
+with an empty stack. Guarded Primaries are checked whether or not they execute. REPEAT permits only counts accepted by the source/IR specification.
+Primary permission never implies Attachment permission. Suffix Attachments obey their existing Primary compatibility matrix; conditional prefixes independently apply to every otherwise valid Primary, including nonencodable Primaries and Folded Block contents. Validation is purely structural;
 even inert RETURN attachments require permission.
 
 WriteCode cannot bypass program rules. After each successful VM tick, the Rust
@@ -153,7 +156,7 @@ and does not redefine VM raw metrics.
 | Metric | Measurement | Across eligible tests/steps | Constraint |
 | --- | --- | --- | --- |
 | ticks | Committed Global Tick | SUM | max_ticks |
-| cost | VM Operation Count, including Custom work and metric-bearing Attachments | SUM | max_cost |
+| cost | VM Operation Count, including Custom work, every conditional prefix evaluation, and metric-bearing suffix Attachments | SUM | max_cost |
 | operation_count | Exact alias of cost | SUM | max_operation_count |
 | memory_addresses_used | Cardinality of VM Used Memory Addresses | MAX | max_memory_addresses |
 | max_data_stack_depth | VM Peak Data Stack Usage | MAX | max_data_stack_depth |
@@ -289,3 +292,7 @@ cell, Primary, and trusted test identity internally. Public results redact these
 details for hidden tests. This refinement changes host resource accounting and
 trusted diagnostics only; the atomic VM transition and terminal player-failure
 priorities remain as defined above.
+
+## Conditional language migration (2026-10-03)
+
+IF_ZERO and IF_ZERO direction capability identifiers are removed. Migrate corresponding program rules to conditional Attachment permissions plus the underlying Primary permissions. Direction Primaries remain always permitted. CMP requires CMP permission; STACK permission does not imply CMP. The level envelope remains format 1 with its approved capability vocabulary; runtime language acceptance and IR format 2 are defined by the updated source/VM specifications.

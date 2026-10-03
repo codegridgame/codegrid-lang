@@ -12,7 +12,7 @@ The retained TOML protocol cases record expected observations independently of a
 
 ## Existing host smoke cases
 
-The shared Full runtime suite contains 63 cases. A complete Native CLI result baseline is generated from the suite and consumed by Node/Chrome browser smoke and the Wasmtime server host harness. These actual hosts compare the complete observable run projection, including events, output deltas, snapshots, threads, stacks, Page, mutable code, memory, errors, faults, and raw metrics.
+The shared Full runtime suite contains 75 cases. A complete Native CLI result baseline is generated from the suite and consumed by Node/Chrome browser smoke and the Wasmtime server host harness. These actual hosts compare the complete observable run projection, including events, output deltas, snapshots, threads, stacks, Page, mutable code, memory, errors, faults, and raw metrics.
 
 ## Full acceptance suite
 

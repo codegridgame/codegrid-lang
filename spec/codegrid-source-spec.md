@@ -105,7 +105,7 @@ A cell is one of the following:
 | --- | --- |
 | `_` | Empty cell. |
 | `~^`, `~v`, `~<`, `~>` | Entry marker with its initial direction. |
-| A Primary token from the table below, optionally followed immediately by one Attachment from §6 | One instruction cell. |
+| A Primary token from the table below, optionally preceded by one conditional prefix and followed immediately by one suffix Attachment from §6 | One instruction cell. |
 
 An Entry marker is a whole cell and cannot have an Attachment. It is not an instruction. Empty cells and Entry markers do not carry Attachments.
 
@@ -114,8 +114,8 @@ Every Primary token in the canonical language inventory is listed here. Instruct
 | Primary token(s) | Instruction |
 | --- | --- |
 | `^`, `v`, `<`, `>` | Set direction. |
-| `?` | Choose a random direction. |
-| `#^`, `#v`, `#<`, `#>` | Set direction conditionally on the current register being zero. |
+| `??` | Choose a random direction. |
+| `?=` | Compare thread Data Stack top A without popping with selected register B; write 0 if equal, 1 if A > B, or 2 if A < B. Empty stack preserves the register. |
 | `,^`, `,v`, `,<`, `,>` | Read input; the suffix gives the direction used when input is exhausted. |
 | `!` | Clear the current register. |
 | `+`, `-` | Add to or subtract from the current register. |
@@ -139,6 +139,10 @@ Prefixes are not tokens by themselves. In particular, standalone `#`, `$`, `,`, 
 
 ## 6. Attachments
 
+A conditional prefix `?0`, `?1`, or `?2` may precede every otherwise valid Primary, requiring equality of the selected register to byte 0, 1, or 2. A cell may have at most one prefix and one suffix, concatenated without whitespace in that order. Initial Empty and Entry cells cannot carry either. Prefixes are allowed inside Folded Blocks; suffixes remain forbidden there. Prefixes do not relax placement or reference validation. Examples: `?0+`, `?1#0`, `?2;`, `?0.3`, `?1?=`, `?0??`, and `?1+x3`. Standalone or repeated prefixes and values outside 0–2 are invalid. `?=` is one complete CMP Primary; `?==` adds WriteCode and `?=*` adds ReadCode.
+
+The rules below describe suffix Attachments independently of prefixes.
+
 An Attachment is concatenated directly to a Primary token in the same cell. The canonical Attachments are:
 
 | Attachment | Meaning |
@@ -147,14 +151,14 @@ An Attachment is concatenated directly to a Primary token in the same cell. The 
 | `=` | WriteCode. |
 | `x2`, `x3`, `x4`, `x5` | Repeat with the stated count. |
 
-Examples of complete attached cells are `+x3`, `,<*`, and `[0=`. An Attachment separated by whitespace from its Primary is detached and invalid. A cell cannot contain more than one Attachment. Entry markers and HALT cannot carry an Attachment. Folded Block rows cannot contain Attachments.
+Examples of complete attached cells are `+x3`, `,<*`, and `[0=`. An Attachment separated by whitespace from its Primary is detached and invalid. A cell cannot contain more than one suffix Attachment. Entry markers and HALT cannot carry a suffix. Folded Block rows cannot contain suffix Attachments.
 
-ReadCode and WriteCode may be attached to any encodable Primary, defined as a Primary with a normative Instruction Code. Repeat may be attached to any encodable Primary except CALL and RETURN. Folded Block calls, Custom calls, Custom returns, and HALT are not encodable and cannot carry Attachments. No other Primary-Attachment combination is valid.
+ReadCode and WriteCode may be attached to any encodable Primary, defined as a Primary with a normative Instruction Code. Repeat may be attached to any encodable Primary except CALL and RETURN. Folded Block calls, Custom calls, Custom returns, and HALT are not encodable and cannot carry suffix Attachments. No other Primary-suffix combination is valid. Conditional prefix eligibility is independent.
 
 ## 7. Contextual placement and name resolution
 
 Immediate output Primaries `.0`–`.9` have no Instruction Code and cannot carry
-any Attachment. Forms such as `.3*`, `.3=`, `.3x2`, `.10`, `.00`, and `.-1`
+any suffix Attachment; conditional prefixes are allowed. Forms such as `.3*`, `.3=`, `.3x2`, `.10`, `.00`, and `.-1`
 are rejected as whole atoms. Ordinary `.` retains its encoding and Attachments.
 
 Static validation checks each Primary against its owning CodeGrid and Board:
@@ -165,7 +169,7 @@ Static validation checks each Primary against its owning CodeGrid and Board:
 - A Folded Block call `$n` resolves only to Folded Block `n` owned by the current Board. It cannot resolve to a Main Board or Function Board owned Folded Block in another scope.
 - A Custom call `#n` resolves to a declared Custom CodeGrid. Custom calls are permitted from outer CodeGrid code, including the outer Main Board, Function Boards, and outer-owned Folded Blocks. They are forbidden from inside a Custom CodeGrid, including its Main Board, Function Boards, and Folded Blocks.
 - Function and Folded Block IDs with the same digit in another CodeGrid or Board do not satisfy a reference.
-- Folded Blocks do not contain Entry markers, Attachments, Function CALLs, Folded Block calls, Function RETURNs, or Custom RETURNs. Other Primary instructions are allowed subject to the Custom-call rule above.
+- Folded Blocks do not contain Entry markers, suffix Attachments, Function CALLs, Folded Block calls, Function RETURNs, or Custom RETURNs. Other Primary instructions are allowed subject to the Custom-call rule above.
 
 Function tail-call eligibility is compiler analysis, not a source-validity condition: both navigation-only and side-effecting return paths may contain syntactically valid recursive calls. A compiler may annotate eligible calls according to the VM contract without rejecting other valid calls.
 
@@ -197,3 +201,7 @@ This contract was reconstructed from the complete instruction and Attachment inv
 The source-language decisions are resolved in the [source decision record](../docs/decisions.md#resolved-source-language-decisions), and the rules in §§1–8 are the normative Full acceptance contract. The implementation gate is covered by focused compiler and IR tests: `compiles_every_resolved_attachment_pair_for_each_encodable_primary`, `verifies_the_complete_full_primary_attachment_compatibility_matrix`, `rejects_invalid_attachment_placement_and_repeat_counts`, `rejects_dimensions_and_total_cells_above_the_portable_source_limit`, `rejects_board_dimensions_and_cell_counts_above_portable_full_bounds`, `size_between_rows_applies_to_the_complete_lexical_scope`, `implicit_main_accepts_qualified_folded_blocks_after_its_grid`, `accepts_named_end_aliases_for_custom_and_function_folded_blocks`, and `rejects_mismatched_custom_and_function_folded_block_end_aliases`. The latter cover explicit Custom Main, outer Function, and Custom Function Folded Blocks with matching local and qualified aliases, plus mismatches. These cases verify implementation coverage; they are not unresolved language decisions.
 
 This Full contract replaces the source restrictions recorded by earlier language profiles. No earlier profile's rejection list narrows Full source acceptance.
+
+## 12. Conditional prefix and CMP migration (2026-10-03)
+
+The approved [decision record](../docs/decisions.md#conditional-prefix-migration-design-2026-10-03) removes the four IfZero forms and standalone random `?`. They are rejected as complete atoms. RandomDirection is `??` and CMP is `?=`. Prefixes and suffixes are separate categories; references and forbidden Primaries remain invalid even when guarded. The executable IR format is 2.

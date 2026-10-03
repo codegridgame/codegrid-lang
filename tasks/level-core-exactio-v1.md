@@ -315,3 +315,7 @@ runtime and artifact digest. Native CLI integration tests establish the matching
 direct Rust baseline. See [traceability](../docs/level-traceability.md) for rule
 coverage and exact integration limitations. These are local test-host results,
 not production suitability or whole-task Steam/backend parity certification.
+
+## Language migration update (2026-10-03)
+
+The dated 36-case evidence above predates the conditional-prefix/CMP migration. The current shared manifest has 41 cases, verified on the native CLI, browser worker, Node WebAssembly, and Wasmtime. Use the current [ExactIO contract](../spec/codegrid-level-exactio-contract-v1.md), [traceability update](../docs/level-traceability.md#conditional-prefix-migration-verification-2026-10-03), and [migration manual](../docs/conditional-prefix-migration.md) for the current capability vocabulary and language behavior.

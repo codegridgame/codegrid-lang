@@ -1311,6 +1311,7 @@ impl Serialize for CellViewProjection<'_> {
         S: Serializer,
     {
         serialize_object!(serializer, {
+            "prefix" => &self.0.prefix,
             "entry" => &self.0.entry,
             "primary" => &self.0.primary,
             "attachment" => &self.0.attachment,
@@ -2266,6 +2267,7 @@ fn board_view_json(board: &BoardView) -> Value {
         "cells": board.cells.iter().map(|cell| json!({
             "entry": cell.entry,
             "primary": cell.primary,
+            "prefix": cell.prefix,
             "attachment": cell.attachment,
         })).collect::<Vec<_>>(),
         "folded_blocks": folded_blocks,

@@ -296,3 +296,109 @@ All forms share OUTPUT permissions and the Output metric kind; immediate
 values do not create distinct instruction kinds. Existing Instruction Codes,
 IR format version, and host envelope versions are unchanged. Malformed forms
 and illegal Attachments retain existing structured validation identities.
+
+## Conditional prefix migration design (2026-10-03)
+
+The user explicitly selects removal of the four IfZero Primaries `#^`, `#v`,
+`#<`, and `#>`. Their replacement is a prefix attachment spelled `?0`, `?1`,
+or `?2`, requiring equality of the executing thread's selected register to
+the corresponding byte. RandomDirection changes its source spelling from `?`
+to `??`; Custom calls `#0` through `#9` and CustomReturn `#]` remain unchanged.
+
+A cell may combine one prefix with one existing suffix Attachment. A false
+condition skips both Primary and suffix, consumes a tick, and moves one cell
+in the current direction. Every Primary may receive a prefix, including
+Function and Custom calls/returns, Folded Block calls and otherwise valid
+Folded Block contents, immediate output, and Halt. Initial Empty and Entry
+cells cannot receive prefixes. Existing contextual restrictions and suffix
+compatibility remain in force. This supersedes the preceding immediate-output
+decision's Attachment prohibition only for the new prefix category; immediate
+output still cannot carry ReadCode, WriteCode, or Repeat.
+
+Repeat evaluates the prefix before each Primary execution. A false initial or
+subsequent result ends the cell's repetition and advances in the current
+direction. Prefixes are not new Primary instructions.
+
+The [execution manual](conditional-prefix-migration.md) separates
+confirmed requirements from pending register snapshot, resume, mutable-code,
+metric, level permission, and compatibility decisions. This is a design record;
+the existing normative specifications and implementation have not yet been
+migrated. No new source acceptance, execution behavior, or host parity is claimed.
+
+### Non-consuming CMP Primary
+
+The user adds CMP with the source token `?=`. It reads A from the executing
+thread's Data Stack top without popping and B from the register selected by
+that thread's current pointer. CMP writes 0 when A equals B, 1 when A is greater
+than B, and 2 when A is less than B to the same selected register. Comparison
+uses the existing unsigned-byte value domain. The Data Stack is unchanged.
+As a Primary, CMP is eligible for the approved conditional prefix category.
+In `?1?=`, the prefix tests the register before CMP executes.
+
+Empty-stack behavior, CMP Instruction Code assignment, suffix compatibility,
+operation accounting, and level capability mapping remain pending in the
+[execution manual](conditional-prefix-migration.md). This extends the design
+scope only; CMP has not been implemented or added to normative specifications.
+
+### Fixed ASCII-sum instruction numbering
+
+The user clarifies that instruction numbers are fixed by the ASCII value of
+a single symbol or the sum of the two symbols' ASCII values. Consequently,
+RandomDirection `??` has number 126 and CMP `?=` has number 124. The former
+recommendation to retain random code 63 after the token rename is superseded.
+The prefix token sums for `?0`, `?1`, and `?2` are 111, 112, and 113; this does
+not make prefix attachments independently executable Primaries.
+
+The [manual's numbering audit](conditional-prefix-migration.md#ascii-sum-numbering-audit)
+records duplicate sums among structural and immediate-output Primary forms.
+These forms are currently excluded from byte Instruction Codes. Whether those
+exclusions should change remains unresolved; the unique existing encodable
+subset must not be presented as proof that all token sums are unique. This is
+a design clarification, not an implementation or normative encoding change.
+
+Follow-up user decision: retain the existing non-encodable forms. Duplicate
+ASCII sums involving FoldedBlock, Custom, or immediate output therefore do not
+create executable Instruction Code collisions. The proposed encoded subset,
+including CMP 124 and RandomDirection 126, is unique. No collision-driven token
+changes or expansion of encoding eligibility are required.
+
+### Final approval of execution and migration rules
+
+The user approves all remaining design choices in the execution manual:
+
+- CMP on an empty Data Stack preserves the register, counts one CMP operation,
+  and moves normally. CMP uses each executing thread's own Data Stack, including
+  internal Custom threads. It supports ReadCode, WriteCode, and Repeat, counts
+  one CMP runtime kind, and requires independent CMP level permission.
+- A prefix reads the selected register from the context tick-start snapshot.
+  CALL checks only before invocation; AfterCall and FoldResume do not recheck.
+- WriteCode changes only Primary and preserves both prefix and suffix. ReadCode
+  reads only Primary. Cleared cells still evaluate their fixed prefix before
+  deciding whether to execute the retained suffix.
+- Every evaluated prefix costs one operation, whether true or false. The three
+  values share one runtime kind but have independent level permissions and
+  count separately as static instruction kinds.
+- New source rejects old IfZero tokens and standalone `?`. Executable IR gets
+  a new format version. RandomDirection moves from code 63 to 126 and CMP uses
+  124; 63 and removed IfZero codes 95, 97, 129, and 153 no longer decode. Other
+  retained encodings remain unchanged, and existing non-encodable forms remain
+  excluded. Existing invalid-byte DECODE behavior remains a counted no-op.
+
+This approval resolves the preceding pending entries. The manual is finalized;
+implementation, normative specification migration, and host execution parity
+verification remain future work. Concrete capability names and required host
+schema/version changes are implementation details to document consistently.
+
+### Implementation projection and capability choices
+
+Conditional permissions use CONDITION_0, CONDITION_1, and CONDITION_2 in
+allowed_attachments; CMP uses independent CMP in allowed_instructions.
+Runtime operation kinds are Condition and Compare. Prefix metadata is stored
+separately from Primary and the existing suffix, including on Folded Block cells.
+
+Normal code-view cells gain a nullable prefix field; folded code-view strings
+include the canonical prefix. These additive read-only fields do not accept
+executable IR from hosts. Runtime API v3, browser envelope, server ABI v4, CLI
+JSON schema 1, debug protocol 2, and level format 1 remain unchanged; executable
+IR alone advances to format 2. This records implementation choices within the
+approved migration, not compatibility acceptance of the removed language.

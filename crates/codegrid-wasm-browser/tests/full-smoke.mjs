@@ -2,7 +2,7 @@ export const RUNTIME_API_VERSION = 3;
 
 export function runFullSmoke(BrowserRuntime, suite, baseline, assert, deepEqual) {
   assert(suite.schema_version === 1, "the shared Full fixture suite must use schema version 1");
-  assert(Array.isArray(suite.cases) && suite.cases.length === 63, "all 63 Full fixtures must be available");
+  assert(Array.isArray(suite.cases) && suite.cases.length === 75, "all 75 Full fixtures must be available");
   assert(baseline?.schema === "codegrid.native-cli.full-run-baseline", "the generated Native CLI baseline must be available");
   assert(baseline.schema_version === 1 && baseline.api_version === RUNTIME_API_VERSION, "the Native CLI baseline must target Runtime API v3");
   assert(baseline.suite_id === suite.suite_id, "the Native CLI baseline must belong to this fixture suite");
@@ -114,6 +114,7 @@ function normalizeRuntimeBoard(board) {
     cells: board.cells.map((cell) => ({
       entry: cell.entry === null ? null : cell.entry.replace(/^~/, ""),
       primary: cell.primary,
+      prefix: cell.prefix,
       attachment: cell.attachment,
     })),
     folded_blocks: board.folded_blocks,

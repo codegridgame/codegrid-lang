@@ -6,11 +6,11 @@
 use std::collections::{BTreeMap, BTreeSet, VecDeque};
 
 use codegrid_model::{
-    AttachmentInstruction, BoundaryMode, Direction, PrimaryInstruction, Slot, MAX_BOARD_CELLS,
-    MAX_BOARD_DIMENSION,
+    AttachmentInstruction, BoundaryMode, ConditionPrefix, Direction, PrimaryInstruction, Slot,
+    MAX_BOARD_CELLS, MAX_BOARD_DIMENSION,
 };
 
-pub const IR_FORMAT_VERSION: u32 = 1;
+pub const IR_FORMAT_VERSION: u32 = 2;
 
 #[derive(Clone, Copy, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
 pub enum CodeGridId {
@@ -26,14 +26,21 @@ pub enum BoardId {
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct Cell {
+    pub prefix: Option<ConditionPrefix>,
     pub entry: Option<Direction>,
     pub primary: Option<PrimaryInstruction>,
     pub attachment: Option<AttachmentInstruction>,
 }
 
 impl Cell {
+    pub const fn with_prefix(mut self, prefix: ConditionPrefix) -> Self {
+        self.prefix = Some(prefix);
+        self
+    }
+
     pub const fn empty() -> Self {
         Self {
+            prefix: None,
             entry: None,
             primary: None,
             attachment: None,
@@ -42,6 +49,7 @@ impl Cell {
 
     pub const fn entry(direction: Direction) -> Self {
         Self {
+            prefix: None,
             entry: Some(direction),
             primary: None,
             attachment: None,
@@ -53,6 +61,7 @@ impl Cell {
         attachment: Option<AttachmentInstruction>,
     ) -> Self {
         Self {
+            prefix: None,
             entry: None,
             primary: Some(primary),
             attachment,
@@ -62,6 +71,7 @@ impl Cell {
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct FoldedBlock {
+    pub prefixes: BTreeMap<usize, ConditionPrefix>,
     pub cells: Vec<Option<PrimaryInstruction>>,
 }
 
@@ -227,13 +237,16 @@ fn reachable_directions(board: &Board) -> BTreeMap<usize, BTreeSet<(Direction, B
         let Some(cell) = board.cells.get(index) else {
             continue;
         };
-        let next_directions = match cell.primary {
+        let mut next_directions = match cell.primary {
             Some(
                 PrimaryInstruction::Halt
                 | PrimaryInstruction::Return
                 | PrimaryInstruction::CustomReturn,
             ) => {
-                continue;
+                if cell.prefix.is_none() {
+                    continue;
+                }
+                vec![direction]
             }
             Some(PrimaryInstruction::Direction(next)) => vec![next],
             Some(PrimaryInstruction::RandomDirection) => vec![
@@ -242,12 +255,15 @@ fn reachable_directions(board: &Board) -> BTreeMap<usize, BTreeSet<(Direction, B
                 Direction::Left,
                 Direction::Right,
             ],
-            Some(PrimaryInstruction::IfZero(target) | PrimaryInstruction::Read(target)) => {
+            Some(PrimaryInstruction::Read(target)) => {
                 vec![direction, target]
             }
             _ => vec![direction],
         };
 
+        if cell.prefix.is_some() && !next_directions.contains(&direction) {
+            next_directions.push(direction);
+        }
         for next_direction in next_directions {
             if let Some(next_index) = next_cell_index(board, index, next_direction, wraps) {
                 queue.push_back((next_index, next_direction, wraps));
@@ -263,6 +279,9 @@ fn has_navigation_return_path(
     direction: Direction,
     boundary_mode: BoundaryMode,
 ) -> bool {
+    if board.cells.iter().any(|cell| cell.prefix.is_some()) {
+        return false;
+    }
     let Some(mut index) = next_cell_index(board, call_index, direction, boundary_mode) else {
         return false;
     };
@@ -480,6 +499,15 @@ fn validate_board(
                 "Folded Block width must match its owner board.",
             ));
         }
+        for index in folded.prefixes.keys() {
+            if folded.cells.get(*index).and_then(|p| *p).is_none() {
+                errors.push(error(
+                    &format!("{fold_path}[{index}]"),
+                    "ir.detached_attachment",
+                    "A folded prefix requires a Primary at a valid cell.",
+                ));
+            }
+        }
         for (index, primary) in folded.cells.iter().enumerate() {
             if let Some(primary) = primary {
                 let outer_context = matches!(
@@ -517,14 +545,16 @@ fn validate_cell(
     board: &Board,
     errors: &mut Vec<IrError>,
 ) {
-    if cell.entry.is_some() && (cell.primary.is_some() || cell.attachment.is_some()) {
+    if cell.entry.is_some()
+        && (cell.primary.is_some() || cell.attachment.is_some() || cell.prefix.is_some())
+    {
         errors.push(error(
             path,
             "ir.entry_instruction",
             "An Entry cannot share a cell with an instruction or Attachment.",
         ));
     }
-    if cell.attachment.is_some() && cell.primary.is_none() {
+    if (cell.attachment.is_some() || cell.prefix.is_some()) && cell.primary.is_none() {
         errors.push(error(
             path,
             "ir.detached_attachment",

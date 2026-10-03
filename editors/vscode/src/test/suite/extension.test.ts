@@ -89,7 +89,7 @@ suite('VS Code extension and optional LSP', () => {
       await vscode.window.showTextDocument(document);
       const labels = await waitForCompletions(document, new vscode.Position(0, 1), (items) => items.includes('#lsp-only'));
       assert.ok(labels.includes('#lsp-only'));
-      assert.ok(!labels.includes('#^'), 'standalone completions must pause while LSP is running');
+      assert.ok(!labels.includes('#0'), 'standalone completions must pause while LSP is running');
     } finally {
       await config.update('enabled', false, target);
       await config.update('enabled', previous.enabled, target);
@@ -140,9 +140,9 @@ suite('VS Code extension and optional LSP', () => {
         const line = source.split('\n')[2];
         const position = new vscode.Position(2, line.length);
         const labels = await waitForCompletions(document, position, (items) =>
-          items.includes('#^') && items.includes('#0') && items.includes('#]')
+          items.includes('#0') && items.includes('#0') && items.includes('#]')
         );
-        assert.ok(labels.includes('#^'));
+        assert.ok(labels.includes('#0'));
         assert.ok(labels.includes('#0') && labels.includes('#]'));
 
         const hover = await vscode.commands.executeCommand<vscode.Hover[]>(
@@ -213,8 +213,8 @@ suite('VS Code extension and optional LSP', () => {
       await vscode.window.showTextDocument(document);
       const serverLabels = await waitForCompletions(document, new vscode.Position(0, 1), (items) => items.includes('#lsp-only'));
       assert.ok(serverLabels.includes('#lsp-only'));
-      const fallbackLabels = await waitForCompletions(document, new vscode.Position(0, 1), (items) => items.includes('#^'));
-      assert.ok(fallbackLabels.includes('#^'));
+      const fallbackLabels = await waitForCompletions(document, new vscode.Position(0, 1), (items) => items.includes('#0'));
+      assert.ok(fallbackLabels.includes('#0'));
       assert.ok(fallbackLabels.includes('#0'));
 
       await config.update('path', path.join(__dirname, 'missing-codegrid-lsp.exe'), target);

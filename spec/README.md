@@ -1,5 +1,7 @@
 # Full Language Specification Status
 
+The current language includes fixed conditional prefixes `?0`–`?2`, CMP `?=`, and random direction `??`; executable IR is format 2. See the [migration manual](../docs/conditional-prefix-migration.md) for semantics, retired forms, compatibility, and verification.
+
 The [error code specification](codegrid-error-codes.md) defines stable source, IR, VM, API, CLI, debug, editor, LSP and WASM error categories, response shapes, compatibility and state effects. Its machine-readable registry is [codegrid-error-codes.json](codegrid-error-codes.json).
 
 The [four-digit error table](codegrid-error-numbers.md) lists every numeric

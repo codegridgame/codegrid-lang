@@ -11,7 +11,8 @@ use crate::Coordinate;
 #[derive(Clone, Copy, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
 pub enum InstructionKind {
     RandomDirection,
-    IfZero,
+    Compare,
+    Condition,
     Read,
     Clear,
     Add,
@@ -41,7 +42,8 @@ impl InstructionKind {
     pub const fn name(self) -> &'static str {
         match self {
             Self::RandomDirection => "RandomDirection",
-            Self::IfZero => "IfZero",
+            Self::Compare => "Compare",
+            Self::Condition => "Condition",
             Self::Read => "Read",
             Self::Clear => "Clear",
             Self::Add => "Add",
@@ -74,7 +76,7 @@ impl InstructionKind {
             | PrimaryInstruction::FoldedBlock(_)
             | PrimaryInstruction::Custom(_) => None,
             PrimaryInstruction::RandomDirection => Some(Self::RandomDirection),
-            PrimaryInstruction::IfZero(_) => Some(Self::IfZero),
+            PrimaryInstruction::Compare => Some(Self::Compare),
             PrimaryInstruction::Read(_) => Some(Self::Read),
             PrimaryInstruction::Clear => Some(Self::Clear),
             PrimaryInstruction::Add => Some(Self::Add),
@@ -409,7 +411,7 @@ mod tests {
         for (token, instruction) in PrimaryInstruction::MVP_SOURCE_TOKENS {
             let expected = match instruction {
                 PrimaryInstruction::Direction(_) => None,
-                PrimaryInstruction::IfZero(_) => Some(InstructionKind::IfZero),
+                PrimaryInstruction::Compare => Some(InstructionKind::Compare),
                 PrimaryInstruction::Read(_) => Some(InstructionKind::Read),
                 PrimaryInstruction::Add => Some(InstructionKind::Add),
                 PrimaryInstruction::Sub => Some(InstructionKind::Sub),
@@ -429,7 +431,6 @@ mod tests {
         }
 
         let expected_kinds = [
-            InstructionKind::IfZero,
             InstructionKind::Read,
             InstructionKind::Add,
             InstructionKind::Sub,
@@ -441,7 +442,7 @@ mod tests {
 
         assert_eq!(
             observed.iter().map(|kind| kind.name()).collect::<Vec<_>>(),
-            ["IfZero", "Read", "Add", "Sub", "Output", "Shift", "Halt"]
+            ["Read", "Add", "Sub", "Output", "Shift", "Halt"]
         );
     }
 

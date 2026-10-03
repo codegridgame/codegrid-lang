@@ -361,6 +361,56 @@
       "seed": "18446744073709551615",
       "custom_limit": "1000",
       "expected_status": "ProgramRejected"
+    },
+    {
+      "id": "cmp-prefix",
+      "level": "cmp-prefix.json",
+      "program": "cmp-prefix.cg",
+      "mode": "Official",
+      "boundary": "Exit",
+      "seed": "18446744073709551615",
+      "custom_limit": "1000",
+      "expected_status": "Passed"
+    },
+    {
+      "id": "cmp-denied",
+      "level": "cmp-denied.json",
+      "program": "cmp-prefix.cg",
+      "mode": "Official",
+      "boundary": "Exit",
+      "seed": "18446744073709551615",
+      "custom_limit": "1000",
+      "expected_status": "ProgramRejected"
+    },
+    {
+      "id": "prefix-denied",
+      "level": "prefix-denied.json",
+      "program": "cmp-prefix.cg",
+      "mode": "Official",
+      "boundary": "Exit",
+      "seed": "18446744073709551615",
+      "custom_limit": "1000",
+      "expected_status": "ProgramRejected"
+    },
+    {
+      "id": "prefix-static-kinds",
+      "level": "prefix-static-kinds.json",
+      "program": "cmp-prefix.cg",
+      "mode": "Official",
+      "boundary": "Exit",
+      "seed": "18446744073709551615",
+      "custom_limit": "1000",
+      "expected_status": "ConstraintExceeded"
+    },
+    {
+      "id": "prefix-operation-cost",
+      "level": "prefix-operation-cost.json",
+      "program": "cmp-prefix.cg",
+      "mode": "Official",
+      "boundary": "Exit",
+      "seed": "18446744073709551615",
+      "custom_limit": "1000",
+      "expected_status": "ConstraintExceeded"
     }
   ]
 }

@@ -356,7 +356,7 @@
     {
       "layer": "source",
       "code": "source.fold_attachment",
-      "condition": "An Attachment appears in a Folded Block.",
+      "condition": "A suffix Attachment appears in a Folded Block; conditional prefixes are allowed.",
       "surface": "Diagnostic.code in core, CLI JSON, LSP diagnostics, browser/server diagnostics and debug diagnostics. CLI check renders [code].",
       "state_effect": "Compilation rejection: no executable IR or VM instance.",
       "code_type": "string",
@@ -491,7 +491,7 @@
     {
       "layer": "ir",
       "code": "ir.detached_attachment",
-      "condition": "An Attachment has no Primary.",
+      "condition": "A prefix or suffix Attachment has no initial Primary (including an invalid folded prefix coordinate).",
       "surface": "IrError.code; compiler forwards the original IR code into Diagnostic.code with compiler source spans.",
       "state_effect": "IR verification fails; unchecked IR cannot execute.",
       "code_type": "string",
@@ -509,7 +509,7 @@
     {
       "layer": "ir",
       "code": "ir.attachment_primary",
-      "condition": "An Attachment is attached to a nonencodable Primary.",
+      "condition": "A suffix Attachment is attached to a nonencodable Primary; conditional prefixes have independent eligibility.",
       "surface": "IrError.code; compiler forwards the original IR code into Diagnostic.code with compiler source spans.",
       "state_effect": "IR verification fails; unchecked IR cannot execute.",
       "code_type": "string",

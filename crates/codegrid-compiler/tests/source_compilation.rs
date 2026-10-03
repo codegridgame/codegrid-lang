@@ -4,6 +4,29 @@ use codegrid_model::{AttachmentInstruction, BoundaryMode, Direction, PrimaryInst
 use codegrid_syntax::{BoardPath, CodeGridPath};
 
 #[test]
+fn conditional_prefixes_preserve_references_and_fold_restrictions() {
+    let program = compile("@main\n~> ?0$0 ;\n@M0 ?0+ ?1?= ?2^\n@end main").unwrap();
+    let folded = &program.program().outer.main.folded_blocks[&slot(0)];
+    assert_eq!(folded.prefixes.len(), 3);
+    assert_eq!(
+        codegrid_compiler::ProgramView::from_verified(&program)
+            .outer
+            .main
+            .folded_blocks[&0][1]
+            .as_deref(),
+        Some("?1?=")
+    );
+    for source in [
+        "~> ?1[0 ;",
+        "~> ?1#0 ;",
+        "~> ?1] ;",
+        "@main\n~> $0 ;\n@M0 ?0+* ^ _\n@end main",
+    ] {
+        assert!(compile(source).is_err(), "{source}");
+    }
+}
+
+#[test]
 fn immediate_outputs_are_complete_atoms_without_attachments() {
     compile("~> .0 .1 .2 .3 .4 .5 .6 .7 .8 .9 . ;\n").unwrap();
     for atom in [".10", ".00", ".-1", ".９", ".3*", ".3=", ".3x2"] {
@@ -915,9 +938,8 @@ fn validates_missing_extra_and_mismatched_end_closures() {
 #[test]
 fn accepts_every_primary_category_allowed_in_an_outer_folded_block() {
     let allowed = [
-        "_", "^", "v", "<", ">", "?", "#<", "#>", "#^", "#v", ",<", ",>", ",^", ",v", "!", "+",
-        "-", "{", "}", ".", "(", ")", "&", "%", "$&", "$(", "$)", "$+", "$-", "$<", "$>", ";",
-        "#0",
+        "_", "^", "v", "<", ">", "??", "?=", ",<", ",>", ",^", ",v", "!", "+", "-", "{", "}", ".",
+        "(", ")", "&", "%", "$&", "$(", "$)", "$+", "$-", "$<", "$>", ";", "#0",
     ];
     let mut main_cells = vec!["~>".to_owned(), "$0".to_owned()];
     main_cells.resize(allowed.len(), "_".to_owned());
@@ -1063,14 +1085,14 @@ fn marks_a_source_level_self_call_with_a_navigation_only_return_path() {
 }
 
 #[test]
-fn marks_self_calls_when_each_branch_turns_through_navigation_to_return() {
+fn conservatively_disables_tail_calls_in_functions_with_conditional_navigation() {
     let source = "@size 3x3\n\
 @main\n~> [0 _\n_ _ _\n_ _ _\n@end main\n\
-@main.F0\n~> #v v\nv [0 <\n] < _\n@end main.F0\n";
+@main.F0\n~> ?0v v\nv [0 <\n] < _\n@end main.F0\n";
     let program = compile(source).expect("branched navigation-only returns should compile");
 
-    assert!(program.is_tail_call(CodeGridId::Outer, slot(0), 4, BoundaryMode::Exit));
-    assert!(program.is_tail_call(CodeGridId::Outer, slot(0), 4, BoundaryMode::Wrap));
+    assert!(!program.is_tail_call(CodeGridId::Outer, slot(0), 4, BoundaryMode::Exit));
+    assert!(!program.is_tail_call(CodeGridId::Outer, slot(0), 4, BoundaryMode::Wrap));
 }
 
 #[test]

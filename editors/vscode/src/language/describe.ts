@@ -35,7 +35,7 @@ export function describeToken(token: string): string | null {
       case 'entry':
         return `**${vscode.l10n.t('Entry marker')}** \`${cell.entry.token}\` — ${vscode.l10n.t(cell.entry.direction)}\n\n${cell.entry.summary}\n\n${vscode.l10n.t('The Entry cell behaves as empty when execution visits it.')}`;
       case 'primary':
-        return `**${cell.primary.name}** \`${cell.primary.token}\`\n\n${cell.primary.summary}${codeLine(cell.primary.code)}`;
+        return `**${cell.primary.name}** \`${cell.primary.token}\`\n\n${cell.primary.summary}${codeLine(cell.primary.code)}${cell.prefix ? `\n\nCondition: execute only when the selected tick-start register equals ${cell.prefix[1]}; otherwise skip this complete cell.` : ''}`;
     }
   }
 

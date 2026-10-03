@@ -43,7 +43,7 @@ Generated from [codegrid-error-codes.json](codegrid-error-codes.json). Numbers a
 | `1036` | source | `source.function_entry_count` | A Function board does not have exactly one Entry. |
 | `1037` | source | `source.fold_width` | A Folded Block width differs from its owner board width. |
 | `1038` | source | `source.fold_entry` | An Entry appears in a Folded Block. |
-| `1039` | source | `source.fold_attachment` | An Attachment appears in a Folded Block. |
+| `1039` | source | `source.fold_attachment` | A suffix Attachment appears in a Folded Block; conditional prefixes are allowed. |
 | `1040` | source | `source.fold_primary` | A Primary is forbidden in its Folded Block context. |
 | `1041` | source | `source.return_scope` | RETURN appears on a Main board. |
 | `1042` | source | `source.custom_return_scope` | CUSTOM_RETURN appears outside a Custom Main board. |
@@ -58,9 +58,9 @@ Generated from [codegrid-error-codes.json](codegrid-error-codes.json). Numbers a
 | `2006` | ir | `ir.fold_width` | Folded Block length differs from board width. |
 | `2007` | ir | `ir.fold_primary` | A Folded Block contains a forbidden instruction. |
 | `2008` | ir | `ir.entry_instruction` | An Entry shares its cell with a Primary or Attachment. |
-| `2009` | ir | `ir.detached_attachment` | An Attachment has no Primary. |
+| `2009` | ir | `ir.detached_attachment` | A prefix or suffix Attachment has no initial Primary (including an invalid folded prefix coordinate). |
 | `2010` | ir | `ir.repeat_count` | Repeat count is outside 2 through 5. |
-| `2011` | ir | `ir.attachment_primary` | An Attachment is attached to a nonencodable Primary. |
+| `2011` | ir | `ir.attachment_primary` | A suffix Attachment is attached to a nonencodable Primary; conditional prefixes have independent eligibility. |
 | `2012` | ir | `ir.repeat_call_return` | Repeat is attached to CALL or RETURN. |
 | `2013` | ir | `ir.return_scope` | RETURN is outside a Function. |
 | `2014` | ir | `ir.custom_return_scope` | CUSTOM_RETURN is outside a Custom Main. |

@@ -1126,11 +1126,12 @@ fn board_json(board: &Board) -> JsonValue {
         "cells": board.cells.iter().map(|cell| json!({
             "entry": cell.entry.map(direction_token),
             "primary": cell.primary.map(PrimaryInstruction::token),
+            "prefix": cell.prefix.map(|prefix| prefix.token()),
             "attachment": cell.attachment.map(AttachmentInstruction::token),
         })).collect::<Vec<_>>(),
         "folded_blocks": board.folded_blocks.iter().map(|(slot, block)| {
             (slot.get().to_string(), json!(
-                block.cells.iter().map(|cell| cell.map(PrimaryInstruction::token)).collect::<Vec<_>>()
+                block.cells.iter().enumerate().map(|(index, cell)| cell.map(|primary| format!("{}{}", block.prefixes.get(&index).map_or("", |prefix| prefix.token()), primary.token()))).collect::<Vec<_>>()
             ))
         }).collect::<serde_json::Map<_, _>>(),
     })

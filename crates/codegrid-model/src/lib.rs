@@ -212,7 +212,7 @@ impl ImmediateDigit {
 pub enum PrimaryInstruction {
     Direction(Direction),
     RandomDirection,
-    IfZero(Direction),
+    Compare,
     Read(Direction),
     Clear,
     Add,
@@ -240,15 +240,11 @@ pub enum PrimaryInstruction {
 impl PrimaryInstruction {
     /// The earlier restricted source inventory, retained temporarily while
     /// downstream crates are migrated to the complete language inventory.
-    pub const MVP_SOURCE_TOKENS: [(&'static str, Self); 18] = [
+    pub const MVP_SOURCE_TOKENS: [(&'static str, Self); 14] = [
         ("^", Self::Direction(Direction::Up)),
         ("v", Self::Direction(Direction::Down)),
         ("<", Self::Direction(Direction::Left)),
         (">", Self::Direction(Direction::Right)),
-        ("#^", Self::IfZero(Direction::Up)),
-        ("#v", Self::IfZero(Direction::Down)),
-        ("#<", Self::IfZero(Direction::Left)),
-        ("#>", Self::IfZero(Direction::Right)),
         (",^", Self::Read(Direction::Up)),
         (",v", Self::Read(Direction::Down)),
         (",<", Self::Read(Direction::Left)),
@@ -269,10 +265,7 @@ impl PrimaryInstruction {
             Self::Direction(Direction::Left),
             Self::Direction(Direction::Right),
             Self::RandomDirection,
-            Self::IfZero(Direction::Up),
-            Self::IfZero(Direction::Down),
-            Self::IfZero(Direction::Left),
-            Self::IfZero(Direction::Right),
+            Self::Compare,
             Self::Read(Direction::Up),
             Self::Read(Direction::Down),
             Self::Read(Direction::Left),
@@ -323,11 +316,8 @@ impl PrimaryInstruction {
             "v" => Self::Direction(Direction::Down),
             "<" => Self::Direction(Direction::Left),
             ">" => Self::Direction(Direction::Right),
-            "?" => Self::RandomDirection,
-            "#^" => Self::IfZero(Direction::Up),
-            "#v" => Self::IfZero(Direction::Down),
-            "#<" => Self::IfZero(Direction::Left),
-            "#>" => Self::IfZero(Direction::Right),
+            "??" => Self::RandomDirection,
+            "?=" => Self::Compare,
             ",^" => Self::Read(Direction::Up),
             ",v" => Self::Read(Direction::Down),
             ",<" => Self::Read(Direction::Left),
@@ -364,11 +354,8 @@ impl PrimaryInstruction {
             Self::Direction(Direction::Down) => "v".to_owned(),
             Self::Direction(Direction::Left) => "<".to_owned(),
             Self::Direction(Direction::Right) => ">".to_owned(),
-            Self::RandomDirection => "?".to_owned(),
-            Self::IfZero(Direction::Left) => "#<".to_owned(),
-            Self::IfZero(Direction::Right) => "#>".to_owned(),
-            Self::IfZero(Direction::Up) => "#^".to_owned(),
-            Self::IfZero(Direction::Down) => "#v".to_owned(),
+            Self::RandomDirection => "??".to_owned(),
+            Self::Compare => "?=".to_owned(),
             Self::Read(Direction::Left) => ",<".to_owned(),
             Self::Read(Direction::Right) => ",>".to_owned(),
             Self::Read(Direction::Up) => ",^".to_owned(),
@@ -418,11 +405,8 @@ impl PrimaryInstruction {
             Self::Direction(Direction::Down) => Some(118),
             Self::Direction(Direction::Left) => Some(60),
             Self::Direction(Direction::Right) => Some(62),
-            Self::RandomDirection => Some(63),
-            Self::IfZero(Direction::Left) => Some(95),
-            Self::IfZero(Direction::Right) => Some(97),
-            Self::IfZero(Direction::Up) => Some(129),
-            Self::IfZero(Direction::Down) => Some(153),
+            Self::RandomDirection => Some(126),
+            Self::Compare => Some(124),
             Self::Read(Direction::Left) => Some(104),
             Self::Read(Direction::Right) => Some(106),
             Self::Read(Direction::Up) => Some(138),
@@ -468,7 +452,8 @@ impl PrimaryInstruction {
             46 => Self::Output,
             60 => Self::Direction(Direction::Left),
             62 => Self::Direction(Direction::Right),
-            63 => Self::RandomDirection,
+            126 => Self::RandomDirection,
+            124 => Self::Compare,
             74 => Self::Nand,
             76 => Self::MemoryLoad,
             77 => Self::MemoryStore,
@@ -476,19 +461,15 @@ impl PrimaryInstruction {
             81 => Self::MovePage(PageDirection::Decrement),
             93 => Self::Return,
             94 => Self::Direction(Direction::Up),
-            95 => Self::IfZero(Direction::Left),
             96 => Self::Shift(ShiftDirection::Left),
-            97 => Self::IfZero(Direction::Right),
             98 => Self::Shift(ShiftDirection::Right),
             104 => Self::Read(Direction::Left),
             106 => Self::Read(Direction::Right),
             118 => Self::Direction(Direction::Down),
             123 => Self::MoveRegisterPointer(PointerDirection::Left),
             125 => Self::MoveRegisterPointer(PointerDirection::Right),
-            129 => Self::IfZero(Direction::Up),
             138 => Self::Read(Direction::Up),
             139..=148 => Self::Call(Slot::new(code - 139)?),
-            153 => Self::IfZero(Direction::Down),
             162 => Self::Read(Direction::Down),
             _ => return None,
         };
@@ -650,9 +631,9 @@ mod tests {
     #[test]
     fn instruction_stack_codes_round_trip() {
         let valid_codes = [
-            32, 33, 37, 38, 40, 41, 43, 45, 46, 60, 62, 63, 74, 76, 77, 79, 81, 93, 94, 95, 96, 97,
-            98, 104, 106, 118, 123, 125, 129, 138, 139, 140, 141, 142, 143, 144, 145, 146, 147,
-            148, 153, 162,
+            32, 33, 37, 38, 40, 41, 43, 45, 46, 60, 62, 126, 124, 74, 76, 77, 79, 81, 93, 94, 96,
+            98, 104, 106, 118, 123, 125, 138, 139, 140, 141, 142, 143, 144, 145, 146, 147, 148,
+            162,
         ];
 
         for code in valid_codes {
@@ -671,6 +652,12 @@ mod tests {
                 assert!(!primary.is_encodable(), "{} has no code", primary.token());
                 continue;
             };
+            assert_eq!(
+                u16::from(code),
+                primary.token().bytes().map(u16::from).sum::<u16>(),
+                "ASCII-sum code for {}",
+                primary.token()
+            );
             assert!(codes.insert(code), "duplicate Instruction Code {code}");
             assert_eq!(
                 PrimaryInstruction::from_instruction_code(code),
@@ -713,7 +700,7 @@ mod tests {
     #[test]
     fn complete_primary_tokens_round_trip_without_duplicates() {
         let forms = PrimaryInstruction::source_forms();
-        assert_eq!(forms.len(), 73);
+        assert_eq!(forms.len(), 70);
         let mut tokens = std::collections::BTreeSet::new();
 
         for form in forms {
@@ -747,6 +734,31 @@ mod tests {
         }
         for token in ["x0", "x1", "x6", "x10", "x2x3", "*x2"] {
             assert_eq!(AttachmentInstruction::from_token(token), None, "{token}");
+        }
+    }
+}
+
+/// A fixed conditional prefix; separate from executable Primary codes.
+#[derive(Clone, Copy, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
+pub enum ConditionPrefix {
+    Zero,
+    One,
+    Two,
+}
+impl ConditionPrefix {
+    pub const ALL: [Self; 3] = [Self::Zero, Self::One, Self::Two];
+    pub const fn value(self) -> u8 {
+        match self {
+            Self::Zero => 0,
+            Self::One => 1,
+            Self::Two => 2,
+        }
+    }
+    pub const fn token(self) -> &'static str {
+        match self {
+            Self::Zero => "?0",
+            Self::One => "?1",
+            Self::Two => "?2",
         }
     }
 }

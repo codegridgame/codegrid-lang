@@ -332,6 +332,7 @@ fn function_folded_and_repeat_static_and_dynamic_metrics() {
     p.outer.main.folded_blocks.insert(
         slot,
         FoldedBlock {
+            prefixes: Default::default(),
             cells: vec![
                 Some(P::Add),
                 Some(P::Direction(Direction::Right)),

@@ -4,7 +4,7 @@ This standalone Rust tool embeds the no-import `wasm32-unknown-unknown`
 `codegrid-wasm-server` artifact in Wasmtime 49.0.1. It verifies the Server ABI
 v4 exports and configured linear-memory maximum, applies per-store memory and
 Wasm stack limits, initializes one persistent module instance, and executes all
-63 shared Full fixtures through the exported JSON ABI. For each case it invokes
+75 shared Full fixtures through the exported JSON ABI. For each case it invokes
 the Native CLI as an oracle and compares the complete observable run projection:
 status, ordered events, newly emitted output, and the full snapshot including
 program mutation, threads, memory, metrics, errors, and faults. It writes the

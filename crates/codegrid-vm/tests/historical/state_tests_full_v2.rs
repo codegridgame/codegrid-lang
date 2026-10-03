@@ -1361,7 +1361,7 @@ mod tests {
                 codegrid_ir::Cell::instruction(PrimaryInstruction::Add, None),
                 codegrid_ir::Cell::empty(),
                 codegrid_ir::Cell::entry(Direction::Right),
-                codegrid_ir::Cell::instruction(PrimaryInstruction::IfZero(Direction::Down), None),
+                codegrid_ir::Cell::instruction(PrimaryInstruction::Direction(Direction::Down), None).with_prefix(codegrid_model::ConditionPrefix::Zero),
                 codegrid_ir::Cell::empty(),
                 codegrid_ir::Cell::empty(),
                 codegrid_ir::Cell::empty(),
@@ -1463,7 +1463,7 @@ mod tests {
                 codegrid_ir::Cell::empty(),
                 codegrid_ir::Cell::empty(),
                 codegrid_ir::Cell::entry(Direction::Right),
-                codegrid_ir::Cell::instruction(PrimaryInstruction::IfZero(Direction::Down), None),
+                codegrid_ir::Cell::instruction(PrimaryInstruction::Direction(Direction::Down), None).with_prefix(codegrid_model::ConditionPrefix::Zero),
                 codegrid_ir::Cell::empty(),
                 codegrid_ir::Cell::empty(),
                 codegrid_ir::Cell::empty(),
@@ -1896,7 +1896,7 @@ mod tests {
             folded_blocks: BTreeMap::from([(
                 slot,
                 FoldedBlock {
-                    cells: vec![Some(PrimaryInstruction::Direction(Direction::Down)); 3],
+                    prefixes: Default::default(), cells: vec![Some(PrimaryInstruction::Direction(Direction::Down)); 3],
                 },
             )]),
         };
@@ -1959,7 +1959,7 @@ mod tests {
                     folded_blocks: BTreeMap::from([(
                         fold_id,
                         FoldedBlock {
-                            cells: vec![
+                            prefixes: Default::default(), cells: vec![
                                 Some(PrimaryInstruction::Custom(custom_id)),
                                 Some(PrimaryInstruction::Halt),
                                 None,
@@ -2048,7 +2048,7 @@ mod tests {
                     folded_blocks: BTreeMap::from([(
                         fold_id,
                         FoldedBlock {
-                            cells: vec![
+                            prefixes: Default::default(), cells: vec![
                                 Some(PrimaryInstruction::MoveRegisterPointer(
                                     PointerDirection::Right,
                                 )),
@@ -2104,7 +2104,7 @@ mod tests {
                     folded_blocks: BTreeMap::from([(
                         fold_id,
                         FoldedBlock {
-                            cells: vec![
+                            prefixes: Default::default(), cells: vec![
                                 Some(PrimaryInstruction::Encode),
                                 Some(PrimaryInstruction::Direction(Direction::Down)),
                                 None,
@@ -2160,7 +2160,7 @@ mod tests {
                     folded_blocks: BTreeMap::from([(
                         fold_id,
                         FoldedBlock {
-                            cells: vec![
+                            prefixes: Default::default(), cells: vec![
                                 Some(PrimaryInstruction::Push),
                                 Some(PrimaryInstruction::Direction(Direction::Down)),
                                 None,
@@ -2216,7 +2216,7 @@ mod tests {
                     folded_blocks: BTreeMap::from([(
                         fold_id,
                         FoldedBlock {
-                            cells: vec![
+                            prefixes: Default::default(), cells: vec![
                                 Some(PrimaryInstruction::Read(Direction::Down)),
                                 Some(PrimaryInstruction::Output),
                                 Some(PrimaryInstruction::Direction(Direction::Down)),
@@ -2264,7 +2264,7 @@ mod tests {
                     folded_blocks: BTreeMap::from([(
                         fold_id,
                         FoldedBlock {
-                            cells: vec![
+                            prefixes: Default::default(), cells: vec![
                                 Some(PrimaryInstruction::RandomDirection),
                                 Some(PrimaryInstruction::Direction(Direction::Down)),
                                 Some(PrimaryInstruction::Direction(Direction::Down)),
@@ -2415,10 +2415,7 @@ mod tests {
                         cells: vec![
                             Cell::entry(Direction::Right),
                             Cell::instruction(PrimaryInstruction::Sub, None),
-                            Cell::instruction(
-                                PrimaryInstruction::IfZero(Direction::Down),
-                                None,
-                            ),
+                            Cell::instruction(PrimaryInstruction::Direction(Direction::Down), None).with_prefix(codegrid_model::ConditionPrefix::Zero),
                             Cell::instruction(
                                 PrimaryInstruction::Call(function_id),
                                 Some(AttachmentInstruction::WriteCode),
@@ -3822,7 +3819,7 @@ mod tests {
         let mut custom_cells = vec![Cell::empty(); 20];
         custom_cells[0] = Cell::entry(Direction::Right);
         custom_cells[1] = Cell::instruction(PrimaryInstruction::Read(Direction::Down), None);
-        custom_cells[2] = Cell::instruction(PrimaryInstruction::IfZero(Direction::Down), None);
+        custom_cells[2] = Cell::instruction(PrimaryInstruction::Direction(Direction::Down), None).with_prefix(codegrid_model::ConditionPrefix::Zero);
         custom_cells[3] = Cell::instruction(PrimaryInstruction::Push, None);
         custom_cells[4] = Cell::instruction(
             PrimaryInstruction::MoveRegisterPointer(PointerDirection::Right),
@@ -5039,7 +5036,7 @@ mod tests {
                     folded_blocks: BTreeMap::from([(
                         fold_id,
                         FoldedBlock {
-                            cells: vec![
+                            prefixes: Default::default(), cells: vec![
                                 Some(PrimaryInstruction::Add),
                                 Some(PrimaryInstruction::Direction(Direction::Down)),
                                 None,
@@ -5156,7 +5153,7 @@ mod tests {
                     folded_blocks: BTreeMap::from([(
                         fold_id,
                         FoldedBlock {
-                            cells: vec![
+                            prefixes: Default::default(), cells: vec![
                                 Some(PrimaryInstruction::Add),
                                 Some(PrimaryInstruction::Output),
                                 Some(PrimaryInstruction::Direction(Direction::Down)),

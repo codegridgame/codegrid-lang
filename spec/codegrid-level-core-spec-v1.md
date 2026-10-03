@@ -259,7 +259,7 @@ are defined by the ExactIO implementation contract. CALL includes RETURN;
 CUSTOM includes CUSTOM_RETURN. All other capabilities require explicit permission.
 
 Anything outside the default permissions and explicitly selected capabilities
-is forbidden. NAND remains independent of STACK.
+is forbidden. NAND and CMP remain independent of STACK. Conditional prefixes require per-value `CONDITION_0`, `CONDITION_1`, and `CONDITION_2` permissions in `allowed_attachments`; a false condition does not hide a forbidden Primary. These identifiers and their static/runtime metric rules are defined in the ExactIO implementation contract.
 
 This guarantees that adding a new language instruction in a future game version does not silently make that instruction available in old levels.
 

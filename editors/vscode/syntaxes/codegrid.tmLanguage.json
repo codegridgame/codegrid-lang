@@ -3,9 +3,15 @@
   "name": "CodeGrid",
   "scopeName": "source.cg",
   "patterns": [
-    { "include": "#comments" },
-    { "include": "#directives" },
-    { "include": "#cells" }
+    {
+      "include": "#comments"
+    },
+    {
+      "include": "#directives"
+    },
+    {
+      "include": "#cells"
+    }
   ],
   "repository": {
     "comments": {
@@ -26,9 +32,15 @@
         {
           "match": "(?i)(@size)([ \\t]+)([0-9]*[1-9][0-9]*x[0-9]*[1-9][0-9]*)(?=$|[ \\t])",
           "captures": {
-            "1": { "name": "keyword.directive.size.codegrid" },
-            "2": { "name": "punctuation.whitespace.codegrid" },
-            "3": { "name": "constant.numeric.size.codegrid" }
+            "1": {
+              "name": "keyword.directive.size.codegrid"
+            },
+            "2": {
+              "name": "punctuation.whitespace.codegrid"
+            },
+            "3": {
+              "name": "constant.numeric.size.codegrid"
+            }
           }
         },
         {
@@ -38,9 +50,15 @@
         {
           "match": "(?i)(@end)([ \\t]+)(main|C[0-9]|F[0-9](?:\\.M[0-9])?|M[0-9]|main\\.[FM][0-9](?:\\.M[0-9])?|C[0-9]\\.(?:F[0-9](?:\\.M[0-9])?|M[0-9])|F[0-9]\\.M[0-9])(?=$|[ \\t])",
           "captures": {
-            "1": { "name": "keyword.directive.end.codegrid" },
-            "2": { "name": "punctuation.whitespace.codegrid" },
-            "3": { "name": "entity.name.definition.codegrid" }
+            "1": {
+              "name": "keyword.directive.end.codegrid"
+            },
+            "2": {
+              "name": "punctuation.whitespace.codegrid"
+            },
+            "3": {
+              "name": "entity.name.definition.codegrid"
+            }
           }
         },
         {
@@ -71,7 +89,9 @@
           "name": "constant.language.entry.codegrid",
           "match": "(~[\\^v<>])(?=$|\\s)",
           "captures": {
-            "1": { "name": "constant.language.entry.codegrid" }
+            "1": {
+              "name": "constant.language.entry.codegrid"
+            }
           }
         },
         {
@@ -82,156 +102,302 @@
           "name": "constant.language.empty-cell.codegrid",
           "match": "(_)(?=$|\\s)",
           "captures": {
-            "1": { "name": "constant.language.empty-cell.codegrid" }
+            "1": {
+              "name": "constant.language.empty-cell.codegrid"
+            }
           }
         },
         {
-          "match": "(#[<>v\\^])([*=]|x[2-5])?(?=$|\\s)",
+          "match": "(\\?[012])?(,[<>v\\^])([*=]|x[2-5])?(?=$|\\s)",
           "captures": {
-            "1": { "name": "keyword.operator.ifzero.codegrid" },
-            "2": { "name": "storage.modifier.attachment.codegrid" }
+            "2": {
+              "name": "keyword.operator.read.codegrid"
+            },
+            "3": {
+              "name": "storage.modifier.attachment.codegrid"
+            },
+            "1": {
+              "name": "storage.modifier.condition.codegrid"
+            }
           }
         },
         {
-          "match": "(,[<>v\\^])([*=]|x[2-5])?(?=$|\\s)",
+          "match": "(\\?[012])?(#[0-9])(?=$|\\s)",
           "captures": {
-            "1": { "name": "keyword.operator.read.codegrid" },
-            "2": { "name": "storage.modifier.attachment.codegrid" }
+            "2": {
+              "name": "keyword.control.custom-call.codegrid"
+            },
+            "1": {
+              "name": "storage.modifier.condition.codegrid"
+            }
           }
         },
         {
-          "match": "(#[0-9])(?=$|\\s)",
+          "match": "(\\?[012])?(#\\])(?=$|\\s)",
           "captures": {
-            "1": { "name": "keyword.control.custom-call.codegrid" }
+            "2": {
+              "name": "keyword.control.custom-return.codegrid"
+            },
+            "1": {
+              "name": "storage.modifier.condition.codegrid"
+            }
           }
         },
         {
-          "match": "(#\\])(?=$|\\s)",
+          "match": "(\\?[012])?(\\$&)([*=]|x[2-5])?(?=$|\\s)",
           "captures": {
-            "1": { "name": "keyword.control.custom-return.codegrid" }
+            "2": {
+              "name": "keyword.operator.nand.codegrid"
+            },
+            "3": {
+              "name": "storage.modifier.attachment.codegrid"
+            },
+            "1": {
+              "name": "storage.modifier.condition.codegrid"
+            }
           }
         },
         {
-          "match": "(\\$&)([*=]|x[2-5])?(?=$|\\s)",
+          "match": "(\\?[012])?(\\$[()])([*=]|x[2-5])?(?=$|\\s)",
           "captures": {
-            "1": { "name": "keyword.operator.nand.codegrid" },
-            "2": { "name": "storage.modifier.attachment.codegrid" }
+            "2": {
+              "name": "keyword.operator.memory.codegrid"
+            },
+            "3": {
+              "name": "storage.modifier.attachment.codegrid"
+            },
+            "1": {
+              "name": "storage.modifier.condition.codegrid"
+            }
           }
         },
         {
-          "match": "(\\$[()])([*=]|x[2-5])?(?=$|\\s)",
+          "match": "(\\?[012])?(\\$[+-])([*=]|x[2-5])?(?=$|\\s)",
           "captures": {
-            "1": { "name": "keyword.operator.memory.codegrid" },
-            "2": { "name": "storage.modifier.attachment.codegrid" }
+            "2": {
+              "name": "keyword.operator.page.codegrid"
+            },
+            "3": {
+              "name": "storage.modifier.attachment.codegrid"
+            },
+            "1": {
+              "name": "storage.modifier.condition.codegrid"
+            }
           }
         },
         {
-          "match": "(\\$[+-])([*=]|x[2-5])?(?=$|\\s)",
+          "match": "(\\?[012])?(\\$[<>])([*=]|x[2-5])?(?=$|\\s)",
           "captures": {
-            "1": { "name": "keyword.operator.page.codegrid" },
-            "2": { "name": "storage.modifier.attachment.codegrid" }
+            "2": {
+              "name": "keyword.operator.shift.codegrid"
+            },
+            "3": {
+              "name": "storage.modifier.attachment.codegrid"
+            },
+            "1": {
+              "name": "storage.modifier.condition.codegrid"
+            }
           }
         },
         {
-          "match": "(\\$[<>])([*=]|x[2-5])?(?=$|\\s)",
+          "match": "(\\?[012])?(\\$[0-9])(?=$|\\s)",
           "captures": {
-            "1": { "name": "keyword.operator.shift.codegrid" },
-            "2": { "name": "storage.modifier.attachment.codegrid" }
+            "2": {
+              "name": "keyword.control.folded-call.codegrid"
+            },
+            "1": {
+              "name": "storage.modifier.condition.codegrid"
+            }
           }
         },
         {
-          "match": "(\\$[0-9])(?=$|\\s)",
+          "match": "(\\?[012])?(\\[[0-9])([*=])?(?=$|\\s)",
           "captures": {
-            "1": { "name": "keyword.control.folded-call.codegrid" }
+            "2": {
+              "name": "keyword.control.function-call.codegrid"
+            },
+            "3": {
+              "name": "storage.modifier.attachment.codegrid"
+            },
+            "1": {
+              "name": "storage.modifier.condition.codegrid"
+            }
           }
         },
         {
-          "match": "(\\[[0-9])([*=])?(?=$|\\s)",
+          "match": "(\\?[012])?(\\])([*=])?(?=$|\\s)",
           "captures": {
-            "1": { "name": "keyword.control.function-call.codegrid" },
-            "2": { "name": "storage.modifier.attachment.codegrid" }
+            "2": {
+              "name": "keyword.control.return.codegrid"
+            },
+            "3": {
+              "name": "storage.modifier.attachment.codegrid"
+            },
+            "1": {
+              "name": "storage.modifier.condition.codegrid"
+            }
           }
         },
         {
-          "match": "(\\])([*=])?(?=$|\\s)",
+          "match": "(\\?[012])?(\\$[<>&])([*=]|x[2-5])?(?=$|\\s)",
           "captures": {
-            "1": { "name": "keyword.control.return.codegrid" },
-            "2": { "name": "storage.modifier.attachment.codegrid" }
+            "2": {
+              "name": "keyword.operator.codegrid"
+            },
+            "3": {
+              "name": "storage.modifier.attachment.codegrid"
+            },
+            "1": {
+              "name": "storage.modifier.condition.codegrid"
+            }
           }
         },
         {
-          "match": "(\\$[<>&])([*=]|x[2-5])?(?=$|\\s)",
+          "match": "(\\?[012])?([v\\^<>])([*=]|x[2-5])?(?=$|\\s)",
           "captures": {
-            "1": { "name": "keyword.operator.codegrid" },
-            "2": { "name": "storage.modifier.attachment.codegrid" }
+            "2": {
+              "name": "keyword.operator.direction.codegrid"
+            },
+            "3": {
+              "name": "storage.modifier.attachment.codegrid"
+            },
+            "1": {
+              "name": "storage.modifier.condition.codegrid"
+            }
           }
         },
         {
-          "match": "([v\\^<>])([*=]|x[2-5])?(?=$|\\s)",
+          "match": "(\\?[012])?(\\?\\?)([*=]|x[2-5])?(?=$|\\s)",
           "captures": {
-            "1": { "name": "keyword.operator.direction.codegrid" },
-            "2": { "name": "storage.modifier.attachment.codegrid" }
+            "2": {
+              "name": "keyword.operator.random-direction.codegrid"
+            },
+            "3": {
+              "name": "storage.modifier.attachment.codegrid"
+            },
+            "1": {
+              "name": "storage.modifier.condition.codegrid"
+            }
           }
         },
         {
-          "match": "(\\?)([*=]|x[2-5])?(?=$|\\s)",
+          "match": "(\\?[012])?(!)([*=]|x[2-5])?(?=$|\\s)",
           "captures": {
-            "1": { "name": "keyword.operator.random-direction.codegrid" },
-            "2": { "name": "storage.modifier.attachment.codegrid" }
+            "2": {
+              "name": "keyword.operator.clear.codegrid"
+            },
+            "3": {
+              "name": "storage.modifier.attachment.codegrid"
+            },
+            "1": {
+              "name": "storage.modifier.condition.codegrid"
+            }
           }
         },
         {
-          "match": "(!)([*=]|x[2-5])?(?=$|\\s)",
+          "match": "(\\?[012])?([+\\-])([*=]|x[2-5])?(?=$|\\s)",
           "captures": {
-            "1": { "name": "keyword.operator.clear.codegrid" },
-            "2": { "name": "storage.modifier.attachment.codegrid" }
+            "2": {
+              "name": "keyword.operator.arithmetic.codegrid"
+            },
+            "3": {
+              "name": "storage.modifier.attachment.codegrid"
+            },
+            "1": {
+              "name": "storage.modifier.condition.codegrid"
+            }
           }
         },
         {
-          "match": "([+\\-])([*=]|x[2-5])?(?=$|\\s)",
+          "match": "(\\?[012])?([{}])([*=]|x[2-5])?(?=$|\\s)",
           "captures": {
-            "1": { "name": "keyword.operator.arithmetic.codegrid" },
-            "2": { "name": "storage.modifier.attachment.codegrid" }
+            "2": {
+              "name": "keyword.operator.pointer.codegrid"
+            },
+            "3": {
+              "name": "storage.modifier.attachment.codegrid"
+            },
+            "1": {
+              "name": "storage.modifier.condition.codegrid"
+            }
           }
         },
         {
-          "match": "([{}])([*=]|x[2-5])?(?=$|\\s)",
+          "match": "(\\?[012])?(\\.[0-9])(?=$|\\s)",
           "captures": {
-            "1": { "name": "keyword.operator.pointer.codegrid" },
-            "2": { "name": "storage.modifier.attachment.codegrid" }
+            "2": {
+              "name": "keyword.operator.output.codegrid"
+            },
+            "1": {
+              "name": "storage.modifier.condition.codegrid"
+            }
           }
         },
         {
-          "match": "(\\.[0-9])(?=$|\\s)",
+          "match": "(\\?[012])?(\\.)([*=]|x[2-5])?(?=$|\\s)",
           "captures": {
-            "1": { "name": "keyword.operator.output.codegrid" }
+            "2": {
+              "name": "keyword.operator.output.codegrid"
+            },
+            "3": {
+              "name": "storage.modifier.attachment.codegrid"
+            },
+            "1": {
+              "name": "storage.modifier.condition.codegrid"
+            }
           }
         },
         {
-          "match": "(\\.)([*=]|x[2-5])?(?=$|\\s)",
+          "match": "(\\?[012])?([()])([*=]|x[2-5])?(?=$|\\s)",
           "captures": {
-            "1": { "name": "keyword.operator.output.codegrid" },
-            "2": { "name": "storage.modifier.attachment.codegrid" }
+            "2": {
+              "name": "keyword.operator.stack.codegrid"
+            },
+            "3": {
+              "name": "storage.modifier.attachment.codegrid"
+            },
+            "1": {
+              "name": "storage.modifier.condition.codegrid"
+            }
           }
         },
         {
-          "match": "([()])([*=]|x[2-5])?(?=$|\\s)",
+          "match": "(\\?[012])?([&%])([*=]|x[2-5])?(?=$|\\s)",
           "captures": {
-            "1": { "name": "keyword.operator.stack.codegrid" },
-            "2": { "name": "storage.modifier.attachment.codegrid" }
+            "2": {
+              "name": "keyword.operator.encoding.codegrid"
+            },
+            "3": {
+              "name": "storage.modifier.attachment.codegrid"
+            },
+            "1": {
+              "name": "storage.modifier.condition.codegrid"
+            }
           }
         },
         {
-          "match": "([&%])([*=]|x[2-5])?(?=$|\\s)",
+          "match": "(\\?[012])?(;)(?=$|\\s)",
           "captures": {
-            "1": { "name": "keyword.operator.encoding.codegrid" },
-            "2": { "name": "storage.modifier.attachment.codegrid" }
+            "2": {
+              "name": "keyword.control.halt.codegrid"
+            },
+            "1": {
+              "name": "storage.modifier.condition.codegrid"
+            }
           }
         },
         {
-          "match": "(;)(?=$|\\s)",
+          "match": "(\\?[012])?(\\?=)([*=]|x[2-5])?(?=$|\\s)",
           "captures": {
-            "1": { "name": "keyword.control.halt.codegrid" }
+            "1": {
+              "name": "storage.modifier.condition.codegrid"
+            },
+            "2": {
+              "name": "keyword.operator.compare.codegrid"
+            },
+            "3": {
+              "name": "storage.modifier.attachment.codegrid"
+            }
           }
         },
         {

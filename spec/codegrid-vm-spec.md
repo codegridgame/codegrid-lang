@@ -67,13 +67,13 @@ Each thread has an explicit phase, and the phase is part of transactional thread
 
 ### 5.1 Normal
 
-Evaluate the cell at the current board and coordinate. Apply its Primary, then its allowed Attachment, then perform that instruction's movement or control transition. An ordinary instruction moves once in the resulting direction. Empty and Entry cells move once. Halt does not move.
+Evaluate the cell at the current board and coordinate. Evaluate its conditional prefix first, as specified in Section 8.0. If the condition succeeds or no prefix is present, apply its Primary, then its allowed suffix Attachment, then perform that instruction's movement or control transition. A false condition skips both and moves once in the current direction. An ordinary instruction moves once in the resulting direction. Empty and Entry cells move once. Halt does not move.
 
 Primary-before-Attachment is the rule for ordinary instructions with WriteCode: the current Primary executes, then WriteCode changes the Primary for later visits. CALL attachments are deferred to AfterCall as specified in Section 8.4. RETURN attachments have no runtime effect.
 
 ### 5.2 Repeat
 
-Repeat(N) executes its attached Primary N times over N ticks, for N in 2 through 5. The first execution occurs on the tick that reaches the cell. While repetitions remain, the thread stays at that cell and does not move; it reexecutes the Primary on each following tick. After the final execution it moves once in the resulting direction and returns to Normal.
+Repeat(N) executes its attached Primary N times over N ticks, for N in 2 through 5. The first execution occurs on the tick that reaches the cell. While repetitions remain, the thread stays at that cell and does not move; it reexecutes the Primary on each following tick. Before each attempted execution, reevaluate the fixed prefix against that context's tick-start selected register. A false condition cancels remaining repetitions, returns to Normal, and moves once in the current direction. After the final successful execution it moves once in the resulting direction and returns to Normal.
 
 The phase records total repetitions and successful repetitions already completed. A failed tick does not advance this phase. Each Primary execution counts separately in Operation Count. Repeat itself is not an operation kind.
 
@@ -97,7 +97,7 @@ RETURN consumes a tick. It restores the caller board and CALL-cell coordinate an
 
 RETURN without an active call frame is a ReturnWithoutCall runtime error. Source and verified IR should reject RETURN in Main, but self-modifying code can place one there.
 
-A statically proven self-tail CALL may reuse the current call frame. Only verifier-derived TailCallSite metadata may enable this optimization; hosts must not construct it independently. The current IR analyzer accepts a direct call from a Function to itself only if the CALL has no Attachment and every reachable post-call navigation path, for the selected boundary mode, consists only of empty cells and direction changes and reaches RETURN without looping, entering an Entry, encountering an Attachment or another Primary, or leaving the board. The analysis conservatively includes all directions that may reach the site, including both outcomes of conditional direction and reads, and every RandomDirection result. This conservative verifier rule is normative.
+A statically proven self-tail CALL may reuse the current call frame. Only verifier-derived TailCallSite metadata may enable this optimization; hosts must not construct it independently. The current IR analyzer conservatively excludes any Function containing a conditional prefix from tail-call optimization. For remaining Functions it accepts a direct call from a Function to itself only if the CALL has no Attachment and every reachable post-call navigation path, for the selected boundary mode, consists only of empty cells and direction changes and reaches RETURN without looping, entering an Entry, encountering an Attachment or another Primary, or leaving the board. The analysis conservatively includes all directions that may reach the site, including the false fall-through of guarded control flow and both outcomes of reads, and every RandomDirection result. This conservative verifier rule is normative.
 
 ### 5.5 Custom invocation
 
@@ -155,7 +155,7 @@ Every ordinary Primary except Halt is followed by its defined movement or contro
 | --- | --- |
 | Direction(up/down/left/right) | Set the thread direction to the encoded direction. |
 | RandomDirection | Draw once from that thread's deterministic PRNG and set its direction. |
-| IfZero(direction) | If the selected register is zero in the tick-start register snapshot, set the encoded direction; otherwise retain the current direction. |
+| Compare | Peek thread Data Stack top A without popping, compare against selected register B as unsigned bytes, and stage 0 if equal, 1 if A > B, or 2 if A < B. With an empty stack, preserve the register and stack. Use ordinary movement and count one operation. Custom CMP uses the internal thread stack, not the caller stack. |
 | Read(direction) | Outer context: consume one front input byte if available and stage it into the selected register. If empty, retain the register and set the encoded direction. Custom context: use the caller's stack as specified in Section 5.5; on empty, retain the register and set the encoded direction. |
 | Clear | Set the selected register to zero. |
 | Add / Sub | Increment / decrement the selected register modulo 256. |
@@ -180,7 +180,15 @@ Outer READ uses one shared input queue. When the queue is nonempty and exactly o
 
 ## 8. Attachments
 
-A cell has at most one Attachment.
+A cell has at most one conditional prefix and one suffix Attachment.
+
+### 8.0 Conditional prefixes
+
+Before executing a cell's Primary, evaluate its fixed `?0`, `?1`, or `?2` prefix against the executing thread's selected register in the context tick-start snapshot. Every evaluation counts one operation and the shared Condition instruction kind, including false results. On false, skip both Primary and suffix and move once in the current direction; normal boundary and Fold movement rules still apply. The visited cell, dispatch, and tick are still counted. Skipped effects, calls, PRNG draws, Halt requests, and skipped instruction metrics do not occur.
+
+Repeat rechecks before each Primary execution. A false result cancels remaining repetitions, restores Normal phase, and moves once. CALL checks only before invocation; AfterCall runs its existing deferred suffix and movement without rechecking. FoldResume also does not recheck. Prefixes are allowed on all otherwise valid Primaries, including Folded Block contents, but do not relax static restrictions.
+
+WriteCode replaces only Primary, retaining prefix and suffix. ReadCode and DECODE/ENCODE represent only Primary. A runtime-cleared cell still evaluates the retained prefix before the existing suffix behavior. Initial detached prefixes remain invalid. Prefix failure and CMP effects participate in the existing transaction/rollback and work-budget rules.
 
 ### 8.1 ReadCode
 
@@ -190,13 +198,13 @@ ReadCode reads the Primary at the same static cell from the tick-start mutable c
 
 When the executing thread's Instruction Stack is nonempty, WriteCode pops its top item and stages replacement of the attached cell's Primary. EMPTY clears the Primary; an encodable Primary replaces it. With an empty stack, the Attachment is a counted no-op and leaves the cell unchanged.
 
-A WriteCode change affects later visits, not the already executed Primary. It changes only the Primary field; the Attachment remains attached, including after clearing the Primary. All threads in one execution context observe tick-start code for that tick. Multiple writes to the same static cell in one context tick conflict even when replacement values are equal.
+A WriteCode change affects later visits, not the already executed Primary. It changes only the Primary field; the prefix and suffix remain attached, including after clearing the Primary. All threads in one execution context observe tick-start code for that tick. Multiple writes to the same static cell in one context tick conflict even when replacement values are equal.
 
 WriteCode modifies the current mutable code copy. In a Custom invocation it changes only that invocation's copy, which is discarded when the invocation ends.
 
 ### 8.3 Repeat
 
-Repeat(N) reexecutes its attached Primary N times over separate ticks, for N in 2 through 5, as in Section 5.2. The verifier rejects unsupported counts and Repeat on CALL or RETURN. Since a cell has only one Attachment, Repeat cannot combine with ReadCode or WriteCode.
+Repeat(N) reexecutes its attached Primary N times over separate ticks, for N in 2 through 5, as in Section 5.2. The verifier rejects unsupported counts and Repeat on CALL or RETURN. Since a cell has only one suffix Attachment, Repeat cannot combine with ReadCode or WriteCode.
 
 ### 8.4 CALL and RETURN timing
 
@@ -220,7 +228,8 @@ These encodable Primaries have canonical byte Instruction Codes and may be store
 | . | 46 |
 | < | 60 |
 | > | 62 |
-| ? | 63 |
+| ?? | 126 |
+| ?= | 124 |
 | $& | 74 |
 | $( | 76 |
 | $) | 77 |
@@ -228,26 +237,22 @@ These encodable Primaries have canonical byte Instruction Codes and may be store
 | $- | 81 |
 | ] | 93 |
 | ^ | 94 |
-| #< | 95 |
 | $< | 96 |
-| #> | 97 |
 | $> | 98 |
 | ,< | 104 |
 | ,> | 106 |
 | v | 118 |
 | { | 123 |
 | } | 125 |
-| #^ | 129 |
 | ,^ | 138 |
 | Call(slot 0 through 9) | 139 through 148, respectively |
-| #v | 153 |
 | ,v | 162 |
 
 FoldedBlock, Custom, CustomReturn, and Halt have no Instruction Code. EMPTY has code 32 but is not a Primary. Attachment tokens are not Instruction Codes.
 
 ## 10. Concurrent effects and conflicts
 
-OutputImmediate has no Instruction Code and accepts no Attachment. It cannot
+OutputImmediate has no Instruction Code and accepts no suffix Attachment; conditional prefixes are permitted. It cannot
 be represented on the Instruction Stack. Existing Instruction Codes remain
 unchanged. All immediate forms count as the existing Output metric kind, not
 as separate kinds for each digit.
@@ -370,7 +375,7 @@ Golden vectors:
 Raw metrics describe deterministic VM work and state use; they do not affect program results.
 
 - **Global Tick:** committed outer Global Ticks. Failed attempts do not advance it.
-- **Operation Count:** each execution of a metric-bearing Primary or ReadCode/WriteCode Attachment, including repeated executions and Custom internal work. Direction-only instructions, empty and Entry cells, FoldedBlock and Custom shells, and Repeat Attachments are excluded. Halt, CustomReturn, and other executable Primary kinds are included.
+- **Operation Count:** each execution of a metric-bearing Primary, conditional prefix evaluation, or ReadCode/WriteCode Attachment, including repeated executions and Custom internal work. Direction-only instructions, empty and Entry cells, FoldedBlock and Custom shells, and Repeat Attachments are excluded. Halt, CustomReturn, and other executable Primary kinds are included.
 - **Instruction Variety:** stable set of distinct metric-bearing Primary and ReadCode/WriteCode kinds. It is not a count. Directions, structural shells, and Repeat are excluded.
 - **Used Cells:** distinct static cells reached. Identity includes code grid, board, optional Folded Block ID, and coordinate; it excludes thread and Custom invocation identity. Entry, empty cells, Folded Block shell, and Folded Block body cells count. Failed attempted visits remain counted.
 - **Used Memory Addresses:** distinct logical locations accessed by MEMORY_LOAD or nonempty MEMORY_STORE. Outer memory has one identity. Custom memory identity includes attempted Global Tick, caller thread ID, and Custom ID. Absent zero-valued locations count when read. An empty MEMORY_STORE does not count. Failed attempted accesses remain counted.
@@ -421,7 +426,7 @@ The VM decisions recorded in [Full Language Decisions](../docs/decisions.md#reso
 
 1. Multiple Custom internal threads returning on different and matching ticks, including a surviving thread, same-tick Halt, error, and Custom execution-limit exhaustion.
 2. CALL ReadCode and WriteCode on AfterCall, inert RETURN attachments, and CALL-site mutation by a callee.
-3. ReadCode's EMPTY behavior is not reachable from verified IR: Attachments require an initial Primary, each cell has at most one Attachment, and WriteCode changes only that cell's Primary while retaining its Attachment. Preserve the specified defensive EMPTY result (Instruction Code 32), but do not require an impossible self-modify-then-ReadCode execution case. Cover ReadCode's tick-start Primary and stack usage, WriteCode clearing while retaining its Attachment, and Instruction Code 32 through reachable DECODE/ENCODE behavior.
+3. ReadCode's EMPTY behavior is not reachable from verified IR: Attachments require an initial Primary, each cell has at most one suffix Attachment, and WriteCode changes only that cell's Primary while retaining its Attachment. Preserve the specified defensive EMPTY result (Instruction Code 32), but do not require an impossible self-modify-then-ReadCode execution case. Cover ReadCode's tick-start Primary and stack usage, WriteCode clearing while retaining its Attachment, and Instruction Code 32 through reachable DECODE/ENCODE behavior.
 4. Empty and nonempty POPADD/NAND register, stack, movement, and metric behavior.
 5. Custom READ from empty and nonempty caller stacks, direction, register preservation, caller-stack conflicts, and coexistence with Custom OUTPUT.
 6. The full cross-effect conflict matrix, canonical multi-error order, successful and failed event-order golden cases, and the stack high-water formula at outer and aligned Custom ticks.
@@ -450,3 +455,7 @@ The following status is based on direct cases in the active `state_tests_full_v2
 The VM receives verified IR and explicit data only. It does not read paths, environment variables, network, clocks, host randomness, CLI arguments, editor state, or operating-system data. CLI owns file access and process exit codes. LSP owns JSON-RPC and document lifecycle. Runtime API and WASM adapters own only their versioned request/response conversion, checks, resource ceilings, and instance lifecycle; they do not duplicate instruction tables, compilation, or VM semantics.
 
 Core source spans remain UTF-8 byte offsets; conversion for editors is outside the VM. Browser and server hosts preserve 64-bit seeds and arbitrary-precision Page/address values without lossy JavaScript Number conversion. Native/WASM parity requires execution comparisons in actual native, browser, and server hosts; compilation alone does not prove parity.
+
+## 18. Encoding migration (2026-10-03)
+
+Instruction Codes follow single-symbol ASCII values or the sum of both symbols' ASCII values. RandomDirection is 126 and CMP is 124. All other retained encodings and EMPTY 32 remain unchanged. Codes 63, 95, 97, 129, and 153 are no longer decoded and are not reused; DECODE handles them by the existing invalid-byte counted-no-op rule. Prefixes and suffixes are not encodable Primaries. Existing non-encodable structural, immediate-output, and Halt forms remain excluded. Executable IR format 2 rejects format 1.

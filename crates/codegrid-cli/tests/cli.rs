@@ -789,7 +789,7 @@ fn evaluate_grouped_permissions_and_default_instructions() {
     for (level_text, source_text) in cases {
         let mut value: Value = serde_json::from_str(level_text).unwrap();
         value["program_rules"]["allowed_instructions"] = json!([
-            "IF_ZERO",
+            "CMP",
             "READ",
             "REGISTER_POINTER",
             "STACK",

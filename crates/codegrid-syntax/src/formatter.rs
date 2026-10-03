@@ -329,10 +329,12 @@ fn render_cell(cell: CellToken) -> String {
             format!("~{}", PrimaryInstruction::Direction(direction).token())
         }
         CellToken::Instruction {
+            prefix,
             primary,
             attachment,
         } => {
-            let mut token = primary.token();
+            let mut token = prefix.map_or_else(String::new, |prefix| prefix.token().to_owned());
+            token.push_str(&primary.token());
             if let Some(attachment) = attachment {
                 token.push_str(&attachment.token());
             }

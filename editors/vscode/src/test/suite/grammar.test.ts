@@ -41,7 +41,9 @@ suite('TextMate grammar', () => {
   }
 
   function assertScope(line: string, fragment: string, scope: string): void {
-    const token = tokenize(line).find((entry) => entry.text.includes(fragment));
+    const tokens = tokenize(line);
+    const token = tokens.find((entry) => entry.text === fragment)
+      ?? tokens.find((entry) => entry.text.includes(fragment));
     assert.ok(token, `no token contains ${JSON.stringify(fragment)} on ${JSON.stringify(line)}`);
     assert.ok(token!.scopes.includes(scope), `expected ${scope} for ${JSON.stringify(token!.text)}; got ${token!.scopes}`);
   }
@@ -60,9 +62,12 @@ suite('TextMate grammar', () => {
     ['@C3.F9.M0', '@C3.F9.M0', 'keyword.directive.structure.codegrid'],
     ['~> _', '~>', 'constant.language.entry.codegrid'],
     ['_', '_', 'constant.language.empty-cell.codegrid'],
-    ['^ v < > ?', '?', 'keyword.operator.random-direction.codegrid'],
-    ['^ v < > ?', '<', 'keyword.operator.direction.codegrid'],
-    ['#< #> #^ #v', '#^', 'keyword.operator.ifzero.codegrid'],
+    ['^ v < > ??', '??', 'keyword.operator.random-direction.codegrid'],
+    ['^ v < > ??', '<', 'keyword.operator.direction.codegrid'],
+    ['?0^ ?1> ?2;', '?0', 'storage.modifier.condition.codegrid'],
+    ['?1?==', '?=', 'keyword.operator.compare.codegrid'],
+    ['?1?==', '=', 'storage.modifier.attachment.codegrid'],
+    ['?0??', '??', 'keyword.operator.random-direction.codegrid'],
     [',< ,> ,^ ,v', ',v', 'keyword.operator.read.codegrid'],
     ['! { } ( ) & %', '{', 'keyword.operator.pointer.codegrid'],
     ['! { } ( ) & %', ')', 'keyword.operator.stack.codegrid'],

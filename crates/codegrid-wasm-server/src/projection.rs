@@ -335,6 +335,7 @@ impl Serialize for CellProjection<'_> {
         S: Serializer,
     {
         serialize_object!(serializer, {
+            "prefix" => &self.0.prefix,
             "entry" => &self.0.entry,
             "primary" => &self.0.primary,
             "attachment" => &self.0.attachment

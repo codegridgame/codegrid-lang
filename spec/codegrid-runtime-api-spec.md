@@ -229,6 +229,12 @@ specification:
   call frames, execution phase, and PRNG state;
 - cumulative raw metrics, structured VM errors, and an optional VM fault.
 
+Normal program-view cells contain nullable canonical token fields `prefix`,
+`entry`, `primary`, and `attachment`. `prefix` is `?0`, `?1`, `?2`, or null;
+it survives mutable Primary replacement and clearing. Folded Block arrays
+contain nullable token strings, including any prefix before the Primary.
+These views are read-only projections and cannot be supplied as executable IR.
+
 Custom invocation state is synchronous and temporary within a caller's
 transition; the snapshot does not invent persistent Custom instance handles.
 Custom effects, failures, events, and memory accesses are represented according
@@ -309,3 +315,9 @@ The Full local development scope and acceptance work are tracked in the
 [Full task book](../tasks/spec-completion.md). This specification assigns
 the host-neutral v3 contract; it does not approve production deployment or
 settle the separate host gates listed above.
+
+## Conditional prefix and CMP migration (2026-10-03)
+
+The approved source/VM migration uses executable IR format 2, RandomDirection `??` (126), CMP `?=` (124), and fixed conditional prefixes `?0`–`?2`. Normal code-view cells expose an additive nullable `prefix` field containing the canonical prefix spelling. This field survives Primary mutation and clearing. Folded Block views keep their existing arrays of nullable strings; nonempty strings include any prefix followed by the Primary token. These are read-only projections, not executable interchange data.
+
+The Runtime API v3, browser binding envelope, server ABI v4, CLI JSON schema 1, and debug protocol 2 remain unchanged; existing lifecycle and transport fields are preserved. Language source acceptance, IR version, capability vocabulary, and new code-view fields follow the recorded migration decision. Removed source forms and obsolete instruction bytes are not compatibility aliases. Consumers displaying cells should include the prefix.

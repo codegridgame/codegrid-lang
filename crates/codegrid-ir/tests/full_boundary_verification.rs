@@ -61,6 +61,7 @@ fn program_with_attachment_candidate(
             (
                 Slot::new(id).unwrap(),
                 FoldedBlock {
+                    prefixes: Default::default(),
                     cells: vec![Some(P::Add); outer_cells.len()],
                 },
             )
@@ -184,6 +185,7 @@ fn resolves_highest_structural_ids_in_outer_and_custom_scopes() {
     outer_main.folded_blocks.insert(
         id,
         FoldedBlock {
+            prefixes: Default::default(),
             cells: vec![Some(P::Add), None, None, None],
         },
     );
@@ -207,6 +209,7 @@ fn resolves_highest_structural_ids_in_outer_and_custom_scopes() {
     custom_main.folded_blocks.insert(
         id,
         FoldedBlock {
+            prefixes: Default::default(),
             cells: vec![Some(P::Add), None],
         },
     );
@@ -326,6 +329,7 @@ fn rejects_invalid_attachment_placement_and_repeat_counts() {
         vec![
             Cell::entry(Direction::Right),
             Cell {
+                prefix: None,
                 entry: None,
                 primary: None,
                 attachment: Some(Attachment::ReadCode),
@@ -430,6 +434,7 @@ fn rejects_invalid_attachment_placement_and_repeat_counts() {
 
     let entry_attachment = program(board(
         vec![Cell {
+            prefix: None,
             entry: Some(Direction::Right),
             primary: None,
             attachment: Some(Attachment::ReadCode),
@@ -503,10 +508,7 @@ fn accepts_full_primary_inventory_in_scoped_programs() {
             P::Direction(Direction::Left),
             P::Direction(Direction::Right),
             P::RandomDirection,
-            P::IfZero(Direction::Up),
-            P::IfZero(Direction::Down),
-            P::IfZero(Direction::Left),
-            P::IfZero(Direction::Right),
+            P::Compare,
             P::Read(Direction::Up),
             P::Read(Direction::Down),
             P::Read(Direction::Left),
@@ -552,6 +554,7 @@ fn accepts_full_primary_inventory_in_scoped_programs() {
     main.folded_blocks.insert(
         fold_id,
         codegrid_ir::FoldedBlock {
+            prefixes: Default::default(),
             cells: folded_cells,
         },
     );
@@ -567,6 +570,7 @@ fn accepts_full_primary_inventory_in_scoped_programs() {
     custom_main.folded_blocks.insert(
         fold_id,
         codegrid_ir::FoldedBlock {
+            prefixes: Default::default(),
             cells: vec![Some(P::Add), None],
         },
     );

@@ -977,6 +977,7 @@ fn finalize_board(
                     hir::Cell::Entry(direction)
                 }
                 CellToken::Instruction {
+                    prefix,
                     primary,
                     attachment,
                 } => {
@@ -988,6 +989,7 @@ fn finalize_board(
                         diagnostics,
                     );
                     hir::Cell::Instruction {
+                        prefix,
                         primary,
                         attachment,
                     }
@@ -1036,6 +1038,7 @@ fn finalize_board(
             ));
         }
         let mut cells = Vec::with_capacity(row.cells.len());
+        let mut prefixes = BTreeMap::new();
         for cell in row.cells {
             let primary = match cell.value {
                 CellToken::Empty => None,
@@ -1048,6 +1051,7 @@ fn finalize_board(
                     None
                 }
                 CellToken::Instruction {
+                    prefix,
                     primary,
                     attachment,
                 } => {
@@ -1065,6 +1069,9 @@ fn finalize_board(
                             cell.span,
                         ));
                     }
+                    if let Some(prefix) = prefix {
+                        prefixes.insert(cells.len(), prefix);
+                    }
                     Some(primary)
                 }
             };
@@ -1076,7 +1083,7 @@ fn finalize_board(
         folded_blocks.insert(
             slot,
             hir::Spanned {
-                value: hir::FoldedBlock { cells },
+                value: hir::FoldedBlock { cells, prefixes },
                 span: raw_fold.span,
             },
         );

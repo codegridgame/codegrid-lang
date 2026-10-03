@@ -202,8 +202,8 @@ fn main() -> Result<()> {
         .as_array()
         .context("conformance fixture cases must be an array")?;
     ensure!(
-        cases.len() == 63,
-        "shared Full fixture must contain all 63 cases, found {}",
+        cases.len() == 75,
+        "shared Full fixture must contain all 75 cases, found {}",
         cases.len()
     );
 
@@ -964,7 +964,7 @@ fn normalize_runtime_board(board: &Value, shape: ResultShape) -> Result<Value> {
         .context("runtime board cells must be an array")?
         .iter()
         .map(|cell| {
-            assert_exact_keys(cell, &["attachment", "entry", "primary"], "runtime cell")?;
+            assert_exact_keys(cell, &["attachment", "entry", "prefix", "primary"], "runtime cell")?;
             let entry = match cell["entry"].as_str() {
                 Some(entry) if matches!(shape, ResultShape::ServerApi) => {
                     entry.strip_prefix('~').with_context(|| {
@@ -977,6 +977,7 @@ fn normalize_runtime_board(board: &Value, shape: ResultShape) -> Result<Value> {
             Ok(json!({
                 "entry": if entry.is_empty() { Value::Null } else { json!(entry) },
                 "primary": cell["primary"],
+                "prefix": cell["prefix"],
                 "attachment": cell["attachment"],
             }))
         })

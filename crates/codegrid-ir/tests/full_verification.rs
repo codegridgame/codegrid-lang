@@ -40,6 +40,38 @@ mod tests {
         }
     }
 
+    #[test]
+    fn rejects_detached_prefixes_entry_prefixes_and_old_ir_version() {
+        use codegrid_model::ConditionPrefix;
+        for cell in [
+            Cell::empty().with_prefix(ConditionPrefix::Zero),
+            Cell::entry(Direction::Right).with_prefix(ConditionPrefix::Zero),
+        ] {
+            assert!(
+                VerifiedProgram::new(program(vec![Cell::entry(Direction::Right), cell], 2))
+                    .is_err()
+            );
+        }
+        let mut old = program(vec![Cell::entry(Direction::Right)], 1);
+        old.format_version = 1;
+        assert_eq!(
+            VerifiedProgram::new(old).unwrap_err()[0].code,
+            "ir.unsupported_version"
+        );
+        let mut malformed = program(vec![Cell::entry(Direction::Right)], 1);
+        malformed.outer.main.folded_blocks.insert(
+            Slot::new(0).unwrap(),
+            FoldedBlock {
+                cells: vec![None],
+                prefixes: BTreeMap::from([(1, ConditionPrefix::Zero)]),
+            },
+        );
+        assert!(VerifiedProgram::new(malformed)
+            .unwrap_err()
+            .iter()
+            .any(|error| error.code == "ir.detached_attachment"));
+    }
+
     fn program_with_function(function: Board) -> Program {
         let function_id = Slot::new(0).expect("zero is a valid function ID");
         Program {
@@ -115,6 +147,7 @@ mod tests {
         let mut entry_shares_instruction =
             program(vec![Cell::entry(Direction::Right), Cell::empty()], 2);
         entry_shares_instruction.outer.main.cells[1] = Cell {
+            prefix: None,
             entry: Some(Direction::Left),
             primary: Some(PrimaryInstruction::Add),
             attachment: None,
@@ -134,7 +167,10 @@ mod tests {
         let mut invalid_fold_width = program(vec![Cell::entry(Direction::Right), Cell::empty()], 2);
         invalid_fold_width.outer.main.folded_blocks.insert(
             Slot::new(0).expect("zero is a valid Fold ID"),
-            FoldedBlock { cells: vec![None] },
+            FoldedBlock {
+                prefixes: Default::default(),
+                cells: vec![None],
+            },
         );
 
         let mut invalid_fold_content =
@@ -142,6 +178,7 @@ mod tests {
         invalid_fold_content.outer.main.folded_blocks.insert(
             Slot::new(0).expect("zero is a valid Fold ID"),
             FoldedBlock {
+                prefixes: Default::default(),
                 cells: vec![Some(PrimaryInstruction::Return), None],
             },
         );
@@ -237,6 +274,7 @@ mod tests {
         custom_main.folded_blocks.insert(
             function_zero,
             FoldedBlock {
+                prefixes: Default::default(),
                 cells: vec![Some(PrimaryInstruction::Custom(custom_one))],
             },
         );

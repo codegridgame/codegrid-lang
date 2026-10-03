@@ -1,5 +1,7 @@
 # CodeGrid Language
 
+The current language includes fixed conditional prefixes `?0`–`?2`, CMP `?=`, and random direction `??`; executable IR is format 2. See the [migration manual](docs/conditional-prefix-migration.md) for semantics, retired forms, compatibility, and verification.
+
 CodeGrid is a grid-based programming language built around a shared Rust compiler and deterministic VM. The development target is the complete language, including multiple execution threads, functions, Custom instructions, Folded Blocks, stacks, memory, attachments, and deterministic randomness.
 
 ## Full language development status

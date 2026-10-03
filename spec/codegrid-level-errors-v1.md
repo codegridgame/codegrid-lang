@@ -39,7 +39,7 @@ unsupported capability/metric/evaluation type, duplicate capability, missing
 visible tests, and trusted byte/test/data ceilings. Structural reasons identify
 instruction/Attachment/memory permissions, board dimensions, Entry threads,
 Function/Custom counts, and generated instruction/memory restrictions.
-These reasons supplement the stable category and preserve exact field paths.
+These reasons supplement the stable category and preserve exact field paths. A missing conditional-prefix permission is `AttachmentNotAllowed`, including in Folded Blocks, where its path identifies the folded cell. A guarded forbidden Primary remains `InstructionNotAllowed`. Obsolete `IF_ZERO` identifiers are unsupported capabilities when loading a level; no new stable error identity is introduced.
 
 Test failures are `WrongOutput`, `IncompleteOutput`, or a forwarded VM runtime
 code. Hidden test results allow only `HiddenTestFailed` and generic typed reason;

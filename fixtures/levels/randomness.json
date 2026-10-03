@@ -10,10 +10,6 @@
       "MOVE_LEFT",
       "MOVE_RIGHT",
       "RANDOM_DIRECTION",
-      "IF_ZERO_UP",
-      "IF_ZERO_DOWN",
-      "IF_ZERO_LEFT",
-      "IF_ZERO_RIGHT",
       "READ",
       "CLEAR",
       "ADD",
@@ -37,12 +33,14 @@
       "FOLDED_BLOCK",
       "CUSTOM",
       "CUSTOM_RETURN",
-      "HALT"
+      "HALT",
+      "CMP"
     ],
     "allowed_attachments": [
       "READ_CODE",
       "WRITE_CODE",
-      "REPEAT"
+      "REPEAT",
+      "CONDITION_0"
     ],
     "main_board": {
       "width": 100,

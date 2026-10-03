@@ -168,7 +168,8 @@ expression evaluation are not implemented.
 
 - Registers `.cg` files as the `codegrid` language and supplies a file icon.
 - Highlights the Full Primary inventory, Entry and Empty cells, ReadCode,
-  WriteCode, and Repeat attachments, Main/Custom/Function/Folded Block paths,
+  WriteCode, and Repeat suffix attachments, conditional prefixes `?0`–`?2`,
+  CMP `?=`, random direction `??`, Main/Custom/Function/Folded Block paths,
   named `@end` paths, dimensions, comments, and malformed lexical tokens.
 - Completes Full Primary and cell spellings, grammar-level attachment forms,
   structural directive paths, and named `@end` shapes. Standalone suggestions
