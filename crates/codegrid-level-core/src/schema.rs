@@ -1,4 +1,6 @@
+mod scene_v2;
 use crate::validate::{attachment_identifiers, instruction_identifiers};
+pub use scene_v2::*;
 use serde::de::{self, MapAccess, Visitor};
 use serde::Deserializer;
 use serde_json::{value::RawValue, Value};
@@ -333,85 +335,8 @@ pub fn load_level_json(input: &[u8], max_bytes: usize) -> Result<ValidatedLevel,
             ))
         }
     }
-    let p = "$.program_rules";
-    let r = object(
-        &m["program_rules"],
-        p,
-        &[
-            "allowed_instructions",
-            "allowed_attachments",
-            "main_board",
-            "function_board",
-            "max_functions",
-            "max_custom",
-            "max_threads",
-            "memory_enabled",
-        ],
-    )?;
-    let rules = ProgramRules {
-        allowed_instructions: capabilities(
-            &r["allowed_instructions"],
-            "$.program_rules.allowed_instructions",
-            instruction_identifiers(),
-        )?,
-        allowed_attachments: capabilities(
-            &r["allowed_attachments"],
-            "$.program_rules.allowed_attachments",
-            attachment_identifiers(),
-        )?,
-        main_board: bounds(&r["main_board"], "$.program_rules.main_board")?,
-        function_board: bounds(&r["function_board"], "$.program_rules.function_board")?,
-        max_functions: integer(
-            &r["max_functions"],
-            "$.program_rules.max_functions",
-            10,
-            false,
-        )? as u32,
-        max_custom: integer(&r["max_custom"], "$.program_rules.max_custom", 10, false)? as u32,
-        max_threads: integer(
-            &r["max_threads"],
-            "$.program_rules.max_threads",
-            u32::MAX.into(),
-            true,
-        )? as u32,
-        memory_enabled: boolean(&r["memory_enabled"], "$.program_rules.memory_enabled")?,
-    };
-    let c = m["constraints"]
-        .as_object()
-        .ok_or_else(|| LevelError::invalid("IncorrectType", "$.constraints"))?;
-    let mut constraints = BTreeMap::new();
-    for (k, v) in c {
-        let p = format!("$.constraints.{k}");
-        if !CONSTRAINTS.contains(&k.as_str()) {
-            return Err(LevelError::invalid("UnsupportedMetric", &p));
-        }
-        constraints.insert(k.clone(), integer(v, &p, u64::MAX, false)?);
-    }
-    let s = object(&m["scoring"], "$.scoring", &["metrics"])?;
-    let s = s["metrics"]
-        .as_object()
-        .ok_or_else(|| LevelError::invalid("IncorrectType", "$.scoring.metrics"))?;
-    let mut scoring = BTreeMap::new();
-    for (k, v) in s {
-        let p = format!("$.scoring.metrics.{k}");
-        if !METRICS.contains(&k.as_str()) {
-            return Err(LevelError::invalid("UnsupportedMetric", &p));
-        }
-        let x = object(v, &p, &["target"])?;
-        scoring.insert(
-            k.clone(),
-            if x["target"].is_null() {
-                None
-            } else {
-                Some(integer(
-                    &x["target"],
-                    &format!("{p}.target"),
-                    u64::MAX,
-                    false,
-                )?)
-            },
-        );
-    }
+    let rules = parse_rules(&m["program_rules"])?;
+    let (constraints, scoring) = parse_metric_policy(&m["constraints"], &m["scoring"], false)?;
     let e = object(&m["evaluation"], "$.evaluation", &["tests"])?;
     let arr = e["tests"]
         .as_array()
@@ -441,6 +366,99 @@ pub fn load_level_json(input: &[u8], max_bytes: usize) -> Result<ValidatedLevel,
         scoring,
     })
 }
+fn parse_rules(value: &Value) -> Result<ProgramRules, LevelError> {
+    let p = "$.program_rules";
+    let r = object(
+        value,
+        p,
+        &[
+            "allowed_instructions",
+            "allowed_attachments",
+            "main_board",
+            "function_board",
+            "max_functions",
+            "max_custom",
+            "max_threads",
+            "memory_enabled",
+        ],
+    )?;
+    Ok(ProgramRules {
+        allowed_instructions: capabilities(
+            &r["allowed_instructions"],
+            "$.program_rules.allowed_instructions",
+            instruction_identifiers(),
+        )?,
+        allowed_attachments: capabilities(
+            &r["allowed_attachments"],
+            "$.program_rules.allowed_attachments",
+            attachment_identifiers(),
+        )?,
+        main_board: bounds(&r["main_board"], "$.program_rules.main_board")?,
+        function_board: bounds(&r["function_board"], "$.program_rules.function_board")?,
+        max_functions: integer(
+            &r["max_functions"],
+            "$.program_rules.max_functions",
+            10,
+            false,
+        )? as u32,
+        max_custom: integer(&r["max_custom"], "$.program_rules.max_custom", 10, false)? as u32,
+        max_threads: integer(
+            &r["max_threads"],
+            "$.program_rules.max_threads",
+            u32::MAX.into(),
+            true,
+        )? as u32,
+        memory_enabled: boolean(&r["memory_enabled"], "$.program_rules.memory_enabled")?,
+    })
+}
+fn parse_metric_policy(
+    constraints_value: &Value,
+    scoring_value: &Value,
+    elevator: bool,
+) -> Result<(BTreeMap<String, u64>, BTreeMap<String, Option<u64>>), LevelError> {
+    let c = constraints_value
+        .as_object()
+        .ok_or_else(|| LevelError::invalid("IncorrectType", "$.constraints"))?;
+    let mut constraints = BTreeMap::new();
+    for (k, v) in c {
+        let p = format!("$.constraints.{k}");
+        if !CONSTRAINTS.contains(&k.as_str())
+            && !(elevator && ["max_travel_distance", "max_stop_count"].contains(&k.as_str()))
+        {
+            return Err(LevelError::invalid("UnsupportedMetric", &p));
+        }
+        constraints.insert(k.clone(), integer(v, &p, u64::MAX, false)?);
+    }
+    let s = object(scoring_value, "$.scoring", &["metrics"])?;
+    let s = s["metrics"]
+        .as_object()
+        .ok_or_else(|| LevelError::invalid("IncorrectType", "$.scoring.metrics"))?;
+    let mut scoring = BTreeMap::new();
+    for (k, v) in s {
+        let p = format!("$.scoring.metrics.{k}");
+        if !METRICS.contains(&k.as_str())
+            && !(elevator && ["travel_distance", "stop_count"].contains(&k.as_str()))
+        {
+            return Err(LevelError::invalid("UnsupportedMetric", &p));
+        }
+        let x = object(v, &p, &["target"])?;
+        scoring.insert(
+            k.clone(),
+            if x["target"].is_null() {
+                None
+            } else {
+                Some(integer(
+                    &x["target"],
+                    &format!("{p}.target"),
+                    u64::MAX,
+                    false,
+                )?)
+            },
+        );
+    }
+    Ok((constraints, scoring))
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

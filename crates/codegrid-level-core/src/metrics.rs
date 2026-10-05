@@ -78,7 +78,10 @@ pub fn aggregate(base: &Metrics, current: &Metrics) -> Option<Metrics> {
     let mut result = base.clone();
     for (name, value) in current {
         let old = result.get(name).copied().unwrap_or(0);
-        let next = if matches!(name.as_str(), "ticks" | "cost" | "operation_count") {
+        let next = if matches!(
+            name.as_str(),
+            "ticks" | "cost" | "operation_count" | "travel_distance" | "stop_count"
+        ) {
             old.checked_add(*value)?
         } else {
             old.max(*value)
@@ -106,6 +109,8 @@ pub fn constraint_metric(key: &str) -> &'static str {
         "max_instruction_kinds" => "instruction_kinds",
         "max_functions_used" => "functions_used",
         "max_boards_used" => "boards_used",
+        "max_travel_distance" => "travel_distance",
+        "max_stop_count" => "stop_count",
         _ => "",
     }
 }

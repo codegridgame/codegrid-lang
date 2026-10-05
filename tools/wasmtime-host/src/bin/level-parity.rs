@@ -7,6 +7,7 @@ use wasmtime::{
 };
 
 struct Host {
+    version: u32,
     store: Store<StoreLimits>,
     memory: Memory,
     alloc: TypedFunc<u32, u32>,
@@ -18,6 +19,14 @@ impl Host {
         engine: &Engine,
         module: &Module,
         memory_limit: usize,
+    ) -> Result<Self, Box<dyn std::error::Error>> {
+        Self::new_versioned(engine, module, memory_limit, 1)
+    }
+    fn new_versioned(
+        engine: &Engine,
+        module: &Module,
+        memory_limit: usize,
+        version: u32,
     ) -> Result<Self, Box<dyn std::error::Error>> {
         let mut store = Store::new(
             engine,
@@ -37,7 +46,16 @@ impl Host {
                 .call(&mut store, ())?,
             1
         );
+        if version == 2 {
+            assert_eq!(
+                instance
+                    .get_typed_func::<(), u32>(&mut store, "level_abi_version_v2")?
+                    .call(&mut store, ())?,
+                2
+            );
+        }
         Ok(Self {
+            version,
             memory: instance
                 .get_memory(&mut store, "memory")
                 .ok_or("Missing memory")?,
@@ -78,8 +96,8 @@ impl Host {
         Ok(serde_json::from_slice(&response)?)
     }
     fn api(&mut self, mut value: Value) -> Result<Value, Box<dyn std::error::Error>> {
-        value["api_version"] = json!(1);
-        self.exchange(json!({"abi_version":1,"api_version":1,"operation":"request","request_json":value.to_string()}))
+        value["api_version"] = json!(self.version);
+        self.exchange(json!({"abi_version":self.version,"api_version":self.version,"operation":"request","request_json":value.to_string()}))
     }
 }
 fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -89,6 +107,13 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             .ok_or("Usage: level-parity <repository-root> <wasm-artifact>")?,
     );
     let wasm = args.get(2).ok_or("Missing WASM path")?;
+    let scene = args.iter().any(|arg| arg == "--scene-v2");
+    let version = if scene { 2 } else { 1 };
+    let fixtures = root.join(if scene {
+        "fixtures/scene-v2"
+    } else {
+        "fixtures/levels"
+    });
     let memory_limit = std::env::var("CODEGRID_WASM_MAX_MEMORY_BYTES")
         .unwrap_or_else(|_| "67108864".into())
         .parse::<usize>()?;
@@ -111,9 +136,17 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     if memory_type.maximum() != Some((memory_limit / 65536) as u64) {
         return Err("Artifact memory maximum differs from configured host ceiling".into());
     }
-    let profile = root.join("fixtures/levels/profiles/local-v1.json");
+    let profile = root.join(if scene {
+        "examples/scene-host-v2/profile-local-v2.json"
+    } else {
+        "fixtures/levels/profiles/local-v1.json"
+    });
     let profile_json = fs::read_to_string(&profile)?;
-    let manifest_path = root.join("fixtures/levels/conformance-v1.json");
+    let manifest_path = fixtures.join(if scene {
+        "conformance-v2.json"
+    } else {
+        "conformance-v1.json"
+    });
     let cases: Vec<Value> = if manifest_path.exists() {
         serde_json::from_str::<Value>(&fs::read_to_string(manifest_path)?)?["cases"]
             .as_array()
@@ -126,12 +159,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     };
     let mut records = vec![];
     for case in cases {
-        let level = root
-            .join("fixtures/levels")
-            .join(case["level"].as_str().ok_or("Level path required")?);
-        let program = root
-            .join("fixtures/levels")
-            .join(case["program"].as_str().ok_or("Program path required")?);
+        let level = fixtures.join(case["level"].as_str().ok_or("Level path required")?);
+        let program = fixtures.join(case["program"].as_str().ok_or("Program path required")?);
         let mode = case["mode"].as_str().unwrap_or("Official");
         let boundary = case["boundary"].as_str().unwrap_or("Exit");
         let seed = case["seed"].as_str().unwrap_or("18446744073709551615");
@@ -156,12 +185,14 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             "--limits-file",
         ])
         .arg(&profile)
+        .args(["--api-version", &version.to_string()])
         .output()?;
         let native: Value = serde_json::from_slice(&native.stdout)?;
-        let mut host = Host::new(&engine, &module, memory_limit)?;
-        assert_eq!(host.exchange(json!({"abi_version":1,"api_version":1,"operation":"initialize","profile_json":profile_json}))?["status"],"ok");
+        let mut host = Host::new_versioned(&engine, &module, memory_limit, version)?;
+        assert_eq!(host.exchange(json!({"abi_version":version,"api_version":version,"operation":"initialize","profile_json":profile_json}))?["status"],"ok");
         let level_response =
             host.api(json!({"operation":"load_level","level_json":fs::read_to_string(&level)?}))?;
+        let mut evaluation = Value::Null;
         let response = if level_response["status"] != "ok" {
             level_response
         } else {
@@ -172,11 +203,12 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 program_response
             } else {
                 let started=host.api(json!({"operation":"start_evaluation","level":level_response["handle"],"program":program_response["handle"],"mode":mode,"boundary_mode":boundary,"shuffle_seed":seed,"custom_execution_limit":custom_limit}))?;
+                evaluation = started["handle"].clone();
                 if started["status"] != "ok" {
                     started
                 } else {
                     loop {
-                        let result=host.api(json!({"operation":"advance_evaluation","evaluation":started["handle"],"work_budget":"1000000"}))?;
+                        let result=host.api(json!({"operation":"advance_evaluation","evaluation":started["handle"],"work_budget":case["work_budget"].as_str().unwrap_or("1000000")}))?;
                         if result["status"] != "pending" {
                             break result;
                         }
@@ -187,7 +219,46 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         let mut portable = response;
         portable.as_object_mut().unwrap().remove("abi_version");
         assert_eq!(portable, native, "Fixture {}", case["id"]);
-        records.push(json!({"id":case["id"],"response":portable}));
+        if scene {
+            assert_eq!(portable["result"]["status"], case["expected_status"]);
+            let mut events = Vec::new();
+            if mode == "Debug" {
+                let mut cursor = json!("0");
+                for _ in 0..100 {
+                    let page = host.api(json!({"operation":"scene_feedback","evaluation_handle":evaluation,"after_sequence":cursor,"max_events":"1024"}))?;
+                    assert_eq!(page["status"], "ok");
+                    events.extend(
+                        page["events"]
+                            .as_array()
+                            .ok_or("Missing events")?
+                            .iter()
+                            .cloned(),
+                    );
+                    cursor = page["next_sequence"].clone();
+                    if page["has_more"] == false {
+                        break;
+                    }
+                }
+            }
+            records.push(json!({"id":case["id"],"result":portable["result"],"events":events}));
+        } else {
+            records.push(json!({"id":case["id"],"response":portable}));
+        }
+    }
+    if scene {
+        let mut fuel_probe = Host::new_versioned(&engine, &module, memory_limit, 2)?;
+        fuel_probe.store.set_fuel(1)?;
+        assert!(fuel_probe.alloc.call(&mut fuel_probe.store, 1).is_err());
+        let report = json!({"runtime":"Wasmtime 49.0.1","memory_limit_bytes":memory_limit.to_string(),"artifact_sha256":format!("{:x}",Sha256::digest(fs::read(wasm)?)),"results":records});
+        fs::write(
+            root.join("target/scene-wasmtime-report.json"),
+            serde_json::to_vec_pretty(&report)?,
+        )?;
+        println!(
+            "Wasmtime API-2 scene parity passed: {} complete CLI results and Debug traces",
+            records.len()
+        );
+        return Ok(());
     }
     let mut probe = Host::new(&engine, &module, memory_limit)?;
     assert_eq!(probe.exchange(json!({"abi_version":1,"api_version":1,"operation":"initialize","profile_json":profile_json}))?["status"],"ok");

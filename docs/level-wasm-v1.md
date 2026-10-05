@@ -118,3 +118,11 @@ runtime identity, and the effective trusted profile. The comparator also reads
 `target/level-wasmtime-report.json` when present; regenerate every report against
 the same current manifest and build before comparing. An unavailable production
 backend or Steam embedding remains an explicit integration dependency.
+
+## Planned scene v2 contract
+
+The [Scene Host Contract v2](../spec/codegrid-scene-host-contract-v2.md) defines
+separate Level API/profile/browser-binding/portable-ABI v2, typed scene failure
+reasons, trusted scene ceilings, visible result variants, and acknowledged
+Debug feedback events. This v1 transport contract and current runtime behavior
+remain unchanged. Implement and verify v2 before advertising its capabilities.

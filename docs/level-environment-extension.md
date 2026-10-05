@@ -1,9 +1,10 @@
 # Level Environment Extension Design
 
-Status: internal WP3 design. This document defines an extension shape for the
-shared Rust level evaluator; it does not make an Environment scene supported.
-`Elevator`, `MaintenanceRobot`, and other production scenes remain unsupported
-until each receives a separate normative schema and protocol specification.
+Status: historical internal WP3 design. The current six-scene protocols are
+defined by the Scene Spec and shared session architecture; this document's
+earlier reset-based Environment sketches and static-Rust-only registration do
+not describe the current runtime. Player-authored packages follow the separate
+[Custom Scene architecture](custom-scenes-architecture.md).
 
 The authorities are the [Level Core v1 specification](../spec/codegrid-level-core-spec-v1.md),
 the [ExactIO implementation contract](../spec/codegrid-level-exactio-contract-v1.md),
@@ -12,6 +13,23 @@ the [level architecture](level-core-architecture.md), and the
 an internal design sketch only. If implementation evidence reveals a semantic
 gap, record the decision in the [decision log](decisions.md) and update the
 normative specification before relying on the new interpretation.
+
+## Later scene protocol decision (2026-10-05)
+
+The [Scene Specification v1](../spec/codegrid-scene-spec-v1.md) now defines
+the selected six-scene protocols. Its continuous VM per case and queue-tail
+input appends supersede the fresh-VM-per-decision lifecycle sketches below
+for Robot, Elevator, and MechanicalArm. Retain those sketches as historical
+interface design; adapt them before implementation. Typed author JSON is now
+defined by the selected [Scene Level JSON format v1 contract](../spec/codegrid-scene-level-json-v2.md).
+The continuous session, input append, and versioned public projections are now
+implemented in Level API v2. The accepted [continuous session design](scene-session-design.md)
+and [scene conformance plan](scene-conformance-plan.md) document the current
+behavior and remaining evidence gaps.
+Their per-tick append, actor-order validation, partial actor effects, and
+terminal priority replace the corresponding old sketches below. This document
+predates the current API-2 six-scene implementation and is retained as design
+history, not a statement of current runtime capability.
 
 ## Design boundary
 

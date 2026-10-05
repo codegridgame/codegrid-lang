@@ -1,0 +1,10 @@
+<!doctype html><html><head><meta charset="utf-8"><title>Scene API-2 Worker Conformance</title></head><body><pre id="result">Running scene worker</pre><script type="module">
+const manifest = await (await fetch('/fixtures/scene-v2/conformance-v2.json')).json();
+const profile = await (await fetch('/examples/scene-host-v2/profile-local-v2.json')).text();
+const cases = await Promise.all(manifest.cases.map(async fixture => ({...fixture,
+  level_json: await (await fetch('/fixtures/scene-v2/' + fixture.level)).text(),
+  source: await (await fetch('/fixtures/scene-v2/' + fixture.program)).text()})));
+const worker = new Worker('./scene-worker.mjs', {type: 'module'});
+worker.onmessage = ({data}) => {document.getElementById('result').textContent = JSON.stringify(data); fetch('/report', {method:'POST', body:JSON.stringify(data)}); worker.terminate();};
+worker.postMessage({profile, cases});
+</script></body></html>

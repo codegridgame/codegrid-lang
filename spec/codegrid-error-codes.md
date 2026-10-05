@@ -468,7 +468,7 @@ These classify existing outcomes without changing correctness or failure priorit
 | --- | --- |
 | `level.wrong_output` | A committed output byte differs from the expected stream. |
 | `level.incomplete_output` | Execution terminates before the expected stream completes. |
-| `level.test_failed` | An ExactIO correctness check fails. |
+| `level.test_failed` | A v1 ExactIO correctness check or v2 scene correctness/action/goal check fails; v2 scene distinctions use typed reasons. |
 | `level.runtime_error` | An ExactIO test encounters a VM error; hidden details remain redacted. |
 | `level.constraint_exceeded` | A permitted metric exceeds a level constraint. |
 

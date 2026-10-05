@@ -1,0 +1,29 @@
+{
+  "profile_version": 2,
+  "profile_id": "codegrid.scene.local-v2",
+  "provenance": "Documentation example validated by the Rust v2 profile loader; not production policy",
+  "max_level_bytes": "1048576",
+  "max_source_bytes": "1048576",
+  "max_tests": "1024",
+  "max_total_test_bytes": "1048576",
+  "max_program_cells": "65536",
+  "max_program_boards": "1024",
+  "max_state_bytes": "16777216",
+  "max_state_units": "1048576",
+  "max_output_bytes": "1048576",
+  "max_handles": "128",
+  "max_response_bytes": "4194304",
+  "max_ticks_per_test": "100000",
+  "max_work_per_call": "1000000",
+  "max_total_work": "100000000",
+  "scene_limits": {
+    "max_input_queue_bytes": "65536",
+    "max_total_input_bytes_per_test": "1048576",
+    "max_scene_state_units": "1048576",
+    "max_scene_frames_per_test": "100000",
+    "max_scene_work_per_call": "100000",
+    "max_total_scene_work": "100000000",
+    "max_scene_events_per_evaluation": "8192",
+    "max_scene_feedback_bytes": "4194304"
+  }
+}

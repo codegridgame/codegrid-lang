@@ -1184,3 +1184,78 @@ fn evaluate_response_ceiling_returns_resource_exit_code() {
         "level_api.response_too_large"
     );
 }
+
+#[test]
+fn scene_api_two_manifest_executes_and_legacy_profile_path_stays_explicit() {
+    let root = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../..");
+    let profile = root.join("examples/scene-host-v2/profile-local-v2.json");
+    let manifest: Value = serde_json::from_str(include_str!(
+        "../../../fixtures/scene-v2/conformance-v2.json"
+    ))
+    .unwrap();
+    for case in manifest["cases"].as_array().unwrap() {
+        let level = root
+            .join("fixtures/scene-v2")
+            .join(case["level"].as_str().unwrap());
+        let source = root
+            .join("fixtures/scene-v2")
+            .join(case["program"].as_str().unwrap());
+        let output = run_cli(&[
+            "evaluate",
+            level.to_str().unwrap(),
+            source.to_str().unwrap(),
+            "--api-version",
+            "2",
+            "--mode",
+            &case["mode"].as_str().unwrap().to_ascii_lowercase(),
+            "--boundary",
+            &case["boundary"].as_str().unwrap().to_ascii_lowercase(),
+            "--seed",
+            case["seed"].as_str().unwrap(),
+            "--custom-limit",
+            "1000",
+            "--limits-file",
+            profile.to_str().unwrap(),
+        ]);
+        // Mirror the CLI's result exit mapping: Passed succeeds, a Fault is a
+        // VM fault, resource ceilings get their own code, and every other
+        // completed evaluation (TestFailed, ConstraintExceeded, ...) is a
+        // normal evaluation failure.
+        let expected_exit = match case["expected_status"].as_str() {
+            Some("Passed") => 0,
+            Some("Fault") => 8,
+            Some("ResourceLimitExceeded" | "Cancelled") => 11,
+            Some(_) => 9,
+            None => 2,
+        };
+        assert_eq!(
+            output.status.code(),
+            Some(expected_exit),
+            "{}: {}",
+            case["id"],
+            String::from_utf8_lossy(&output.stderr)
+        );
+        let response: Value = serde_json::from_slice(&output.stdout).unwrap();
+        assert_eq!(response["api_version"], 2);
+        assert_eq!(response["result"]["status"], case["expected_status"]);
+    }
+    let output = run_cli(&[
+        "evaluate",
+        root.join("fixtures/scene-v2/exactio.json")
+            .to_str()
+            .unwrap(),
+        root.join("fixtures/scene-v2/exactio.cg").to_str().unwrap(),
+        "--mode",
+        "debug",
+        "--boundary",
+        "exit",
+        "--seed",
+        "0",
+        "--custom-limit",
+        "1000",
+        "--limits-file",
+        profile.to_str().unwrap(),
+    ]);
+    assert_eq!(output.status.code(), Some(2));
+    assert!(String::from_utf8_lossy(&output.stderr).contains("level_api.invalid_profile"));
+}

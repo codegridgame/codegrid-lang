@@ -1,4 +1,4 @@
-//! Selected product scenes; this design catalog does not register executable scenes.
+//! Product catalog; implemented status tracks native API-2 registration, not WASM parity.
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum SceneKind {
@@ -7,6 +7,7 @@ pub enum SceneKind {
     QualityControl,
     Elevator,
     Robot,
+    MechanicalArm,
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -36,18 +37,16 @@ impl SceneKind {
             Self::QualityControl => "QualityControl",
             Self::Elevator => "Elevator",
             Self::Robot => "Robot",
+            Self::MechanicalArm => "MechanicalArm",
         }
     }
 
     pub const fn descriptor(self) -> SceneDescriptor {
         let family = match self {
             Self::ExactIO | Self::Baudot | Self::QualityControl => EvaluationFamily::ExactIO,
-            Self::Elevator | Self::Robot => EvaluationFamily::Environment,
+            Self::Elevator | Self::Robot | Self::MechanicalArm => EvaluationFamily::Environment,
         };
-        let status = match self {
-            Self::ExactIO => SceneStatus::Implemented,
-            _ => SceneStatus::Planned,
-        };
+        let status = SceneStatus::Implemented;
         SceneDescriptor {
             kind: self,
             family,
@@ -57,12 +56,13 @@ impl SceneKind {
 }
 
 /// Stable product order, distinct from executable Environment capabilities.
-pub const SELECTED_SCENES: [SceneKind; 5] = [
+pub const SELECTED_SCENES: [SceneKind; 6] = [
     SceneKind::ExactIO,
     SceneKind::Baudot,
     SceneKind::QualityControl,
     SceneKind::Elevator,
     SceneKind::Robot,
+    SceneKind::MechanicalArm,
 ];
 
 #[cfg(test)]
@@ -70,10 +70,10 @@ mod tests {
     use super::*;
 
     #[test]
-    fn catalog_preserves_selection_without_claiming_runtime_support() {
+    fn catalog_matches_native_scene_registration() {
         let ids: std::collections::BTreeSet<_> =
             SELECTED_SCENES.iter().map(|scene| scene.id()).collect();
-        assert_eq!(ids.len(), 5);
+        assert_eq!(ids.len(), 6);
         assert!(!ids.contains("Terminal"));
         assert!(!ids.contains("MaintenanceRobot"));
         let descriptors = SELECTED_SCENES.map(SceneKind::descriptor);
@@ -89,7 +89,7 @@ mod tests {
                 .iter()
                 .filter(|s| s.family == EvaluationFamily::Environment)
                 .count(),
-            2
+            3
         );
         assert_eq!(
             descriptors
@@ -97,7 +97,7 @@ mod tests {
                 .filter(|s| s.status == SceneStatus::Implemented)
                 .map(|s| s.kind)
                 .collect::<Vec<_>>(),
-            vec![SceneKind::ExactIO]
+            SELECTED_SCENES.to_vec()
         );
     }
 }

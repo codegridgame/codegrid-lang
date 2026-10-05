@@ -250,6 +250,6 @@ Generated from [codegrid-error-codes.json](codegrid-error-codes.json). Numbers a
 | `5024` | cli | `cli.source_bom` | The evaluate command's source file begins with a forbidden UTF-8 byte-order mark. |
 | `9025` | level | `level.wrong_output` | Committed output differs from the expected byte stream. |
 | `9026` | level | `level.incomplete_output` | Execution terminates before all expected bytes are produced. |
-| `9027` | level | `level.test_failed` | An ExactIO correctness check fails. |
-| `9028` | level | `level.runtime_error` | An ExactIO test encounters a VM runtime error; public details follow visibility rules. |
+| `9027` | level | `level.test_failed` | A v1 ExactIO correctness check or v2 scene correctness/action/goal check fails; v2 scene distinctions use typed reasons. |
+| `9028` | level | `level.runtime_error` | A level test encounters a VM runtime error; public details follow visibility rules. |
 | `9029` | level | `level.constraint_exceeded` | A permitted metric exceeds a configured level constraint. |

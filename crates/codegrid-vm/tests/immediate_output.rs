@@ -118,3 +118,76 @@ fn custom_immediate_output_pushes_to_caller_stack() {
     assert_eq!(vm.snapshot().output, [10]);
     assert_eq!(vm.snapshot().registers[0], 10);
 }
+
+#[test]
+fn appended_input_preserves_unread_tail_and_execution_state() {
+    let mut vm = machine(
+        board(
+            vec![
+                Cell::entry(Direction::Right),
+                instruction(",>"),
+                instruction("."),
+                instruction(",>"),
+                instruction("."),
+                instruction(";"),
+            ],
+            6,
+        ),
+        None,
+        &[9],
+    );
+    vm.step();
+    let before = vm.snapshot();
+    vm.append_input(&[8, 7]).unwrap();
+    vm.append_input(&[]).unwrap();
+    let after = vm.snapshot();
+    assert_eq!(after.input, [9, 8, 7]);
+    assert_eq!(after.registers, before.registers);
+    assert_eq!(after.threads, before.threads);
+    assert_eq!(after.metrics, before.metrics);
+    assert_eq!(after.runtime_program, before.runtime_program);
+    assert_eq!(vm.run(10), RunOutcome::Halted);
+    assert_eq!(vm.snapshot().output, [9, 8]);
+    assert_eq!(vm.snapshot().input, [7]);
+    let terminal = vm.snapshot();
+    assert_eq!(
+        vm.append_input(&[6]),
+        Err(codegrid_vm::InputAppendError::Terminal)
+    );
+    assert_eq!(vm.snapshot(), terminal);
+}
+
+#[test]
+fn append_after_interrupted_tick_uses_the_rolled_back_boundary() {
+    let outer = board(
+        vec![
+            Cell::entry(Direction::Right),
+            instruction("#0"),
+            instruction(",>"),
+            instruction("."),
+            instruction(";"),
+        ],
+        5,
+    );
+    let custom = board(
+        vec![
+            Cell::entry(Direction::Right),
+            instruction(".9"),
+            instruction("#]"),
+        ],
+        3,
+    );
+    let mut vm = machine(outer, Some(custom), &[8]);
+    vm.step();
+    let before = vm.snapshot();
+    let (result, work) = vm.step_with_work_accounting(NonZeroU64::new(1).unwrap());
+    assert!(result.is_err());
+    assert_eq!(work, 1);
+    assert_eq!(vm.snapshot(), before);
+    vm.append_input(&[7]).unwrap();
+    assert_eq!(vm.snapshot().input, [8, 7]);
+    assert_eq!(vm.snapshot().metrics, before.metrics);
+    assert_eq!(vm.run(20), RunOutcome::Halted);
+    assert_eq!(vm.snapshot().output, [8]);
+    assert_eq!(vm.snapshot().input, [7]);
+}

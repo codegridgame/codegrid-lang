@@ -1,9 +1,11 @@
 # Level Core Architecture
 
-Status: ExactIO core, shared Level API v1, CLI evaluate, and both Level WASM
-adapters are implemented. Environment remains an extension design with no
-production scenes. Local host verification and integration limitations are
-recorded in the [task book](../tasks/level-core-exactio-v1.md).
+Status: ExactIO API v1 and six scene protocols through Level API v2 are
+implemented, with initial browser/server host comparisons. The API-2 loader,
+examples, and fixtures use the selected Scene Level JSON format v1. Remaining
+verification limits are in the
+[scene conformance plan](scene-conformance-plan.md) and
+[task book](../tasks/level-core-exactio-v1.md).
 
 The [Level Core v1 specification](../spec/codegrid-level-core-spec-v1.md)
 defines evaluation behavior. The source and VM specifications continue to own
@@ -11,18 +13,32 @@ language acceptance, execution, raw metrics, and deterministic transitions.
 This architecture implements the user's decision that level validation and
 evaluation run in Rust, with Web, Steam, and backend callers using WASM.
 
-The [delivery task book](../tasks/level-core-exactio-v1.md) adds native CLI
-level-file evaluation to this direction, schedules the Environment extension
-design without production scenes, and requires actual host parity evidence.
+The [delivery task book](../tasks/level-core-exactio-v1.md) tracks native CLI
+level-file evaluation, scene host verification, and remaining parity evidence.
 The CLI evaluate command calls the level API; existing language
 check/run/debug commands retain their current composition and contracts.
 
+The initial ExactIO/Environment design below predates the accepted six-scene
+protocol and continuous-case work. Scene lifecycle and transitions are now
+defined by the [Scene Spec](../spec/codegrid-scene-spec-v1.md),
+[session design](scene-session-design.md), and
+[six-scene architecture](level-scenes-architecture.md). In particular,
+dynamic scenes retain one VM for a whole test case and reset between cases.
+The future boundary for player-authored scene packages is in the
+[Custom Scene architecture](custom-scenes-architecture.md).
+
 ## Ownership and dependencies
 
-The [five-scene architecture](level-scenes-architecture.md) maps the selected
-ExactIO, Baudot, QualityControl, Elevator, and Robot product scenes to shared
-evaluation engines. The implemented Rust catalog records design selection;
-it does not enable planned scenes or change executable capabilities.
+The [six-scene architecture](level-scenes-architecture.md) maps the selected
+ExactIO, Baudot, QualityControl, Elevator, Robot, and MechanicalArm scenes to
+the current Rust execution engines. API v2 advertises the six registered
+scenes; API v1 remains ExactIO-only.
+
+The future extension boundary for player-authored packages is described in the
+[Custom Scene architecture](custom-scenes-architecture.md). Official scenes
+share a private transition interface, but the closed schema/catalog remains a
+built-in registration mechanism. Custom packages require a separately versioned
+cooperative scene-call API; they are not loaded by the current catalog.
 
 Keep the language workspace independent of game policy. The following
 additional layers are implemented in this repository without changing the
@@ -50,7 +66,7 @@ the native CLI evaluate command depends on the Level API.
 
 | Component | Responsibility |
 | --- | --- |
-| `codegrid-level-core` | Decode and statically validate logical level JSON; check program rules against verified IR; execute ExactIO; aggregate metrics; enforce constraints; calculate ratings; produce privacy-safe results. Environment is a future extension with no production scene support. |
+| `codegrid-level-core` | Decode and validate logical levels; check program rules against verified IR; execute ExactIO and the six registered scene protocols; aggregate metrics; enforce constraints; calculate ratings; produce privacy-safe results. Custom package loading and guest execution are future work. |
 | `codegrid-level-api` | Versioned requests/results, source compilation through the existing compiler, validated-level and evaluation handles, explicit configuration, resource ceilings, bounded continuation, and lifecycle. |
 | `codegrid-level-wasm-browser` | Browser binding conversion and lifecycle only; built for the browser WASM toolchain. |
 | `codegrid-level-wasm-server` | Portable no-import byte ABI, bounded request/response buffers, and lifecycle only; usable in an embedded Steam runtime and a backend runtime. |
@@ -84,7 +100,8 @@ evaluate(level, verified_program, mode, resolved_options) -> EvaluationResult
 
 `evaluate` drives the same session transitions as `advance`. A pending host
 slice is not a player failure. Sessions retain an in-progress VM across host
-slices, but reset it at every new ExactIO test or Environment decision step.
+slices. ExactIO creates a fresh VM per test; current dynamic scene sessions
+retain one VM through the whole case and reset all VM/scene state between cases.
 They retain only committed VM state: a work interruption rolls back the whole
 attempted outer tick, including synchronous Custom work. The next call retries
 that tick from its start; it cannot resume a partially executed Custom invocation.
@@ -125,13 +142,14 @@ commit may an output complete a test or action; a same-tick committed HALT does
 not undo that output. No additional output ordering or partial-tick success
 semantics are introduced by the evaluator.
 
-Environment keeps persistent Rust scene state. Each decision encodes an
-observation as normal byte input, starts a fresh VM, collects normal OUTPUT
-bytes until a complete action, discards that VM, and applies the action in Rust.
-Goals and constraints use AND semantics. Incomplete/invalid actions are
-`TestFailed`, distinct from VM errors. A scene is supported only after its
-schema, byte protocols, transitions, goals, and metrics have a normative contract.
-The Elevator and MaintenanceRobot examples alone are insufficient contracts.
+Dynamic scenes keep persistent Rust world state and a continuous VM per case.
+Committed output is consumed in order; observations append to the VM input tail
+without discarding unread bytes. The evaluator and scene apply the transactional
+and actor-order rules in the [Scene Spec](../spec/codegrid-scene-spec-v1.md) and
+[session design](scene-session-design.md). Goals, action framing, scene
+failures, events, and scene metrics follow the current scene contracts. The
+older fresh-VM-per-decision Environment sketch is retained above only as
+historical Level Core v1 context.
 
 ## Metrics, limits, and results
 
@@ -228,6 +246,11 @@ trusted evaluator. Ordinary client debug execution may use the existing language
 Runtime API, but official hidden evaluations must not expose its raw snapshots.
 
 ## Decisions required before implementation
+
+This table is retained from the original ExactIO delivery planning. Scene
+protocol, continuous-session, and API v2 design gaps were subsequently resolved
+in the linked Scene Spec and host contracts; remaining implementation and
+verification work is tracked in the current scene conformance plan.
 
 The [ExactIO implementation contract](../spec/codegrid-level-exactio-contract-v1.md)
 resolves the first-phase schema, capability mapping, metric registry (including

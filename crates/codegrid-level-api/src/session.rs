@@ -8,14 +8,14 @@ use std::collections::BTreeMap;
 use std::num::NonZeroU64;
 
 #[derive(Deserialize)]
-struct Request {
-    api_version: u32,
+pub(crate) struct Request {
+    pub(crate) api_version: u32,
     #[serde(flatten)]
-    operation: Operation,
+    pub(crate) operation: Operation,
 }
 #[derive(Deserialize)]
 #[serde(tag = "operation", rename_all = "snake_case", deny_unknown_fields)]
-enum Operation {
+pub(crate) enum Operation {
     Capabilities,
     LoadLevel {
         level_json: String,
@@ -43,6 +43,11 @@ enum Operation {
         handle: String,
     },
     Shutdown,
+    SceneFeedback {
+        evaluation_handle: String,
+        after_sequence: String,
+        max_events: String,
+    },
 }
 struct Retained<T> {
     value: T,
@@ -61,7 +66,7 @@ pub struct LevelApi {
     stopped: bool,
     seed_source: Option<Box<dyn FnMut() -> u64>>,
 }
-static NEXT_SESSION: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(1);
+pub(crate) static NEXT_SESSION: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(1);
 impl LevelApi {
     pub fn new(profile: SafetyProfile) -> Result<Self, ApiError> {
         profile.validate()?;
@@ -411,6 +416,7 @@ impl LevelApi {
                 self.retained_bytes -= bytes;
                 Ok(envelope("ok", json!({})))
             }
+            Operation::SceneFeedback { .. } => Err(invalid_config()),
             Operation::Shutdown => {
                 self.levels.clear();
                 self.programs.clear();
@@ -426,6 +432,12 @@ fn nz(n: u64) -> NonZeroU64 {
     NonZeroU64::new(n).expect("Validated positive profile")
 }
 fn parse_request(text: &str) -> Result<Request, ApiError> {
+    parse_versioned_request(text, LEVEL_API_VERSION)
+}
+pub(crate) fn parse_versioned_request(
+    text: &str,
+    expected_version: u32,
+) -> Result<Request, ApiError> {
     struct Unique;
     impl<'de> serde::de::Visitor<'de> for Unique {
         type Value = serde_json::Map<String, Value>;
@@ -461,7 +473,7 @@ fn parse_request(text: &str) -> Result<Request, ApiError> {
                 "API version must be an integer",
             )
         })?;
-    if version != u64::from(LEVEL_API_VERSION) {
+    if version != u64::from(expected_version) {
         return Err(ApiError::new(
             "level_api.unsupported_version",
             "Unsupported level API version",
@@ -482,6 +494,9 @@ fn parse_request(text: &str) -> Result<Request, ApiError> {
         Some("advance_evaluation") => &["evaluation", "work_budget"],
         Some("evaluation_result") => &["evaluation"],
         Some("release") => &["kind", "handle"],
+        Some("scene_feedback") if expected_version == 2 => {
+            &["evaluation_handle", "after_sequence", "max_events"]
+        }
         _ => {
             return Err(ApiError::new(
                 "level_api.invalid_request",
@@ -501,24 +516,24 @@ fn parse_request(text: &str) -> Result<Request, ApiError> {
     serde_json::from_value(Value::Object(values))
         .map_err(|e| ApiError::new("level_api.invalid_request", e.to_string()))
 }
-fn positive(s: &str) -> Result<NonZeroU64, ApiError> {
+pub(crate) fn positive(s: &str) -> Result<NonZeroU64, ApiError> {
     parse_decimal(s)
         .and_then(NonZeroU64::new)
         .ok_or_else(invalid_config)
 }
-fn invalid_handle() -> ApiError {
+pub(crate) fn invalid_handle() -> ApiError {
     ApiError::new(
         "level_api.invalid_handle",
         "Handle is stale, has another kind, or belongs to another session",
     )
 }
-fn invalid_config() -> ApiError {
+pub(crate) fn invalid_config() -> ApiError {
     ApiError::new(
         "level_api.invalid_configuration",
         "Expected explicit supported configuration and canonical exact integer",
     )
 }
-fn level_code(category: &str) -> &str {
+pub(crate) fn level_code(category: &str) -> &str {
     match category {
         "UnsupportedFormatVersion" => "level.unsupported_format_version",
         "UnsupportedSceneType" => "level.unsupported_scene_type",
@@ -532,7 +547,7 @@ fn envelope(status: &str, fields: Value) -> Value {
         .extend(fields.as_object().unwrap().clone());
     v
 }
-fn program_size(program: &VerifiedProgram) -> (u64, u64) {
+pub(crate) fn program_size(program: &VerifiedProgram) -> (u64, u64) {
     let mut cells = 0;
     let mut boards = 0;
     for scope in std::iter::once(&program.program().outer)
@@ -572,12 +587,26 @@ fn outcome_json(outcome: &TestOutcome) -> Value {
         }
     }
 }
-fn sha256(bytes: &[u8]) -> String {
+pub(crate) fn sha256(bytes: &[u8]) -> String {
     use sha2::{Digest, Sha256};
     format!("{:x}", Sha256::digest(bytes))
 }
-fn result_json(r: &EvaluationResult, provenance: &Value) -> Value {
-    let result_code = match &r.status {
+pub(crate) struct CommonResult<'a> {
+    pub level_id: &'a str,
+    pub level_version: u32,
+    pub evaluator_contract: &'a str,
+    pub mode: EvaluationMode,
+    pub config: &'a EvaluationConfig,
+    pub vm_seed: u64,
+    pub status: &'a EvaluationStatus,
+    pub partial_metrics: &'a Metrics,
+    pub final_metrics: Option<&'a Metrics>,
+    pub rating: Option<u8>,
+    pub constraints: &'a [ConstraintResult],
+    pub scoring: &'a [ScoringResult],
+}
+pub(crate) fn common_result_json(r: CommonResult<'_>, provenance: &Value) -> Value {
+    let result_code = match r.status {
         EvaluationStatus::Passed => None,
         EvaluationStatus::ProgramRejected(_) => Some("level.program_rejected"),
         EvaluationStatus::TestFailed => Some("level.test_failed"),
@@ -588,7 +617,7 @@ fn result_json(r: &EvaluationResult, provenance: &Value) -> Value {
         EvaluationStatus::Fault(reason) => Some(reason.code()),
     };
 
-    let (status, rejection) = match &r.status {
+    let (status, rejection) = match r.status {
         EvaluationStatus::Passed => ("Passed", Value::Null),
         EvaluationStatus::ProgramRejected(p) => (
             "ProgramRejected",
@@ -610,10 +639,36 @@ fn result_json(r: &EvaluationResult, provenance: &Value) -> Value {
             json!({"code":reason.code(),"error_number":codegrid_model::error_number("level",reason.code()),"reason":format!("{reason:?}")}),
         ),
     };
-    json!({"status":status,"error_number":result_code.and_then(|c|codegrid_model::error_number("level",c)),"replay":provenance,"failure":rejection,"level_id":r.level_id,"level_version":r.level_version,"evaluator_contract":r.evaluator_contract,"evaluator_build":env!("CODEGRID_LEVEL_BUILD_ID"),"mode":format!("{:?}",r.mode),"configuration":{"boundary_mode":format!("{:?}",r.config.boundary_mode),"shuffle_seed":r.config.shuffle_seed.to_string(),"vm_seed":r.vm_seed.to_string(),"custom_execution_limit":r.config.custom_execution_limit.get().to_string(),"profile_id":r.config.safety.id,"profile_version":r.config.safety.version,"safety":{"max_output_bytes":r.config.safety.max_output_bytes.get().to_string(),"max_state_units":r.config.safety.max_state_units.get().to_string(),"max_feedback_bytes":r.config.safety.max_feedback_bytes.get().to_string(),"max_ticks_per_test":r.config.safety.per_test_ticks.get().to_string(),"max_work_per_call":r.config.safety.per_call_work.get().to_string(),"max_total_work":r.config.safety.cumulative_work.get().to_string()}},"hidden_failure":r.hidden_failure.as_ref().map(|o|json!({"category":"HiddenTestFailed","reason":outcome_json(o)})),"visible_tests":r.visible_tests.iter().map(|t|json!({"source_index":t.source_index.to_string(),"input":t.input,"expected_output":t.expected_output,"actual_output":t.actual_output,"outcome":outcome_json(&t.outcome)})).collect::<Vec<_>>(),"constraints":r.constraints.iter().map(|c|json!({"name":c.name,"limit":c.limit.to_string(),"value":c.value.to_string(),"passed":c.passed})).collect::<Vec<_>>(),"scoring":r.scoring.iter().map(|s|json!({"name":s.name,"target":s.target.map(|t|t.to_string()),"value":s.value.to_string(),"direction":"minimize","rating":s.rating})).collect::<Vec<_>>(),"partial_metrics":metrics_json(&r.partial_metrics),"final_metrics":r.final_metrics.as_ref().map(metrics_json),"rating":r.rating})
+    json!({"status":status,"error_number":result_code.and_then(|c|codegrid_model::error_number("level",c)),"replay":provenance,"failure":rejection,"level_id":r.level_id,"level_version":r.level_version,"evaluator_contract":r.evaluator_contract,"evaluator_build":env!("CODEGRID_LEVEL_BUILD_ID"),"mode":format!("{:?}",r.mode),"configuration":{"boundary_mode":format!("{:?}",r.config.boundary_mode),"shuffle_seed":r.config.shuffle_seed.to_string(),"vm_seed":r.vm_seed.to_string(),"custom_execution_limit":r.config.custom_execution_limit.get().to_string(),"profile_id":r.config.safety.id,"profile_version":r.config.safety.version,"safety":{"max_output_bytes":r.config.safety.max_output_bytes.get().to_string(),"max_state_units":r.config.safety.max_state_units.get().to_string(),"max_feedback_bytes":r.config.safety.max_feedback_bytes.get().to_string(),"max_ticks_per_test":r.config.safety.per_test_ticks.get().to_string(),"max_work_per_call":r.config.safety.per_call_work.get().to_string(),"max_total_work":r.config.safety.cumulative_work.get().to_string()}},"constraints":r.constraints.iter().map(|c|json!({"name":c.name,"limit":c.limit.to_string(),"value":c.value.to_string(),"passed":c.passed})).collect::<Vec<_>>(),"scoring":r.scoring.iter().map(|s|json!({"name":s.name,"target":s.target.map(|t|t.to_string()),"value":s.value.to_string(),"direction":"minimize","rating":s.rating})).collect::<Vec<_>>(),"partial_metrics":metrics_json(r.partial_metrics),"final_metrics":r.final_metrics.map(metrics_json),"rating":r.rating})
+}
+fn result_json(r: &EvaluationResult, provenance: &Value) -> Value {
+    let mut value = common_result_json(
+        CommonResult {
+            level_id: &r.level_id,
+            level_version: r.level_version,
+            evaluator_contract: &r.evaluator_contract,
+            mode: r.mode,
+            config: &r.config,
+            vm_seed: r.vm_seed,
+            status: &r.status,
+            partial_metrics: &r.partial_metrics,
+            final_metrics: r.final_metrics.as_ref(),
+            rating: r.rating,
+            constraints: &r.constraints,
+            scoring: &r.scoring,
+        },
+        provenance,
+    );
+    value["hidden_failure"] = r
+        .hidden_failure
+        .as_ref()
+        .map(|o| json!({"category":"HiddenTestFailed","reason":outcome_json(o)}))
+        .unwrap_or(Value::Null);
+    value["visible_tests"] = json!(r.visible_tests.iter().map(|t|json!({"source_index":t.source_index.to_string(),"input":t.input,"expected_output":t.expected_output,"actual_output":t.actual_output,"outcome":outcome_json(&t.outcome)})).collect::<Vec<_>>());
+    value
 }
 
-fn response_too_large() -> ApiError {
+pub(crate) fn response_too_large() -> ApiError {
     ApiError::new(
         "level_api.response_too_large",
         "Complete response exceeds trusted byte ceiling",
@@ -633,7 +688,7 @@ fn project_result(
     ))
 }
 /// Never allocate a serialized response buffer beyond the trusted ceiling.
-fn bounded_json(value: &Value, limit: u64) -> Option<String> {
+pub(crate) fn bounded_json(value: &Value, limit: u64) -> Option<String> {
     struct Bounded {
         bytes: Vec<u8>,
         limit: u64,

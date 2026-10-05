@@ -10,6 +10,14 @@ records the decided v1 schema, capabilities, metric projections, deterministic
 configuration, and execution boundaries. Its explicit refinements supersede
 the earlier conceptual examples where their details differ.
 
+The [Scene Specification v1](codegrid-scene-spec-v1.md), recorded on 2026-10-05,
+defines the selected future product protocols. For Robot, Elevator, and
+MechanicalArm, its continuous VM per case supersedes the fresh-VM-per-decision
+Environment model in the conceptual sections below. ExactIO remains unchanged;
+the selected [Scene Level JSON format v1 author contract](codegrid-scene-level-json-v2.md)
+specifies scene data. Its revised loader and fixtures still require migration;
+the path retains an earlier v2 filename.
+
 ---
 
 ## 1. Purpose

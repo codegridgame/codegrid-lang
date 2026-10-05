@@ -38,3 +38,14 @@ cargo run --manifest-path tools/wasmtime-host/Cargo.toml --release -- target/was
 The Wasmtime crate is pinned to 49.0.1. Wasmtime 49 requires Rust 1.96 or
 newer. The memory environment value must match the value used to build the
 server artifact.
+
+## Scene API 2
+
+Pass `--scene-v2` after the root/artifact arguments to `level-parity`. It executes
+the `format_version: 1` scene author levels through Level ABI/API 2 and compares
+complete native CLI results. The `v2` option and directory refer to the host API
+generation, not the author JSON format.
+The scene report also contains Debug event traces for cross-host comparison.
+Run `scripts/test-scene-wasm.ps1` from the repository root for both v1 regression
+and the scene comparison pipeline. This remains a local harness, not a
+production backend integration.

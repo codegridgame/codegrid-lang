@@ -1,0 +1,95 @@
+{
+  "format_version": 1,
+  "level_id": "example.robot",
+  "level_version": 1,
+  "evaluation_type": "Environment",
+  "scene_type": "Robot",
+  "scene_config": {
+    "robot_count": 1,
+    "map": {
+      "width": 16,
+      "height": 16,
+      "terrain": [
+        "0000............",
+        "................",
+        "................",
+        "................",
+        "................",
+        "................",
+        "................",
+        "................",
+        "................",
+        "................",
+        "................",
+        "................",
+        "................",
+        "................",
+        "................",
+        "................"
+      ],
+      "colors": [],
+      "objects": [
+        {
+          "index": 0,
+          "type": "start",
+          "robot": "A",
+          "direction": "right"
+        },
+        {
+          "index": 1,
+          "type": "patrol",
+          "id": 0
+        },
+        {
+          "index": 0,
+          "type": "trigger",
+          "id": 0
+        },
+        {
+          "index": 2,
+          "type": "door",
+          "id": 0
+        }
+      ]
+    }
+  },
+  "program_rules": {
+    "allowed_instructions": [
+      "READ",
+      "CLEAR",
+      "ADD",
+      "SUB",
+      "REGISTER_POINTER",
+      "STACK",
+      "CMP"
+    ],
+    "allowed_attachments": [
+      "CONDITION_0",
+      "CONDITION_1",
+      "CONDITION_2"
+    ],
+    "main_board": {
+      "width": 16,
+      "height": 16
+    },
+    "function_board": {
+      "width": 16,
+      "height": 16
+    },
+    "max_functions": 0,
+    "max_custom": 0,
+    "max_threads": 1,
+    "memory_enabled": false
+  },
+  "constraints": {},
+  "scoring": {
+    "metrics": {}
+  },
+  "evaluation": {
+    "tests": [
+      {
+        "visible": true
+      }
+    ]
+  }
+}

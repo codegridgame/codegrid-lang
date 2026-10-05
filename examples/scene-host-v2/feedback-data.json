@@ -1,0 +1,36 @@
+{
+  "events": [
+    {
+      "sequence": "1",
+      "source_index": "0",
+      "scene_type": "Robot",
+      "tick": "0",
+      "frame_index": null,
+      "actor": null,
+      "kind": "CaseStarted",
+      "data": {
+        "observation": [
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "sequence": "2",
+      "source_index": "0",
+      "scene_type": "Robot",
+      "tick": "0",
+      "frame_index": null,
+      "actor": null,
+      "kind": "InputAppended",
+      "data": {
+        "bytes": [
+          0,
+          0
+        ]
+      }
+    }
+  ],
+  "next_sequence": "2",
+  "has_more": false
+}

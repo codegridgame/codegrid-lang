@@ -20,6 +20,13 @@ pub enum VmInitializationError {
     InitialThreadIdOverflow,
 }
 
+/// Input append failures are host resource/lifecycle failures, not VM errors.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum InputAppendError {
+    Terminal,
+    Capacity,
+}
+
 /// One isolated execution instance over a verified immutable program.
 pub struct Vm {
     pub(super) config: VmConfig,
@@ -98,6 +105,23 @@ impl Vm {
 
     pub const fn config(&self) -> VmConfig {
         self.config
+    }
+
+    /// Append explicit data at a completed step boundary without executing code.
+    ///
+    /// Steps are synchronous and retain no unfinished tick between calls, so
+    /// exclusive access guarantees a committed boundary (including rollback).
+    /// Reserve the complete append before publishing any bytes. Evaluators own
+    /// their queue ceilings; this operation only reports allocation failure.
+    pub fn append_input(&mut self, values: &[Value]) -> Result<(), InputAppendError> {
+        if self.status != VmStatus::Running {
+            return Err(InputAppendError::Terminal);
+        }
+        self.input
+            .try_reserve(values.len())
+            .map_err(|_| InputAppendError::Capacity)?;
+        self.input.extend(values.iter().copied());
+        Ok(())
     }
 
     pub fn snapshot(&self) -> VmSnapshot {

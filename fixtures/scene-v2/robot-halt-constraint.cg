@@ -1,0 +1,5 @@
+@main
+@size 2x2
+~> .0
+~> ;
+@end main

@@ -26,3 +26,9 @@ Execute verified Full CodeGrid IR with deterministic multi-thread semantics and 
 ## Validation
 
 Test every Full tick phase, Primary and Attachment behavior, input/output, concurrent conflicts, commit/rollback, calls/resumes/tail calls, Folded Blocks, Custom isolation/limits, deterministic random vectors, snapshots, events, and raw metrics. Run the shared Full fixtures and compare native and actual WebAssembly hosts when available.
+
+The Rust-only `append_input` operation receives explicit bytes between completed
+steps, reserves the entire append, preserves unread FIFO data, and changes no
+language metric. Its allocation/lifecycle errors are not VM runtime errors.
+Scene definitions, queue ceilings, and publication policy remain in the level
+layer; language host adapters do not expose arbitrary input mutation.

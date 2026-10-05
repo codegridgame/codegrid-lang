@@ -1,0 +1,68 @@
+{
+  "format_version": 1,
+  "level_id": "example.elevator",
+  "level_version": 1,
+  "evaluation_type": "Environment",
+  "scene_type": "Elevator",
+  "scene_config": {
+    "elevator_count": 1
+  },
+  "program_rules": {
+    "allowed_instructions": [
+      "READ",
+      "CLEAR",
+      "ADD",
+      "SUB",
+      "REGISTER_POINTER",
+      "STACK",
+      "CMP"
+    ],
+    "allowed_attachments": [
+      "CONDITION_0",
+      "CONDITION_1",
+      "CONDITION_2"
+    ],
+    "main_board": {
+      "width": 16,
+      "height": 16
+    },
+    "function_board": {
+      "width": 16,
+      "height": 16
+    },
+    "max_functions": 0,
+    "max_custom": 0,
+    "max_threads": 1,
+    "memory_enabled": false
+  },
+  "constraints": {
+    "max_travel_distance": 20
+  },
+  "scoring": {
+    "metrics": {
+      "travel_distance": {
+        "target": 9
+      },
+      "stop_count": {
+        "target": 2
+      }
+    }
+  },
+  "evaluation": {
+    "tests": [
+      {
+        "visible": true,
+        "initial_floors": [
+          0
+        ],
+        "initial_passengers": [
+          {
+            "from": 2,
+            "to": 7
+          }
+        ],
+        "sequential_passengers": []
+      }
+    ]
+  }
+}

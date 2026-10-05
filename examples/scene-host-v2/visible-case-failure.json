@@ -1,0 +1,23 @@
+{
+  "source_index": "0",
+  "scene_type": "Robot",
+  "outcome": "SceneFailure",
+  "failure": {
+    "code": "level.test_failed",
+    "error_number": "9027",
+    "reason": "InvalidOutput",
+    "details": {
+      "tick": "20",
+      "frame_index": "3",
+      "actor": "B",
+      "value": 5
+    }
+  },
+  "comparison": null,
+  "summary": {
+    "frames": "3",
+    "rounds": "2",
+    "visited_patrol_points": "1",
+    "required_patrol_points": "2"
+  }
+}

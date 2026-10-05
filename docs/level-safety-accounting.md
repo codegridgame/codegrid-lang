@@ -86,3 +86,20 @@ select immutable trusted profiles and retain full logical levels; submissions
 cannot replace the profile or supply official results. Client-shipped hidden
 tests are not secrets. Cancellation, runtime traps, allocation failures, and
 host deadlines cannot award ratings or certify player success.
+
+## Future continuous scene accounting
+
+The [continuous scene session design](scene-session-design.md#resource-accounting-and-privacy)
+defines required additional world, frame, observation-queue, and cumulative
+input accounting. These requirements do not claim that the current ExactIO
+profile already measures scene storage. Concrete profile fields and ceilings
+must be recorded before executable scene registration; preserve the current
+ExactIO counters until that integration change is implemented.
+
+## Planned scene v2 contract
+
+The [Scene Host Contract v2](../spec/codegrid-scene-host-contract-v2.md) defines
+separate Level API/profile/browser-binding/portable-ABI v2, typed scene failure
+reasons, trusted scene ceilings, visible result variants, and acknowledged
+Debug feedback events. This v1 accounting contract and current runtime behavior
+remain unchanged. Implement and verify v2 before advertising its capabilities.

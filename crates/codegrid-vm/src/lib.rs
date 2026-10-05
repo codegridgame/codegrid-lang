@@ -29,6 +29,6 @@ pub use random::{
     custom_invocation_seed, internal_thread_state, mix64, outer_thread_state, SplitMix64,
 };
 pub use state::{
-    CallFrameSnapshot, ThreadPhaseSnapshot, ThreadSnapshot, ThreadSnapshotView, Vm, VmFault,
-    VmInitializationError, VmSnapshot, VmSnapshotView, VmStatus,
+    CallFrameSnapshot, InputAppendError, ThreadPhaseSnapshot, ThreadSnapshot, ThreadSnapshotView,
+    Vm, VmFault, VmInitializationError, VmSnapshot, VmSnapshotView, VmStatus,
 };

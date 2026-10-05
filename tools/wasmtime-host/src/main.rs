@@ -964,7 +964,11 @@ fn normalize_runtime_board(board: &Value, shape: ResultShape) -> Result<Value> {
         .context("runtime board cells must be an array")?
         .iter()
         .map(|cell| {
-            assert_exact_keys(cell, &["attachment", "entry", "prefix", "primary"], "runtime cell")?;
+            assert_exact_keys(
+                cell,
+                &["attachment", "entry", "prefix", "primary"],
+                "runtime cell",
+            )?;
             let entry = match cell["entry"].as_str() {
                 Some(entry) if matches!(shape, ResultShape::ServerApi) => {
                     entry.strip_prefix('~').with_context(|| {

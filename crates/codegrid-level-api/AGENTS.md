@@ -2,8 +2,15 @@
 
 ## Responsibility
 
-Provide Level Host API v1, shared exact JSON projection, trusted resource
+Provide Level Host API v1 and the independent native v2 scene lifecycle, shared exact JSON projection, trusted resource
 profiles, source compilation, checked handles, and evaluation lifecycle.
+The strict v2 profile loader converts trusted scene ceilings to core limits;
+it does not by itself register executable capabilities. `LevelApiV2` owns
+version-2 request dispatch and registers the six executable native scenes;
+browser/server transport support and actual WASM parity require separate evidence.
+The v2 result projection accepts only the privacy-safe multi-case result and
+reuses common result fields and core scene failure serialization. It must never
+project raw case-session results or infer failures from message text.
 Re-export the shared model error translation helpers for host presentation.
 Translations must not replace structured outcomes or expose hidden test data.
 
@@ -29,3 +36,7 @@ Translations must not replace structured outcomes or expose hidden test data.
 
 Test profile/request validation, exact integers, source/level rejection,
 isolation, release/shutdown/cancellation, bounded responses, and shared results.
+
+Scene feedback responses copy the core's retained event encodings after reserving
+the complete envelope. Do not build a second serialized event representation or
+confirm delivery before response capacity/allocation succeeds.

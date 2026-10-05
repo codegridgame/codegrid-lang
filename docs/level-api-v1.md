@@ -108,3 +108,11 @@ keep their current versions and contracts. Profile, format, evaluator, API,
 browser binding, portable ABI, and build identities are independent. Clients
 must query capabilities and must not treat a local Debug result as an official
 backend certification.
+
+## Planned scene v2 contract
+
+The [Scene Host Contract v2](../spec/codegrid-scene-host-contract-v2.md) defines
+separate Level API/profile/browser-binding/portable-ABI v2, typed scene failure
+reasons, trusted scene ceilings, visible result variants, and acknowledged
+Debug feedback events. This v1 API contract and current runtime behavior
+remain unchanged. Implement and verify v2 before advertising its capabilities.

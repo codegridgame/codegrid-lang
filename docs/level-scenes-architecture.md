@@ -1,100 +1,75 @@
-# Five-Scene Code Architecture
+# Six-Scene Code Architecture
 
-Status: selected product architecture. The Rust catalog is implemented; only
-ExactIO evaluation is executable. This document does not define new wire fields
-or scene protocols. See the [Environment design](level-environment-extension.md)
-for the future typed scene interface and registration acceptance checklist.
+Status: six protocols are executable through the native Rust API-2 session.
+API-1 remains ExactIO-only. Browser/server v2 transports have initial actual-host comparison evidence;
+complete protocol/resource coverage remains pending.
 
 ## Selection and engine mapping
 
 | Product scene | Evaluation family | Correctness | Current delivery |
 | --- | --- | --- | --- |
-| ExactIO | ExactIO | Exact expected output plus existing halt, constraint, and outcome rules | Implemented |
-| Baudot | ExactIO | Entire encoded or decoded message matches expected bytes | Planned protocol and authoring |
-| QualityControl | ExactIO | Every item's classification matches expected bytes | Planned protocol and authoring |
-| Elevator | Environment | All passengers reach their destinations and configured constraints hold | Planned engine and protocol |
-| Robot | Environment | All faulty devices are repaired and configured goals and constraints hold | Planned engine and protocol |
+| ExactIO | ExactIO | Expected byte sequence, existing halt/constraint/outcome rules | Implemented |
+| Baudot | ExactIO profile | Expected five-bit code sequence | API-2 and WASM v2 implemented; initial parity verified |
+| QualityControl | ExactIO profile | One Item/Batch accept-or-reject decision | API-2 and WASM v2 implemented; initial parity verified |
+| Elevator | Dynamic scene | All configured passengers appear and reach destinations | API-2 and WASM v2 implemented; initial parity verified |
+| Robot | Dynamic scene | All required patrol points visited | API-2 and WASM v2 implemented; initial parity verified |
+| MechanicalArm | Dynamic scene | Expected visible robot-state sequence | API-2 and WASM v2 implemented; initial parity verified |
 
-Terminal is excluded. Robot is the selected product identity. MaintenanceRobot
-in historical specification examples is not a registered identity or a wire
-alias; any migration or alias requires a recorded protocol decision.
-
-`codegrid_level_core::scenes` contains SceneKind, EvaluationFamily, SceneStatus,
-SceneDescriptor, and SELECTED_SCENES. This catalog expresses product selection,
-not load acceptance. Keep host capabilities sourced from actual executable
-support. The current API still reports ExactIO and an empty scene_types list.
+Terminal is excluded. Robot is the selected identity; MaintenanceRobot in old
+examples is not an alias. Robot's current goal is patrol completion, superseding
+the earlier repair-device concept. The Rust catalog's SceneKind,
+EvaluationFamily, SceneStatus, SceneDescriptor, and SELECTED_SCENES express
+native API-2 registration rather than WASM deployment. Existing API-1 hosts
+report only ExactIO and an empty scene_types list; API-2 reports the six scenes
+that its loader/evaluator executes. Do not advertise planned protocols as executable.
 
 ## Shared execution boundary
 
-All five scenes use ordinary CodeGrid input and output. Do not add MOVE,
-REPAIR, ACCEPT, or elevator instructions to the compiler or VM.
+All scenes use ordinary CodeGrid input/output; there are no game-specific
+compiler or VM instructions. Keep definition validation, observation encoding,
+action decoding, ordered world transitions, goals, and metrics in Rust above
+the language core. Hosts own visualization and ABI conversion.
 
-Baudot and QualityControl reuse the existing validated ExactIO tests and
-EvaluationSession. A level author supplies input and expected output as bytes;
-the evaluator remains unaware of paper tape, characters, products, or artwork.
-Their future domain validators and authoring transformations belong in the Rust
-level layer, while visual labels and animation belong in the game host. Do not
-add a second evaluator or compare correctness in JavaScript.
+Baudot and QualityControl use ExactIO comparison with additional domain
+validation. Do not add a second evaluator or compare correctness in JavaScript.
+The selected author contract uses `format_version: 1` and distinguishes scene
+definitions from executable programs. The current loader, examples, and fixtures
+use this contract; no legacy scene-format branch is supported.
 
-Keep the current level JSON unchanged: evaluation_type is ExactIO for these
-three families of static tests. There is currently no product scene field.
-A future versioned presentation identifier can distinguish the visuals without
-changing correctness; it must have an approved schema before loader support.
-Do not insert unrecognized fields into current strict level JSON.
+Dynamic scenes retain one VM throughout a case, append observations behind
+unread input, and reset completely between cases. This accepted lifecycle
+supersedes the fresh-VM-per-decision sketch in the earlier
+[Environment extension design](level-environment-extension.md). Its ownership,
+bounded work, cancellation, and privacy requirements remain useful, but its
+reset-based execution loop cannot implement the new protocols unchanged.
 
-Elevator and Robot use the proposed shared Environment session. A future
-validated evaluation sum type will dispatch ExactIO to the existing session and
-Environment to the scene orchestrator. Preserve opaque validated construction;
-raw JSON must never directly construct executable definitions or state.
+The shared orchestrator owns case/VM lifecycle, output framing, work slices,
+constraints, metrics, cancellation, and privacy-safe results. Each scene owns
+validated definitions, persistent world state, observations/actions, goals,
+failures, and bounded events. Hosts cannot supply semantic callbacks or build
+unchecked executable definitions. Preserve the existing dependency graph.
 
-The Environment orchestrator owns decision lifecycle, fresh VM construction,
-work slices, committed action output, constraints, metrics, cancellation, and
-privacy-safe results. Each typed scene implementation owns validated definition,
-goals, persistent state, observation encoding, action decoding, atomic world
-transitions, goal predicates, scene failures, and bounded public events.
-Use static Rust registration inside codegrid-level-core; hosts cannot provide
-semantic callbacks. Follow the existing Environment interface design rather
-than introducing a second competing scene trait.
-
-## Protocol decisions still required
-
-Baudot needs a fixed encoding variant, letter/figure shifts, framing, permitted
-characters, and direction of conversion. QualityControl needs bounded item
-records, classification values, framing, and test construction rules. Their
-presentation data must not reveal hidden tests.
-
-Elevator needs floor and passenger bounds, observations, command frames,
-boarding and movement order, time progression, terminal failures, and metrics.
-Robot needs map and position_id bounds, device states, observation frames,
-action values, collision and repair rules, goal checks, and metrics. Position
-followed by device state is the selected observation concept; its byte encoding
-and numeric domains remain to be specified. Example action numbers from the
-conversation are design examples, not published runtime tokens.
-
-A lifecycle conflict must be resolved before Environment implementation: the
-conversation suggests using VM memory across robot actions, but Level Core v1
-requires a fresh standard VM for every Environment decision. Under the current
-contract only world state persists. Supporting a continuous VM would require
-an explicit recorded change covering memory, input framing, slicing, metrics,
-and termination. This architecture preserves the current normative reset rule.
+This describes the current built-in Rust scene boundary. It is intentionally a
+closed catalog and does not support player packages. The target architecture
+for community scenes is documented in [Custom Scene architecture](custom-scenes-architecture.md):
+package execution stays in the application host behind a versioned cooperative
+call/reply protocol. Do not extend `SceneKind` or add game-host callbacks as a
+substitute for that boundary. Current API v2 capabilities continue to list only
+the six scenes implemented by this Rust evaluator.
 
 ## Implementation sequence and verification
 
-1. Specify Baudot and QualityControl protocols and fixtures; reuse ExactIO
-   correctness, metrics, and result handling. Keep product metadata separate
-   from executable Environment registration.
-2. Resolve Environment framing, priorities, and the VM lifecycle decision in
-   the decision log. Introduce a validated evaluation variant and shared
-   Environment session only with the first actual scene implementation.
-3. Implement Robot with typed validation, bounded observations/actions, atomic
-   transitions, goals, and visible events; then implement Elevator using the
-   same orchestrator. Add no empty scene crates or placeholder implementations.
-4. Project registered capabilities and privacy-safe results through the shared
-   Level API. Browser/server adapters remain ABI conversion only.
-5. Test malformed definitions, invalid actions, initial/completed goals,
-   constraints, cancellation, deterministic seeds, hidden-data redaction, and
-   slice invariance. Compare actual native, browser-WASM, and server-WASM
-   execution before claiming cross-host parity.
-
-No new Cargo dependency is needed for the catalog. Scene execution remains
-above model/compiler/VM, using the existing one-way workspace dependency graph.
+1. Follow the accepted [continuous session design](scene-session-design.md).
+   Migrate to the selected [Level JSON format v1 contract](../spec/codegrid-scene-level-json-v2.md);
+   implement the [Scene Host Contract v2](../spec/codegrid-scene-host-contract-v2.md)
+   failure, resource, result, and feedback contracts alongside it.
+2. Implement domain validation for Baudot and QualityControl above ExactIO.
+3. Introduce the shared continuous-case orchestrator with the first dynamic
+   scene, then implement Robot, Elevator, and MechanicalArm using it. Add no
+   empty crates or executable registration for unimplemented scenes.
+4. Project actual supported capabilities, privacy-safe observations, metrics,
+   and results through shared Level APIs; adapters stay thin.
+5. Cover the [scene conformance plan](scene-conformance-plan.md) and Scene Spec acceptance matrix, case isolation, queue append,
+   partial frames, round ordering, constraints, cancellation, hidden-data
+   redaction, and deterministic slicing. Compare actual native, browser-WASM,
+   and server-WASM results before claiming parity.

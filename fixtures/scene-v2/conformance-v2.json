@@ -1,0 +1,180 @@
+{
+  "format_version": 1,
+  "profile": "../../examples/scene-host-v2/profile-local-v2.json",
+  "cases": [
+    {
+      "id": "exactio.pass",
+      "level": "exactio.json",
+      "program": "exactio.cg",
+      "mode": "Debug",
+      "boundary": "Exit",
+      "seed": "18446744073709551615",
+      "custom_limit": "1000",
+      "expected_status": "Passed"
+    },
+    {
+      "id": "baudot.pass",
+      "level": "baudot.json",
+      "program": "baudot.cg",
+      "mode": "Debug",
+      "boundary": "Exit",
+      "seed": "18446744073709551615",
+      "custom_limit": "1000",
+      "expected_status": "Passed"
+    },
+    {
+      "id": "quality-control.pass",
+      "level": "quality-control.json",
+      "program": "quality-control.cg",
+      "mode": "Debug",
+      "boundary": "Exit",
+      "seed": "18446744073709551615",
+      "custom_limit": "1000",
+      "expected_status": "Passed"
+    },
+    {
+      "id": "elevator.pass",
+      "level": "elevator.json",
+      "program": "elevator.cg",
+      "mode": "Debug",
+      "boundary": "Exit",
+      "seed": "18446744073709551615",
+      "custom_limit": "1000",
+      "expected_status": "Passed"
+    },
+    {
+      "id": "robot.pass",
+      "level": "robot.json",
+      "program": "robot.cg",
+      "mode": "Debug",
+      "boundary": "Exit",
+      "seed": "18446744073709551615",
+      "custom_limit": "1000",
+      "expected_status": "Passed"
+    },
+    {
+      "id": "mechanical-arm.pass",
+      "level": "mechanical-arm.json",
+      "program": "mechanical-arm.cg",
+      "mode": "Debug",
+      "boundary": "Exit",
+      "seed": "18446744073709551615",
+      "custom_limit": "1000",
+      "expected_status": "Passed"
+    },
+    {
+      "id": "exactio.official",
+      "level": "exactio.json",
+      "program": "exactio.cg",
+      "mode": "Official",
+      "boundary": "Exit",
+      "seed": "18446744073709551615",
+      "custom_limit": "1000",
+      "expected_status": "Passed"
+    },
+    {
+      "id": "baudot.official",
+      "level": "baudot.json",
+      "program": "baudot.cg",
+      "mode": "Official",
+      "boundary": "Exit",
+      "seed": "18446744073709551615",
+      "custom_limit": "1000",
+      "expected_status": "Passed"
+    },
+    {
+      "id": "quality-control.official",
+      "level": "quality-control.json",
+      "program": "quality-control.cg",
+      "mode": "Official",
+      "boundary": "Exit",
+      "seed": "18446744073709551615",
+      "custom_limit": "1000",
+      "expected_status": "Passed"
+    },
+    {
+      "id": "elevator.official",
+      "level": "elevator.json",
+      "program": "elevator.cg",
+      "mode": "Official",
+      "boundary": "Exit",
+      "seed": "18446744073709551615",
+      "custom_limit": "1000",
+      "expected_status": "Passed"
+    },
+    {
+      "id": "robot.official",
+      "level": "robot.json",
+      "program": "robot.cg",
+      "mode": "Official",
+      "boundary": "Exit",
+      "seed": "18446744073709551615",
+      "custom_limit": "1000",
+      "expected_status": "Passed"
+    },
+    {
+      "id": "mechanical-arm.official",
+      "level": "mechanical-arm.json",
+      "program": "mechanical-arm.cg",
+      "mode": "Official",
+      "boundary": "Exit",
+      "seed": "18446744073709551615",
+      "custom_limit": "1000",
+      "expected_status": "Passed"
+    },
+    {
+      "id": "robot.slice",
+      "level": "robot.json",
+      "program": "robot.cg",
+      "mode": "Debug",
+      "boundary": "Exit",
+      "seed": "18446744073709551615",
+      "custom_limit": "1000",
+      "expected_status": "Passed",
+      "work_budget": "1"
+    },
+    {
+      "id": "mechanical-arm.slice",
+      "level": "mechanical-arm.json",
+      "program": "mechanical-arm.cg",
+      "mode": "Debug",
+      "boundary": "Exit",
+      "seed": "18446744073709551615",
+      "custom_limit": "1000",
+      "expected_status": "Passed",
+      "work_budget": "1"
+    },
+    {
+      "id": "robot.read-observation",
+      "level": "robot-read-observation.json",
+      "program": "robot-read-observation.cg",
+      "mode": "Debug",
+      "boundary": "Exit",
+      "seed": "18446744073709551615",
+      "custom_limit": "1000",
+      "work_budget": "1000000",
+      "expected_status": "Passed"
+    },
+    {
+      "id": "robot.read-observation-slice",
+      "level": "robot-read-observation.json",
+      "program": "robot-read-observation.cg",
+      "mode": "Debug",
+      "boundary": "Exit",
+      "seed": "18446744073709551615",
+      "custom_limit": "1000",
+      "work_budget": "1",
+      "expected_status": "Passed"
+    },
+    {
+      "id": "robot.halt-constraint",
+      "level": "robot-halt-constraint.json",
+      "program": "robot-halt-constraint.cg",
+      "mode": "Debug",
+      "boundary": "Wrap",
+      "seed": "18446744073709551615",
+      "custom_limit": "1000",
+      "expected_status": "ConstraintExceeded"
+    }
+  ]
+}

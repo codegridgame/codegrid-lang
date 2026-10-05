@@ -1,5 +1,34 @@
 # Full Language Decisions and Open Questions
 
+## Robot author-map revision (2026-10-05)
+
+The user selects a terrain/object/test separation and resets the scene author
+format to v1 without a legacy compatibility requirement. Terrain is 16 rows of
+16 ASCII characters: `.` VOID, `0` low ground, and `1` high ground. Initially
+all terrain is VOID; authors must draw usable ground. Sparse colors preserve
+the existing NONE/BLUE/RED protocol, with omitted ground colors defaulting to 0.
+Sparse objects use index = y * 16 + x. start, patrol, trigger, and door are
+mutually exclusive and object indices are globally unique within objects.
+All colors, objects, and starts must address drawn ground. device is excluded.
+One trigger and one door with the same integer ID form a mechanism; no explicit
+reference is stored. Patrol IDs are a separate namespace. Static starts are
+map objects; Robot tests carry visibility only. No single-test restriction was
+approved. This decision supersedes earlier dense maps, combined patrol/trigger
+cells, explicit door references, and default-walkable proposals. The v1
+contract, loader, examples, and fixtures now use these rules; direct protocol
+and complete host conformance remain tracked separately.
+
+## Robot sparse-map validation identities (2026-10-05)
+
+The Scene Host Contract v2 reason table now follows the selected sparse-map
+shape: dimensions/terrain, colors, and objects are validated separately;
+VOID placement errors point at the sparse record index; repeated sparse indices
+and same-type IDs point at the later record; and unmatched trigger/door IDs
+point at the unmatched `.id`. `InvalidDirection` applies to an unsupported
+direction string, while numeric range errors keep `IntegerOutOfRange`. These
+are typed reason strings under the existing LevelInvalid identity and allocate
+no new numeric error codes. The previous dense-cell-only reasons are superseded.
+
 ## Sources of truth
 
 - [`spec/codegrid-source-spec.md`](../spec/codegrid-source-spec.md) is the normative Full authority for source syntax and static acceptance. Source-language choices are resolved below, and the source/compiler plus IR implementation gates have focused conformance coverage.
@@ -402,3 +431,160 @@ executable IR from hosts. Runtime API v3, browser envelope, server ABI v4, CLI
 JSON schema 1, debug protocol 2, and level format 1 remain unchanged; executable
 IR alone advances to format 2. This records implementation choices within the
 approved migration, not compatibility acceptance of the removed language.
+
+## Scene protocol specification (2026-10-05)
+
+The user requests a concrete repository specification based on the selected
+conversation "梳理确定场景" (conversation ID
+6ac2518f-10cc-83ec-98ae-a8e59bd6b639). The resulting
+[Scene Specification v1](../spec/codegrid-scene-spec-v1.md) records six scenes:
+ExactIO, Baudot, Elevator, Robot, QualityControl, and MechanicalArm.
+
+This replaces the earlier five-scene product selection for planned work and
+Robot's repair-device objective with required-patrol completion. New dynamic
+protocols preserve one VM for the whole case and append observations to its
+unread queue; reset all VM/scene state only between cases. This supersedes the
+earlier fresh-VM-per-decision conceptual Environment lifecycle for these scenes.
+MechanicalArm uses hidden true inspection, fixed state packing, delayed table
+and buffer readiness, and may pack an inspected normal robot without Processing.
+
+Only documentation changes are authorized in this task. Current strict Level
+JSON, executable registrations, API/ABI versions, the five-entry Rust catalog,
+and ExactIO execution are unchanged. The spec explicitly lists remaining
+schema/session/error/projection decisions and acceptance cases; those must be
+resolved before implementation relies on them. Existing VM no-op/error rules,
+transaction semantics, resource categories, and hidden-test privacy remain
+normative and are not replaced by informal examples in the conversation.
+
+## Scene execution boundaries accepted (2026-10-05)
+
+The user explicitly accepts all six recommendations from the Scene Spec review.
+They are now normative in Scene Spec Sections 2 and 6: append observations after
+each committed tick before the next tick; validate actors when dispatched in
+A/B order and ignore B after terminal A; retain completed A effects on B failure;
+use the explicit dynamic-scene terminal priority; use screen-style Robot axes,
+modular turns, and forbid wall/door co-location; preserve the same VM and its
+ordinary state for an entire case. Reset fully only between cases.
+
+The session design records candidate round publication with all-or-none input
+append, trusted accounting, replay and privacy boundaries. The conformance plan
+provides concrete vectors and delivery gates. Typed author JSON, actual append
+APIs, stable scene failure/metric transport, and concrete trusted-profile fields
+remain implementation integration work. No source, VM implementation, loader,
+API/ABI, or executable scene capability changes are delivered in this task.
+
+## Scene author JSON v2 contract (2026-10-05)
+
+The user requests completion of supporting documents after agreeing that the
+scene author JSON must be specified before implementation. The selected
+[Level JSON v2 contract](../spec/codegrid-scene-level-json-v2.md) adds explicit
+scene_type/scene_config to the familiar envelope, uses ExactIO for static
+profiles and Environment for dynamic scenes, and preserves v1 ExactIO loading.
+All fields are explicit with no implicit defaults, strict unknown/duplicate-key
+rejection, and domain/cross-field validation.
+
+The contract selects dense 256-cell Robot maps with per-cell trigger/door
+records, four fixed optional MechanicalArm worktable slots, ordered passenger
+records, level-wide QC representation/mode, domain-limited Baudot bytes, and
+complete per-scene test records. Elevator distance/stops aggregate with SUM
+across visible cases; existing VM metrics retain their aggregation and scoring
+rules. Case VMs use the existing root-seed VM derivation and never reseed per
+action. Twelve complete author examples plus a manifest are documentation
+fixtures, not current loader/execution evidence. Typed failure transport and
+trusted scene resource-profile fields still need implementation contracts;
+no code, runtime capability, or host version is changed by these documents.
+
+## Scene host integration contract v2 (2026-10-05)
+
+The user explicitly authorizes completing failure identity, trusted resource
+fields, and result/event contracts before implementation. The selected
+[Scene Host Contract v2](../spec/codegrid-scene-host-contract-v2.md) uses separate
+Level API 2/profile 2/browser binding 2/portable ABI 2 and leaves v1 untouched.
+Language API/ABI and the author/gameplay versions are independently unchanged.
+
+Existing level.test_failed/9027 carries typed InvalidOutput, IllegalOperation,
+and IncompleteGoal reasons for new v2 scenes. Existing WrongOutput, VM errors,
+fault, constraints, resource, and cancellation identities stay in their categories.
+The registry clarifies the v2 scope of existing level correctness/runtime-error
+categories without changing v1 emitted behavior or allocating new numbers.
+Author cross-field typed reasons and exact offending paths are fixed.
+
+Profile 2 adds mandatory scene_limits for unread/cumulative input, retained scene
+state, complete frames, per-call/cumulative scene work, retained visible Debug
+events, and reserved feedback bytes. All values are positive exact u64 strings.
+Public results use visible_cases with explicit scene summaries; hidden failure
+redaction remains mandatory. Only visible Debug cases produce scene feedback,
+with monotonic public event sequences and acknowledgement cursors. World-derived
+round transitions are allowlisted; no raw VM/world or hidden author snapshots
+are exported. Local example ceilings are not production recommendations.
+
+The contract is design-only. Actual Rust v2 profile/loader/session/projection/
+feedback support, dual-version transport artifacts, and host comparisons must
+be implemented before advertising it. Auto-generated numeric documentation is
+synchronized; runtime instruction semantics and existing API implementations
+are unchanged by this task.
+
+## Scene feedback implementation clarifications (2026-10-05)
+
+Implementation review found two incomplete payload domains in the accepted
+Scene Host v2 design. Under the user's delegation to adopt recommended design
+choices, record these explicit clarifications before depending on them:
+
+- MechanicalArm feedback interaction identifies the slot faced before the
+  action, including WAIT/TURN. An unpopulated table remains Worktable with its
+  public index; the lower-arm orientation 0 is Unavailable. This names feedback
+  locations without changing GRAB/DROP gameplay or permitting unavailable use.
+- RuntimeError failure details contain runtime_errors, an array of forwarded
+  VM code/error_number pairs. This resolves the contract's existing forwarding
+  requirement while preserving the exactly-four-field visible failure envelope.
+
+These are documented implementation clarifications, not quotations from the
+referenced scene conversation. They allocate no error numbers and change no
+source syntax, VM behavior, author acceptance, or hidden-case projection.
+
+## Scene feedback retained-record accounting clarification (2026-10-05)
+
+Under the user's authorization to adopt recommended integration details, the
+Scene Host Contract v2 explicitly counts each retained event and round-change
+record as one scene state unit. Owned observation byte vectors retained by an
+event are counted separately from world observations and VM input; scalar fields
+inside a record add no units. This closes a retention-accounting omission for
+already specified feedback records without changing gameplay, language behavior,
+or stable error identities. It does not establish complete API-instance or
+cross-host resource conformance.
+
+## Scene feedback publication encoding and page copies (2026-10-05)
+
+Under the user's authorization to adopt recommended integration details, retain
+one immutable JSON encoding per published visible event. Scene work charges
+its actual UTF-8 encoding bytes during staging, including failed attempts.
+Reading/replaying retained events copies that encoding into a transport envelope;
+this byte copy does not perform a new scene-content encoding. Typed native pages
+remain available, but the shared API must use the retained encoding rather than
+serializing scene payloads again. Feedback byte retention includes the cached
+encoding until acknowledged storage is released.
+
+A prepared page's owned event/observation/round-change copies count independently
+from retained storage against scene units. Reserve their complete peak before
+cloning each record and reject insufficient capacity without changing delivery
+or acknowledgement. Envelope capacity must be checked before copying cached
+bodies or confirming delivery. This clarifies the previously accepted work and
+retention contract without changing event fields, gameplay, or stable errors.
+
+## Player-authored Scene architecture requirement (2026-10-05)
+
+The user requires the project architecture to support player-authored Scenes in
+the future. The current six-scene Rust catalog, Level API v2, author formats,
+and WASM transports remain fixed and are not represented as custom-package
+support.
+
+The recommended project boundary is recorded in the
+[Custom Scene architecture](custom-scenes-architecture.md): a contract-only
+Scene API; shared Rust evaluation in `codegrid-level-core`; host-owned package
+resolution and sandboxed WASM execution; and a separately versioned cooperative
+call/reply Level API so browser and portable WASM hosts can run the same
+evaluator without embedding a particular WASM engine in the core. Community
+packages use a serialized protocol, never Rust dynamic-library ABI. This is an
+architecture target, not an approved runtime wire schema. Exact package
+manifest, guest ABI, resource accounting, error identities, editor schema, and
+host conformance vectors must be specified before implementation begins.

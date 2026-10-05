@@ -2230,7 +2230,7 @@
     {
       "layer": "level",
       "code": "level.test_failed",
-      "condition": "An ExactIO correctness check fails.",
+      "condition": "A v1 ExactIO correctness check or v2 scene correctness/action/goal check fails; v2 scene distinctions use typed reasons.",
       "surface": "Level outcome and evaluation result presentation; hidden details remain redacted.",
       "state_effect": "Evaluation does not award final metrics or rating.",
       "code_type": "string",
@@ -2239,7 +2239,7 @@
     {
       "layer": "level",
       "code": "level.runtime_error",
-      "condition": "An ExactIO test encounters a VM runtime error; public details follow visibility rules.",
+      "condition": "A level test encounters a VM runtime error; public details follow visibility rules.",
       "surface": "Level outcome and evaluation result presentation; hidden details remain redacted.",
       "state_effect": "Evaluation does not award final metrics or rating.",
       "code_type": "string",

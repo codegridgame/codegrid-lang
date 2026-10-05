@@ -56,7 +56,7 @@ pub struct SafetyProfile {
     pub max_total_work: u64,
 }
 
-fn positive<'de, D: serde::Deserializer<'de>>(d: D) -> Result<u64, D::Error> {
+pub(crate) fn positive<'de, D: serde::Deserializer<'de>>(d: D) -> Result<u64, D::Error> {
     let text = String::deserialize(d)?;
     parse_decimal(&text)
         .filter(|n| *n > 0)

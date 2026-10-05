@@ -54,3 +54,14 @@ or inability to reserve/write a complete response. Validate the called export
 and do not interpret zero as JSON or player success. Reservation occurs before
 semantic dispatch; an exceptional late response failure does not guarantee
 rollback and must not be retried blindly.
+
+## Planned scene API v2 refinement
+
+The [Scene Host Contract v2](codegrid-scene-host-contract-v2.md#2-stable-failure-identity-and-typed-reasons)
+selects existing level.test_failed/9027 with typed InvalidOutput,
+IllegalOperation, and IncompleteGoal reasons for new dynamic scene failures.
+WrongOutput and IncompleteOutput preserve existing byte-comparison identities;
+VM errors/faults, resources, cancellation, and constraints retain their categories.
+New author cross-field reason spellings, exact paths, visible details, and
+HiddenTestFailed redaction are defined there. No new numeric identity or changed
+v1 emitted behavior is introduced; v2 support remains unimplemented.

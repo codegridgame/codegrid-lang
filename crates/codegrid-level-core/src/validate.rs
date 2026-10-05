@@ -186,7 +186,13 @@ pub fn validate_program(
     level: &ValidatedLevel,
     program: &VerifiedProgram,
 ) -> Result<(), ProgramRejection> {
-    let r = level.rules();
+    validate_program_rules(level.rules(), program)
+}
+
+pub fn validate_program_rules(
+    r: &ProgramRules,
+    program: &VerifiedProgram,
+) -> Result<(), ProgramRejection> {
     let p = program.program();
     if p.customs.len() > r.max_custom as usize {
         return Err(reject("CustomCountExceeded", "customs"));

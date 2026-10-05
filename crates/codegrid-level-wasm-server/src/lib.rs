@@ -1,19 +1,17 @@
 //! No-import portable level transport with exact live buffer ownership.
 use codegrid_level_api::error_number;
-use codegrid_level_api::{LevelApi, SafetyProfile};
+use codegrid_level_api::{LevelApi, LevelApiV2, SafetyProfile, SafetyProfileV2};
 use serde::Deserialize;
 use serde_json::json;
 #[cfg(any(target_arch = "wasm32", test))]
 use std::collections::BTreeMap;
 pub const LEVEL_ABI_VERSION: u32 = 1;
+pub const SCENE_LEVEL_ABI_VERSION: u32 = 2;
 const MAX_BUFFER_BYTES: usize = 8 * 1024 * 1024;
 #[cfg(any(target_arch = "wasm32", test))]
 const MAX_RETAINED_BYTES: usize = 24 * 1024 * 1024;
 #[cfg(any(target_arch = "wasm32", test))]
 const MAX_BUFFER_COUNT: usize = 1024;
-fn error(code: &str, message: &str) -> String {
-    json!({"abi_version":1,"api_version":1,"status":"error","error":{"code":code,"error_number":error_number("level",code),"message":message}}).to_string()
-}
 #[derive(Deserialize)]
 #[serde(tag = "operation", rename_all = "snake_case", deny_unknown_fields)]
 enum Operation {
@@ -32,22 +30,47 @@ enum Operation {
         api_version: u32,
     },
 }
+enum VersionedApi {
+    Legacy(LevelApi),
+    Scene(LevelApiV2),
+}
+impl VersionedApi {
+    fn version(&self) -> u32 {
+        match self {
+            Self::Legacy(_) => 1,
+            Self::Scene(_) => 2,
+        }
+    }
+    fn request(&mut self, text: &str) -> String {
+        match self {
+            Self::Legacy(api) => api.request_json(text),
+            Self::Scene(api) => api.request_json(text),
+        }
+    }
+}
 #[derive(Default)]
 pub struct PortableSession {
-    api: Option<LevelApi>,
+    api: Option<VersionedApi>,
     closed: bool,
+    version: Option<u32>,
 }
 impl PortableSession {
+    fn transport_error(&self, code: &str, message: &str) -> String {
+        versioned_error(self.version.unwrap_or(1), code, message)
+    }
     pub fn request_text(&mut self, text: &str) -> String {
         if text.len() > MAX_BUFFER_BYTES {
-            return error(
+            return self.transport_error(
                 "level_api.resource_limit",
                 "Transport request exceeds byte ceiling",
             );
         }
         let operation = match serde_json::from_str::<Operation>(text) {
-            Ok(o) => o,
-            Err(_) => return error("level_api.invalid_request", "Malformed portable request"),
+            Ok(operation) => operation,
+            Err(_) => {
+                return self
+                    .transport_error("level_api.invalid_request", "Malformed portable request")
+            }
         };
         let (abi, api) = match &operation {
             Operation::Initialize {
@@ -65,66 +88,96 @@ impl PortableSession {
                 api_version,
             } => (*abi_version, *api_version),
         };
-        if abi != 1 {
-            return error(
+        if !(1..=2).contains(&abi) || (abi == 2 && api != 2) {
+            return self.transport_error(
                 "level_abi.unsupported_version",
                 "Unsupported level ABI version",
             );
         }
-        if api != 1 {
-            return error(
+        if api != abi {
+            return self.transport_error(
                 "level_api.unsupported_version",
                 "Unsupported level API version",
             );
         }
+        if self.version.is_some_and(|version| version != abi) {
+            return self.transport_error(
+                "level_abi.unsupported_version",
+                "Session transport version is immutable",
+            );
+        }
         if self.closed {
-            return error("level_api.shutdown", "Session is shut down");
+            return self.transport_error("level_api.shutdown", "Session is shut down");
         }
         let response = match operation {
             Operation::Initialize { profile_json, .. } => {
                 if self.api.is_some() {
-                    return error(
+                    return self.transport_error(
                         "level_abi.already_initialized",
                         "Trusted profile is immutable",
                     );
                 }
-                match SafetyProfile::from_json(&profile_json).and_then(LevelApi::new) {
+                let initialized = if abi == 1 {
+                    SafetyProfile::from_json(&profile_json)
+                        .and_then(LevelApi::new)
+                        .map(VersionedApi::Legacy)
+                } else {
+                    SafetyProfileV2::from_json(&profile_json)
+                        .and_then(|profile| {
+                            if profile.max_response_bytes > (MAX_BUFFER_BYTES - 16) as u64 {
+                                return Err(codegrid_level_api::ApiError {
+                                    code: "level_api.invalid_profile",
+                                    message: "Response ceiling exceeds portable transport capacity"
+                                        .into(),
+                                });
+                            }
+                            LevelApiV2::new(profile)
+                        })
+                        .map(VersionedApi::Scene)
+                };
+                match initialized {
                     Ok(api) => {
+                        self.version = Some(api.version());
                         self.api = Some(api);
-                        json!({"api_version":1,"status":"ok"}).to_string()
+                        json!({"api_version":abi,"status":"ok"}).to_string()
                     }
-                    Err(e) => return error(e.code, &e.message),
+                    Err(error) => return versioned_error(abi, error.code, &error.message),
                 }
             }
             Operation::Request { request_json, .. } => match self.api.as_mut() {
-                Some(api) => api.request_json(&request_json),
+                Some(api) => api.request(&request_json),
                 None => {
-                    return error(
+                    return versioned_error(
+                        abi,
                         "level_abi.not_initialized",
                         "Initialize the trusted session first",
                     )
                 }
             },
             Operation::Shutdown { .. } => {
+                self.version = Some(abi);
                 self.closed = true;
                 self.api = None;
-                json!({"api_version":1,"status":"ok"}).to_string()
+                json!({"api_version":abi,"status":"ok"}).to_string()
             }
         };
-        // The API returns bounded complete JSON; add only the transport version.
         if response.len().saturating_add(16) > MAX_BUFFER_BYTES {
-            return error(
+            return self.transport_error(
                 "level_api.response_too_large",
                 "Response exceeds adapter byte ceiling",
             );
         }
         if let Some(rest) = response.strip_prefix('{') {
-            format!("{{\"abi_version\":1,{rest}")
+            format!("{{\"abi_version\":{abi},{rest}")
         } else {
-            error("level_api.fault", "Shared API returned invalid response")
+            self.transport_error("level_api.fault", "Shared API returned invalid response")
         }
     }
 }
+fn versioned_error(version: u32, code: &str, message: &str) -> String {
+    json!({"abi_version":version,"api_version":version,"status":"error","error":{"code":code,"error_number":error_number("level",code),"message":message}}).to_string()
+}
+
 #[cfg(any(target_arch = "wasm32", test))]
 struct Buffer {
     bytes: Box<[u8]>,
@@ -203,6 +256,12 @@ pub extern "C" fn level_abi_version() -> u32 {
 #[cfg(target_arch = "wasm32")]
 #[allow(unsafe_code)]
 #[unsafe(no_mangle)]
+pub extern "C" fn level_abi_version_v2() -> u32 {
+    SCENE_LEVEL_ABI_VERSION
+}
+#[cfg(target_arch = "wasm32")]
+#[allow(unsafe_code)]
+#[unsafe(no_mangle)]
 pub extern "C" fn level_alloc(length: u32) -> u32 {
     BUFFERS.with(|b| {
         b.borrow_mut()
@@ -239,7 +298,10 @@ pub extern "C" fn level_request(pointer: u32, length: u32) -> u64 {
         let input = buffers.input(pointer as usize, length as usize)?;
         Some(match std::str::from_utf8(input) {
             Ok(text) => SESSION.with(|s| s.borrow_mut().request_text(text)),
-            Err(_) => error("level_api.invalid_request", "Request is not valid UTF-8"),
+            Err(_) => SESSION.with(|s| {
+                s.borrow()
+                    .transport_error("level_api.invalid_request", "Request is not valid UTF-8")
+            }),
         })
     });
     let Some(response) = response else {
@@ -315,5 +377,56 @@ mod strict_tests {
     assert!(PortableSession::default().request_text(&text).contains("level_api.invalid_request"),"{text}");
    }
         }
+    }
+}
+
+#[cfg(test)]
+mod scene_transport_tests {
+    use super::*;
+    #[test]
+    fn explicit_scene_version_and_immutable_session() {
+        let mut session = PortableSession::default();
+        let profile = include_str!("../../../examples/scene-host-v2/profile-local-v2.json");
+        let initialized: serde_json::Value = serde_json::from_str(&session.request_text(&json!({"abi_version":2,"api_version":2,"operation":"initialize","profile_json":profile}).to_string())).unwrap();
+        assert_eq!(initialized["abi_version"], 2);
+        assert_eq!(initialized["status"], "ok");
+        let capability: serde_json::Value = serde_json::from_str(&session.request_text(&json!({"abi_version":2,"api_version":2,"operation":"request","request_json":"{\"api_version\":2,\"operation\":\"capabilities\"}"}).to_string())).unwrap();
+        assert_eq!(
+            capability["capabilities"]["scene_types"]
+                .as_array()
+                .unwrap()
+                .len(),
+            6
+        );
+        assert!(session
+            .request_text(r#"{"abi_version":1,"api_version":1,"operation":"shutdown"}"#)
+            .contains("unsupported_version"));
+        assert!(session
+            .request_text(r#"{"abi_version":2,"api_version":2,"operation":"shutdown"}"#)
+            .contains("\"ok\""));
+        assert!(session
+            .request_text(r#"{"abi_version":2,"api_version":2,"operation":"shutdown"}"#)
+            .contains("level_api.shutdown"));
+    }
+    #[test]
+    fn profile_cannot_commit_feedback_beyond_transport_response_capacity() {
+        let mut profile: serde_json::Value = serde_json::from_str(include_str!(
+            "../../../examples/scene-host-v2/profile-local-v2.json"
+        ))
+        .unwrap();
+        profile["max_response_bytes"] = json!((MAX_BUFFER_BYTES as u64).to_string());
+        let response = PortableSession::default().request_text(&json!({"abi_version":2,"api_version":2,"operation":"initialize","profile_json":profile.to_string()}).to_string());
+        assert!(response.contains("level_api.invalid_profile"));
+    }
+    #[test]
+    fn version_two_preserves_original_profile_duplicate_detection() {
+        let profile = include_str!("../../../examples/scene-host-v2/profile-local-v2.json");
+        let bad = profile.replacen("{", "{\"profile_version\":2,", 1);
+        let response = PortableSession::default().request_text(
+            &json!({"abi_version":2,"api_version":2,"operation":"initialize","profile_json":bad})
+                .to_string(),
+        );
+        assert!(response.contains("level_api.invalid_profile"));
+        assert!(response.contains("\"abi_version\":2"));
     }
 }

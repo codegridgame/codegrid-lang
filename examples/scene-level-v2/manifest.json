@@ -1,0 +1,72 @@
+{
+  "format_version": 1,
+  "status": "Author-format examples for the selected Scene Level JSON v1 contract.",
+  "cases": [
+    {
+      "file": "exactio.json",
+      "expected_validation": "Valid",
+      "reason": "Conforms to the selected format_version 1 author contract."
+    },
+    {
+      "file": "exactio-invalid.json",
+      "expected_validation": "LevelInvalid",
+      "path": "$.scene_config.unexpected",
+      "reason": "Unknown field in empty ExactIO configuration."
+    },
+    {
+      "file": "baudot.json",
+      "expected_validation": "Valid",
+      "reason": "Conforms to the selected format_version 1 author contract."
+    },
+    {
+      "file": "baudot-invalid.json",
+      "expected_validation": "LevelInvalid",
+      "path": "$.evaluation.tests[0].input[0]",
+      "reason": "Baudot code exceeds 31."
+    },
+    {
+      "file": "quality-control.json",
+      "expected_validation": "Valid",
+      "reason": "Conforms to the selected format_version 1 author contract."
+    },
+    {
+      "file": "quality-control-invalid.json",
+      "expected_validation": "LevelInvalid",
+      "path": "$.evaluation.tests[0].input[0]",
+      "reason": "PackedRobot reserved color 3."
+    },
+    {
+      "file": "elevator.json",
+      "expected_validation": "Valid",
+      "reason": "Conforms to the selected format_version 1 author contract."
+    },
+    {
+      "file": "elevator-invalid.json",
+      "expected_validation": "LevelInvalid",
+      "path": "$.evaluation.tests[0].initial_passengers[0].to",
+      "reason": "Passenger origin equals destination."
+    },
+    {
+      "file": "robot.json",
+      "expected_validation": "Valid",
+      "reason": "Conforms to the selected format_version 1 author contract."
+    },
+    {
+      "file": "robot-invalid.json",
+      "expected_validation": "LevelInvalid",
+      "path": "$.scene_config.map.objects[2].index",
+      "reason": "A cell index is reused by multiple object records."
+    },
+    {
+      "file": "mechanical-arm.json",
+      "expected_validation": "Valid",
+      "reason": "Conforms to the selected format_version 1 author contract."
+    },
+    {
+      "file": "mechanical-arm-invalid.json",
+      "expected_validation": "LevelInvalid",
+      "path": "$.evaluation.tests[0].expected_output[0]",
+      "reason": "DEFECT inspection cannot have processed=1."
+    }
+  ]
+}

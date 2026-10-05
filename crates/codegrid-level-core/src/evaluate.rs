@@ -473,7 +473,7 @@ impl EvaluationSession {
             .map_or(EvaluationProgress::Pending, EvaluationProgress::Complete)
     }
 }
-fn check_scope(
+pub(crate) fn check_scope(
     rules: &crate::schema::ProgramRules,
     scoped: &ScopedProgram,
 ) -> Option<crate::validate::ProgramRejection> {

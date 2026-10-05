@@ -25,3 +25,7 @@ Build the server artifact with `CODEGRID_WASM_MAX_MEMORY_BYTES`, then run this
 tool with the artifact path and the same configured memory value. Keep the
 Wasmtime dependency pinned and review fuel, memory, and stack behavior whenever
 the pinned Wasmtime release changes.
+
+`level-parity --scene-v2` verifies ABI/API 2 against shared format-v1 scene levels,
+complete native CLI results, and permitted Debug event traces. Keep these reports
+separate from the v1 regression report and preserve exact original input text.
