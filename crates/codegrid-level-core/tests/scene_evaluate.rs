@@ -136,40 +136,6 @@ fn register_input_and_scene_state_reset_for_every_case() {
     }
 }
 #[test]
-fn elevator_cumulative_constraints_override_final_goal() {
-    let mut v = author("elevator");
-    let case = v["evaluation"]["tests"][0].clone();
-    v["evaluation"]["tests"] = json!([case.clone(), case]);
-    v["scoring"]["metrics"] = json!({"travel_distance":{"target":14},"stop_count":{"target":4}});
-    let result = evaluate_scene(
-        load(&v),
-        program(&[".2", ".7", ";"]),
-        EvaluationMode::Official,
-        config(),
-        limits(),
-    );
-    assert_eq!(result.status, EvaluationStatus::Passed);
-    assert_eq!(result.partial_metrics["travel_distance"], 14);
-    assert_eq!(result.partial_metrics["stop_count"], 4);
-    assert_eq!(result.rating, Some(3));
-    v["constraints"]["max_travel_distance"] = json!(13);
-    let result = evaluate_scene(
-        load(&v),
-        program(&[".2", ".7", ";"]),
-        EvaluationMode::Official,
-        config(),
-        limits(),
-    );
-    assert_eq!(result.status, EvaluationStatus::ConstraintExceeded);
-    assert_eq!(result.partial_metrics["travel_distance"], 14);
-    assert!(result.final_metrics.is_none());
-    assert!(result.rating.is_none());
-    assert!(result
-        .visible_cases
-        .iter()
-        .all(|c| c.outcome == VisibleSceneOutcome::Passed));
-}
-#[test]
 fn cancellation_keeps_visible_partial_metrics_and_not_completed_case() {
     let v = two_point_robot();
     let mut s = start_scene_evaluation(

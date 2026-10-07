@@ -44,3 +44,6 @@ Retain each published event's immutable encoded body and bill its staging work.
 The shared API copies these bodies when paging; it must not re-encode scene
 payloads on replay. Prepared typed page copies reserve their peak scene units
 before cloning and change cursors only on successful commit.
+
+The executable catalog contains ExactIO, Robot, and MechanicalArm.
+Paper tape and quality inspection are host presentations of ExactIO; Elevator has no runtime registration.

@@ -11,7 +11,7 @@ Review each program against the completed Full source specification before using
 
 ## Scene author documents
 
-[Scene Level JSON v2 examples](scene-level-v2/README.md) provide six complete valid author documents and six invalid counterparts. They illustrate the decided author schema, are currently unsupported by the format-1 loader, and are not execution conformance evidence.
+[Scene Level JSON examples](scene-level-v2/README.md) cover the current format-1 author schema for ExactIO, Robot, and MechanicalArm, plus invalid documents. Additional ExactIO documents cover byte boundaries and classification. Execution conformance evidence lives in the fixture manifests and actual-host reports.
 
 [Scene host v2 examples](scene-host-v2/README.md) illustrate the trusted profile, Debug feedback request/data, and visible case failure. Fragments and profile examples are clearly distinguished from executable author levels and existing API support.
 

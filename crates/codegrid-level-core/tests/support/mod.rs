@@ -39,7 +39,6 @@ pub fn limits() -> SceneLimits {
 pub fn author(name: &str) -> Value {
     let mut v: Value = serde_json::from_str(match name {
         "robot" => include_str!("../../../../examples/scene-level-v2/robot.json"),
-        "elevator" => include_str!("../../../../examples/scene-level-v2/elevator.json"),
         "arm" => include_str!("../../../../examples/scene-level-v2/mechanical-arm.json"),
         "exact" => include_str!("../../../../examples/scene-level-v2/exactio.json"),
         _ => panic!("fixture name"),

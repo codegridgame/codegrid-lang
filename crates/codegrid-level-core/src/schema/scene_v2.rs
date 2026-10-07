@@ -2,16 +2,6 @@ use super::*;
 use crate::scenes::SceneKind;
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
-pub enum QualityInput {
-    Color,
-    PackedRobot,
-}
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
-pub enum QualityMode {
-    Item,
-    Batch,
-}
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum Worktable {
     Inspection,
     Repair,
@@ -22,14 +12,6 @@ pub enum Worktable {
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum SceneConfig {
     ExactIO,
-    Baudot,
-    QualityControl {
-        input: QualityInput,
-        mode: QualityMode,
-    },
-    Elevator {
-        actors: u8,
-    },
     Robot {
         actors: u8,
         map: RobotMap,
@@ -38,11 +20,6 @@ pub enum SceneConfig {
         actors: u8,
         tables: [Option<Worktable>; 4],
     },
-}
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
-pub struct Passenger {
-    pub from: u8,
-    pub to: u8,
 }
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub struct RobotStart {
@@ -79,11 +56,6 @@ pub enum SceneCaseData {
         input: Vec<u8>,
         expected: Vec<u8>,
     },
-    Elevator {
-        floors: Vec<u8>,
-        initial: Vec<Passenger>,
-        sequential: Vec<Passenger>,
-    },
     Robot,
     MechanicalArm {
         input: Vec<InputRobot>,
@@ -102,13 +74,6 @@ impl SceneCase {
             SceneCaseData::Static { input, expected } => {
                 (input.len() as u64).checked_add(expected.len() as u64)
             }
-            SceneCaseData::Elevator {
-                floors,
-                initial,
-                sequential,
-            } => (floors.len() as u64)
-                .checked_add(initial.len() as u64)?
-                .checked_add(sequential.len() as u64),
             SceneCaseData::Robot => Some(0),
             SceneCaseData::MechanicalArm { input, expected } => {
                 (input.len() as u64).checked_add(expected.len() as u64)
@@ -180,42 +145,9 @@ fn actor_count(v: &Value, p: &str) -> Result<u8, LevelError> {
 fn config(kind: SceneKind, v: &Value) -> Result<SceneConfig, LevelError> {
     let p = "$.scene_config";
     Ok(match kind {
-        SceneKind::ExactIO | SceneKind::Baudot => {
+        SceneKind::ExactIO => {
             object(v, p, &[])?;
-            if kind == SceneKind::ExactIO {
-                SceneConfig::ExactIO
-            } else {
-                SceneConfig::Baudot
-            }
-        }
-        SceneKind::QualityControl => {
-            let m = object(v, p, &["input_mode", "case_mode"])?;
-            let input = match string(&m["input_mode"], "$.scene_config.input_mode")? {
-                "Color" => QualityInput::Color,
-                "PackedRobot" => QualityInput::PackedRobot,
-                _ => {
-                    return Err(LevelError::invalid(
-                        "UnsupportedInputMode",
-                        "$.scene_config.input_mode",
-                    ))
-                }
-            };
-            let mode = match string(&m["case_mode"], "$.scene_config.case_mode")? {
-                "Item" => QualityMode::Item,
-                "Batch" => QualityMode::Batch,
-                _ => {
-                    return Err(LevelError::invalid(
-                        "UnsupportedCaseMode",
-                        "$.scene_config.case_mode",
-                    ))
-                }
-            };
-            SceneConfig::QualityControl { input, mode }
-        }
-        SceneKind::Elevator => {
-            let m = object(v, p, &["elevator_count"])?;
-            let actors = actor_count(&m["elevator_count"], &format!("{p}.elevator_count"))?;
-            SceneConfig::Elevator { actors }
+            SceneConfig::ExactIO
         }
         SceneKind::Robot => {
             let m = object(v, p, &["robot_count", "map"])?;
@@ -250,25 +182,6 @@ fn config(kind: SceneKind, v: &Value) -> Result<SceneConfig, LevelError> {
             SceneConfig::MechanicalArm { actors, tables }
         }
     })
-}
-fn passengers(v: &Value, p: &str) -> Result<Vec<Passenger>, LevelError> {
-    array(v, p)?
-        .iter()
-        .enumerate()
-        .map(|(i, v)| {
-            let p = format!("{p}[{i}]");
-            let m = object(v, &p, &["from", "to"])?;
-            let from = byte(&m["from"], &format!("{p}.from"), 9)?;
-            let to = byte(&m["to"], &format!("{p}.to"), 9)?;
-            if from == to {
-                return Err(LevelError::invalid(
-                    "SamePassengerFloor",
-                    &format!("{p}.to"),
-                ));
-            }
-            Ok(Passenger { from, to })
-        })
-        .collect()
 }
 fn robot_map(v: &Value, p: &str, actors: u8) -> Result<RobotMap, LevelError> {
     let m = object(v, p, &["width", "height", "terrain", "colors", "objects"])?;
@@ -473,51 +386,12 @@ fn robot_map(v: &Value, p: &str, actors: u8) -> Result<RobotMap, LevelError> {
 }
 fn case(config: &SceneConfig, v: &Value, p: &str) -> Result<SceneCase, LevelError> {
     let fields: &[&str] = match config {
-        SceneConfig::Elevator { .. } => &[
-            "visible",
-            "initial_floors",
-            "initial_passengers",
-            "sequential_passengers",
-        ],
         SceneConfig::Robot { .. } => &["visible"],
         _ => &["visible", "input", "expected_output"],
     };
     let m = object(v, p, fields)?;
     let visible = boolean(&m["visible"], &format!("{p}.visible"))?;
     let data = match config {
-        SceneConfig::Elevator { actors } => {
-            let floors = bytes(&m["initial_floors"], &format!("{p}.initial_floors"))?;
-            if floors.len() != usize::from(*actors) {
-                return Err(LevelError::invalid(
-                    "ActorCountMismatch",
-                    &format!("{p}.initial_floors"),
-                ));
-            }
-            for (i, f) in floors.iter().enumerate() {
-                if *f > 9 {
-                    return Err(LevelError::invalid(
-                        "IntegerOutOfRange",
-                        &format!("{p}.initial_floors[{i}]"),
-                    ));
-                }
-            }
-            let initial = passengers(&m["initial_passengers"], &format!("{p}.initial_passengers"))?;
-            let sequential = passengers(
-                &m["sequential_passengers"],
-                &format!("{p}.sequential_passengers"),
-            )?;
-            if initial.is_empty() || initial.len() + sequential.len() > 10 {
-                return Err(LevelError::invalid(
-                    "InvalidPassengerCount",
-                    &format!("{p}.initial_passengers"),
-                ));
-            }
-            SceneCaseData::Elevator {
-                floors,
-                initial,
-                sequential,
-            }
-        }
         SceneConfig::Robot { .. } => SceneCaseData::Robot,
         SceneConfig::MechanicalArm { .. } => {
             let arr = array(&m["input"], &format!("{p}.input"))?;
@@ -554,54 +428,6 @@ fn case(config: &SceneConfig, v: &Value, p: &str) -> Result<SceneCase, LevelErro
         _ => {
             let input = bytes(&m["input"], &format!("{p}.input"))?;
             let expected = bytes(&m["expected_output"], &format!("{p}.expected_output"))?;
-            if *config == SceneConfig::Baudot {
-                for (key, arr) in [("input", &input), ("expected_output", &expected)] {
-                    for (i, b) in arr.iter().enumerate() {
-                        if *b > 31 {
-                            return Err(LevelError::invalid(
-                                "IntegerOutOfRange",
-                                &format!("{p}.{key}[{i}]"),
-                            ));
-                        }
-                    }
-                }
-            }
-            if let SceneConfig::QualityControl {
-                input: mode,
-                mode: case_mode,
-            } = config
-            {
-                if input.is_empty() || (*case_mode == QualityMode::Item && input.len() != 1) {
-                    return Err(LevelError::invalid(
-                        "InvalidItemCount",
-                        &format!("{p}.input"),
-                    ));
-                }
-                if expected.len() != 1 {
-                    return Err(LevelError::invalid(
-                        "InvalidDecisionCount",
-                        &format!("{p}.expected_output"),
-                    ));
-                }
-                if expected[0] > 1 {
-                    return Err(LevelError::invalid(
-                        "IntegerOutOfRange",
-                        &format!("{p}.expected_output[0]"),
-                    ));
-                }
-                for (i, b) in input.iter().enumerate() {
-                    let q = format!("{p}.input[{i}]");
-                    match mode {
-                        QualityInput::Color if *b > 2 => {
-                            return Err(LevelError::invalid("IntegerOutOfRange", &q))
-                        }
-                        QualityInput::PackedRobot if b & 3 == 3 => {
-                            return Err(LevelError::invalid("InvalidPackedColor", &q))
-                        }
-                        _ => {}
-                    }
-                }
-            }
             SceneCaseData::Static { input, expected }
         }
     };
@@ -672,9 +498,6 @@ pub fn load_scene_level_json(
     )? as u32;
     let kind = match string(&m["scene_type"], "$.scene_type")? {
         "ExactIO" => SceneKind::ExactIO,
-        "Baudot" => SceneKind::Baudot,
-        "QualityControl" => SceneKind::QualityControl,
-        "Elevator" => SceneKind::Elevator,
         "Robot" => SceneKind::Robot,
         "MechanicalArm" => SceneKind::MechanicalArm,
         _ => {
@@ -692,10 +515,7 @@ pub fn load_scene_level_json(
             "$.evaluation_type",
         ));
     }
-    let is_static = matches!(
-        kind,
-        SceneKind::ExactIO | SceneKind::Baudot | SceneKind::QualityControl
-    );
+    let is_static = matches!(kind, SceneKind::ExactIO);
     if (family == "ExactIO") != is_static {
         return Err(LevelError::invalid(
             "SceneFamilyMismatch",
@@ -704,11 +524,7 @@ pub fn load_scene_level_json(
     }
     let config = config(kind, &m["scene_config"])?;
     let rules = parse_rules(&m["program_rules"])?;
-    let (constraints, scoring) = parse_metric_policy(
-        &m["constraints"],
-        &m["scoring"],
-        kind == SceneKind::Elevator,
-    )?;
+    let (constraints, scoring) = parse_metric_policy(&m["constraints"], &m["scoring"])?;
     let e = object(&m["evaluation"], "$.evaluation", &["tests"])?;
     let arr = array(&e["tests"], "$.evaluation.tests")?;
     if arr.len() > limits.max_tests {

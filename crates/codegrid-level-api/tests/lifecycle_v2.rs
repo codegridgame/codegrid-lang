@@ -213,9 +213,6 @@ fn start_refuses_when_feedback_budget_cannot_cover_result_baseline() {
 fn every_advertised_scene_executes_through_api_two() {
     let fixtures = [
         include_str!("../../../examples/scene-level-v2/exactio.json"),
-        include_str!("../../../examples/scene-level-v2/baudot.json"),
-        include_str!("../../../examples/scene-level-v2/quality-control.json"),
-        include_str!("../../../examples/scene-level-v2/elevator.json"),
         include_str!("../../../examples/scene-level-v2/robot.json"),
         include_str!("../../../examples/scene-level-v2/mechanical-arm.json"),
     ];

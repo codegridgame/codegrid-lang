@@ -13,9 +13,9 @@
       "expected_status": "Passed"
     },
     {
-      "id": "baudot.pass",
-      "level": "baudot.json",
-      "program": "baudot.cg",
+      "id": "exactio-byte-boundaries.pass",
+      "level": "exactio-byte-boundaries.json",
+      "program": "exactio-byte-boundaries.cg",
       "mode": "Debug",
       "boundary": "Exit",
       "seed": "18446744073709551615",
@@ -23,19 +23,9 @@
       "expected_status": "Passed"
     },
     {
-      "id": "quality-control.pass",
-      "level": "quality-control.json",
-      "program": "quality-control.cg",
-      "mode": "Debug",
-      "boundary": "Exit",
-      "seed": "18446744073709551615",
-      "custom_limit": "1000",
-      "expected_status": "Passed"
-    },
-    {
-      "id": "elevator.pass",
-      "level": "elevator.json",
-      "program": "elevator.cg",
+      "id": "exactio-classification.pass",
+      "level": "exactio-classification.json",
+      "program": "exactio-classification.cg",
       "mode": "Debug",
       "boundary": "Exit",
       "seed": "18446744073709551615",
@@ -73,9 +63,9 @@
       "expected_status": "Passed"
     },
     {
-      "id": "baudot.official",
-      "level": "baudot.json",
-      "program": "baudot.cg",
+      "id": "exactio-byte-boundaries.official",
+      "level": "exactio-byte-boundaries.json",
+      "program": "exactio-byte-boundaries.cg",
       "mode": "Official",
       "boundary": "Exit",
       "seed": "18446744073709551615",
@@ -83,19 +73,9 @@
       "expected_status": "Passed"
     },
     {
-      "id": "quality-control.official",
-      "level": "quality-control.json",
-      "program": "quality-control.cg",
-      "mode": "Official",
-      "boundary": "Exit",
-      "seed": "18446744073709551615",
-      "custom_limit": "1000",
-      "expected_status": "Passed"
-    },
-    {
-      "id": "elevator.official",
-      "level": "elevator.json",
-      "program": "elevator.cg",
+      "id": "exactio-classification.official",
+      "level": "exactio-classification.json",
+      "program": "exactio-classification.cg",
       "mode": "Official",
       "boundary": "Exit",
       "seed": "18446744073709551615",

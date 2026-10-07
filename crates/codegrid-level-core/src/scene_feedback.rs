@@ -45,12 +45,6 @@ impl SceneInteraction {
 }
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum SceneEffect {
-    Elevator {
-        from_floor: u8,
-        to_floor: u8,
-        boarded: u64,
-        delivered: u64,
-    },
     Robot {
         from_position: u8,
         to_position: u8,
@@ -70,7 +64,6 @@ pub enum SceneRoundChange {
     TableReady { worktable_index: usize, state: u8 },
     BufferReady { right: bool, state: u8 },
     DoorOpened { door_id: u8 },
-    PassengerIntroduced { from: u8, to: u8 },
 }
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum SceneEventPayload {
@@ -206,14 +199,6 @@ pub fn visible_failure_value(failure: &VisibleSceneFailure, static_scene: bool) 
 impl SceneEffect {
     fn value(&self) -> Value {
         match self {
-            Self::Elevator {
-                from_floor,
-                to_floor,
-                boarded,
-                delivered,
-            } => {
-                json!({"scene_type":"Elevator","from_floor":from_floor,"to_floor":to_floor,"boarded":boarded.to_string(),"delivered":delivered.to_string()})
-            }
             Self::Robot {
                 from_position,
                 to_position,
@@ -249,9 +234,6 @@ impl SceneRoundChange {
                 json!({"kind":"BufferReady","buffer":if *right {"Right"}else{"Left"},"state":state})
             }
             Self::DoorOpened { door_id } => json!({"kind":"DoorOpened","door_id":door_id}),
-            Self::PassengerIntroduced { from, to } => {
-                json!({"kind":"PassengerIntroduced","from":from,"to":to})
-            }
         }
     }
 }
@@ -305,10 +287,7 @@ impl SceneEventPayload {
 impl Serialize for SceneEvent {
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         let d = &self.draft;
-        let static_scene = matches!(
-            d.scene_type,
-            SceneKind::ExactIO | SceneKind::Baudot | SceneKind::QualityControl
-        );
+        let static_scene = matches!(d.scene_type, SceneKind::ExactIO);
         json!({"sequence":self.sequence.to_string(),"source_index":d.source_index.to_string(),"scene_type":d.scene_type.id(),
             "tick":d.tick.map(|v|v.to_string()),"frame_index":d.frame_index.map(|v|v.to_string()),"actor":d.actor,"kind":d.payload.kind(),"data":d.payload.value(static_scene)}).serialize(serializer)
     }

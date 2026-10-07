@@ -59,8 +59,7 @@ supplies a work slice; the session retains state on Pending. In order:
 6. Retain completed actor effects on a scene error. Do not promote pending
    doors/tables/buffers or append a snapshot after terminal scene failure.
 7. On a nonterminal completed round, apply round-end work and compute the next
-   observation. Elevator may consume a frame without advancing its round;
-   Robot/MechanicalArm WAIT still advances theirs.
+   observation. Robot and MechanicalArm WAIT actions still advance rounds.
 8. Check constraints and terminal rules before appending any observation. If
    still Running, reserve complete observation capacity and publish the
    candidate successful round and queue append together, then permit the next
@@ -104,12 +103,10 @@ failure category, and public-event order with several host slice sizes.
 ## Resource accounting and privacy
 
 Extend the existing [safety accounting](level-safety-accounting.md) for actual
-retained scene definitions, world records, frame bytes, waiting/onboard
-passengers, conveyor/hand/table/buffer robots, patrol/trigger/door sets, and
+retained scene definitions, world records, frame bytes, conveyor/hand/table/buffer robots, patrol/trigger/door sets, and
 pending observation bytes. Each retained input byte is counted once in its
 owning queue; cumulative appended bytes require a separate checked ceiling.
 Keep scene metrics, VM Operation Count, work units, and rounds distinct.
-No-op floor targets can consume ticks without increasing Elevator rounds.
 
 Use trusted positive ceilings for cumulative ticks/work, queue size, cumulative
 input, feedback/events, and retained world state. The v2 host contract fixes scene_limits wire fields and accounting; numeric

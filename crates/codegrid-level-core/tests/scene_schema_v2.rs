@@ -16,9 +16,6 @@ fn load(
 fn example(name: &str) -> Value {
     let source = match name {
         "exactio" => include_str!("../../../examples/scene-level-v2/exactio.json"),
-        "baudot" => include_str!("../../../examples/scene-level-v2/baudot.json"),
-        "quality-control" => include_str!("../../../examples/scene-level-v2/quality-control.json"),
-        "elevator" => include_str!("../../../examples/scene-level-v2/elevator.json"),
         "robot" => include_str!("../../../examples/scene-level-v2/robot.json"),
         "mechanical-arm" => include_str!("../../../examples/scene-level-v2/mechanical-arm.json"),
         _ => panic!("internal fixture name"),
@@ -28,14 +25,7 @@ fn example(name: &str) -> Value {
 
 #[test]
 fn documented_author_examples_have_typed_definitions() {
-    for name in [
-        "exactio",
-        "baudot",
-        "quality-control",
-        "elevator",
-        "robot",
-        "mechanical-arm",
-    ] {
+    for name in ["exactio", "robot", "mechanical-arm"] {
         let v = example(name);
         let level = load(&v).unwrap();
         assert_eq!(level.kind().id(), v["scene_type"].as_str().unwrap());
@@ -58,21 +48,6 @@ fn documented_invalid_examples_return_exact_paths() {
             include_str!("../../../examples/scene-level-v2/exactio-invalid.json"),
             "UnknownField",
             "$.scene_config.unexpected",
-        ),
-        (
-            include_str!("../../../examples/scene-level-v2/baudot-invalid.json"),
-            "IntegerOutOfRange",
-            "$.evaluation.tests[0].input[0]",
-        ),
-        (
-            include_str!("../../../examples/scene-level-v2/quality-control-invalid.json"),
-            "InvalidPackedColor",
-            "$.evaluation.tests[0].input[0]",
-        ),
-        (
-            include_str!("../../../examples/scene-level-v2/elevator-invalid.json"),
-            "SamePassengerFloor",
-            "$.evaluation.tests[0].initial_passengers[0].to",
         ),
         (
             include_str!("../../../examples/scene-level-v2/robot-invalid.json"),
@@ -332,15 +307,6 @@ fn mechanical_robot_state_domain_and_table_slots_are_finite() {
 
 #[test]
 fn collection_and_trusted_size_boundaries_are_enforced() {
-    let mut v = example("quality-control");
-    v["scene_config"] = json!({"input_mode":"Color","case_mode":"Item"});
-    v["evaluation"]["tests"][0]["input"] = json!([1]);
-    load(&v).unwrap();
-    v["evaluation"]["tests"][0]["input"] = json!([1, 2]);
-    assert_eq!(load(&v).unwrap_err().reason, "InvalidItemCount");
-    let mut v = example("elevator");
-    v["evaluation"]["tests"][0]["initial_passengers"] = json!([]);
-    assert_eq!(load(&v).unwrap_err().reason, "InvalidPassengerCount");
     let source = example("robot").to_string();
     let mut limit = limits();
     limit.max_total_test_bytes = 10;
@@ -361,42 +327,20 @@ fn collection_and_trusted_size_boundaries_are_enforced() {
 }
 
 #[test]
-fn elevator_metrics_use_checked_sums_and_scene_only_policy() {
-    use codegrid_level_core::{aggregate, constraints_exceeded, Metrics};
-    let base = Metrics::from([("travel_distance".into(), 7), ("stop_count".into(), 3)]);
-    let current = Metrics::from([("travel_distance".into(), 4), ("stop_count".into(), 2)]);
-    let total = aggregate(&base, &current).unwrap();
-    assert_eq!(total["travel_distance"], 11);
-    assert_eq!(total["stop_count"], 5);
-    assert!(constraints_exceeded(
-        &total,
-        &Metrics::from([("max_travel_distance".into(), 10)])
-    ));
-    assert!(constraints_exceeded(
-        &total,
-        &Metrics::from([("max_stop_count".into(), 4)])
-    ));
-    assert!(!constraints_exceeded(
-        &total,
-        &Metrics::from([("max_stop_count".into(), 5)])
-    ));
-    let overflow = Metrics::from([("travel_distance".into(), u64::MAX)]);
-    assert!(aggregate(&overflow, &current).is_none());
-    for name in [
-        "exactio",
-        "baudot",
-        "quality-control",
-        "robot",
-        "mechanical-arm",
-    ] {
+fn removed_scene_identifiers_and_metrics_are_rejected() {
+    for scene in ["Baudot", "QualityControl", "Elevator"] {
+        let mut v = example("exactio");
+        v["scene_type"] = json!(scene);
+        let error = load(&v).unwrap_err();
+        assert_eq!(error.category, "UnsupportedSceneType");
+        assert_eq!(error.path, "$.scene_type");
+    }
+    for name in ["exactio", "robot", "mechanical-arm"] {
         let mut v = example(name);
-        v["constraints"]["max_stop_count"] = json!(10);
+        v["constraints"]["max_stop_count"] = json!(1);
         assert_eq!(load(&v).unwrap_err().reason, "UnsupportedMetric");
-        v["constraints"]
-            .as_object_mut()
-            .unwrap()
-            .remove("max_stop_count");
-        v["scoring"]["metrics"]["travel_distance"] = json!({"target": 10});
+        v["constraints"] = json!({});
+        v["scoring"]["metrics"]["travel_distance"] = json!({"target":1});
         assert_eq!(load(&v).unwrap_err().reason, "UnsupportedMetric");
     }
 }

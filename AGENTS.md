@@ -68,6 +68,8 @@ These rules apply to all AI-assisted work in this repository.
 
 ## Changes and verification
 
+- For every change, read and follow [Mandatory downstream synchronization](docs/downstream-synchronization.md) before reporting completion. Inspect downstream impact and synchronize affected files in `C:/source/bf-steam-wt` in the same task, including consumers, generated artifacts, provenance, documentation, and tests. Do not wait for a separate user reminder. No-impact conclusions require concrete evidence; unavailable repositories or required checks must be reported as incomplete synchronization. Upstream checks alone do not satisfy this completion gate.
+
 - Make the smallest coherent change that satisfies the task. Preserve unrelated user changes and do not claim a proposed component already exists.
 - Add or update focused tests when changing language behavior, source acceptance, formatting, or cross-host boundaries. Use valid Full `.cg` fixtures for parser acceptance; review the seven old M0 fixtures and rewrite them before promoting them to conformance evidence.
 - Check formatting, build, and relevant tests when the tools are available. Report exactly which checks ran and any verification limits; do not claim native or WebAssembly parity without running the relevant comparison.

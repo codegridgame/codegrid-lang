@@ -6,7 +6,7 @@ Provide Level Host API v1 and the independent native v2 scene lifecycle, shared 
 profiles, source compilation, checked handles, and evaluation lifecycle.
 The strict v2 profile loader converts trusted scene ceilings to core limits;
 it does not by itself register executable capabilities. `LevelApiV2` owns
-version-2 request dispatch and registers the six executable native scenes;
+version-2 request dispatch and registers the three executable native scenes;
 browser/server transport support and actual WASM parity require separate evidence.
 The v2 result projection accepts only the privacy-safe multi-case result and
 reuses common result fields and core scene failure serialization. It must never

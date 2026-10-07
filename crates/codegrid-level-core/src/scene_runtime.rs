@@ -6,9 +6,7 @@ use crate::scene_feedback::SceneRoundChange;
 use crate::scene_protocol::{
     IllegalOperationReason, SceneCounterError, SceneFailure, SceneOutcome,
 };
-use crate::scene_world::{
-    ActorSnapshot, ArmError, ArmWorld, ElevatorWorld, RobotWorld, TransitionError,
-};
+use crate::scene_world::{ActorSnapshot, ArmError, ArmWorld, RobotWorld, TransitionError};
 use crate::scenes::SceneKind;
 use crate::{InputRobot, Worktable};
 use std::collections::BTreeMap;
@@ -73,7 +71,6 @@ pub(super) trait SceneRuntime: SceneRuntimeClone {
     fn expected_output(&self) -> Option<&[u8]>;
     fn actual_output(&self) -> Option<&[u8]>;
     fn rounds(&self) -> u64;
-    fn elevator_metrics(&self) -> Option<(u64, u64)>;
     fn debug_snapshot(&mut self, actor: usize) -> Option<ActorSnapshot>;
     fn round_changes(&mut self) -> Result<Vec<SceneRoundChange>, SceneCounterError>;
     fn end_round(&mut self, observation: Vec<u8>) -> Result<Vec<u8>, SceneCounterError>;
@@ -120,12 +117,7 @@ impl SceneRuntime for StaticRuntime {
         let SceneCommand::StaticOutput(value) = command else {
             unreachable!("static runtime only receives static outputs")
         };
-        let outcome = if (self.kind == SceneKind::Baudot && value > 31)
-            || (self.kind == SceneKind::QualityControl && value > 1)
-        {
-            self.work += 1;
-            SceneOutcome::Failed(SceneFailure::InvalidOutput { actor: None, value })
-        } else {
+        let outcome = {
             self.work += 3; // Decode, inspect expected byte, update actual sequence.
             let index = self.actual.len();
             let wanted = self.expected.get(index).copied();
@@ -181,10 +173,6 @@ impl SceneRuntime for StaticRuntime {
         0
     }
 
-    fn elevator_metrics(&self) -> Option<(u64, u64)> {
-        None
-    }
-
     fn debug_snapshot(&mut self, _actor: usize) -> Option<ActorSnapshot> {
         None
     }
@@ -195,117 +183,6 @@ impl SceneRuntime for StaticRuntime {
 
     fn end_round(&mut self, _observation: Vec<u8>) -> Result<Vec<u8>, SceneCounterError> {
         unreachable!("static runtime has no actor rounds")
-    }
-}
-
-#[derive(Clone)]
-pub(super) struct ElevatorRuntime {
-    world: ElevatorWorld,
-}
-
-impl ElevatorRuntime {
-    pub fn new(
-        floors: &[u8],
-        initial: &[crate::Passenger],
-        sequential: &[crate::Passenger],
-    ) -> Self {
-        Self {
-            world: ElevatorWorld::new(floors, initial, sequential),
-        }
-    }
-}
-
-impl SceneRuntime for ElevatorRuntime {
-    fn kind(&self) -> SceneKind {
-        SceneKind::Elevator
-    }
-
-    fn mode(&self) -> SceneRuntimeMode {
-        SceneRuntimeMode::ActorFrame
-    }
-
-    fn reset_transition_work(&mut self) {
-        self.world.work = 0;
-    }
-
-    fn transition(
-        &mut self,
-        command: SceneCommand,
-    ) -> Result<RuntimeTransition, SceneCounterError> {
-        let SceneCommand::ActorOutput { actor, action } = command else {
-            unreachable!("elevator runtime only receives actor outputs")
-        };
-        let result = match self.world.act(actor, action) {
-            Ok(()) => RuntimeTransition {
-                outcome: self.world.complete().then_some(SceneOutcome::Passed),
-                observation: Vec::new(),
-            },
-            Err(TransitionError::CounterOverflow) => return Err(SceneCounterError::Overflow),
-            Err(TransitionError::InvalidOutput) => RuntimeTransition {
-                outcome: Some(SceneOutcome::Failed(SceneFailure::InvalidOutput {
-                    actor: Some(actor as u8),
-                    value: action,
-                })),
-                observation: Vec::new(),
-            },
-        };
-        Ok(result)
-    }
-
-    fn take_initial_input(&mut self) -> Vec<u8> {
-        self.world.initial_input()
-    }
-
-    fn initialization_work(&self, _actors: usize, initial_input_len: usize) -> u64 {
-        self.world.work + initial_input_len as u64 / 2
-    }
-
-    fn retained_units(&self) -> u64 {
-        self.world.retained_units()
-    }
-
-    fn transition_work(&self, _actors: usize, _observation_is_empty: bool) -> u64 {
-        self.world.work
-    }
-
-    fn summary(&self) -> BTreeMap<&'static str, u64> {
-        let mut result = BTreeMap::new();
-        let (delivered, introduced) = self.world.summary();
-        result.insert("delivered_passengers", delivered);
-        result.insert("introduced_passengers", introduced);
-        result.insert("travel_distance", self.world.travel_distance);
-        result.insert("stop_count", self.world.stop_count);
-        result
-    }
-
-    fn expected_output(&self) -> Option<&[u8]> {
-        None
-    }
-
-    fn actual_output(&self) -> Option<&[u8]> {
-        None
-    }
-
-    fn rounds(&self) -> u64 {
-        self.world.rounds
-    }
-
-    fn elevator_metrics(&self) -> Option<(u64, u64)> {
-        Some((self.world.travel_distance, self.world.stop_count))
-    }
-
-    fn debug_snapshot(&mut self, actor: usize) -> Option<ActorSnapshot> {
-        Some(self.world.debug_snapshot(actor))
-    }
-
-    fn round_changes(&mut self) -> Result<Vec<SceneRoundChange>, SceneCounterError> {
-        Ok(self.world.round_changes())
-    }
-
-    fn end_round(&mut self, _observation: Vec<u8>) -> Result<Vec<u8>, SceneCounterError> {
-        self.world
-            .end_round()
-            .map_err(|_| SceneCounterError::Overflow)
     }
 }
 
@@ -407,10 +284,6 @@ impl SceneRuntime for RobotRuntime {
 
     fn rounds(&self) -> u64 {
         self.world.rounds
-    }
-
-    fn elevator_metrics(&self) -> Option<(u64, u64)> {
-        None
     }
 
     fn debug_snapshot(&mut self, actor: usize) -> Option<ActorSnapshot> {
@@ -559,10 +432,6 @@ impl SceneRuntime for MechanicalArmRuntime {
 
     fn rounds(&self) -> u64 {
         self.world.rounds
-    }
-
-    fn elevator_metrics(&self) -> Option<(u64, u64)> {
-        None
     }
 
     fn debug_snapshot(&mut self, actor: usize) -> Option<ActorSnapshot> {

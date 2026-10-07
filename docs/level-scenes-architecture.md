@@ -1,6 +1,6 @@
-# Six-Scene Code Architecture
+# Scene Code Architecture
 
-Status: six protocols are executable through the native Rust API-2 session.
+Status: three protocols are executable through the native Rust API-2 session.
 API-1 remains ExactIO-only. Browser/server v2 transports have initial actual-host comparison evidence;
 complete protocol/resource coverage remains pending.
 
@@ -9,9 +9,6 @@ complete protocol/resource coverage remains pending.
 | Product scene | Evaluation family | Correctness | Current delivery |
 | --- | --- | --- | --- |
 | ExactIO | ExactIO | Expected byte sequence, existing halt/constraint/outcome rules | Implemented |
-| Baudot | ExactIO profile | Expected five-bit code sequence | API-2 and WASM v2 implemented; initial parity verified |
-| QualityControl | ExactIO profile | One Item/Batch accept-or-reject decision | API-2 and WASM v2 implemented; initial parity verified |
-| Elevator | Dynamic scene | All configured passengers appear and reach destinations | API-2 and WASM v2 implemented; initial parity verified |
 | Robot | Dynamic scene | All required patrol points visited | API-2 and WASM v2 implemented; initial parity verified |
 | MechanicalArm | Dynamic scene | Expected visible robot-state sequence | API-2 and WASM v2 implemented; initial parity verified |
 
@@ -20,7 +17,7 @@ examples is not an alias. Robot's current goal is patrol completion, superseding
 the earlier repair-device concept. The Rust catalog's SceneKind,
 EvaluationFamily, SceneStatus, SceneDescriptor, and SELECTED_SCENES express
 native API-2 registration rather than WASM deployment. Existing API-1 hosts
-report only ExactIO and an empty scene_types list; API-2 reports the six scenes
+report only ExactIO and an empty scene_types list; API-2 reports the three scenes
 that its loader/evaluator executes. Do not advertise planned protocols as executable.
 
 ## Shared execution boundary
@@ -30,8 +27,7 @@ compiler or VM instructions. Keep definition validation, observation encoding,
 action decoding, ordered world transitions, goals, and metrics in Rust above
 the language core. Hosts own visualization and ABI conversion.
 
-Baudot and QualityControl use ExactIO comparison with additional domain
-validation. Do not add a second evaluator or compare correctness in JavaScript.
+Paper-tape and quality authoring compile to generic ExactIO byte cases. Do not add a second evaluator or compare correctness in JavaScript.
 The selected author contract uses `format_version: 1` and distinguishes scene
 definitions from executable programs. The current loader, examples, and fixtures
 use this contract; no legacy scene-format branch is supported.
@@ -55,7 +51,7 @@ for community scenes is documented in [Custom Scene architecture](custom-scenes-
 package execution stays in the application host behind a versioned cooperative
 call/reply protocol. Do not extend `SceneKind` or add game-host callbacks as a
 substitute for that boundary. Current API v2 capabilities continue to list only
-the six scenes implemented by this Rust evaluator.
+the three scenes implemented by this Rust evaluator.
 
 ## Implementation sequence and verification
 
@@ -63,9 +59,9 @@ the six scenes implemented by this Rust evaluator.
    Migrate to the selected [Level JSON format v1 contract](../spec/codegrid-scene-level-json-v2.md);
    implement the [Scene Host Contract v2](../spec/codegrid-scene-host-contract-v2.md)
    failure, resource, result, and feedback contracts alongside it.
-2. Implement domain validation for Baudot and QualityControl above ExactIO.
+2. Keep paper-tape and quality authoring transformations in the application.
 3. Introduce the shared continuous-case orchestrator with the first dynamic
-   scene, then implement Robot, Elevator, and MechanicalArm using it. Add no
+   scene, then implement Robot and MechanicalArm using it. Add no
    empty crates or executable registration for unimplemented scenes.
 4. Project actual supported capabilities, privacy-safe observations, metrics,
    and results through shared Level APIs; adapters stay thin.
@@ -73,3 +69,7 @@ the six scenes implemented by this Rust evaluator.
    partial frames, round ordering, constraints, cancellation, hidden-data
    redaction, and deterministic slicing. Compare actual native, browser-WASM,
    and server-WASM results before claiming parity.
+
+Current catalog (2026-10-07): ExactIO, Robot, MechanicalArm.
+Paper-tape authoring uses ExactIO; Baudot, QualityControl, and Elevator wire identifiers are unsupported.
+Historical scene verification does not establish support in this build.

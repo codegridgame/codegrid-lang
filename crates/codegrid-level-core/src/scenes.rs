@@ -3,9 +3,6 @@
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum SceneKind {
     ExactIO,
-    Baudot,
-    QualityControl,
-    Elevator,
     Robot,
     MechanicalArm,
 }
@@ -33,9 +30,6 @@ impl SceneKind {
     pub const fn id(self) -> &'static str {
         match self {
             Self::ExactIO => "ExactIO",
-            Self::Baudot => "Baudot",
-            Self::QualityControl => "QualityControl",
-            Self::Elevator => "Elevator",
             Self::Robot => "Robot",
             Self::MechanicalArm => "MechanicalArm",
         }
@@ -43,8 +37,8 @@ impl SceneKind {
 
     pub const fn descriptor(self) -> SceneDescriptor {
         let family = match self {
-            Self::ExactIO | Self::Baudot | Self::QualityControl => EvaluationFamily::ExactIO,
-            Self::Elevator | Self::Robot | Self::MechanicalArm => EvaluationFamily::Environment,
+            Self::ExactIO => EvaluationFamily::ExactIO,
+            Self::Robot | Self::MechanicalArm => EvaluationFamily::Environment,
         };
         let status = SceneStatus::Implemented;
         SceneDescriptor {
@@ -56,11 +50,8 @@ impl SceneKind {
 }
 
 /// Stable product order, distinct from executable Environment capabilities.
-pub const SELECTED_SCENES: [SceneKind; 6] = [
+pub const SELECTED_SCENES: [SceneKind; 3] = [
     SceneKind::ExactIO,
-    SceneKind::Baudot,
-    SceneKind::QualityControl,
-    SceneKind::Elevator,
     SceneKind::Robot,
     SceneKind::MechanicalArm,
 ];
@@ -73,7 +64,7 @@ mod tests {
     fn catalog_matches_native_scene_registration() {
         let ids: std::collections::BTreeSet<_> =
             SELECTED_SCENES.iter().map(|scene| scene.id()).collect();
-        assert_eq!(ids.len(), 6);
+        assert_eq!(ids.len(), 3);
         assert!(!ids.contains("Terminal"));
         assert!(!ids.contains("MaintenanceRobot"));
         let descriptors = SELECTED_SCENES.map(SceneKind::descriptor);
@@ -82,14 +73,14 @@ mod tests {
                 .iter()
                 .filter(|s| s.family == EvaluationFamily::ExactIO)
                 .count(),
-            3
+            1
         );
         assert_eq!(
             descriptors
                 .iter()
                 .filter(|s| s.family == EvaluationFamily::Environment)
                 .count(),
-            3
+            2
         );
         assert_eq!(
             descriptors

@@ -588,3 +588,34 @@ packages use a serialized protocol, never Rust dynamic-library ABI. This is an
 architecture target, not an approved runtime wire schema. Exact package
 manifest, guest ABI, resource accounting, error identities, editor schema, and
 host conformance vectors must be specified before implementation begins.
+
+## 2026-10-07: Remove paper-tape and elevator runtime scenes
+
+The user explicitly removes Baudot and Elevator from the Rust scene catalog.
+Only ExactIO, QualityControl, Robot, and MechanicalArm remain executable.
+Paper tape is an authoring and presentation mode compiled into ExactIO input
+and expected output bytes. Rust does not enforce a five-bit domain or interpret
+character shifts. Old Baudot/Elevator wire scene names are unsupported; consumers
+may explicitly migrate saved paper-tape data to ExactIO while preserving
+presentation metadata. Elevator drafts remain available for recovery/backup but
+cannot be exported or evaluated by the current host. Elevator-specific metrics,
+passenger state, runtime actions, and feedback are removed. This decision
+supersedes the earlier six-scene selection without changing Full VM semantics.
+
+The same user decision also removes QualityControl as a Rust scene. Quality
+authoring precompiles numeric input and expected decisions into ExactIO cases;
+Color/PackedRobot and Item/Batch are presentation/authoring metadata only.
+Rust imposes no quality-specific byte ranges or case lengths. The final runtime
+catalog is ExactIO, Robot, MechanicalArm.
+
+## 2026-10-07: Remove obsolete scene fixtures and examples
+
+The user requests complete cleanup of removed scene implementation material.
+Delete obsolete device fixtures and dedicated invalid-example files; explicit
+removed-identifier rejection remains covered directly by schema and transport
+tests. Rename generic ExactIO examples and execution vectors to
+`exactio-byte-boundaries` and `exactio-classification`, including their manifest
+IDs. Remove superseded device examples and validation reasons from current
+specifications and session documentation. Earlier dated decisions remain an
+audit record, not executable registrations. No Full language semantics or
+published numeric error identities change.

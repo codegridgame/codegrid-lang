@@ -1,6 +1,6 @@
 # Level Environment Extension Design
 
-Status: historical internal WP3 design. The current six-scene protocols are
+Status: historical internal WP3 design. The current scene protocols are
 defined by the Scene Spec and shared session architecture; this document's
 earlier reset-based Environment sketches and static-Rust-only registration do
 not describe the current runtime. Player-authored packages follow the separate
@@ -17,9 +17,9 @@ normative specification before relying on the new interpretation.
 ## Later scene protocol decision (2026-10-05)
 
 The [Scene Specification v1](../spec/codegrid-scene-spec-v1.md) now defines
-the selected six-scene protocols. Its continuous VM per case and queue-tail
+the selected scene protocols. Its continuous VM per case and queue-tail
 input appends supersede the fresh-VM-per-decision lifecycle sketches below
-for Robot, Elevator, and MechanicalArm. Retain those sketches as historical
+for Robot and MechanicalArm. Retain those sketches as historical
 interface design; adapt them before implementation. Typed author JSON is now
 defined by the selected [Scene Level JSON format v1 contract](../spec/codegrid-scene-level-json-v2.md).
 The continuous session, input append, and versioned public projections are now
@@ -28,7 +28,7 @@ and [scene conformance plan](scene-conformance-plan.md) document the current
 behavior and remaining evidence gaps.
 Their per-tick append, actor-order validation, partial actor effects, and
 terminal priority replace the corresponding old sketches below. This document
-predates the current API-2 six-scene implementation and is retained as design
+predates the current API-2 scene implementation and is retained as design
 history, not a statement of current runtime capability.
 
 ## Design boundary

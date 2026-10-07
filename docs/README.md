@@ -8,10 +8,11 @@
 - [CodeGrid VM specification](../spec/codegrid-vm-spec.md): normative Full execution, errors, snapshots, metrics, and determinism.
 - [CodeGrid Runtime API specification](../spec/codegrid-runtime-api-spec.md): normative Full v3 lifecycle, request/response, resource-limit, and error contract.
 - [AI contribution rules](../AGENTS.md): project language, dependency direction, prohibited shortcuts, and verification requirements.
+- [Mandatory downstream synchronization](downstream-synchronization.md): required impact review and same-task updates to `C:/source/bf-steam-wt` after upstream changes, including generated artifacts and verification.
 
 ## Scene protocols
 
-- [Scene Specification v1](../spec/codegrid-scene-spec-v1.md): six accepted scene protocols, byte encodings, rounds, state transitions, validation, goals, and implementation gaps.
+- [Scene Specification v1](../spec/codegrid-scene-spec-v1.md): ExactIO, Robot, and MechanicalArm protocols, byte encodings, rounds, state transitions, validation, goals, and implementation gaps.
 
 - [Continuous scene session design](scene-session-design.md): accepted VM lifetime, tick-boundary input/output interleaving, actor effects, resource accounting, and integration gates.
 - [Scene conformance plan](scene-conformance-plan.md): concrete protocol vectors, lifecycle invariants, and delivery evidence requirements.
@@ -33,7 +34,7 @@
 - [Rust level evaluation task book](../tasks/level-core-exactio-v1.md): ExactIO implementation, Environment extension design, native CLI evaluation, WASM delivery, and actual-host parity acceptance.
 - [Level Host API v1](level-api-v1.md), [WASM transports v1](level-wasm-v1.md), and [safety accounting](level-safety-accounting.md): versioned integration and trusted local profiles.
 - [Environment extension design](level-environment-extension.md): historical reset-based Rust design sketch, superseded by the current continuous scene-session design.
-- [Six-scene architecture](level-scenes-architecture.md): selected product scenes, current Rust catalog limits, shared engines, and delivery sequence.
+- [Scene architecture](level-scenes-architecture.md): authoring presentations, current Rust catalog limits, shared engines, and delivery sequence.
 - [Level implementation traceability](level-traceability.md): normative rules, test coverage, reproducible host comparisons, and remaining integration dependencies.
 - [Level build provenance](level-build-provenance.md): pinned local toolchain, exact evaluator source identity, and artifact/toolchain reports.
 - [Level host integration readiness](level-host-integration-readiness.md): candidate Steam/backend workspace, existing ABI boundaries, and required actual-host acceptance.

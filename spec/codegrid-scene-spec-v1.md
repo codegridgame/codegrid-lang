@@ -6,14 +6,13 @@ Source: the user-selected conversation [梳理确定场景](chatgpt-conversation
 
 ## 1. Scope and authority
 
-This specification defines six scenes: ExactIO, Baudot, Elevator, Robot,
-QualityControl, and MechanicalArm. It translates the selected conversation into
+This specification defines three scenes: ExactIO, Robot, and MechanicalArm. It translates the selected conversation into
 an implementation-oriented English contract. The existing compiler and VM do
-not interpret elevators, actors, passengers, robot parts, maps, or worktables.
+not interpret actors, robot parts, maps, or worktables.
 Scenes interpret ordinary byte input and committed byte output in the Rust level
 layer. Presentation and animation remain in the game host.
 
-All six scenes execute through the shared Rust scene core and API/ABI v2.
+All three scenes execute through the shared Rust scene core and API/ABI v2.
 The author-file contract is defined in `codegrid-scene-level-json-v2.md`
 (author format v1), and transport behavior in `codegrid-scene-host-contract-v2.md`.
 The legacy API/ABI v1 retains its separate ExactIO contract.
@@ -31,7 +30,7 @@ defined by their current contracts.
 ### 2.1 Values and isolation
 
 All VM-facing values are `u8`. Domain limits are additional scene validation:
-Baudot codes are 0–31, floors are 0–9, and QualityControl decisions are 0–1.
+Only Robot and MechanicalArm define additional scene domains.
 Invalid author data is rejected before execution. Invalid player output fails
 the current case.
 
@@ -62,7 +61,7 @@ categories for those outcomes.
 
 Successful HALT is not automatically a scene pass. If its goal is unfinished,
 fail with the logical reason `IncompleteGoal`; a partially collected dual-actor
-frame is also unfinished. ExactIO and Baudot with empty expected output pass
+frame is also unfinished. ExactIO with empty expected output pass
 only on successful HALT without any output. Complete nonempty goals pass
 immediately without requiring HALT or consumption of remaining input.
 
@@ -102,9 +101,7 @@ Robot and MechanicalArm use these action bytes:
 | 3 | TURN_LEFT | Turn left | Rotate left by 60 degrees |
 | 4 | TURN_RIGHT | Turn right | Rotate right by 60 degrees |
 
-Other bytes fail as `InvalidOutput`. Elevator uses floor targets instead;
-its byte 0 means floor 0, not WAIT.
-
+Other bytes fail as `InvalidOutput`.
 For a single actor, one output is a complete frame. For two actors, collect
 two outputs: first A, then B. Do not execute A until both outputs are collected.
 Decode and validate each collected byte only when its actor is dispatched,
@@ -115,8 +112,7 @@ observations. Scene rounds do not roll back previously completed actors.
 If A produces a
 terminal outcome, stop immediately without executing B or round-end work.
 WAIT is an action. Robot and MechanicalArm advance a completed nonterminal
-round even when both actors wait or movement/grab is a no-op. Elevator's special
-round advancement rule is defined in Section 5.
+round even when both actors wait or movement/grab is a no-op.
 
 ### 2.4 Tick boundary and terminal priority
 
@@ -155,8 +151,8 @@ transition and observation. Insufficient capacity produces ResourceLimitExceeded
 not dropped input or altered bytes. Previously committed VM effects remain
 committed; resource-terminal scene projections must be defined by the session
 contract. All queue and scene-metric counters use checked arithmetic. Waiting
-and blocked actions remain subject to VM work/tick ceilings even if Elevator
-rounds do not advance.
+and blocked actions remain subject to VM work/tick ceilings even when no scene
+goal progresses.
 
 ## 3. ExactIO
 
@@ -174,68 +170,11 @@ successful HALT with no output passes. These rules follow the existing
 [ExactIO implementation contract](codegrid-level-exactio-contract-v1.md),
 including its transactional and constraint priorities.
 
-## 4. Baudot
+## 4–5. Removed presentation and runtime scenes
 
-Case data: byte vectors `input` and `expected_output`, with every value 0–31.
-A message unit is one five-bit code; a case contains an entire sequence.
-Append the complete input once at initialization, not one code per round.
-Author values above 31 are invalid. Player values above 31 fail immediately.
-
-Start interpretation/display mode at LTRS. LTRS/FIGS mode persists through
-the case and resets for the next case. Correctness compares raw five-bit codes,
-not rendered text. Pass/fail and empty expected-output behavior exactly follow
-ExactIO. A particular character table, shift-code numbers, and presentation
-conversion are not selected by this protocol; they must not alter byte
-correctness or be invented as author-data acceptance rules.
-
-## 5. Elevator
-
-### 5.1 Definition and validation
-
-Floors are 0–9. A case has one or two elevators, each with an independently
-configured initial floor. Two elevators may start on or occupy the same floor.
-For a single elevator, no B initial floor is required.
-
-Passengers are ordered records `{from: u8, to: u8}`. Both floors must be 0–9
-and different. There must be at least one initial passenger and 1–10 passengers
-total across `initial_passengers` and `sequential_passengers`. Preserve author
-order; do not sort or deduplicate passengers.
-
-Initially all initial passengers are waiting at their origins. Merely starting
-an elevator at a floor does not service passengers. Initial input is each
-initial passenger's `[from, to]` pair concatenated in author order, with no
-count prefix.
-
-### 5.2 Targets, servicing, and rounds
-
-One elevator receives one target output per frame; two receive A's target then
-B's. Targets 10–255 fail. A target equal to the elevator's current floor is a
-no-op: no boarding, alighting, travel, or stop is counted.
-
-For a different target, move immediately, without simulated travel time:
-
-1. Alight every onboard passenger whose destination is this floor.
-2. Board every waiting passenger at this floor.
-
-There is no capacity limit. Execute A before B. If both arrive at the same
-floor, A boards first; B cannot board passengers already taken by A.
-
-A completed frame advances the round only if at least one elevator actually
-moved. A stationary elevator does not service passengers. After each advanced
-nonterminal round, introduce at most one sequential passenger in author order
-and append that passenger's `[from, to]` to the unread queue tail. Introduction
-does not retroactively service an elevator already at that origin. A passenger
-is introduced and sent only once. A frame where every target equals the
-corresponding current floor introduces no passenger.
-
-Pass immediately when all configured passengers have appeared and all have
-reached their destinations. Pending sequential passengers prevent passing.
-
-### 5.3 Scene metrics
-
-`travel_distance` adds `abs(target - previous_floor)` for every actual move.
-`stop_count` adds one per elevator per actual move/arrival. Sum across both
-elevators. Current-floor outputs contribute zero to both metrics.
+Paper tape uses ExactIO with precompiled case bytes. Its five-bit authoring
+restrictions and character rendering belong to the application. Elevator is
+removed and its old wire identifier is unsupported. See the 2026-10-07 decision.
 
 ## 6. Robot
 
@@ -301,38 +240,10 @@ still Running, append another snapshot:
 Color is the current cell's color. Direction is not included. Map and initial
 direction are scene definition/presentation data. Do not replace unread snapshots.
 
-## 7. QualityControl
+## 7. Quality presentation
 
-Decisions are 0 Reject and 1 Accept; outputs 2–255 fail. Each level selects
-one input representation and one case mode; do not mix representations.
-
-Color representation permits one byte per item: 0 NONE, 1 BLUE, 2 RED.
-PackedRobot representation uses one byte per item:
-
-| Bit(s) | Meaning |
-| --- | --- |
-| 7 | Left leg fault |
-| 6 | Right leg fault |
-| 5 | Left arm fault |
-| 4 | Right arm fault |
-| 3 | Visual sensor fault |
-| 2 | Core fault |
-| 1–0 | Color: 0 NONE, 1 BLUE, 2 RED; 3 invalid |
-
-Each fault flag value 0 means normal and value 1 means faulty. Reject author
-data with color 3.
-This layout is distinct from MechanicalArm's state layout.
-
-Item mode requires exactly one input item and exactly one expected decision.
-Batch mode requires at least one input item and exactly one expected decision.
-Append the entire batch in author order at initialization. There is no count
-prefix and no per-item replenishment; READ exhaustion can detect the batch end.
-The first decision output immediately passes or fails against the expected
-0/1. No later outputs are processed after terminal completion.
-
-There is no general rule engine. Descriptions such as "accept at least three
-blue items" are author guidance; the author supplies inputs and the expected
-decision, and the evaluator compares the actual decision.
+Quality inspection is an application presentation of precompiled ExactIO cases.
+Rust imposes no Color/PackedRobot domain or Item/Batch case-length policy.
 
 ## 8. MechanicalArm
 
@@ -475,17 +386,14 @@ an out-of-range author value into a byte. Required logical records include:
 | Scene | Required data |
 | --- | --- |
 | ExactIO | Input bytes, expected bytes |
-| Baudot | Input/expected five-bit codes |
-| Elevator | Actor count, initial floors, ordered initial/sequential passengers |
 | Robot | 256 map cells, 1–2 actor starts/directions, patrol set, trigger/door associations |
-| QualityControl | Level-wide representation and Item/Batch mode, input items, one expected decision |
 | MechanicalArm | Arm count, four optional table slots, ordered input robot definitions, expected state bytes |
 
 Validation covers all bounds and structural restrictions in Sections 3–8,
 including duplicate/missing IDs, dangling trigger/door references, unique dual
 starts, legal table types, and per-case reset requirements. Only host-trusted
 ceilings bound otherwise unspecified author collection sizes; do not invent
-gameplay limits for QC batches or MechanicalArm conveyors.
+gameplay limits for quality inspection batches or MechanicalArm conveyors.
 
 The Rust scene layer owns validation, observation encoding, action decoding,
 ordered transitions, goals, and scene metrics. Compiler/model/VM stay independent
@@ -494,8 +402,7 @@ a second scene interpreter. Keep hidden case data and hidden true inspection
 out of public results, snapshots, traces, and presentation beyond permitted
 observations under the existing privacy contract.
 
-Only Elevator adds scene-specific metrics in v1: travel_distance and stop_count.
-Other scenes use existing VM/level metrics. Operation cost, work units, Global
+All current scenes use existing VM/level metrics. Operation cost, work units, Global
 Ticks, and scene rounds are distinct; a blocked action can advance a round
 without changing position. Adding a metric requires a later recorded contract.
 
@@ -517,9 +424,7 @@ retains the earlier v2 name. The Rust loader, examples, and fixtures use that
 contract. The continuous session, trusted limits, public events, and
 privacy-safe projections are implemented in the current Level API path; the
 remaining direct protocol and actual-host evidence is listed in the
-[conformance plan](../docs/scene-conformance-plan.md). A Baudot display table is
-only needed if a host adds character rendering; raw-code correctness is defined
-here and does not depend on presentation choices. These evidence gaps do not
+[conformance plan](../docs/scene-conformance-plan.md). Paper-tape character rendering belongs to the application. These evidence gaps do not
 reopen the accepted gameplay protocol.
 
 ## 11. Required acceptance cases
@@ -527,10 +432,8 @@ reopen the accepted gameplay protocol.
 | Area | Direct cases |
 | --- | --- |
 | Shared | Fresh-case isolation including self-modified code; same-case memory persistence; append behind unread data; empty READ; HALT with incomplete frame/goal; failed VM tick consumes no scene output; terminal goal with pending B |
-| ExactIO/Baudot | First/middle mismatch; final match; unread input; empty expected and HALT; empty expected and output; Baudot 31 versus 32; per-case LTRS reset |
-| Elevator | Floors 0/9 versus 10; from=to rejected; passenger bounds; author order; current-floor no-op; alight-before-board; same-floor A/B service; late passenger append; pending arrivals prevent pass; distance/stops |
+| ExactIO | First/middle mismatch; final match; unread input; empty expected and HALT; empty expected and output |
 | Robot | All directions; boundary/VOID/door blocking; forward same-height and jump different-height; swap/shared-target/vacated-cell collision; shared patrols; trigger activation and one-round door delay; snapshots |
-| QualityControl | Both representations; color 3 rejection; all fault bits; Item lengths; empty Batch rejection; one expected decision; output 2 failure; full batch queued before execution |
 | MechanicalArm | All six orientations and both layouts; duplicate/absent tables; FIFO input; hidden inspection; byte packing; illegal flags/255; every table precondition; direct normal Packing; repeat transformation failure; Removal; occupied GRAB/DROP; pending buffer/table delay; event/snapshot queues; ordered outputs and immediate pass |
 | Hosts | Same definitions, inputs, actions, statuses, errors, metrics, and privacy projections in actual native/browser/server execution before claiming parity |
 

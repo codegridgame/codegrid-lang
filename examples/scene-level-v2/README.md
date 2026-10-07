@@ -10,9 +10,6 @@ execution conformance.
 | Scene | Valid author document | Invalid counterpart |
 | --- | --- | --- |
 | ExactIO | [exactio.json](exactio.json) | [exactio-invalid.json](exactio-invalid.json): unknown config field |
-| Baudot | [baudot.json](baudot.json) | [baudot-invalid.json](baudot-invalid.json): input code 32 |
-| QualityControl | [quality-control.json](quality-control.json) | [quality-control-invalid.json](quality-control-invalid.json): reserved color |
-| Elevator | [elevator.json](elevator.json) | [elevator-invalid.json](elevator-invalid.json): from equals to |
 | Robot | [robot.json](robot.json) | [robot-invalid.json](robot-invalid.json): duplicate object index |
 | MechanicalArm | [mechanical-arm.json](mechanical-arm.json) | [mechanical-arm-invalid.json](mechanical-arm-invalid.json): DEFECT plus processed |
 
@@ -21,7 +18,10 @@ test record contains only `visible`. The map uses 16 terrain rows (`.`/`0`/`1`),
 sparse colors, and sparse mutually exclusive start/patrol/trigger/door objects.
 Equal trigger/door IDs pair a mechanism. See the Robot section of the author
 specification. MechanicalArm demonstrates direct packing of an inspected
-NORMAL BLUE robot, with expected visible state 33. QualityControl
-classification is author-defined.
+NORMAL BLUE robot, with expected visible state 33.
 
 No program is embedded; program rules and scoring describe example author choices. The examples establish shape and invalid data cases, not solvability, scores, or native/WASM parity. Loader validation and full execution conformance are covered by separate Rust and host tests; these documents alone do not establish either result.
+
+Additional ExactIO examples cover byte boundaries and classification using
+generic input and expected-output arrays. Unsupported scene identifiers are
+covered directly by Rust schema tests and WASM transport tests.

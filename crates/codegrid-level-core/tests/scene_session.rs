@@ -134,15 +134,7 @@ fn frame_tick_work_and_initial_state_ceilings_are_distinct() {
     );
 }
 #[test]
-fn elevator_metrics_and_arm_events_follow_committed_ticks() {
-    let v = author("elevator");
-    let result = run(
-        session(&v, program(&[".2", ".7", ";"]), config(), limits()),
-        1,
-    );
-    assert_eq!(result.status, EvaluationStatus::Passed);
-    assert_eq!(result.metrics["travel_distance"], 7);
-    assert_eq!(result.metrics["stop_count"], 2);
+fn arm_events_follow_committed_ticks() {
     let v = author("arm");
     let p = program(&[".1", ".4", ".2", ".1", ".4", ".2", ".1", ".4", ".2", ";"]);
     let result = run(session(&v, p, config(), limits()), 1);

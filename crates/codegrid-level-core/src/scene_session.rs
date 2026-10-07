@@ -118,7 +118,6 @@ fn initialization_bounds(level: &ValidatedSceneLevel, index: usize) -> Option<(u
     let units = level.case_definition_units(index)?;
     let input = match &case.data {
         SceneCaseData::Static { input, .. } => input.len() as u64,
-        SceneCaseData::Elevator { initial, .. } => (initial.len() as u64).checked_mul(2)?,
         SceneCaseData::MechanicalArm { .. } => 2,
         SceneCaseData::Robot => return None,
     };
@@ -340,15 +339,7 @@ impl SceneCaseSession {
             return true;
         }
         let Some(vm) = &self.vm else { return true };
-        let mut dynamic = dynamic_metrics(&vm.snapshot_view().metrics().summary());
-        if let Some((distance, stops)) = self
-            .machine
-            .as_ref()
-            .and_then(SceneMachine::elevator_metrics)
-        {
-            dynamic.insert("travel_distance".into(), distance);
-            dynamic.insert("stop_count".into(), stops);
-        }
+        let dynamic = dynamic_metrics(&vm.snapshot_view().metrics().summary());
         let Some(metrics) = aggregate(&self.base_metrics, &dynamic) else {
             self.finish(
                 EvaluationStatus::Fault(FaultReason::NumericOverflow),
@@ -777,7 +768,7 @@ impl SceneCaseSession {
                 if !self.bill_scene(work, &mut scene_remaining) {
                     break;
                 }
-                let mut dynamic = dynamic_metrics(
+                let dynamic = dynamic_metrics(
                     &self
                         .vm
                         .as_ref()
@@ -786,10 +777,6 @@ impl SceneCaseSession {
                         .metrics()
                         .summary(),
                 );
-                if let Some((d, s)) = candidate.elevator_metrics() {
-                    dynamic.insert("travel_distance".into(), d);
-                    dynamic.insert("stop_count".into(), s);
-                }
                 let Some(metrics) = (if self.include_metrics {
                     aggregate(&self.base_metrics, &dynamic)
                 } else {

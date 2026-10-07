@@ -201,7 +201,7 @@ mod scene_tests {
                 .as_array()
                 .unwrap()
                 .len(),
-            6
+            3
         );
         assert!(session
             .request_text(r#"{"api_version":1,"operation":"capabilities"}"#)

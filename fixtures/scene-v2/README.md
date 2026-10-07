@@ -1,13 +1,12 @@
 # Scene API 2 Execution Fixtures
 
-These `format_version: 1` author levels and Full `.cg` programs exercise all six
-scenes through Level API 2. API 2 is the host protocol version; it is separate
-from the author JSON format version. The manifest supplies explicit seeds,
-boundaries, and expected terminal status. MechanicalArm includes Inspection
-and Packing before output; Elevator boards and delivers a passenger; Robot
-reaches its required patrol; Baudot emits both five-bit boundary values used by
-the author example. Robot's static terrain, colors, starts, and objects live in
-`scene_config`; each test contains only `visible`.
+These `format_version: 1` author levels and Full `.cg` programs exercise
+ExactIO, Robot, and MechanicalArm through Level API 2. The API version is
+separate from the author JSON format version. The manifest supplies explicit
+seeds, boundaries, and expected terminal status. MechanicalArm inspects and
+packs an input robot; Robot reaches its required patrol. Additional ExactIO
+fixtures cover byte boundaries and a fixed classification mapping. Robot
+configuration lives in `scene_config`; each test contains only `visible`.
 
 Use the shared Rust compiler/evaluator for acceptance and execution. Host
 harnesses transport original files and compare complete permitted results;

@@ -1,12 +1,10 @@
 {
   "format_version": 1,
-  "level_id": "example.elevator",
+  "level_id": "conformance.scene.exactio-classification",
   "level_version": 1,
-  "evaluation_type": "Environment",
-  "scene_type": "Elevator",
-  "scene_config": {
-    "elevator_count": 1
-  },
+  "evaluation_type": "ExactIO",
+  "scene_type": "ExactIO",
+  "scene_config": {},
   "program_rules": {
     "allowed_instructions": [
       "READ",
@@ -15,7 +13,9 @@
       "SUB",
       "REGISTER_POINTER",
       "STACK",
-      "CMP"
+      "CMP",
+      "OUTPUT",
+      "HALT"
     ],
     "allowed_attachments": [
       "CONDITION_0",
@@ -23,8 +23,8 @@
       "CONDITION_2"
     ],
     "main_board": {
-      "width": 16,
-      "height": 16
+      "width": 100,
+      "height": 2
     },
     "function_board": {
       "width": 16,
@@ -35,33 +35,21 @@
     "max_threads": 1,
     "memory_enabled": false
   },
-  "constraints": {
-    "max_travel_distance": 20
-  },
+  "constraints": {},
   "scoring": {
-    "metrics": {
-      "travel_distance": {
-        "target": 9
-      },
-      "stop_count": {
-        "target": 2
-      }
-    }
+    "metrics": {}
   },
   "evaluation": {
     "tests": [
       {
         "visible": true,
-        "initial_floors": [
-          0
+        "input": [
+          1,
+          65
         ],
-        "initial_passengers": [
-          {
-            "from": 2,
-            "to": 7
-          }
-        ],
-        "sequential_passengers": []
+        "expected_output": [
+          1
+        ]
       }
     ]
   }

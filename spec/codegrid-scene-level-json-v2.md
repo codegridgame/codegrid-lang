@@ -39,9 +39,6 @@ wide integers or bytes. Preserve exact Unicode IDs without normalization.
 | scene_type | evaluation_type | scene_config fields |
 | --- | --- | --- |
 | ExactIO | ExactIO | None: exactly `{}` |
-| Baudot | ExactIO | None: exactly `{}` |
-| QualityControl | ExactIO | input_mode, case_mode |
-| Elevator | Environment | elevator_count |
 | Robot | Environment | robot_count |
 | MechanicalArm | Environment | arm_count, worktables |
 
@@ -74,12 +71,7 @@ one continuous VM per dynamic case. Do not sum multiple cumulative snapshots
 of the same VM. VM peaks and used-address cardinalities are per-case values
 aggregated with their existing MAX rule; static metrics are computed once.
 
-Only Elevator additionally accepts:
-
-| Metric | Aggregation | Constraint | Direction |
-| --- | --- | --- | --- |
-| travel_distance | SUM of visible case totals | max_travel_distance | Minimize |
-| stop_count | SUM of visible case totals | max_stop_count | Minimize |
+No current scene adds scoring metrics beyond the shared VM/static metrics.
 
 All limits and non-null targets are integer 0–18446744073709551615. A metric
 unsupported by the selected scene is invalid. Scene rounds are internal state,
@@ -89,7 +81,7 @@ integer transport; JavaScript Number must not round u64 limits/targets.
 
 ## 4. Static scene test records
 
-ExactIO, Baudot, and QualityControl tests have exactly these fields:
+ExactIO tests have exactly these fields:
 
 ```json
 { "visible": true, "input": [1], "expected_output": [1] }
@@ -98,42 +90,12 @@ ExactIO, Baudot, and QualityControl tests have exactly these fields:
 | Scene | input | expected_output |
 | --- | --- | --- |
 | ExactIO | Bytes 0–255; empty permitted | Bytes 0–255; empty permitted |
-| Baudot | Codes 0–31; empty permitted | Codes 0–31; empty permitted |
-| QualityControl Item | Exactly one valid item byte | Exactly one 0/1 decision |
-| QualityControl Batch | At least one valid item byte | Exactly one 0/1 decision |
 
-QualityControl config has exactly `input_mode: "Color" | "PackedRobot"` and
-`case_mode: "Item" | "Batch"`. Color bytes are 0–2. PackedRobot bytes are
-0–255 with `(byte & 3) != 3`; bit assignments follow Scene Spec Section 7.
-No count prefix, per-item expected array, predicate, or rule-expression field.
+## 5. Removed scene identifiers
 
-Baudot wire correctness is raw five-bit codes. It has no mandatory character
-table/display mode field; any future presentation table must stay outside
-this author correctness payload.
-
-## 5. Elevator records
-
-Config has exactly `elevator_count: 1 | 2`.
-Each test has exactly:
-
-```json
-{
-  "visible": true,
-  "initial_floors": [0],
-  "initial_passengers": [{ "from": 2, "to": 7 }],
-  "sequential_passengers": []
-}
-```
-
-initial_floors length equals elevator_count; A then B, each floor 0–9. Initial
-floors may coincide. initial_passengers is nonempty. Sequential may be empty.
-Each passenger has exactly from/to, both 0–9 and different. Total passengers
-across both arrays is 1–10; preserve duplicates and author order as separate
-passengers. There are no passenger IDs, count prefixes, arrival-time fields,
-capacity fields, expected_output, or initial onboard passengers.
-
-The deterministic round-arrival rule, boarding order, no-op targets, and goal
-come exclusively from Scene Spec Section 5, not author overrides.
+Baudot, QualityControl, and Elevator are unsupported Rust scene identifiers. Paper-tape and quality
+authoring emit ExactIO byte cases; presentation data stays outside this payload.
+Existing elevator drafts require recovery in their application and cannot run.
 
 ## 6. Robot records
 

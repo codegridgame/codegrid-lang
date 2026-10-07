@@ -1,6 +1,6 @@
 # Level Core Architecture
 
-Status: ExactIO API v1 and six scene protocols through Level API v2 are
+Status: ExactIO API v1 and three scene protocols through Level API v2 are
 implemented, with initial browser/server host comparisons. The API-2 loader,
 examples, and fixtures use the selected Scene Level JSON format v1. Remaining
 verification limits are in the
@@ -18,19 +18,19 @@ level-file evaluation, scene host verification, and remaining parity evidence.
 The CLI evaluate command calls the level API; existing language
 check/run/debug commands retain their current composition and contracts.
 
-The initial ExactIO/Environment design below predates the accepted six-scene
+The initial ExactIO/Environment design below predates the accepted scene
 protocol and continuous-case work. Scene lifecycle and transitions are now
 defined by the [Scene Spec](../spec/codegrid-scene-spec-v1.md),
 [session design](scene-session-design.md), and
-[six-scene architecture](level-scenes-architecture.md). In particular,
+[scene architecture](level-scenes-architecture.md). In particular,
 dynamic scenes retain one VM for a whole test case and reset between cases.
 The future boundary for player-authored scene packages is in the
 [Custom Scene architecture](custom-scenes-architecture.md).
 
 ## Ownership and dependencies
 
-The [six-scene architecture](level-scenes-architecture.md) maps the selected
-ExactIO, Baudot, QualityControl, Elevator, Robot, and MechanicalArm scenes to
+The [scene architecture](level-scenes-architecture.md) maps the selected
+ExactIO, Robot, and MechanicalArm scenes to
 the current Rust execution engines. API v2 advertises the six registered
 scenes; API v1 remains ExactIO-only.
 
@@ -312,3 +312,7 @@ and visible scene events, including wide integers and resource lifecycle. Add
 negative tests proving hidden data cannot escape through results, progress,
 snapshots, errors, or partial metrics. Existing language host parity evidence
 does not establish level parity. WASM compilation alone is insufficient.
+
+Current catalog (2026-10-07): ExactIO, Robot, MechanicalArm.
+Paper-tape authoring uses ExactIO; Baudot, QualityControl, and Elevator wire identifiers are unsupported.
+Historical scene verification does not establish support in this build.

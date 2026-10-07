@@ -396,7 +396,7 @@ mod scene_transport_tests {
                 .as_array()
                 .unwrap()
                 .len(),
-            6
+            3
         );
         assert!(session
             .request_text(r#"{"abi_version":1,"api_version":1,"operation":"shutdown"}"#)

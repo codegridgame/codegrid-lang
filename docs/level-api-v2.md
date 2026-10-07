@@ -3,7 +3,8 @@
 `codegrid-level-api::LevelApiV2` exposes the native scene lifecycle described by
 the [Scene Host Contract v2](../spec/codegrid-scene-host-contract-v2.md).
 `SafetyProfileV2` validates explicit trusted ceilings; level/source content never
-relaxes them. The current API implementation loads and executes all six scenes
+relaxes them. The current API implementation loads and executes ExactIO, Robot,
+and MechanicalArm
 under the selected `format_version: 1` author contract and shares the compiler
 and evaluator with [browser/portable transports](level-wasm-v2.md). API 1
 remains unchanged. Full direct protocol and production host coverage is tracked

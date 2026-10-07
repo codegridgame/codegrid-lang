@@ -1,8 +1,7 @@
 //! Actor framing and terminal ordering shared by all scene sessions.
 use crate::scene_feedback::{SceneActor, SceneEventPayload, SceneInteraction};
 use crate::scene_runtime::{
-    ElevatorRuntime, MechanicalArmRuntime, RobotRuntime, SceneCommand, SceneRuntime,
-    SceneRuntimeMode, StaticRuntime,
+    MechanicalArmRuntime, RobotRuntime, SceneCommand, SceneRuntime, SceneRuntimeMode, StaticRuntime,
 };
 use crate::scene_world::ActorSnapshot;
 use crate::scenes::SceneKind;
@@ -82,17 +81,6 @@ impl SceneMachine {
                     Box::new(StaticRuntime::new(level.kind(), input, expected))
                         as Box<dyn SceneRuntime>,
                     1,
-                ),
-                (
-                    SceneCaseData::Elevator {
-                        floors,
-                        initial,
-                        sequential,
-                    },
-                    SceneConfig::Elevator { actors },
-                ) => (
-                    Box::new(ElevatorRuntime::new(floors, initial, sequential)),
-                    usize::from(*actors),
                 ),
                 (SceneCaseData::Robot, SceneConfig::Robot { actors, map }) => (
                     Box::new(RobotRuntime::new(&map.starts, &map.cells)),
@@ -174,9 +162,6 @@ impl SceneMachine {
     }
     pub fn pending_actions(&self) -> &[u8] {
         &self.pending
-    }
-    pub fn elevator_metrics(&self) -> Option<(u64, u64)> {
-        self.runtime.elevator_metrics()
     }
     pub fn actual_output(&self) -> Option<&[u8]> {
         self.runtime.actual_output()
@@ -342,11 +327,6 @@ mod runtime_seam_tests {
     fn example(name: &str) -> Value {
         let json = match name {
             "exact" => include_str!("../../../examples/scene-level-v2/exactio.json"),
-            "baudot" => include_str!("../../../examples/scene-level-v2/baudot.json"),
-            "quality" => {
-                include_str!("../../../examples/scene-level-v2/quality-control.json")
-            }
-            "elevator" => include_str!("../../../examples/scene-level-v2/elevator.json"),
             "robot" => include_str!("../../../examples/scene-level-v2/robot.json"),
             "arm" => include_str!("../../../examples/scene-level-v2/mechanical-arm.json"),
             _ => panic!("unknown scene fixture"),
@@ -375,24 +355,6 @@ mod runtime_seam_tests {
                 SceneKind::ExactIO,
                 SceneRuntimeMode::StaticOutput,
                 9,
-            ),
-            (
-                "baudot",
-                SceneKind::Baudot,
-                SceneRuntimeMode::StaticOutput,
-                1,
-            ),
-            (
-                "quality",
-                SceneKind::QualityControl,
-                SceneRuntimeMode::StaticOutput,
-                1,
-            ),
-            (
-                "elevator",
-                SceneKind::Elevator,
-                SceneRuntimeMode::ActorFrame,
-                2,
             ),
             ("robot", SceneKind::Robot, SceneRuntimeMode::ActorFrame, 1),
             (

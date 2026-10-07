@@ -9,9 +9,6 @@ fn n(value: u64) -> NonZeroU64 {
 fn author(name: &str) -> Value {
     let text = match name {
         "exact" => include_str!("../../../examples/scene-level-v2/exactio.json"),
-        "baudot" => include_str!("../../../examples/scene-level-v2/baudot.json"),
-        "quality" => include_str!("../../../examples/scene-level-v2/quality-control.json"),
-        "elevator" => include_str!("../../../examples/scene-level-v2/elevator.json"),
         "robot" => include_str!("../../../examples/scene-level-v2/robot.json"),
         "arm" => include_str!("../../../examples/scene-level-v2/mechanical-arm.json"),
         _ => panic!("fixture"),
@@ -74,7 +71,7 @@ fn project(result: &SceneEvaluationResult) -> Value {
 }
 #[test]
 fn compiled_scene_results_use_exact_tagged_shapes() {
-    for name in ["exact", "baudot", "quality", "elevator", "robot", "arm"] {
+    for name in ["exact", "robot", "arm"] {
         let result = run(author(name), EvaluationMode::Debug);
         assert_eq!(result.visible_cases.len(), 1, "{name}: {result:?}");
         let wire = project(&result);
@@ -90,7 +87,7 @@ fn compiled_scene_results_use_exact_tagged_shapes() {
         assert_eq!(case["source_index"], "0");
         let comparison = &case["comparison"];
         match name {
-            "elevator" | "robot" => assert!(comparison.is_null()),
+            "robot" => assert!(comparison.is_null()),
             "arm" => {
                 assert_eq!(comparison.as_object().unwrap().len(), 2);
                 assert!(comparison.get("input").is_none());

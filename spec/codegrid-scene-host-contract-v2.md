@@ -71,7 +71,7 @@ The v1 behavior and emitted reason values do not change.
 | Cancelled evaluation | Cancelled | level.cancelled | Cancelled |
 
 InvalidOutput is scene-specific: an action outside 0–4, floor outside 0–9,
-Baudot code above 31, or QC decision above 1. IllegalOperation includes occupied
+an invalid Robot or MechanicalArm action. IllegalOperation includes occupied
 GRAB/DROP or a table's unmet preconditions. Neither is a VM runtime error.
 Do not turn blocked Robot movement or specified no-ops into IllegalOperation.
 OutputMismatch in the logical SceneFailure enum maps to WrongOutput; it does
@@ -111,9 +111,6 @@ reasons where applicable. Add these v2 reason spellings, not new numeric codes:
 | --- | --- |
 | SceneFamilyMismatch | scene_type does not match evaluation_type |
 | InvalidActorCount | Selected actor count not 1 or 2 |
-| ActorCountMismatch | Initial actor/floor array length differs from config |
-| InvalidPassengerCount | No initial passengers or total outside 1–10 |
-| SamePassengerFloor | Passenger from equals to |
 | InvalidMapSize | Robot map width, height, or terrain row count is not 16 |
 | InvalidTerrainRow | Terrain row is not exactly 16 ASCII characters |
 | InvalidTerrainCell | Terrain contains a character other than `.`, `0`, or `1` |
@@ -128,17 +125,12 @@ reasons where applicable. Add these v2 reason spellings, not new numeric codes:
 | DuplicateSceneId | Repeated patrol ID, repeated trigger ID, or repeated door ID within its own type |
 | InvalidDoorReference | A trigger ID has no matching door ID |
 | UnpairedDoor | A door ID has no matching trigger ID |
-| UnsupportedInputMode | QualityControl input_mode enum unknown |
-| UnsupportedCaseMode | QualityControl case_mode enum unknown |
-| InvalidItemCount | QC Item/Batch input length violates its mode |
-| InvalidDecisionCount | QC expected decision length not one |
-| InvalidPackedColor | PackedRobot low bits equal 3 |
 | InvalidWorktableSlots | MechanicalArm table array length not four |
 | UnsupportedWorktableType | Table enum unknown |
 | InvalidRobotState | Expected state has illegal color/reserved bits/flags/EMPTY |
 | InvalidRobotSequence | Empty MechanicalArm input/expected or expected longer than input |
 
-Range violations in numeric indices, IDs, colors, floors, or byte flags retain
+Range violations in numeric indices, IDs, colors, or byte flags retain
 IntegerOutOfRange rather than duplicating those meanings. Invalid direction
 strings use InvalidDirection. Wrong JSON type is detected before domain or
 cross-field checks. Duplicate sparse indices and IDs point at the later
@@ -163,7 +155,7 @@ noncanonical, or out-of-range values. No implicit defaults.
 | max_input_queue_bytes | Maximum unread VM input bytes per active case, including initial input and every append; reserve before enqueue |
 | max_total_input_bytes_per_test | Cumulative initial/enqueued bytes per case, even after READ removes them; charge only complete published appends |
 | max_scene_state_units | Total retained scene definition/world/frame/candidate/observation units across the API instance; reserve before retaining/cloning |
-| max_scene_frames_per_test | Complete collected action frames per dynamic case, including Elevator no-op target frames; check before actor dispatch |
+| max_scene_frames_per_test | Complete collected action frames per dynamic case, check before actor dispatch |
 | max_scene_work_per_call | Per-advance internal scene work ceiling; distinct from VM dispatch work |
 | max_total_scene_work | Cumulative actual scene work per evaluation, including retries/draft transitions |
 | max_scene_events_per_evaluation | Total retained unacknowledged visible Debug event records per evaluation; no silent dropping |
@@ -176,7 +168,7 @@ all cases including hidden cases. The original level JSON length remains
 charged separately under max_level_bytes. No implicit physical heap guarantee.
 
 Scene state units count one for each retained map cell, trigger association,
-door-state record, actor, passenger record, robot instance, table slot, buffer
+door-state record, actor, robot instance, table slot, buffer
 slot, set entry, frame byte, expected state byte, pending observation byte,
 retained feedback event record, and retained round-change record. Owned
 observation byte vectors in retained feedback count independently from the VM
@@ -235,7 +227,7 @@ visible_cases instead of v1 visible_tests. Each visible case is a tagged record:
 
 For static scenes comparison has exactly input, expected_output, and actual_output
 byte arrays. MechanicalArm comparison has exactly expected_output and actual_output;
-dynamic Elevator/Robot comparison is null. MechanicalArm never
+dynamic Robot comparison is null. MechanicalArm never
 includes hidden true_inspection author records here. For a hidden case emit no
 visible_cases entry. Passed cases have failure=null. Resource/cancel/fault
 interruptions use NotCompleted, with the evaluation's typed failure category
@@ -245,8 +237,7 @@ Summary fields are explicit by scene:
 
 | Scene | summary fields |
 | --- | --- |
-| ExactIO/Baudot/QualityControl | {} |
-| Elevator | frames, rounds, delivered_passengers, introduced_passengers, travel_distance, stop_count |
+| ExactIO | {} |
 | Robot | frames, rounds, visited_patrol_points, required_patrol_points |
 | MechanicalArm | frames, rounds, matched_output_robots |
 
@@ -297,15 +288,15 @@ is not retried as a substitute for an uncertain advance result.
 | CaseStarted | observation, nullable for empty/event-based initial input |
 | ActionApplied | action byte, effect object |
 | RoundCompleted | rounds counter, observation byte array (empty for single-arm event input), transitions array |
-| InputAppended | bytes array; exactly the newly appended permitted observation/passenger/event bytes |
+| InputAppended | bytes array; exactly the newly appended permitted observation/event bytes |
 | RobotProduced | state byte, output_index counter |
 | CaseEnded | outcome and nullable visible failure |
 
 ActionApplied effect contains a scene_type tag and these required visible values:
-Elevator from_floor/to_floor, boarded/delivered counts; Robot from_position/
+Robot from_position/
 to_position and from_direction/to_direction; MechanicalArm interaction,
 from_orientation/to_orientation, and before_state/after_state (255 means empty).
-Floor/position/direction/state/action values are JSON numbers; counts and indices
+Position/direction/state/action values are JSON numbers; counts and indices
 are decimal strings. MechanicalArm's interaction is a public interaction name
 and worktable_index is additionally required only for Worktable. Interaction
 identifies the slot faced before the action; Unavailable names the lower-arm
@@ -324,8 +315,7 @@ CaseEnded is last for a visible case. A scene-failure event can retain completed
 A effects but emits no RoundCompleted/input append. A resource-discarded draft
 emits no speculative events. Single-arm successful grabs use InputAppended
 for event-based bytes; RoundCompleted observation is empty rather than
-inventing a fixed snapshot. Elevator no-op frames emit ActionApplied only,
-without RoundCompleted or a passenger arrival.
+inventing a fixed snapshot.
 
 Event publication/reservation is all-or-none per resumable scene draft. Store
 committed actor effects needed on B failure, and reserve their visible event
@@ -334,7 +324,7 @@ debug payloads or increments the public event sequence.
 
 RoundCompleted transitions contains only published visible world changes,
 in fixed order: table promotions by worktable_index, buffer promotions left
-then right, opened doors by numeric ID, then a newly introduced passenger.
+then right, followed by opened doors in numeric ID order.
 Irrelevant transition families are empty for a scene. Each record is exactly:
 
 | kind | Additional fields |
@@ -342,7 +332,6 @@ Irrelevant transition families are empty for a scene. Each record is exactly:
 | TableReady | worktable_index number 0–3, state byte |
 | BufferReady | buffer Left or Right, state byte |
 | DoorOpened | door_id number 0–255 |
-| PassengerIntroduced | from and to floor numbers |
 
 These are public derived scene state, never hidden author records. Inspection
 state is revealed only when the Inspection transformation completes, not before.
@@ -376,3 +365,8 @@ part of the deterministic host-call sequence; compare hosts with the same
 acknowledgement policy, not a fast-draining host against a stalled one. Feedback
 backpressure may terminate a configured Debug session and must not be silently
 removed to manufacture a parity claim.
+
+Removed scene compatibility: Baudot, QualityControl, and Elevator are unsupported.
+Published error identities remain reserved for compatibility. Removed scene
+reason spellings are not part of the current validation table.
+The current runtime catalog is ExactIO, Robot, MechanicalArm.

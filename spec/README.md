@@ -13,7 +13,7 @@ The [VM specification](codegrid-vm-spec.md) defines the normative Full execution
 
 The [Runtime API specification](codegrid-runtime-api-spec.md) defines the normative Full host-neutral contract in v3, including requests, responses, instance lifecycle, exact wide integers, limits, and errors. Browser bindings and Server ABI v4 are separate versioned host contracts. See [`docs/decisions.md`](../docs/decisions.md) for language and host decisions. Historical source/IR/VM tests and fixtures are supplemental evidence; normative wording and the shared Full conformance suite define current acceptance.
 
-The [Scene Specification v1](codegrid-scene-spec-v1.md) defines the accepted ExactIO, Baudot, Elevator, Robot, QualityControl, and MechanicalArm protocols above the VM. Native API 2 and both WASM adapters execute these protocols; the document records the remaining direct-vector and deployment gaps.
+The [Scene Specification v1](codegrid-scene-spec-v1.md) defines the accepted ExactIO, Robot, and MechanicalArm protocols above the VM. Native API 2 and both WASM adapters execute these protocols; the document records the remaining direct-vector and deployment gaps.
 
 The Scene Spec is supported by the [continuous session design](../docs/scene-session-design.md) and [scene conformance plan](../docs/scene-conformance-plan.md). They describe implementation boundaries and the evidence still required for full coverage.
 
@@ -22,3 +22,7 @@ The [Custom Scene architecture](../docs/custom-scenes-architecture.md) describes
 The [Scene Level JSON format v1 contract](codegrid-scene-level-json-v2.md) defines author-file structure and validation, supported scene/family combinations, metrics, and replay seeds. Its filename retains the earlier v2 name. The Rust loader, examples, and fixtures use this v1 contract; direct protocol and complete actual-host coverage remain tracked separately.
 
 The [Scene Host Contract v2](codegrid-scene-host-contract-v2.md) freezes scene failure mapping, trusted ceilings, results, Debug feedback, and independent API/profile/transport versioning. Native dispatch and initial browser/server verification are implemented; full direct-vector and production deployment coverage remains open.
+
+Current catalog (2026-10-07): ExactIO, Robot, MechanicalArm.
+Paper-tape authoring uses ExactIO; Baudot, QualityControl, and Elevator wire identifiers are unsupported.
+Historical scene verification does not establish support in this build.

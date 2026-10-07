@@ -22,15 +22,6 @@ The Rust v2 loader now validates the complete author examples. Native protocol a
 | Case ID | Setup / action | Required result |
 | --- | --- | --- |
 | exact.empty | Empty expected output | Initially Running; silent successful HALT passes; any output fails |
-| baudot.range | Author input or expected contains 32 | Reject before VM execution |
-| baudot.player-range | Player outputs 32 while active | InvalidOutput |
-| qc.item | Color input [1], expected [1], output 1 | Pass on first output |
-| qc.batch | Input [1,1,2], expected [0], output 0 | All three inputs queued initially; one decision passes |
-| qc.reserved | Packed item low bits are 3, e.g. 255 | Author rejection |
-| elevator.no-service | Start floor 2; initial passenger 2→7; output 2 | No boarding, no round/stop/distance; still Running |
-| elevator.trip | Same setup; targets 3,2,7 | First leave, then board at 2, then deliver at 7; distance 7, stops 3; Pass |
-| elevator.order | Two elevators reach same floor with waiting passengers | A boards first; B cannot board the same passengers |
-| elevator.arrival | Unread initial pairs remain; one advanced round ends | Append next sequential [from,to] behind them exactly once |
 | robot.position | Position (2,3) | Encoded byte 50 |
 | robot.geometry | At (2,3) facing UP, walkable same-height (2,2), FORWARD | Move to byte 34; left/right turns use modular direction rules |
 | robot.jump | Adjacent cell same height versus different height | JUMP stays versus moves; never skips an intervening cell |
@@ -67,12 +58,11 @@ direct positive/negative cases from Scene Spec Section 11.
 | session.state | Registers, memory, stacks, mutable code, input, and PRNG persist within case; No per-action VM reconstruction |
 | session.reset | Next case begins after a self-modifying, stateful case; Standard state and original verified code; no queued bytes/frame/world leak |
 | session.capacity | Observation cannot be fully reserved; ResourceLimitExceeded; no partial append or speculative round events |
-| session.no-progress | Elevator outputs current floor indefinitely; Cumulative tick/work ceiling terminates independently of round count |
 | session.privacy | Hidden case/inspection and visible permitted observation; No hidden definitions/traces/metrics escape projections |
 
 ## Delivery gates and evidence
 
-1. Implement the decided v2 author schema, Elevator metric registry, and
+1. Implement the decided v2 author schema, shared metric registry, and
    [Scene Host Contract v2](../spec/codegrid-scene-host-contract-v2.md) failure/profile/result/event rules. Distinguish logical examples from
    loader-accepted fixtures and planned scene IDs from executable capability IDs.
 2. Add focused validation and transition tests in the Rust level layer; use
@@ -90,9 +80,10 @@ direct positive/negative cases from Scene Spec Section 11.
    results, limitations, and runtime versions from actual runs. Compilation
    and this plan are not execution evidence.
 
-The initial loader stage implemented strict v2 author loading, typed definitions for all six scenes, and Elevator SUM/constraint metric policy. Subsequent implementation and host-registration evidence is recorded below.
-
-Validation evidence: `cargo test -p codegrid-level-core` passes 19 unit tests, 16 existing evaluator tests, and 7 v2 schema/metric tests. The v2 suite checks all 12 author examples, exact rejection paths, all 256 MechanicalArm state bytes (21 legal), Robot associations/starts, strict envelopes, trusted size limits, checked Elevator metric sums, and scene-specific metric restrictions.
+The loader implements strict author loading for ExactIO, Robot, and
+MechanicalArm. Current schema tests cover the example manifest, removed-scene
+rejection, all MechanicalArm state bytes, Robot associations/starts, strict
+envelopes, trusted size limits, and applicable metric restrictions.
 
 ## Host v2 acceptance additions
 
@@ -114,8 +105,8 @@ Validation evidence: `cargo test -p codegrid-level-core` passes 19 unit tests, 1
 
 The Rust `scene_protocol` layer constructs scenes from validated definitions,
 frames dual actor bytes before dispatch, stops at terminal A, and preserves A
-effects when B fails. Private `scene_world` transitions implement Elevator, Robot,
-and MechanicalArm; static comparisons cover ExactIO, Baudot, and QualityControl.
+effects when B fails. Private `scene_world` transitions implement Robot and MechanicalArm; static
+comparisons use ExactIO.
 The Rust-only VM `append_input` reserves whole appends and preserves unread data
 and execution metrics.
 
@@ -141,7 +132,7 @@ The shared `SceneEvaluationSession` now evaluates the selected visible/hidden
 cases with one fresh continuous case session per test, visible-only cumulative
 metrics/constraints/scoring, per-evaluation work and retention ceilings, and
 coarse hidden failures. Nine focused integration tests cover slice equivalence,
-case reset, Debug continuation, hidden redaction, cumulative Elevator constraints,
+case reset, Debug continuation, hidden redaction, cumulative shared constraints,
 cancellation, feedback/work limits, comparison privacy, local failure ticks,
 and forwarded VM error identities.
 
@@ -178,7 +169,7 @@ API-2 operations or establish instance-wide scene accounting or WASM parity.
 The API layer's `project_scene_result` serializes only the privacy-safe core
 result. Shared common identity/configuration/constraint/scoring projection is
 used by both API versions; scene failures reuse the core feedback serializer.
-Four new integration tests compile Full `.cg`, execute all six loaded scene
+Four new integration tests compile Full `.cg`, execute the current loaded scene
 examples, and check tagged comparison shapes, mechanical-arm author-state
 exclusion, coarse hidden mismatch, exact wide integers, and complete-response
 capacity rejection. These executions verify native projection, not fixture
@@ -190,11 +181,11 @@ remains a required regression check after common projection changes.
 `LevelApiV2` uses explicit version-2 request dispatch, strict author format 2,
 shared source compilation, isolated non-reused handles, full scene results,
 transactional Debug feedback acknowledgement, release, and shutdown. API-1
-paths remain format-1 ExactIO. Five lifecycle integration tests cover all six
+paths remain format-1 ExactIO. Five lifecycle integration tests cover all three current
 advertised scenes, version/field rejection, case execution, feedback replay and
 stale cursors, Official feedback rejection, cross-instance handles, and release
 of reserved scene capacity. Result projection tests additionally execute the
-six compiler-produced fixtures and verify privacy and exact integer output.
+compiler-produced fixtures and verify privacy and exact integer output.
 
 This section records the current implementation's earlier author-format draft.
 The selected Scene Level contract now uses `format_version: 1` with no legacy
@@ -212,17 +203,17 @@ complete cross-host resource/event-work audits remain delivery gates.
 
 ## Actual scene host execution evidence
 
-The initial `fixtures/scene-v2/conformance-v2.json` manifest supplies six successful
-Full `.cg` scene programs, each executed in Debug and Official modes, and two
-small-work-slice variants. CLI integration tests invoke these files through
+The current `fixtures/scene-v2/conformance-v2.json` manifest supplies 15 runs
+for ExactIO, Robot, and MechanicalArm, including Debug/Official execution,
+byte boundaries, classification, small slices, and reactive observations. CLI integration tests invoke these files through
 `evaluate --api-version 2`. Browser `SceneLevelSession` and portable ABI 2 use
 the same Rust API; v1 constructors/transport requests remain supported.
 
 `scripts/test-scene-hosts.mjs`, the actual Chromium module Worker, and Wasmtime
 `level-parity --scene-v2` produce separate reports. `compare-scene-hosts.mjs`
 compares every complete result to native CLI and every Debug event to the
-portable report. All 14 runs match, including MechanicalArm inspection/packing,
-Elevator boarding/delivery, Robot patrol, Official event exclusion, and slice
+portable report. All 15 current runs match, including MechanicalArm inspection/packing,
+ExactIO byte boundaries/classification, Robot patrol, Official event exclusion, and slice
 trace equivalence. Encoded 64 MiB memory limits, zero portable imports, and
 Wasmtime fuel exhaustion are checked. These are actual executions, not parity
 claims inferred from compilation. Full protocol-vector and resource/event-work
@@ -239,3 +230,16 @@ tests check exact page capacity, no cursor change on rejection, cached-body
 identity, exact original encoding work, and replay without new retention.
 Existing API lifecycle tests verify complete feedback/replay and stable results.
 Full protocol-vector and broader resource-accounting coverage remain separate.
+
+Current catalog (2026-10-07): ExactIO, Robot, MechanicalArm.
+Paper-tape authoring uses ExactIO; Baudot, QualityControl, and Elevator wire identifiers are unsupported.
+
+## Current verification (2026-10-07)
+
+Workspace tests and the pinned scene WASM harness pass. Complete results agree
+across native, Chromium Worker, Node WASM, and Wasmtime for 41 legacy Level
+cases and 15 current scene cases; Debug event traces also agree. Capability
+checks report exactly ExactIO, Robot, and MechanicalArm. Removed scene
+identifiers are rejected, and ExactIO accepts arbitrary byte inputs/outputs
+without paper-tape or quality-specific domain restrictions. Earlier delivery
+stages and their test counts below are historical evidence.

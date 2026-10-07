@@ -57,7 +57,7 @@ pub fn project_scene_result(
         .map(|failure| json!({"category":"HiddenTestFailed", "reason":format!("{failure:?}")}))
         .unwrap_or(Value::Null);
     value["visible_cases"] = json!(r.visible_cases.iter().map(|case| {
-        let static_scene = matches!(case.scene_type, SceneKind::ExactIO | SceneKind::Baudot | SceneKind::QualityControl);
+        let static_scene = matches!(case.scene_type, SceneKind::ExactIO);
         let comparison = match &case.comparison {
             Some(SceneComparison::Static { input, expected_output, actual_output }) => json!({"input":input, "expected_output":expected_output, "actual_output":actual_output}),
             Some(SceneComparison::MechanicalArm { expected_output, actual_output }) => json!({"expected_output":expected_output,"actual_output":actual_output}),

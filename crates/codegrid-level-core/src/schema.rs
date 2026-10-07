@@ -336,7 +336,7 @@ pub fn load_level_json(input: &[u8], max_bytes: usize) -> Result<ValidatedLevel,
         }
     }
     let rules = parse_rules(&m["program_rules"])?;
-    let (constraints, scoring) = parse_metric_policy(&m["constraints"], &m["scoring"], false)?;
+    let (constraints, scoring) = parse_metric_policy(&m["constraints"], &m["scoring"])?;
     let e = object(&m["evaluation"], "$.evaluation", &["tests"])?;
     let arr = e["tests"]
         .as_array()
@@ -414,7 +414,6 @@ fn parse_rules(value: &Value) -> Result<ProgramRules, LevelError> {
 fn parse_metric_policy(
     constraints_value: &Value,
     scoring_value: &Value,
-    elevator: bool,
 ) -> Result<(BTreeMap<String, u64>, BTreeMap<String, Option<u64>>), LevelError> {
     let c = constraints_value
         .as_object()
@@ -422,9 +421,7 @@ fn parse_metric_policy(
     let mut constraints = BTreeMap::new();
     for (k, v) in c {
         let p = format!("$.constraints.{k}");
-        if !CONSTRAINTS.contains(&k.as_str())
-            && !(elevator && ["max_travel_distance", "max_stop_count"].contains(&k.as_str()))
-        {
+        if !CONSTRAINTS.contains(&k.as_str()) {
             return Err(LevelError::invalid("UnsupportedMetric", &p));
         }
         constraints.insert(k.clone(), integer(v, &p, u64::MAX, false)?);
@@ -436,9 +433,7 @@ fn parse_metric_policy(
     let mut scoring = BTreeMap::new();
     for (k, v) in s {
         let p = format!("$.scoring.metrics.{k}");
-        if !METRICS.contains(&k.as_str())
-            && !(elevator && ["travel_distance", "stop_count"].contains(&k.as_str()))
-        {
+        if !METRICS.contains(&k.as_str()) {
             return Err(LevelError::invalid("UnsupportedMetric", &p));
         }
         let x = object(v, &p, &["target"])?;

@@ -11,8 +11,7 @@ configuration, and execution boundaries. Its explicit refinements supersede
 the earlier conceptual examples where their details differ.
 
 The [Scene Specification v1](codegrid-scene-spec-v1.md), recorded on 2026-10-05,
-defines the selected future product protocols. For Robot, Elevator, and
-MechanicalArm, its continuous VM per case supersedes the fresh-VM-per-decision
+defines the current product protocols. For Robot and MechanicalArm, its continuous VM per case supersedes the fresh-VM-per-decision
 Environment model in the conceptual sections below. ExactIO remains unchanged;
 the selected [Scene Level JSON format v1 author contract](codegrid-scene-level-json-v2.md)
 specifies scene data. Its revised loader and fixtures still require migration;
@@ -153,7 +152,7 @@ Examples include:
 - scoring targets;
 - scene data;
 - Environment maps;
-- passenger definitions;
+- scene object definitions;
 - goals;
 - program restrictions.
 
@@ -807,7 +806,7 @@ This prevents hidden programs from running indefinitely or exceeding core safety
 
 Environment evaluation is used for persistent simulated worlds such as:
 
-- elevators;
+- robots;
 - maintenance robots;
 - LightBot-style maps;
 - future simulated devices.
@@ -818,7 +817,7 @@ Example:
 {
   "evaluation_type": "Environment",
   "evaluation": {
-    "scene_type": "Elevator",
+    "scene_type": "Robot",
     "scene_data": {},
     "goals": {}
   }
@@ -834,7 +833,7 @@ Every Environment level must explicitly declare a `scene_type`.
 Example:
 
 ```json
-"scene_type": "Elevator"
+"scene_type": "Robot"
 ```
 
 Each scene type defines its own fixed:
@@ -872,8 +871,6 @@ Describes the world.
 
 Examples:
 
-- floors;
-- passengers;
 - map layout;
 - repair nodes;
 - start position.
@@ -885,7 +882,7 @@ Describes what must become true for success.
 Examples:
 
 ```text
-all_passengers_delivered
+visit_all_patrol_points
 repair_all
 reach_exit
 ```
@@ -897,8 +894,6 @@ Describes limits that must remain satisfied.
 Examples:
 
 ```text
-max_stops
-max_travel_distance
 max_ticks
 max_cost
 ```
@@ -1003,7 +998,7 @@ Each `scene_type` defines one fixed Observation protocol.
 
 Individual levels of that type cannot redefine it.
 
-All Elevator levels therefore use the same Elevator Observation protocol.
+All Robot levels therefore use the same Robot Observation protocol.
 
 This gives players one stable device interface to learn.
 
@@ -1024,18 +1019,7 @@ Each scene type defines:
 - how many output bytes form one complete action;
 - how those bytes are decoded.
 
-Examples:
-
-```text
-Elevator:
-[floor]
-```
-
-Possible future dual-elevator scene:
-
-```text
-[elevator_id, floor]
-```
+Example:
 
 Maintenance Robot:
 
@@ -1077,7 +1061,7 @@ TestFailed: InvalidAction
 
 Example:
 
-An elevator supports floors `1..9`, but the program outputs:
+A Robot action protocol does not define action code 12, but the program outputs:
 
 ```text
 12
@@ -1116,8 +1100,8 @@ If a constraint becomes irreversibly violated, the level fails immediately.
 Example:
 
 ```text
-max_stops = 5
-stop_count = 6
+max_ticks = 5
+ticks = 6
 ```
 
 No additional dynamic steps are executed.
@@ -1156,14 +1140,6 @@ Their exact definitions belong to the VM Metrics specification.
 ### 29.2 Scene Metrics
 
 Each Environment scene type defines its own fixed scene metric vocabulary.
-
-Example Elevator metrics:
-
-```text
-stop_count
-travel_distance
-passengers_delivered
-```
 
 Example MaintenanceRobot metrics:
 
@@ -1258,9 +1234,7 @@ Example:
 {
   "constraints": {
     "max_ticks": 500,
-    "max_cost": 30,
-    "max_stops": 5,
-    "max_travel_distance": 20
+    "max_cost": 30
   }
 }
 ```
@@ -1358,7 +1332,7 @@ Environment example:
 {
   "scoring": {
     "metrics": {
-      "stop_count": {
+      "cost": {
         "target": 4
       },
       "ticks": {
@@ -1410,8 +1384,6 @@ Typical examples:
 ticks                  minimize
 cost                   minimize
 memory_addresses_used  minimize
-stop_count             minimize
-travel_distance        minimize
 ```
 
 A future metric may be:
@@ -1849,126 +1821,11 @@ In Official evaluation:
 
 ---
 
-## 53. Elevator Environment Example
+## 53. Removed Environment Example
 
-```json
-{
-  "format_version": 1,
-  "level_id": "official.elevator.01",
-  "level_version": 1,
-
-  "evaluation_type": "Environment",
-
-  "program_rules": {
-    "allowed_instructions": [
-      "MOVE_UP",
-      "MOVE_DOWN",
-      "MOVE_LEFT",
-      "MOVE_RIGHT",
-      "READ",
-      "OUTPUT"
-    ],
-
-    "allowed_attachments": [],
-
-    "main_board": {
-      "width": 5,
-      "height": 5
-    },
-
-    "function_board": {
-      "width": 5,
-      "height": 5
-    },
-
-    "max_functions": 0,
-    "max_custom": 0,
-    "max_threads": 1,
-    "memory_enabled": false
-  },
-
-  "constraints": {
-    "max_stops": 5
-  },
-
-  "scoring": {
-    "metrics": {
-      "stop_count": {
-        "target": 4
-      },
-      "ticks": {
-        "target": null
-      }
-    }
-  },
-
-  "evaluation": {
-    "scene_type": "Elevator",
-
-    "scene_data": {
-      "floor_count": 9,
-      "initial_floor": 1,
-
-      "passengers": [
-        {
-          "from": 2,
-          "to": 6
-        },
-        {
-          "from": 7,
-          "to": 3
-        },
-        {
-          "from": 4,
-          "to": 8
-        }
-      ]
-    },
-
-    "goals": {
-      "all_passengers_delivered": true
-    }
-  }
-}
-```
-
-The author defines complete passenger state:
-
-```text
-2 -> 6
-7 -> 3
-4 -> 8
-```
-
-The player initially receives only currently observable requests, encoded through the fixed Elevator Observation protocol.
-
-Conceptually this may represent:
-
-```text
-2 Up
-4 Up
-7 Down
-```
-
-The player outputs the next destination, for example:
-
-```text
-OUTPUT 2
-```
-
-The Environment then:
-
-1. applies the action;
-2. moves the elevator;
-3. boards/alights passengers according to scene rules;
-4. updates persistent state;
-5. exposes newly relevant internal requests;
-6. discards the VM;
-7. creates the next observation;
-8. resets the VM;
-9. runs the same player program again.
-
-This repeats until all passengers are delivered or the Level fails.
+The obsolete device example has been removed. Use the current Robot and
+MechanicalArm author documents under `examples/scene-level-v2/` and their
+continuous-session execution contract. Section numbering is retained for links.
 
 ---
 
@@ -2235,7 +2092,6 @@ level-core/
 │   └── scoring.rs
 │
 ├── scenes/
-│   ├── elevator/
 │   └── maintenance_robot/
 │
 ├── result/

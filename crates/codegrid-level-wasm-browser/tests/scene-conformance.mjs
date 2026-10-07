@@ -6,6 +6,14 @@ export function runSceneConformance(request, cases, assert) {
     return response;
   };
   const results = [];
+  const capability = call('capabilities');
+  assert(JSON.stringify(capability.capabilities.scene_types) === JSON.stringify(['ExactIO', 'Robot', 'MechanicalArm']), 'three runtime scenes only');
+  for (const scene of ['Baudot', 'QualityControl', 'Elevator']) {
+    const old = JSON.parse(cases[0].level_json);
+    old.scene_type = scene;
+    const rejected = call('load_level', {level_json: JSON.stringify(old)});
+    assert(rejected.error?.code === 'level.unsupported_scene_type', scene + ': removed scene rejection');
+  }
   for (const fixture of cases) {
     const level = call('load_level', {level_json: fixture.level_json});
     assert(level.status === 'ok', fixture.id + ': load');

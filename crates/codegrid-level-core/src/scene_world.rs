@@ -1,120 +1,11 @@
 //! Deterministic scene transitions. VM stepping and host limits live above this layer.
-use crate::schema::{MapCell, Passenger, RobotStart};
+use crate::schema::{MapCell, RobotStart};
 use std::collections::BTreeSet;
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum TransitionError {
     InvalidOutput,
     CounterOverflow,
-}
-
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
-enum PassengerLocation {
-    Waiting,
-    Onboard(usize),
-    Delivered,
-}
-
-#[derive(Clone, Debug, Eq, PartialEq)]
-pub(crate) struct ElevatorWorld {
-    pub floors: Vec<u8>,
-    passengers: Vec<(Passenger, PassengerLocation)>,
-    sequential: Vec<Passenger>,
-    next: usize,
-    moved: bool,
-    delivered: u64,
-    pub travel_distance: u64,
-    pub stop_count: u64,
-    pub rounds: u64,
-    pub work: u64,
-}
-
-impl ElevatorWorld {
-    pub fn new(floors: &[u8], initial: &[Passenger], sequential: &[Passenger]) -> Self {
-        Self {
-            floors: floors.to_vec(),
-            passengers: initial
-                .iter()
-                .map(|p| (*p, PassengerLocation::Waiting))
-                .collect(),
-            sequential: sequential.to_vec(),
-            next: 0,
-            moved: false,
-            delivered: 0,
-            travel_distance: 0,
-            stop_count: 0,
-            rounds: 0,
-            work: 0,
-        }
-    }
-    pub fn initial_input(&self) -> Vec<u8> {
-        self.passengers
-            .iter()
-            .flat_map(|(p, _)| [p.from, p.to])
-            .collect()
-    }
-    pub fn complete(&mut self) -> bool {
-        self.next == self.sequential.len() && self.delivered == self.passengers.len() as u64
-    }
-    pub fn act(&mut self, actor: usize, target: u8) -> Result<(), TransitionError> {
-        if target > 9 {
-            return Err(TransitionError::InvalidOutput);
-        }
-        self.work += 1;
-        let previous = self.floors[actor];
-        if previous == target {
-            return Ok(());
-        }
-        let distance = self
-            .travel_distance
-            .checked_add(u64::from(target.abs_diff(previous)))
-            .ok_or(TransitionError::CounterOverflow)?;
-        let stops = self
-            .stop_count
-            .checked_add(1)
-            .ok_or(TransitionError::CounterOverflow)?;
-        self.travel_distance = distance;
-        self.stop_count = stops;
-        self.work += 1;
-        self.floors[actor] = target;
-        self.moved = true;
-        for (passenger, location) in &mut self.passengers {
-            self.work += 1;
-            if *location == PassengerLocation::Onboard(actor) && passenger.to == target {
-                self.work += 1;
-                *location = PassengerLocation::Delivered;
-                self.delivered += 1;
-            }
-        }
-        for (passenger, location) in &mut self.passengers {
-            self.work += 1;
-            if *location == PassengerLocation::Waiting && passenger.from == target {
-                self.work += 1;
-                *location = PassengerLocation::Onboard(actor);
-            }
-        }
-        Ok(())
-    }
-    /// Called only for a fully dispatched, nonterminal frame.
-    pub fn end_round(&mut self) -> Result<Vec<u8>, TransitionError> {
-        if !self.moved {
-            return Ok(Vec::new());
-        }
-        self.rounds = self
-            .rounds
-            .checked_add(1)
-            .ok_or(TransitionError::CounterOverflow)?;
-        self.moved = false;
-        if let Some(passenger) = self.sequential.get(self.next).copied() {
-            self.work += 2; // Inspect the sequential record and retain its waiting copy.
-            self.next += 1;
-            self.passengers
-                .push((passenger, PassengerLocation::Waiting));
-            Ok(vec![passenger.from, passenger.to])
-        } else {
-            Ok(Vec::new())
-        }
-    }
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -263,45 +154,6 @@ mod tests {
         ];
         map[255].patrol = true;
         map
-    }
-    #[test]
-    fn elevator_no_service_trip_and_sequential_arrival() {
-        let mut world = ElevatorWorld::new(&[2], &[Passenger { from: 2, to: 7 }], &[]);
-        assert_eq!(world.initial_input(), [2, 7]);
-        world.act(0, 2).unwrap();
-        assert!(world.end_round().unwrap().is_empty());
-        assert_eq!(
-            (world.rounds, world.stop_count, world.travel_distance),
-            (0, 0, 0)
-        );
-        for target in [3, 2] {
-            world.act(0, target).unwrap();
-            world.end_round().unwrap();
-        }
-        assert!(!world.complete());
-        world.act(0, 7).unwrap();
-        assert!(world.complete());
-        assert_eq!((world.stop_count, world.travel_distance), (3, 7));
-        let mut world = ElevatorWorld::new(
-            &[0, 0],
-            &[Passenger { from: 2, to: 7 }],
-            &[Passenger { from: 3, to: 9 }],
-        );
-        world.act(0, 2).unwrap();
-        world.act(1, 2).unwrap();
-        assert_eq!(world.passengers[0].1, PassengerLocation::Onboard(0));
-        assert_eq!(world.end_round().unwrap(), [3, 9]);
-        world.act(0, 7).unwrap();
-        assert!(!world.complete());
-        assert!(world.end_round().unwrap().is_empty());
-    }
-    #[test]
-    fn elevator_invalid_second_actor_keeps_first_actor_effect() {
-        let mut world = ElevatorWorld::new(&[0, 0], &[Passenger { from: 2, to: 7 }], &[]);
-        world.act(0, 2).unwrap();
-        assert_eq!(world.act(1, 10), Err(TransitionError::InvalidOutput));
-        assert_eq!(world.floors, [2, 0]);
-        assert_eq!((world.rounds, world.stop_count), (0, 1));
     }
     #[test]
     fn robot_geometry_jump_turns_and_boundaries() {
@@ -805,14 +657,6 @@ mod arm_tests {
     }
 }
 
-impl ElevatorWorld {
-    pub fn retained_units(&self) -> u64 {
-        (self.floors.len() + self.passengers.len() + self.sequential.len()) as u64
-    }
-    pub fn summary(&self) -> (u64, u64) {
-        (self.delivered, self.passengers.len() as u64)
-    }
-}
 impl RobotWorld {
     pub fn retained_units(&self) -> u64 {
         self.map_units
@@ -837,11 +681,6 @@ impl ArmWorld {
 }
 
 pub(crate) enum ActorSnapshot {
-    Elevator {
-        floor: u8,
-        onboard: u64,
-        delivered: u64,
-    },
     Robot {
         position: u8,
         direction: u8,
@@ -856,26 +695,6 @@ impl ActorSnapshot {
     pub fn effect(self, after: Self) -> crate::scene_feedback::SceneEffect {
         use crate::scene_feedback::SceneEffect;
         match (self, after) {
-            (
-                Self::Elevator {
-                    floor: from_floor,
-                    onboard: before,
-                    delivered: old,
-                },
-                Self::Elevator {
-                    floor: to_floor,
-                    onboard: after,
-                    delivered: new,
-                },
-            ) => {
-                let delivered = new - old;
-                SceneEffect::Elevator {
-                    from_floor,
-                    to_floor,
-                    boarded: after + delivered - before,
-                    delivered,
-                }
-            }
             (
                 Self::Robot {
                     position: from_position,
@@ -910,38 +729,6 @@ impl ActorSnapshot {
                 after_state,
             },
             _ => unreachable!("actor snapshot belongs to unchanged world kind"),
-        }
-    }
-}
-impl ElevatorWorld {
-    pub fn debug_snapshot(&mut self, actor: usize) -> ActorSnapshot {
-        self.work += 1;
-        let floor = self.floors[actor];
-        let mut onboard = 0;
-        for (_, location) in &self.passengers {
-            self.work += 1;
-            onboard += u64::from(*location == PassengerLocation::Onboard(actor));
-        }
-        ActorSnapshot::Elevator {
-            floor,
-            onboard,
-            delivered: self.delivered,
-        }
-    }
-    pub fn round_changes(&mut self) -> Vec<crate::scene_feedback::SceneRoundChange> {
-        if !self.moved {
-            return Vec::new();
-        }
-        if let Some(p) = self.sequential.get(self.next) {
-            self.work += 1;
-            vec![
-                crate::scene_feedback::SceneRoundChange::PassengerIntroduced {
-                    from: p.from,
-                    to: p.to,
-                },
-            ]
-        } else {
-            Vec::new()
         }
     }
 }
