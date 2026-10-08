@@ -7,6 +7,13 @@ language and scene mechanism changes were not reaching application consumers.
 
 ## Every-change requirement
 
+The [release policy](../AGENTS.md#release-and-compatibility-policy) takes
+precedence over legacy-preservation requirements below. No user-published
+release exists as of 2026-10-08. Synchronize current contracts and consumers
+directly; do not add compatibility readers, retain old artifacts, reserve old
+codes, or require migrations/version bumps for unpublished versions. Continue
+to preserve unrelated user data and record truthful artifact provenance.
+
 For every change, inspect its downstream impact before reporting completion.
 Changes to syntax, instruction permissions, compilation, VM behavior, scenes,
 level JSON, errors, metrics, limits, scoring, or public API/WASM contracts must

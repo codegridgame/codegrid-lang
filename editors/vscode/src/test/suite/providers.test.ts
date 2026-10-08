@@ -70,7 +70,7 @@ suite('Full standalone providers', () => {
       assert.ok(shift.includes(token), `missing ${token}`);
     }
     const read = await complete(await openDoc('~> ,'), 0, 4);
-    for (const token of [',<', ',>', ',^', ',v', ',<*', ',<x2']) {
+    for (const token of [',', ',', ',', ',', ',*', ',x2']) {
       assert.ok(read.includes(token), `missing ${token}`);
     }
   });
@@ -123,7 +123,7 @@ suite('Full standalone providers', () => {
   });
 
   test('hover explains known instructions and incomplete prefixes', async () => {
-    const document = await openDoc('~> ,> ?0^ $> + ; #');
+    const document = await openDoc('~> , ?0^ $> + ; #');
     const hoverAt = async (character: number): Promise<string> => {
       const hovers = await vscode.commands.executeCommand<vscode.Hover[]>(
         'vscode.executeHoverProvider', document.uri, new vscode.Position(0, character)
@@ -132,7 +132,7 @@ suite('Full standalone providers', () => {
         content instanceof vscode.MarkdownString ? content.value : String(content)
       ).join('\n');
     };
-    assert.ok((await hoverAt(4)).includes('input is exhausted'));
+    assert.ok((await hoverAt(4)).includes('F=1'));
     assert.ok((await hoverAt(7)).includes('register equals 0'));
     assert.ok((await hoverAt(11)).includes('logically'));
     assert.ok((await hoverAt(13)).includes('8-bit wrapping'));

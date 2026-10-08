@@ -22,6 +22,6 @@ Provide the native `codegrid check`, `codegrid run`, `codegrid evaluate`, and `c
 
 Test argument errors, file and UTF-8 failures, both input paths and explicit empty input, exit behavior, JSON stability, diagnostics, runtime failures, and end-to-end determinism.
 
-`evaluate --api-version 2` selects only the shared v2 API/profile loader. The
-default remains version 1. Do not detect scene kinds or interpret level rules
+`evaluate` uses only the shared API/profile 2 loader. Optional `--api-version 2`
+validates that current contract; no older version is accepted. Do not detect scene kinds or interpret level rules
 in the CLI; all author acceptance and results remain API-owned.

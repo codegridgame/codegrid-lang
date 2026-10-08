@@ -7,7 +7,7 @@ use support::*;
 #[test]
 fn continuous_read_observation_and_vm_slices_match() {
     let v = two_point_robot();
-    let p = program(&[",>", ",>", ".1", ",>", ".", ";"]);
+    let p = program(&[",", ",", ".1", ",", ".", ";"]);
     let large = run(session(&v, p.clone(), config(), limits()), 1000);
     let small = run(session(&v, p, config(), limits()), 1);
     assert_eq!(large, small);
@@ -44,7 +44,7 @@ fn queue_and_cumulative_input_failures_discard_candidate_round() {
     let mut l = limits();
     l.max_total_input_bytes_per_test = n(3);
     let result = run(
-        session(&v, program(&[",>", ",>", ".1", ";"]), config(), l),
+        session(&v, program(&[",", ",", ".1", ";"]), config(), l),
         100,
     );
     assert_eq!(result.status, EvaluationStatus::ResourceLimitExceeded);
@@ -229,12 +229,7 @@ fn byte_append_keeps_older_unread_snapshot_at_queue_head() {
     let v = two_point_robot();
     // Two READs after the move still consume the initial [0,0], not the new [1,0].
     let result = run(
-        session(
-            &v,
-            program(&[".1", ",>", ",>", ".", ";"]),
-            config(),
-            limits(),
-        ),
+        session(&v, program(&[".1", ",", ",", ".", ";"]), config(), limits()),
         1,
     );
     assert_eq!(result.status, EvaluationStatus::TestFailed);
@@ -246,7 +241,7 @@ fn byte_append_keeps_older_unread_snapshot_at_queue_head() {
 fn static_output_passes_and_robot_halt_without_patrol_visit_fails() {
     let v = author("exact");
     let result = run(
-        session(&v, program(&[",>", ".", ";"]), config(), limits()),
+        session(&v, program(&[",", ".", ";"]), config(), limits()),
         1,
     );
     assert_eq!(result.status, EvaluationStatus::Passed);

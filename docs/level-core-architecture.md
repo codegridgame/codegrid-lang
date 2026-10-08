@@ -1,7 +1,7 @@
 # Level Core Architecture
 
-Status: ExactIO API v1 and three scene protocols through Level API v2 are
-implemented, with initial browser/server host comparisons. The API-2 loader,
+Status: ExactIO, Robot and MechanicalArm use the sole current Level API 2;
+historical Level API 1 entry points are removed, with initial browser/server host comparisons. The API-2 loader,
 examples, and fixtures use the selected Scene Level JSON format v1. Remaining
 verification limits are in the
 [scene conformance plan](scene-conformance-plan.md) and
@@ -31,8 +31,8 @@ The future boundary for player-authored scene packages is in the
 
 The [scene architecture](level-scenes-architecture.md) maps the selected
 ExactIO, Robot, and MechanicalArm scenes to
-the current Rust execution engines. API v2 advertises the six registered
-scenes; API v1 remains ExactIO-only.
+the current Rust execution engines. API 2 advertises these three registered
+scenes. It also covers the converted ExactIO regression cases.
 
 The future extension boundary for player-authored packages is described in the
 [Custom Scene architecture](custom-scenes-architecture.md). Official scenes

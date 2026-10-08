@@ -365,6 +365,8 @@ pub struct RuntimeThreadSnapshot {
     pub position: Coordinate,
     pub direction: Direction,
     pub register_pointer: u8,
+    pub status_flag: u8,
+    pub private_registers: Option<[u8; 10]>,
     pub page: Page,
     pub data_stack: Vec<u8>,
     pub instruction_stack: Vec<codegrid_model::InstructionStackItem>,
@@ -494,6 +496,10 @@ impl RuntimeThreadSnapshotView<'_> {
         self.inner.register_pointer()
     }
 
+    pub const fn status_flag(&self) -> u8 {
+        self.inner.status_flag()
+    }
+
     pub fn page(&self) -> &Page {
         self.inner.page()
     }
@@ -504,6 +510,10 @@ impl RuntimeThreadSnapshotView<'_> {
 
     pub fn instruction_stack(&self) -> &[codegrid_model::InstructionStackItem] {
         self.inner.instruction_stack()
+    }
+
+    pub fn private_registers(&self) -> Option<&[u8; 10]> {
+        self.inner.private_registers()
     }
 
     pub fn call_frames(&self) -> impl Iterator<Item = CallFrameSnapshot> + '_ {
@@ -526,6 +536,8 @@ impl RuntimeThreadSnapshotView<'_> {
             position: self.position(),
             direction: self.direction(),
             register_pointer: self.register_pointer(),
+            status_flag: self.status_flag(),
+            private_registers: self.private_registers().copied(),
             page: self.page().clone(),
             data_stack: self.data_stack().to_vec(),
             instruction_stack: self.instruction_stack().to_vec(),

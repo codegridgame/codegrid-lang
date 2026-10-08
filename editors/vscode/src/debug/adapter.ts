@@ -84,7 +84,8 @@ export class CodeGridDebugAdapter implements vscode.DebugAdapter {
         case 'scopes': {
           const thread = this.frameThreads.get(args.frameId);
           this.reply(request, { scopes: [
-            { name: vscode.l10n.t('Registers'), variablesReference: this.reference(this.snapshot.registers || []), expensive: false },
+            { name: vscode.l10n.t('Registers'), variablesReference: this.reference(thread?.private_registers ?? this.snapshot.registers ?? []), expensive: false },
+            { name: 'Status flag F', variablesReference: this.reference({ F: thread?.status_flag ?? 0 }), expensive: false },
             { name: vscode.l10n.t('Thread'), variablesReference: this.reference(thread || {}), expensive: false },
             { name: vscode.l10n.t('Memory'), variablesReference: this.reference(this.snapshot.memory || []), expensive: false },
             { name: vscode.l10n.t('Input / Output'), variablesReference: this.reference({ remaining_input: this.snapshot.remaining_input, output: this.snapshot.output }), expensive: false },
@@ -101,7 +102,7 @@ export class CodeGridDebugAdapter implements vscode.DebugAdapter {
         }
         case 'evaluate': {
           const thread = this.frameThreads.get(args.frameId) || this.liveThreads()[0];
-          const data = { ...this.snapshot, thread, events: this.lastEvents };
+          const data = { ...this.snapshot, registers: thread?.private_registers ?? this.snapshot.registers, thread, events: this.lastEvents };
           const expression = String(args.expression).trim();
           if (!/^[A-Za-z_][\w]*(?:(?:\.[A-Za-z_][\w]*)|(?:\[\d+\]))*$/.test(expression)) throw new CodedError('editor.invalid_expression', 'Use a state path such as registers[0], thread.data_stack or metrics.global_tick.');
           const keys = expression.replace(/\[(\d+)\]/g, '.$1').split('.');
@@ -269,10 +270,10 @@ export class CodeGridDebugAdapter implements vscode.DebugAdapter {
   private stackTrace(threadId: number): any {
     const thread = this.liveThreads().find((item) => this.threadId(item) === threadId);
     if (!thread) return { stackFrames: [], totalFrames: 0 };
-    const entries = [{ name: `${this.boardPath(thread)} (${thread.position.x}, ${thread.position.y})`, path: this.cellPath(thread) }, ...[...thread.call_stack].reverse().map((frame: any) => ({ name: frame.caller_board.kind === 'main' ? '@main' : `@main.F${frame.caller_board.id}`, path: this.cellPath(thread, frame.caller_board, frame.call_position) }))];
+    const entries = [{ name: `${this.boardPath(thread)} (${thread.position.x}, ${thread.position.y})`, path: this.cellPath(thread), state: thread }, ...[...thread.call_stack].reverse().map((frame: any) => ({ name: frame.caller_board.kind === 'main' ? '@main' : `@main.F${frame.caller_board.id}`, path: this.cellPath(thread, frame.caller_board, frame.call_position), state: { ...thread, board: frame.caller_board, position: frame.call_position, register_pointer: frame.saved_register_pointer, status_flag: frame.saved_status_flag, private_registers: frame.saved_registers } }))];
     const stackFrames = entries.map((entry) => {
       const id = this.nextFrame++;
-      this.frameThreads.set(id, thread);
+      this.frameThreads.set(id, entry.state);
       const location = this.locations.find((item) => item.path === entry.path);
       return { id, name: entry.name, source: { name: path.basename(this.sourcePath), path: this.sourcePath }, line: location?.line || 1, column: location?.column || 1, endLine: location?.endLine, endColumn: location?.endColumn };
     });

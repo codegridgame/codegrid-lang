@@ -10,7 +10,7 @@ use codegrid_model::{
     MAX_BOARD_CELLS, MAX_BOARD_DIMENSION,
 };
 
-pub const IR_FORMAT_VERSION: u32 = 2;
+pub const IR_FORMAT_VERSION: u32 = 3;
 
 #[derive(Clone, Copy, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
 pub enum CodeGridId {
@@ -255,9 +255,6 @@ fn reachable_directions(board: &Board) -> BTreeMap<usize, BTreeSet<(Direction, B
                 Direction::Left,
                 Direction::Right,
             ],
-            Some(PrimaryInstruction::Read(target)) => {
-                vec![direction, target]
-            }
             _ => vec![direction],
         };
 
@@ -571,7 +568,9 @@ fn validate_cell(
                     "Repeat count must be from 2 through 5.",
                 ));
             }
-            if !primary.is_encodable() {
+            let immediate_repeat = matches!(primary, PrimaryInstruction::OutputImmediate(_))
+                && matches!(attachment, AttachmentInstruction::Repeat(_));
+            if !primary.is_encodable() && !immediate_repeat {
                 errors.push(error(
                     path,
                     "ir.attachment_primary",

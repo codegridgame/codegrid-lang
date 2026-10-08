@@ -414,6 +414,7 @@ impl Vm {
         let output_start = self.output.len();
         commit_effects(
             &mut self.registers,
+            &mut staged_threads,
             &mut self.memory,
             &mut self.input,
             &mut self.output,
@@ -868,6 +869,7 @@ fn runtime_cell(
 
 fn commit_effects(
     registers: &mut [Value; 10],
+    threads: &mut [ThreadState],
     memory: &mut crate::Memory,
     input: &mut VecDeque<Value>,
     output: &mut Vec<Value>,
@@ -875,11 +877,25 @@ fn commit_effects(
     effects: &SharedEffectBatch,
 ) {
     for write in &effects.register_writes {
-        registers[usize::from(write.register)] = write.value;
+        commit_register(
+            registers,
+            threads,
+            effects,
+            write.thread_id,
+            write.register,
+            write.value,
+        );
     }
     if let Some(read) = effects.input_reads.iter().find(|read| read.value.is_some()) {
         if let Some(value) = read.value {
-            registers[usize::from(read.register)] = value;
+            commit_register(
+                registers,
+                threads,
+                effects,
+                read.thread_id,
+                read.register,
+                value,
+            );
         }
     }
     if let Some(read) = effects
@@ -888,7 +904,14 @@ fn commit_effects(
         .find(|read| read.value.is_some())
     {
         if let Some(value) = read.value {
-            registers[usize::from(read.register)] = value;
+            commit_register(
+                registers,
+                threads,
+                effects,
+                read.thread_id,
+                read.register,
+                value,
+            );
         }
     }
     if !effects.input_reads.is_empty() && effects.input_reads[0].value.is_some() {
@@ -909,6 +932,27 @@ fn commit_effects(
                 cell.primary = write.primary;
             }
         }
+    }
+}
+
+fn commit_register(
+    registers: &mut [Value; 10],
+    threads: &mut [ThreadState],
+    effects: &SharedEffectBatch,
+    thread_id: u64,
+    register: u8,
+    value: Value,
+) {
+    if effects.private_register_threads.contains(&thread_id) {
+        if let Some(bank) = threads
+            .iter_mut()
+            .find(|thread| thread.id == thread_id)
+            .and_then(|thread| thread.private_registers.as_mut())
+        {
+            bank[usize::from(register)] = value;
+        }
+    } else {
+        registers[usize::from(register)] = value;
     }
 }
 
@@ -939,6 +983,9 @@ mod stack_high_water_formula_tests {
                 caller_board: BoardId::Main,
                 call_position: Coordinate { x: 0, y: 0 },
                 saved_direction: Direction::Right,
+                saved_registers: None,
+                saved_register_pointer: 0,
+                saved_status_flag: 0,
             })
             .collect();
         thread

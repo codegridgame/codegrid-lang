@@ -1,0 +1,88 @@
+{
+  "format_version": 1,
+  "level_id": "conformance.constraint-max_operation_count",
+  "level_version": 1,
+  "evaluation_type": "ExactIO",
+  "program_rules": {
+    "allowed_instructions": [
+      "MOVE_UP",
+      "MOVE_DOWN",
+      "MOVE_LEFT",
+      "MOVE_RIGHT",
+      "RANDOM_DIRECTION",
+      "READ",
+      "CLEAR",
+      "ADD",
+      "SUB",
+      "POINTER_LEFT",
+      "POINTER_RIGHT",
+      "OUTPUT",
+      "PUSH",
+      "POP_ADD",
+      "DECODE",
+      "ENCODE",
+      "CALL",
+      "RETURN",
+      "NAND",
+      "MEMORY_LOAD",
+      "MEMORY_STORE",
+      "PAGE_INCREMENT",
+      "PAGE_DECREMENT",
+      "SHIFT_LEFT",
+      "SHIFT_RIGHT",
+      "FOLDED_BLOCK",
+      "CUSTOM",
+      "CUSTOM_RETURN",
+      "HALT",
+      "CMP"
+    ],
+    "allowed_attachments": [
+      "READ_CODE",
+      "WRITE_CODE",
+      "REPEAT",
+      "CONDITION_0"
+    ],
+    "main_board": {
+      "width": 100,
+      "height": 100
+    },
+    "function_board": {
+      "width": 100,
+      "height": 100
+    },
+    "max_functions": 10,
+    "max_custom": 10,
+    "max_threads": 10,
+    "memory_enabled": true
+  },
+  "constraints": {
+    "max_operation_count": 0
+  },
+  "scoring": {
+    "metrics": {}
+  },
+  "evaluation": {
+    "tests": [
+      {
+        "visible": true,
+        "expected_output": [
+          9
+        ],
+        "input": [
+          9
+        ]
+      },
+      {
+        "visible": true,
+        "expected_output": [
+          9
+        ],
+        "input": [
+          9
+        ]
+      }
+    ]
+  },
+  "scene_type": "ExactIO",
+  "scene_config": {}
+}

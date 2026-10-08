@@ -31,7 +31,7 @@ fn kinds(events: &[Value]) -> Vec<&str> {
 #[test]
 fn robot_events_and_results_are_identical_across_vm_slices() {
     let v = two_point_robot();
-    let tokens = [",>", ",>", ".1", ",>", ".", ";"];
+    let tokens = [",", ",", ".1", ",", ".", ";"];
     let mut large = start(&v, &tokens, limits());
     let mut small = start(&v, &tokens, limits());
     assert_eq!(finish(&mut large, 1000), finish(&mut small, 1));

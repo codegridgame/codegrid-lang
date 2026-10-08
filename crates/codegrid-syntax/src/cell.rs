@@ -33,10 +33,13 @@ pub fn parse_cell_token(token: &str) -> Result<CellToken, CellTokenError> {
                     primary,
                     attachment,
                 }),
+                Err(error) => Err(CellTokenError {
+                    code: "source.invalid_cell",
+                    message: error.message,
+                }),
                 _ => Err(CellTokenError {
                     code: "source.invalid_cell",
-                    message:
-                        "A conditional prefix requires one complete Primary and cannot be repeated.",
+                    message: "A conditional prefix cannot apply to an Empty cell or Entry marker; follow it with one Primary instruction.",
                 }),
             };
         }
@@ -73,22 +76,32 @@ fn parse_unprefixed_cell(token: &str) -> Result<CellToken, CellTokenError> {
             primary,
             attachment: None,
         }),
-        None => parse_attached_primary(token).ok_or(CellTokenError {
-            code: "source.invalid_cell",
-            message: "Unknown or malformed Full cell token, or an invalid Primary-Attachment combination.",
-        }),
+        None => parse_attached_primary(token),
     }
 }
 
-fn parse_attached_primary(token: &str) -> Option<CellToken> {
+fn parse_attached_primary(token: &str) -> Result<CellToken, CellTokenError> {
     for attachment in AttachmentInstruction::ALL {
         let suffix = attachment.token();
         let Some(primary_token) = token.strip_suffix(&suffix) else {
             continue;
         };
-        let primary = PrimaryInstruction::from_token(primary_token)?;
-        if !primary.is_encodable() {
-            return None;
+        let Some(primary) = PrimaryInstruction::from_token(primary_token) else {
+            continue;
+        };
+        let immediate_repeat = matches!(primary, PrimaryInstruction::OutputImmediate(_))
+            && matches!(attachment, AttachmentInstruction::Repeat(_));
+        if !primary.is_encodable() && !immediate_repeat {
+            return Err(CellTokenError {
+                code: "source.invalid_cell",
+                message: match primary {
+                    PrimaryInstruction::OutputImmediate(_) => "Immediate output .0 through .9 allows only Repeat x2 through x5; ReadCode (*) and WriteCode (=) are not allowed.",
+                    PrimaryInstruction::Halt => "HALT (;) cannot carry a suffix Attachment.",
+                    PrimaryInstruction::FoldedBlock(_) => "A Folded Block call cannot carry a suffix Attachment.",
+                    PrimaryInstruction::Custom(_) | PrimaryInstruction::CustomReturn => "A Custom call or return cannot carry a suffix Attachment.",
+                    _ => "This Primary instruction cannot carry a suffix Attachment.",
+                },
+            });
         }
         if matches!(attachment, AttachmentInstruction::Repeat(_))
             && matches!(
@@ -96,15 +109,69 @@ fn parse_attached_primary(token: &str) -> Option<CellToken> {
                 PrimaryInstruction::Call(_) | PrimaryInstruction::Return
             )
         {
-            return None;
+            return Err(CellTokenError {
+                code: "source.invalid_cell",
+                message: "Repeat is not allowed on Function CALL ([0 through [9) or RETURN (]); use an ordinary call/return without x2 through x5.",
+            });
         }
-        return Some(CellToken::Instruction {
+        return Ok(CellToken::Instruction {
             prefix: None,
             primary,
             attachment: Some(attachment),
         });
     }
-    None
+    Err(CellTokenError {
+        code: "source.invalid_cell",
+        message: invalid_token_message(token),
+    })
+}
+
+/// Refine rejected atoms for diagnostics only; never recover executable cells.
+fn invalid_token_message(token: &str) -> &'static str {
+    if ConditionPrefix::ALL
+        .iter()
+        .any(|prefix| token.starts_with(prefix.token()))
+    {
+        return "A cell allows only one conditional prefix (?0, ?1, ?2, or ?!); nested or repeated prefixes are not allowed.";
+    }
+    if token == "*" || token == "=" || token.starts_with('x') {
+        return "A suffix Attachment must be joined directly to a Primary in the same cell; it cannot stand alone.";
+    }
+    if token.starts_with('_') {
+        return "Empty cells must be exactly _ and cannot carry a prefix or suffix Attachment.";
+    }
+    if token.starts_with('?') && token.as_bytes().get(1).is_some_and(u8::is_ascii_digit) {
+        return "A conditional prefix must be ?0, ?1, ?2, or ?! followed directly by one Primary instruction.";
+    }
+    if token.starts_with(',') {
+        return "READ is the single token , without a direction; use at most one allowed suffix Attachment.";
+    }
+    for attachment in AttachmentInstruction::ALL {
+        if let Some(base) = token.strip_suffix(&attachment.token()) {
+            if AttachmentInstruction::ALL
+                .iter()
+                .any(|earlier| base.ends_with(&earlier.token()))
+            {
+                return "A cell allows only one suffix Attachment; multiple or combined suffixes are not allowed.";
+            }
+        }
+    }
+    if let Some((primary, count)) = token.rsplit_once('x') {
+        if PrimaryInstruction::from_token(primary).is_some() {
+            return if !count.is_empty() && count.bytes().all(|byte| byte.is_ascii_digit()) {
+                "Repeat count must be a single digit from 2 through 5; use x2, x3, x4, or x5."
+            } else {
+                "Malformed Repeat suffix; use x2, x3, x4, or x5 immediately after the Primary."
+            };
+        }
+    }
+    if token.starts_with('.') && token != "." {
+        return "Immediate output must be .0 through .9 with exactly one ASCII digit; only an optional Repeat suffix x2 through x5 is allowed.";
+    }
+    if token.starts_with('[') || token.starts_with('$') || token.starts_with('#') {
+        return "Unknown or malformed Primary reference; Function CALL uses [0 through [9, Folded Block CALL uses $0 through $9, and Custom CALL uses #0 through #9 or #] for return.";
+    }
+    "Unknown or malformed Full cell token; use one complete Primary instruction with at most one conditional prefix and one allowed suffix Attachment."
 }
 
 #[cfg(test)]
@@ -128,10 +195,10 @@ mod tests {
             })
         );
         assert_eq!(
-            parse_cell_token(",<"),
+            parse_cell_token(","),
             Ok(CellToken::Instruction {
                 prefix: None,
-                primary: PrimaryInstruction::Read(Direction::Left),
+                primary: PrimaryInstruction::Read,
                 attachment: None,
             })
         );
@@ -144,10 +211,10 @@ mod tests {
             })
         );
         assert_eq!(
-            parse_cell_token(",<*"),
+            parse_cell_token(",*"),
             Ok(CellToken::Instruction {
                 prefix: None,
-                primary: PrimaryInstruction::Read(Direction::Left),
+                primary: PrimaryInstruction::Read,
                 attachment: Some(AttachmentInstruction::ReadCode),
             })
         );
@@ -164,8 +231,9 @@ mod tests {
     #[test]
     fn rejects_detached_and_malformed_complete_tokens() {
         for token in [
-            "*", "=", "x2", "#0x3", "#00", "++", "+*x3", "+x2*", ";x2", ";*", ";=", "$0x2", "[0x3",
-            "[0x2", "]x2", "#]x2", "~>x2", "~>*", "_x2", "[[0", "+x0", "+x6",
+            ",^", ",v", ",<", ",>", "?!,v", ",^x2", "*", "=", "x2", "#0x3", "#00", "++", "+*x3",
+            "+x2*", ";x2", ";*", ";=", "$0x2", "[0x3", "[0x2", "]x2", "#]x2", "~>x2", "~>*", "_x2",
+            "[[0", "+x0", "+x6",
         ] {
             assert!(parse_cell_token(token).is_err(), "{token} must be rejected");
         }
@@ -173,7 +241,7 @@ mod tests {
 
     #[test]
     fn rejects_each_standalone_primary_prefix_token() {
-        for token in ["#", "$", ",", "[", "x"] {
+        for token in ["#", "$", "[", "x"] {
             assert!(
                 parse_cell_token(token).is_err(),
                 "standalone token {token:?} must be rejected"
@@ -202,7 +270,9 @@ mod tests {
         for primary in PrimaryInstruction::source_forms() {
             for attachment in AttachmentInstruction::ALL {
                 let token = format!("{}{}", primary.token(), attachment.token());
-                let compatible = primary.is_encodable()
+                let compatible = (primary.is_encodable()
+                    || (matches!(primary, PrimaryInstruction::OutputImmediate(_))
+                        && matches!(attachment, AttachmentInstruction::Repeat(_))))
                     && (!matches!(attachment, AttachmentInstruction::Repeat(_))
                         || !matches!(
                             primary,

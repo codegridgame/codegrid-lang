@@ -23,6 +23,15 @@ fn program(main: Board) -> Program {
     }
 }
 
+#[test]
+fn old_shared_function_register_ir_versions_are_rejected() {
+    for version in [1, 2] {
+        let mut old = program(board(vec![Cell::entry(Direction::Right)], 1, 1));
+        old.format_version = version;
+        assert!(VerifiedProgram::new(old).is_err());
+    }
+}
+
 fn program_with_attachment_candidate(
     primary: codegrid_model::PrimaryInstruction,
     attachment: codegrid_model::AttachmentInstruction,
@@ -459,7 +468,10 @@ fn verifies_the_complete_full_primary_attachment_compatibility_matrix() {
                     primary,
                     PrimaryInstruction::Call(_) | PrimaryInstruction::Return
                 );
-            let compatible = primary.is_encodable() && !repeat_on_call_or_return;
+            let compatible = (primary.is_encodable()
+                || (matches!(primary, PrimaryInstruction::OutputImmediate(_))
+                    && matches!(attachment, Attachment::Repeat(_))))
+                && !repeat_on_call_or_return;
             let result =
                 VerifiedProgram::new(program_with_attachment_candidate(primary, attachment));
             if compatible {
@@ -509,10 +521,10 @@ fn accepts_full_primary_inventory_in_scoped_programs() {
             P::Direction(Direction::Right),
             P::RandomDirection,
             P::Compare,
-            P::Read(Direction::Up),
-            P::Read(Direction::Down),
-            P::Read(Direction::Left),
-            P::Read(Direction::Right),
+            P::Read,
+            P::Read,
+            P::Read,
+            P::Read,
             P::Clear,
             P::Add,
             P::Sub,
@@ -544,7 +556,7 @@ fn accepts_full_primary_inventory_in_scoped_programs() {
     // forbidden on CALL and RETURN. The Full boundary cases below pin that rule.
     main_cells.extend([
         Cell::instruction(P::Shift(ShiftDirection::Left), Some(Attachment::Repeat(2))),
-        Cell::instruction(P::Read(Direction::Left), Some(Attachment::ReadCode)),
+        Cell::instruction(P::Read, Some(Attachment::ReadCode)),
         Cell::instruction(P::Add, Some(Attachment::WriteCode)),
     ]);
     let main_width = main_cells.len();

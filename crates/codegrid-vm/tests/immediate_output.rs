@@ -8,6 +8,96 @@ use std::{collections::BTreeMap, num::NonZeroU64};
 fn instruction(token: &str) -> Cell {
     Cell::instruction(PrimaryInstruction::from_token(token).unwrap(), None)
 }
+
+fn repeated_digit(digit: u8, count: u8) -> Cell {
+    Cell::instruction(
+        PrimaryInstruction::OutputImmediate(codegrid_model::ImmediateDigit::new(digit).unwrap()),
+        Some(codegrid_model::AttachmentInstruction::Repeat(count)),
+    )
+}
+
+#[test]
+fn immediate_repeat_emits_once_per_tick_and_matches_bounded_execution() {
+    for digit in 0..10 {
+        for count in 2..=5 {
+            let main = board(
+                vec![
+                    Cell::entry(Direction::Right),
+                    repeated_digit(digit, count),
+                    instruction(";"),
+                ],
+                3,
+            );
+            let mut stepped = machine(main.clone(), None, &[]);
+            let mut bounded = machine(main, None, &[]);
+            stepped.step();
+            for completed in 1..=count {
+                stepped.step();
+                let state = stepped.snapshot();
+                assert_eq!(state.output, vec![digit; usize::from(completed)]);
+                assert_eq!(state.registers, [0; 10]);
+                assert_eq!(state.threads[0].register_pointer, 0);
+                assert_eq!(state.metrics.operation_count(), u64::from(completed));
+                assert_eq!(stepped.committed_ticks(), u64::from(completed) + 1);
+            }
+            stepped.step();
+            assert_eq!(bounded.run(20), RunOutcome::Halted);
+            assert_eq!(stepped.snapshot(), bounded.snapshot());
+        }
+    }
+}
+
+#[test]
+fn repeated_immediate_output_conflict_rolls_back_only_the_conflicting_tick() {
+    let main = board(
+        vec![
+            Cell::entry(Direction::Right),
+            repeated_digit(3, 3),
+            instruction(";"),
+            Cell::entry(Direction::Right),
+            Cell::empty(),
+            instruction("."),
+        ],
+        3,
+    );
+    let mut vm = machine(main, None, &[]);
+    vm.step();
+    vm.step();
+    assert_eq!(vm.snapshot().output, [3]);
+    assert_eq!(vm.step().status, VmStatus::Error);
+    assert_eq!(vm.snapshot().output, [3]);
+    assert_eq!(vm.committed_ticks(), 2);
+}
+
+#[test]
+fn repeated_custom_immediate_output_pushes_each_value_to_the_caller() {
+    let outer = board(
+        vec![
+            Cell::entry(Direction::Right),
+            instruction("#0"),
+            instruction(")"),
+            instruction("."),
+            instruction(")"),
+            instruction("."),
+            instruction(")"),
+            instruction("."),
+            instruction(";"),
+        ],
+        9,
+    );
+    let custom = board(
+        vec![
+            Cell::entry(Direction::Right),
+            repeated_digit(9, 3),
+            instruction("#]"),
+        ],
+        3,
+    );
+    let mut vm = machine(outer, Some(custom), &[]);
+    assert_eq!(vm.run(30), RunOutcome::Halted);
+    // POP adds each stacked byte to the selected register.
+    assert_eq!(vm.snapshot().output, [9, 18, 27]);
+}
 fn board(cells: Vec<Cell>, width: usize) -> Board {
     Board {
         width,
@@ -52,7 +142,7 @@ fn all_digits_preserve_selected_register_pointer_and_share_output_metrics() {
     let mut cells = vec![
         Cell::entry(Direction::Right),
         instruction("}"),
-        instruction(",>"),
+        instruction(","),
     ];
     for digit in 0..10 {
         cells.push(instruction(&format!(".{digit}")));
@@ -125,9 +215,9 @@ fn appended_input_preserves_unread_tail_and_execution_state() {
         board(
             vec![
                 Cell::entry(Direction::Right),
-                instruction(",>"),
+                instruction(","),
                 instruction("."),
-                instruction(",>"),
+                instruction(","),
                 instruction("."),
                 instruction(";"),
             ],
@@ -163,7 +253,7 @@ fn append_after_interrupted_tick_uses_the_rolled_back_boundary() {
         vec![
             Cell::entry(Direction::Right),
             instruction("#0"),
-            instruction(",>"),
+            instruction(","),
             instruction("."),
             instruction(";"),
         ],

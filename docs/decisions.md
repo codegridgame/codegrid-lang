@@ -435,7 +435,7 @@ approved migration, not compatibility acceptance of the removed language.
 ## Scene protocol specification (2026-10-05)
 
 The user requests a concrete repository specification based on the selected
-conversation "梳理确定场景" (conversation ID
+conversation "Scene definition review" (translated title) (conversation ID
 6ac2518f-10cc-83ec-98ae-a8e59bd6b639). The resulting
 [Scene Specification v1](../spec/codegrid-scene-spec-v1.md) records six scenes:
 ExactIO, Baudot, Elevator, Robot, QualityControl, and MechanicalArm.
@@ -619,3 +619,95 @@ IDs. Remove superseded device examples and validation reasons from current
 specifications and session documentation. Earlier dated decisions remain an
 audit record, not executable registrations. No Full language semantics or
 published numeric error identities change.
+
+## 2026-10-07: Repeat suffixes on immediate output
+
+The user explicitly permits `.0` through `.9` with Repeat suffixes `x2` through
+`x5`, including conditional prefixes. This supersedes the immediate-output
+suffix prohibition for Repeat only. Each repetition executes on its own tick,
+uses ordinary output costs, conflicts and rollback, and routes Custom output
+to the caller stack. Registers and their pointer are preserved; movement occurs
+after the last repetition. ReadCode and WriteCode remain invalid because
+immediate outputs have no Instruction Code. Encoding, IR format and host API
+versions are unchanged. Rust compiler/IR/VM and actual-host fixtures establish
+acceptance and execution; downstream consumers use rebuilt shared WASM.
+
+## 2026-10-07: Specific invalid-cell diagnostics
+
+Invalid Full cells retain source.invalid_cell and numeric code 1004. Diagnostics quote the complete source atom, preserve its UTF-8 byte span, and identify the violated token or Attachment rule. Conditional prefixes preserve an invalid body's specific reason. Message wording is descriptive; consumers must continue using stable error identities rather than parsing messages.
+
+## 2026-10-08: Compatibility begins only with a user-published release
+
+The user subsequently authorizes execution of the cleanup audit. Remove the
+old Level API/profile 1 sessions and transport dispatch; current API 2 handles
+ExactIO, Robot and MechanicalArm. CLI evaluation defaults to API 2; the portable
+level_abi_version export reports 2 and the alias export is removed. Keep shared
+validation and projection as internal primitives. Convert 41 ExactIO regression
+cases into current Scene fixtures and preserve all 56 actual-host comparisons.
+Remove obsolete IF_ZERO authoring acceptance, field-free Full response fallback,
+MVP helper inventories, historical series import, old MVP artifacts/importers,
+and protocol-only M0 fixtures. Current DTO normalization and validation remain.
+Rename the current Full packaging script/CI artifacts and correct API-3/ABI-4
+manifest metadata without publishing. See [execution evidence](deprecated-feature-cleanup.md).
+This does not implement the separately pending F/directionless READ change.
+
+The user states that no project release has been published. Only an explicit
+user publication establishes a compatibility baseline. Before that event,
+update current contracts and consumers directly without historical readers,
+aliases, reserved codes, migration layers, retained binaries or mandatory
+version increments for compatibility. Internal version labels and acceptance
+reports are not published releases. This supersedes earlier unpublished
+compatibility decisions, including the initial Status Flag IR-4/Level-2 plan.
+See the [repository policy](../AGENTS.md#release-and-compatibility-policy).
+Preserve unrelated user work and truthful provenance throughout.
+
+## 2026-10-08: Status Flag and directionless READ design
+
+The user approves the [next-generation amendment](status-flag-and-read.md),
+implemented following explicit user authorization. Add thread/frame-local F and
+`?!`; replace directional READ with `,` (code 44). Empty READ and empty
+POPADD set F=1; nonempty POPADD reports unsigned carry. NAND and existing CMP
+preserve F; no standalone POP is added. Fix the pointer example to `?!}`.
+Top-level threads start at zero; each Custom Entry copies the invoking F.
+Functions copy and discard private F; Folded Blocks share active F.
+Exhaustion means attempting a read after the provided input has no bytes left.
+
+Apply the unpublished-release policy: update current contracts directly,
+remove directional READ mappings/capabilities, and add independent
+CONDITION_FLAG permission. No compatibility-driven IR/Level/host version
+bump, reserved READ code, historical reader or migration layer is required.
+The current Rust/compiler/VM, editor, runtime projections, Level rules and
+downstream artifacts implement this decision. Current evidence compares 94
+Full fixtures and 57 scene cases across actual hosts; older dated reports
+remain historical evidence. See the amendment for provenance and verification.
+
+## 2026-10-08: Function-private registers and NEG
+
+The user requests specification changes first after review of the referenced
+Function and NEG design documents. Approve ordinary Function CALL copying all
+ten caller active register values and the pointer into invocation-private
+state. RETURN discards that state and resumes the caller bank and saved
+pointer. Main banks remain shared across Main threads; returning must not
+restore an old Main snapshot over sibling writes. Nested Functions, recursion,
+eligible self-tail reuse, Functions in Custom, tick-start reads and rollback
+follow the clarified VM contract. Stack/Page/PRNG ownership, memory/code/I/O,
+CALL/RETURN/AfterCall timing, tail eligibility and scene behavior are unchanged.
+
+Approve `$!` as NEG with Instruction Code 69, capability `NEG` and metric kind
+`Neg`. The explicit current table has no encoding collision. NEG writes the
+selected byte's additive inverse modulo 256 and performs ordinary movement.
+It accepts existing prefixes and encodable-Primary suffixes using canonical
+`x2` through `x5` syntax. Existing NAND, decrement and every other code remain
+unchanged. DECODE(69) will change from an invalid counted no-op to a valid push.
+
+These decisions supersede the shared-Function-register contract and complete
+the Primary/code inventory only as target specifications. Rust and downstream
+WASM implementation remains pending. The
+[implementation plan](function-registers-and-neg.md) identifies required
+coverage and downstream consumers. Snapshot/event wire representation,
+resource sizing and compatibility/version review are release gates, not
+claims that current host fields already expose private state.
+
+## Function and NEG implementation compatibility (2026-10-08)
+
+The approved value-copy Function register/pointer scope and `$!` NEG code 69 are implemented. RETURN discards the callee bank and resumes its caller bank/pointer; same-thread Data Stack returns remain available. Main sibling writes are never overwritten by an old snapshot. Executable IR is bumped to 3 because the Function execution semantics changed; reject formats 1 and 2 and recompile source. Host Runtime API v3/browser v3/server ABI v4 add nullable private/saved banks and saved pointers without a new event kind. ThreadChanged carries private state; RegisterChanged retains shared Main-bank semantics. Actual host comparisons cover all 81 Full fixtures.

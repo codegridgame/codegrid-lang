@@ -213,7 +213,7 @@ pub enum PrimaryInstruction {
     Direction(Direction),
     RandomDirection,
     Compare,
-    Read(Direction),
+    Read,
     Clear,
     Add,
     Sub,
@@ -226,6 +226,7 @@ pub enum PrimaryInstruction {
     Encode,
     Call(Slot),
     Return,
+    Neg,
     Nand,
     MemoryLoad,
     MemoryStore,
@@ -238,25 +239,6 @@ pub enum PrimaryInstruction {
 }
 
 impl PrimaryInstruction {
-    /// The earlier restricted source inventory, retained temporarily while
-    /// downstream crates are migrated to the complete language inventory.
-    pub const MVP_SOURCE_TOKENS: [(&'static str, Self); 14] = [
-        ("^", Self::Direction(Direction::Up)),
-        ("v", Self::Direction(Direction::Down)),
-        ("<", Self::Direction(Direction::Left)),
-        (">", Self::Direction(Direction::Right)),
-        (",^", Self::Read(Direction::Up)),
-        (",v", Self::Read(Direction::Down)),
-        (",<", Self::Read(Direction::Left)),
-        (",>", Self::Read(Direction::Right)),
-        (".", Self::Output),
-        ("$<", Self::Shift(ShiftDirection::Left)),
-        ("$>", Self::Shift(ShiftDirection::Right)),
-        ("+", Self::Add),
-        ("-", Self::Sub),
-        (";", Self::Halt),
-    ];
-
     /// Returns every Primary form accepted by the complete source language.
     pub fn source_forms() -> Vec<Self> {
         let mut forms = vec![
@@ -266,10 +248,7 @@ impl PrimaryInstruction {
             Self::Direction(Direction::Right),
             Self::RandomDirection,
             Self::Compare,
-            Self::Read(Direction::Up),
-            Self::Read(Direction::Down),
-            Self::Read(Direction::Left),
-            Self::Read(Direction::Right),
+            Self::Read,
             Self::Clear,
             Self::Add,
             Self::Sub,
@@ -281,6 +260,7 @@ impl PrimaryInstruction {
             Self::Decode,
             Self::Encode,
             Self::Return,
+            Self::Neg,
             Self::Nand,
             Self::MemoryLoad,
             Self::MemoryStore,
@@ -301,13 +281,6 @@ impl PrimaryInstruction {
         forms
     }
 
-    /// Returns whether this value belongs to the earlier restricted profile.
-    pub fn is_mvp(self) -> bool {
-        Self::MVP_SOURCE_TOKENS
-            .iter()
-            .any(|(_, primary)| *primary == self)
-    }
-
     /// Parses a complete canonical Primary token. Prefixes are never accepted
     /// on their own, and instruction spelling is case-sensitive.
     pub fn from_token(token: &str) -> Option<Self> {
@@ -318,10 +291,7 @@ impl PrimaryInstruction {
             ">" => Self::Direction(Direction::Right),
             "??" => Self::RandomDirection,
             "?=" => Self::Compare,
-            ",^" => Self::Read(Direction::Up),
-            ",v" => Self::Read(Direction::Down),
-            ",<" => Self::Read(Direction::Left),
-            ",>" => Self::Read(Direction::Right),
+            "," => Self::Read,
             "!" => Self::Clear,
             "+" => Self::Add,
             "-" => Self::Sub,
@@ -333,6 +303,7 @@ impl PrimaryInstruction {
             "&" => Self::Decode,
             "%" => Self::Encode,
             "]" => Self::Return,
+            "$!" => Self::Neg,
             "$&" => Self::Nand,
             "$(" => Self::MemoryLoad,
             "$)" => Self::MemoryStore,
@@ -356,10 +327,7 @@ impl PrimaryInstruction {
             Self::Direction(Direction::Right) => ">".to_owned(),
             Self::RandomDirection => "??".to_owned(),
             Self::Compare => "?=".to_owned(),
-            Self::Read(Direction::Left) => ",<".to_owned(),
-            Self::Read(Direction::Right) => ",>".to_owned(),
-            Self::Read(Direction::Up) => ",^".to_owned(),
-            Self::Read(Direction::Down) => ",v".to_owned(),
+            Self::Read => ",".to_owned(),
             Self::Clear => "!".to_owned(),
             Self::Add => "+".to_owned(),
             Self::Sub => "-".to_owned(),
@@ -373,6 +341,7 @@ impl PrimaryInstruction {
             Self::Encode => "%".to_owned(),
             Self::Call(slot) => format!("[{}", slot.get()),
             Self::Return => "]".to_owned(),
+            Self::Neg => "$!".to_owned(),
             Self::Nand => "$&".to_owned(),
             Self::MemoryLoad => "$(".to_owned(),
             Self::MemoryStore => "$)".to_owned(),
@@ -407,10 +376,7 @@ impl PrimaryInstruction {
             Self::Direction(Direction::Right) => Some(62),
             Self::RandomDirection => Some(126),
             Self::Compare => Some(124),
-            Self::Read(Direction::Left) => Some(104),
-            Self::Read(Direction::Right) => Some(106),
-            Self::Read(Direction::Up) => Some(138),
-            Self::Read(Direction::Down) => Some(162),
+            Self::Read => Some(44),
             Self::Clear => Some(33),
             Self::Add => Some(43),
             Self::Sub => Some(45),
@@ -423,6 +389,7 @@ impl PrimaryInstruction {
             Self::Encode => Some(37),
             Self::Call(slot) => Some(139 + slot.get()),
             Self::Return => Some(93),
+            Self::Neg => Some(69),
             Self::Nand => Some(74),
             Self::MemoryLoad => Some(76),
             Self::MemoryStore => Some(77),
@@ -448,12 +415,14 @@ impl PrimaryInstruction {
             40 => Self::Push,
             41 => Self::PopAdd,
             43 => Self::Add,
+            44 => Self::Read,
             45 => Self::Sub,
             46 => Self::Output,
             60 => Self::Direction(Direction::Left),
             62 => Self::Direction(Direction::Right),
             126 => Self::RandomDirection,
             124 => Self::Compare,
+            69 => Self::Neg,
             74 => Self::Nand,
             76 => Self::MemoryLoad,
             77 => Self::MemoryStore,
@@ -463,14 +432,10 @@ impl PrimaryInstruction {
             94 => Self::Direction(Direction::Up),
             96 => Self::Shift(ShiftDirection::Left),
             98 => Self::Shift(ShiftDirection::Right),
-            104 => Self::Read(Direction::Left),
-            106 => Self::Read(Direction::Right),
             118 => Self::Direction(Direction::Down),
             123 => Self::MoveRegisterPointer(PointerDirection::Left),
             125 => Self::MoveRegisterPointer(PointerDirection::Right),
-            138 => Self::Read(Direction::Up),
             139..=148 => Self::Call(Slot::new(code - 139)?),
-            162 => Self::Read(Direction::Down),
             _ => return None,
         };
         Some(primary)
@@ -631,9 +596,8 @@ mod tests {
     #[test]
     fn instruction_stack_codes_round_trip() {
         let valid_codes = [
-            32, 33, 37, 38, 40, 41, 43, 45, 46, 60, 62, 126, 124, 74, 76, 77, 79, 81, 93, 94, 96,
-            98, 104, 106, 118, 123, 125, 138, 139, 140, 141, 142, 143, 144, 145, 146, 147, 148,
-            162,
+            32, 33, 37, 38, 40, 41, 43, 44, 45, 46, 60, 62, 126, 124, 74, 76, 77, 79, 81, 93, 94,
+            96, 98, 118, 123, 125, 139, 140, 141, 142, 143, 144, 145, 146, 147, 148,
         ];
 
         for code in valid_codes {
@@ -670,7 +634,7 @@ mod tests {
 
     #[test]
     fn decoder_rejects_attachment_prefix_and_structural_codes() {
-        for code in [35, 36, 42, 44, 59, 61, 70, 91, 120] {
+        for code in [35, 36, 42, 104, 106, 138, 162, 59, 61, 70, 91, 120] {
             assert_eq!(InstructionStackItem::from_code(code), None);
         }
         assert_eq!(PrimaryInstruction::from_instruction_code(32), None,);
@@ -700,7 +664,7 @@ mod tests {
     #[test]
     fn complete_primary_tokens_round_trip_without_duplicates() {
         let forms = PrimaryInstruction::source_forms();
-        assert_eq!(forms.len(), 70);
+        assert_eq!(forms.len(), 68);
         let mut tokens = std::collections::BTreeSet::new();
 
         for form in forms {
@@ -713,8 +677,8 @@ mod tests {
         }
 
         for token in [
-            "#", "$", ",", "[", "x2", "[00", "[10", "$10", "#00", "#10", "*", "=", "x6", "+x2",
-            "<*",
+            "#", "$", ",^", ",v", ",<", ",>", "[", "x2", "[00", "[10", "$10", "#00", "#10", "*",
+            "=", "x6", "+x2", "<*",
         ] {
             assert_eq!(
                 PrimaryInstruction::from_token(token),
@@ -744,14 +708,16 @@ pub enum ConditionPrefix {
     Zero,
     One,
     Two,
+    Flag,
 }
 impl ConditionPrefix {
-    pub const ALL: [Self; 3] = [Self::Zero, Self::One, Self::Two];
+    pub const ALL: [Self; 4] = [Self::Zero, Self::One, Self::Two, Self::Flag];
     pub const fn value(self) -> u8 {
         match self {
             Self::Zero => 0,
             Self::One => 1,
             Self::Two => 2,
+            Self::Flag => 1,
         }
     }
     pub const fn token(self) -> &'static str {
@@ -759,6 +725,7 @@ impl ConditionPrefix {
             Self::Zero => "?0",
             Self::One => "?1",
             Self::Two => "?2",
+            Self::Flag => "?!",
         }
     }
 }

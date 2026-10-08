@@ -1,5 +1,8 @@
 # Level WASM Transports v1
 
+Historical design only: API/profile 1 bindings and transports were removed on
+2026-10-08. Use [current Scene transports](level-wasm-v2.md).
+
 Both adapters invoke [Level Host API v1](level-api-v1.md). They contain conversion,
 buffer ownership, and lifecycle glue only. Level policies and output projections
 live in the shared Rust API.

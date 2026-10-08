@@ -475,3 +475,7 @@ These classify existing outcomes without changing correctness or failure priorit
 ## Conditional prefix migration diagnostics
 
 Malformed, detached, repeated, out-of-range, or obsolete conditional source atoms use source.invalid_cell. Prefixes do not suppress contextual source/reference diagnostics. IR Entry sharing a cell with a prefix uses ir.entry_instruction; detached normal or folded prefixes use ir.detached_attachment. Unsupported executable format 1 uses ir.unsupported_version. No new error identity or number is introduced; published spellings and transport aliases remain unchanged. Invalid DECODE bytes, including retired instruction numbers, remain counted no-ops and are not errors.
+
+### Invalid-cell message context
+
+The parser includes the rejected source atom in invalid-cell messages and describes the detected token, prefix, suffix, count, or Primary/Attachment restriction. The UTF-8 span selects the same complete atom. Prefixing a malformed body does not replace its specific cause with a generic prefix error. This refines message context without adding or changing error identities; consumers must use the code or number, not message text, for programmatic decisions.

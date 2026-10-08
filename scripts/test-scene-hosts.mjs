@@ -12,8 +12,24 @@ assert.equal(memoryMaximum(bytes), BigInt(process.env.CODEGRID_WASM_MAX_MEMORY_B
 const module = await WebAssembly.compile(bytes);
 assert.equal(WebAssembly.Module.imports(module).length, 0);
 const guest = new WebAssembly.Instance(module).exports;
-assert.equal(guest.level_abi_version(), 1);
-assert.equal(guest.level_abi_version_v2(), 2);
+assert.equal(guest.level_abi_version(), 2);
+assert.equal(guest.level_alloc(0), 0);
+assert.equal(guest.level_alloc(8388609), 0);
+assert.equal(guest.level_request(1, 1), 0n, 'unknown live buffer pair');
+const allocator = new WebAssembly.Instance(module).exports;
+const buffers = [];
+for (let index = 0; index < 1024; index++) {
+  const pointer = allocator.level_alloc(1);
+  assert.notEqual(pointer, 0);
+  buffers.push(pointer);
+}
+assert.equal(allocator.level_alloc(1), 0, 'buffer count ceiling');
+for (const pointer of buffers) {
+  assert.equal(allocator.level_dealloc(pointer, 2), 0, 'exact live length');
+  assert.equal(allocator.level_dealloc(pointer, 1), 1);
+  assert.equal(allocator.level_dealloc(pointer, 1), 0, 'double release');
+}
+assert.throws(() => allocator.memory.grow(65536), RangeError, 'linked memory ceiling');
 function transport(value) {
   const input = new TextEncoder().encode(JSON.stringify(value));
   const pointer = guest.level_alloc(input.length);
@@ -34,7 +50,7 @@ const cases = manifest.cases.map(f => ({...f, level_json:readFileSync(resolve(ro
 const results = runSceneConformance(request_json => transport({abi_version:2,api_version:2,operation:'request',request_json}), cases, (condition,message)=>assert.ok(condition,message));
 const native = cases.map(f => {
   const execution = spawnSync(resolve(root,process.platform==='win32'?'target/debug/codegrid.exe':'target/debug/codegrid'), ['evaluate',resolve(root,'fixtures/scene-v2',f.level),resolve(root,'fixtures/scene-v2',f.program),'--api-version','2','--mode',f.mode.toLowerCase(),'--boundary',f.boundary.toLowerCase(),'--seed',f.seed,'--custom-limit',f.custom_limit,'--limits-file',resolve(root,'examples/scene-host-v2/profile-local-v2.json')], {encoding:'utf8',windowsHide:true});
-  assert.ok([0,9].includes(execution.status),execution.stderr);
+  assert.ok([0,8,9,10,11].includes(execution.status),execution.stderr);
   const response = JSON.parse(execution.stdout);
   assert.equal(response.status,'result');
   return {id:f.id,result:response.result};

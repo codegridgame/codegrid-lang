@@ -53,6 +53,7 @@ pub(super) struct CallerStackWrite {
 
 #[derive(Clone, Debug, Default, Eq, PartialEq)]
 pub(super) struct SharedEffectBatch {
+    pub private_register_threads: std::collections::BTreeSet<u64>,
     pub register_writes: Vec<RegisterWrite>,
     pub input_reads: Vec<InputRead>,
     pub output_writes: Vec<OutputWrite>,
@@ -165,23 +166,30 @@ pub(super) fn resolve_shared_conflicts(
 
     let mut register_writers: BTreeMap<u8, Vec<u64>> = BTreeMap::new();
     for write in &effects.register_writes {
+        if effects.private_register_threads.contains(&write.thread_id) {
+            continue;
+        }
         register_writers
             .entry(write.register)
             .or_default()
             .push(write.thread_id);
     }
     if let Some(read) = successful_input_read {
-        register_writers
-            .entry(read.register)
-            .or_default()
-            .push(read.thread_id);
-    }
-    if !caller_read_conflict && !caller_stack_read_write_conflict {
-        if let Some(read) = caller_stack_read {
+        if !effects.private_register_threads.contains(&read.thread_id) {
             register_writers
                 .entry(read.register)
                 .or_default()
                 .push(read.thread_id);
+        }
+    }
+    if !caller_read_conflict && !caller_stack_read_write_conflict {
+        if let Some(read) = caller_stack_read {
+            if !effects.private_register_threads.contains(&read.thread_id) {
+                register_writers
+                    .entry(read.register)
+                    .or_default()
+                    .push(read.thread_id);
+            }
         }
     }
     for (register, thread_ids) in register_writers {

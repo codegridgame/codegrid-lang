@@ -14,14 +14,14 @@ try {
     if ($LASTEXITCODE) { throw 'Browser binding generation failed' }
     cargo build --locked -p codegrid-cli
     if ($LASTEXITCODE) { throw 'Native CLI build failed' }
-    node crates/codegrid-level-wasm-server/tests/server-smoke.mjs
-    if ($LASTEXITCODE) { throw 'Portable host comparison failed' }
+    node scripts/test-scene-hosts.mjs
+    if ($LASTEXITCODE) { throw 'Native/Node scene comparison failed' }
     node crates/codegrid-level-wasm-browser/tests/run-browser-smoke.mjs
-    if ($LASTEXITCODE) { throw 'Browser worker comparison failed' }
+    if ($LASTEXITCODE) { throw 'Browser scene comparison failed' }
     cargo run --locked --manifest-path tools/wasmtime-host/Cargo.toml --bin level-parity -- $taskRoot (Join-Path $taskRoot 'target/wasm32-unknown-unknown/release/codegrid_level_wasm_server.wasm')
-    if ($LASTEXITCODE) { throw 'Wasmtime portable comparison failed' }
-    node scripts/compare-level-hosts.mjs
-    if ($LASTEXITCODE) { throw 'Full semantic host comparison failed' }
+    if ($LASTEXITCODE) { throw 'Wasmtime scene comparison failed' }
+    node scripts/compare-scene-hosts.mjs
+    if ($LASTEXITCODE) { throw 'Complete scene host comparison failed' }
     node scripts/record-level-build.mjs
     if ($LASTEXITCODE) { throw 'Build provenance recording failed' }
 } finally { Pop-Location }

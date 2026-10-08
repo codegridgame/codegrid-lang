@@ -47,7 +47,7 @@ suite('CodeGrid formatter', () => {
   });
 
   test('formats Full Primary and attached cell spellings as complete cells', () => {
-    const source = '~> +x3 ,<* [0= ]= $&x2\n';
+    const source = '~> +x3 ,* [0= ]= $&x2\n';
     const formatted = formatCodeGrid(source);
     assert.strictEqual(formatted, source);
     assert.strictEqual(formatCodeGrid(formatted!), formatted);
@@ -55,7 +55,7 @@ suite('CodeGrid formatter', () => {
 
   test('declines incomplete tokens, malformed attachments, and structural directives it cannot preserve', () => {
     const declines = [
-      '~> # _\n', '~> $ _\n', '~> , _\n', '~> [\n', '~> #\n', '~> $\n',
+      '~> # _\n', '~> $ _\n', '~> ,v _\n', '~> [\n', '~> #\n', '~> $\n',
       '~> ?x1\n', '~> #]x2\n', '~> *\n', '~> +x6\n', '~> ++\n', '~> ;x2\n',
       '~> ~x\n', '~> _x2\n', '@C0\n~> ;\n', '@F0\n~> ;\n', '@M0 +\n',
       '@size 0x2\n~> ;\n', '@size 00x2\n~> ;\n', '@size 2x2x2\n~> ;\n', '@end main extra\n', '@end main.bad\n', '@unknown\n',

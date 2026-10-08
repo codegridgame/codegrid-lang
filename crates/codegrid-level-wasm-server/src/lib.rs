@@ -1,12 +1,11 @@
 //! No-import portable level transport with exact live buffer ownership.
 use codegrid_level_api::error_number;
-use codegrid_level_api::{LevelApi, LevelApiV2, SafetyProfile, SafetyProfileV2};
+use codegrid_level_api::{LevelApiV2, SafetyProfileV2};
 use serde::Deserialize;
 use serde_json::json;
 #[cfg(any(target_arch = "wasm32", test))]
 use std::collections::BTreeMap;
-pub const LEVEL_ABI_VERSION: u32 = 1;
-pub const SCENE_LEVEL_ABI_VERSION: u32 = 2;
+pub const LEVEL_ABI_VERSION: u32 = 2;
 const MAX_BUFFER_BYTES: usize = 8 * 1024 * 1024;
 #[cfg(any(target_arch = "wasm32", test))]
 const MAX_RETAINED_BYTES: usize = 24 * 1024 * 1024;
@@ -30,33 +29,15 @@ enum Operation {
         api_version: u32,
     },
 }
-enum VersionedApi {
-    Legacy(LevelApi),
-    Scene(LevelApiV2),
-}
-impl VersionedApi {
-    fn version(&self) -> u32 {
-        match self {
-            Self::Legacy(_) => 1,
-            Self::Scene(_) => 2,
-        }
-    }
-    fn request(&mut self, text: &str) -> String {
-        match self {
-            Self::Legacy(api) => api.request_json(text),
-            Self::Scene(api) => api.request_json(text),
-        }
-    }
-}
 #[derive(Default)]
 pub struct PortableSession {
-    api: Option<VersionedApi>,
+    api: Option<LevelApiV2>,
     closed: bool,
     version: Option<u32>,
 }
 impl PortableSession {
     fn transport_error(&self, code: &str, message: &str) -> String {
-        versioned_error(self.version.unwrap_or(1), code, message)
+        versioned_error(self.version.unwrap_or(2), code, message)
     }
     pub fn request_text(&mut self, text: &str) -> String {
         if text.len() > MAX_BUFFER_BYTES {
@@ -88,7 +69,7 @@ impl PortableSession {
                 api_version,
             } => (*abi_version, *api_version),
         };
-        if !(1..=2).contains(&abi) || (abi == 2 && api != 2) {
+        if abi != LEVEL_ABI_VERSION {
             return self.transport_error(
                 "level_abi.unsupported_version",
                 "Unsupported level ABI version",
@@ -117,27 +98,18 @@ impl PortableSession {
                         "Trusted profile is immutable",
                     );
                 }
-                let initialized = if abi == 1 {
-                    SafetyProfile::from_json(&profile_json)
-                        .and_then(LevelApi::new)
-                        .map(VersionedApi::Legacy)
-                } else {
-                    SafetyProfileV2::from_json(&profile_json)
-                        .and_then(|profile| {
-                            if profile.max_response_bytes > (MAX_BUFFER_BYTES - 16) as u64 {
-                                return Err(codegrid_level_api::ApiError {
-                                    code: "level_api.invalid_profile",
-                                    message: "Response ceiling exceeds portable transport capacity"
-                                        .into(),
-                                });
-                            }
-                            LevelApiV2::new(profile)
-                        })
-                        .map(VersionedApi::Scene)
-                };
+                let initialized = SafetyProfileV2::from_json(&profile_json).and_then(|profile| {
+                    if profile.max_response_bytes > (MAX_BUFFER_BYTES - 16) as u64 {
+                        return Err(codegrid_level_api::ApiError {
+                            code: "level_api.invalid_profile",
+                            message: "Response ceiling exceeds portable transport capacity".into(),
+                        });
+                    }
+                    LevelApiV2::new(profile)
+                });
                 match initialized {
                     Ok(api) => {
-                        self.version = Some(api.version());
+                        self.version = Some(LEVEL_ABI_VERSION);
                         self.api = Some(api);
                         json!({"api_version":abi,"status":"ok"}).to_string()
                     }
@@ -145,7 +117,7 @@ impl PortableSession {
                 }
             }
             Operation::Request { request_json, .. } => match self.api.as_mut() {
-                Some(api) => api.request(&request_json),
+                Some(api) => api.request_json(&request_json),
                 None => {
                     return versioned_error(
                         abi,
@@ -255,10 +227,6 @@ pub extern "C" fn level_abi_version() -> u32 {
 }
 #[cfg(target_arch = "wasm32")]
 #[allow(unsafe_code)]
-#[unsafe(no_mangle)]
-pub extern "C" fn level_abi_version_v2() -> u32 {
-    SCENE_LEVEL_ABI_VERSION
-}
 #[cfg(target_arch = "wasm32")]
 #[allow(unsafe_code)]
 #[unsafe(no_mangle)]
@@ -338,28 +306,6 @@ mod tests {
         assert!(!b.release(p, 100));
         assert!(b.release(p, 2));
         assert_eq!(b.retained, 0);
-    }
-    #[test]
-    fn lifecycle_version_and_profile_duplicates() {
-        let mut s = PortableSession::default();
-        let request = json!({"abi_version":1,"api_version":1,"operation":"request","request_json":"{\"api_version\":1,\"operation\":\"capabilities\"}"});
-        assert!(s
-            .request_text(&request.to_string())
-            .contains("not_initialized"));
-        let profile = include_str!("../../../fixtures/levels/profiles/local-v1.json");
-        let initialize = json!({"abi_version":1,"api_version":1,"operation":"initialize","profile_json":profile});
-        assert!(s.request_text(&initialize.to_string()).contains("\"ok\""));
-        assert!(s
-            .request_text(&initialize.to_string())
-            .contains("already_initialized"));
-        assert!(s.request_text(&request.to_string()).contains("ExactIO"));
-        assert!(s
-            .request_text(r#"{"abi_version":2,"api_version":1,"operation":"shutdown"}"#)
-            .contains("unsupported_version"));
-        s.request_text(r#"{"abi_version":1,"api_version":1,"operation":"shutdown"}"#);
-        assert!(s
-            .request_text(&initialize.to_string())
-            .contains("level_api.shutdown"));
     }
 }
 #[cfg(test)]

@@ -11,8 +11,6 @@ text. Shutdown is permanent for a module session. Require explicit configured
 linear-memory maximum for wasm32 builds; physical fuel/stack limits belong to
 embedding runtimes. Actual runtime tests are required for parity claims.
 
-Select ABI/API/profile 1 or 2 explicitly at initialization; that choice remains
-immutable. Preserve `level_abi_version()` as 1 and expose v2 support through
-`level_abi_version_v2()`. Both versions share the exact buffer allocator and
-request entry point. Reject v2 profiles whose response ceiling plus transport
+Accept only ABI/API/profile 2 at initialization. `level_abi_version()` returns 2.
+There is no historical version dispatch or alias export. Reject v2 profiles whose response ceiling plus transport
 version field exceeds reserved buffer capacity before semantic initialization.

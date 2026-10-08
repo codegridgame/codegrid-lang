@@ -1,4 +1,4 @@
 @main
 @size 4x1
-~> ,v . ;
+~> , . ;
 @end

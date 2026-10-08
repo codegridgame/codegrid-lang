@@ -1,0 +1,48 @@
+{
+  "format_version": 1,
+  "level_id": "conformance.prefix-denied",
+  "level_version": 1,
+  "evaluation_type": "ExactIO",
+  "program_rules": {
+    "allowed_instructions": [
+      "READ",
+      "PUSH",
+      "CMP"
+    ],
+    "allowed_attachments": [
+      "CONDITION_0"
+    ],
+    "main_board": {
+      "width": 8,
+      "height": 8
+    },
+    "function_board": {
+      "width": 8,
+      "height": 8
+    },
+    "max_functions": 0,
+    "max_custom": 0,
+    "max_threads": 1,
+    "memory_enabled": false
+  },
+  "constraints": {},
+  "scoring": {
+    "metrics": {}
+  },
+  "evaluation": {
+    "tests": [
+      {
+        "visible": true,
+        "input": [
+          255,
+          0
+        ],
+        "expected_output": [
+          1
+        ]
+      }
+    ]
+  },
+  "scene_type": "ExactIO",
+  "scene_config": {}
+}

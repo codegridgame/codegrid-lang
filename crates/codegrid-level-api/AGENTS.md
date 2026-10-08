@@ -2,7 +2,7 @@
 
 ## Responsibility
 
-Provide Level Host API v1 and the independent native v2 scene lifecycle, shared exact JSON projection, trusted resource
+Provide only the current Level Host API 2 scene lifecycle, shared exact JSON projection, trusted resource
 profiles, source compilation, checked handles, and evaluation lifecycle.
 The strict v2 profile loader converts trusted scene ceilings to core limits;
 it does not by itself register executable capabilities. `LevelApiV2` owns

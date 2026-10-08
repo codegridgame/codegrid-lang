@@ -4,15 +4,18 @@ This directory contains host-neutral cases for observable CodeGrid behavior. Nat
 
 ## Reviewed historical protocol cases
 
-The retained TOML protocol cases record expected observations independently of a parser or VM. Their embedded `program.text` uses superseded draft syntax and is not valid `.cg` source. Treat them as review material; rewrite the source and verify expected traces against the Full specifications before promoting any case.
+The seven protocol-only M0 TOML drafts and index have been removed. Their source
+was never executable Full conformance evidence. Current Full fixtures and active
+Rust tests cover wrapping, rollback, Repeat, thread order, Custom stack conflicts,
+PRNG vectors and mutable-code scope.
 
 ## Retained diagnostic and runtime cases
 
-`fixtures/source-diagnostics-v1.json` is a diagnostic smoke case and does not define the current diagnostic contract. `fixtures/conformance-v1.json` and its adjacent `.cg` programs form the shared Full execution suite, including functions, Attachments, stacks, memory, and Custom instructions. Compiler/IR/VM historical suites are retained as supplemental regression evidence; the active Full specifications and conformance suite are normative.
+`fixtures/source-diagnostics-v1.json` is a diagnostic smoke case and does not define the current diagnostic contract. `fixtures/conformance-v1.json` and its adjacent `.cg` programs form the shared Full execution suite, including functions, Attachments, stacks, memory, and Custom instructions. Compiler/IR/VM regression suites remain active, including VM src/state_tests.rs; the active Full specifications and conformance suite are normative.
 
 ## Existing host smoke cases
 
-The shared Full runtime suite contains 75 cases. A complete Native CLI result baseline is generated from the suite and consumed by Node/Chrome browser smoke and the Wasmtime server host harness. These actual hosts compare the complete observable run projection, including events, output deltas, snapshots, threads, stacks, Page, mutable code, memory, errors, faults, and raw metrics.
+The shared Full runtime suite contains 81 cases. A complete Native CLI result baseline is generated from the suite and consumed by Node/Chrome browser smoke and the Wasmtime server host harness. These actual hosts compare the complete observable run projection, including events, output deltas, snapshots, threads, stacks, Page, mutable code, memory, errors, faults, and raw metrics.
 
 ## Full acceptance suite
 

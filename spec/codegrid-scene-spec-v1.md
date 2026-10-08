@@ -2,7 +2,7 @@
 
 Status: accepted product protocol, implemented by the shared Rust scene core and API/ABI v2 adapters; direct-vector and production integration coverage remains open.
 Recorded: 2026-10-05.
-Source: the user-selected conversation [梳理确定场景](chatgpt-conversation://6ac2518f-10cc-83ec-98ae-a8e59bd6b639), especially its consolidated Scene Spec v1 and accepted follow-up rules.
+Source: the user-selected conversation [Scene definition review](chatgpt-conversation://6ac2518f-10cc-83ec-98ae-a8e59bd6b639), especially its consolidated Scene Spec v1 and accepted follow-up rules.
 
 ## 1. Scope and authority
 

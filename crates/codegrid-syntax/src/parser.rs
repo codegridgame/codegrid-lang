@@ -71,7 +71,7 @@ pub fn parse_syntax(source: &str) -> ParsedSource {
                         if let Err(error) = parse_cell_token(atom.text) {
                             parsed.diagnostics.push(Diagnostic::error(
                                 error.code,
-                                error.message,
+                                format!("Invalid cell '{}': {}", atom.text, error.message),
                                 atom.span,
                             ));
                         }
@@ -94,11 +94,11 @@ pub fn parse_syntax(source: &str) -> ParsedSource {
                     value,
                     span: atom.span,
                 }),
-                Err(error) => {
-                    parsed
-                        .diagnostics
-                        .push(Diagnostic::error(error.code, error.message, atom.span))
-                }
+                Err(error) => parsed.diagnostics.push(Diagnostic::error(
+                    error.code,
+                    format!("Invalid cell '{}': {}", atom.text, error.message),
+                    atom.span,
+                )),
             }
         }
         parsed.items.push(SyntaxItem::GridRow {
@@ -228,7 +228,7 @@ mod tests {
             .contains("may include cells on its directive line"));
         assert!(parsed.diagnostics[2]
             .message
-            .contains("malformed Full cell token"));
+            .contains("malformed Primary reference"));
     }
 
     #[test]
@@ -265,7 +265,7 @@ mod tests {
 
     #[test]
     fn parses_folded_block_directive_cells_and_recovers_after_an_invalid_cell() {
-        let source = "@main.M0 +x3 ,<*\n@C0.M9 #] ;\n@main\n~> ;\n";
+        let source = "@main.M0 +x3 ,*\n@C0.M9 #] ;\n@main\n~> ;\n";
         let parsed = parse_syntax(source);
 
         assert_eq!(parsed.diagnostics.len(), 0);

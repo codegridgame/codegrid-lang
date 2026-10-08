@@ -622,6 +622,8 @@ impl Serialize for SnapshotThreadProjection<'_, '_> {
             thread.position(),
             thread.direction(),
             thread.register_pointer(),
+            thread.status_flag(),
+            thread.private_registers().copied(),
             thread.page().to_string(),
             thread.data_stack(),
             thread.instruction_stack().iter().map(|item| item.code()),
@@ -640,6 +642,8 @@ fn serialize_thread<S, I, J>(
     position: Coordinate,
     direction: Direction,
     register_pointer: u8,
+    status_flag: u8,
+    private_registers: Option<[u8; 10]>,
     page: String,
     data_stack: &[u8],
     instruction_stack: I,
@@ -659,6 +663,8 @@ where
     object.serialize_entry("position", &CoordinateProjection(position))?;
     object.serialize_entry("direction", &DirectionName(direction))?;
     object.serialize_entry("register_pointer", &register_pointer)?;
+    object.serialize_entry("status_flag", &status_flag)?;
+    object.serialize_entry("private_registers", &private_registers)?;
     object.serialize_entry("page", &page)?;
     object.serialize_entry("data_stack", &data_stack)?;
     object.serialize_entry(
@@ -717,7 +723,10 @@ impl Serialize for CallFrameProjection {
         serialize_object!(serializer, {
             "caller_board" => BoardName(self.0.caller_board),
             "call_position" => CoordinateProjection(self.0.call_position),
-            "saved_direction" => DirectionName(self.0.saved_direction)
+            "saved_direction" => DirectionName(self.0.saved_direction),
+            "saved_registers" => self.0.saved_registers,
+            "saved_register_pointer" => self.0.saved_register_pointer,
+            "saved_status_flag" => self.0.saved_status_flag
         })
     }
 }
@@ -855,6 +864,8 @@ impl Serialize for VmEventProjection<'_> {
                         position: before.position,
                         direction: before.direction,
                         register_pointer: before.register_pointer,
+                        status_flag: before.status_flag,
+                        private_registers: before.private_registers,
                         page: before.page.to_string(),
                         data_stack: before.data_stack.as_slice(),
                         instruction_codes: before.instruction_stack.iter().map(|item| item.code()),
@@ -872,6 +883,8 @@ impl Serialize for VmEventProjection<'_> {
                         position: after.position,
                         direction: after.direction,
                         register_pointer: after.register_pointer,
+                        status_flag: after.status_flag,
+                        private_registers: after.private_registers,
                         page: after.page.to_string(),
                         data_stack: after.data_stack.as_slice(),
                         instruction_codes: after.instruction_stack.iter().map(|item| item.code()),
@@ -893,6 +906,8 @@ struct EventThreadProjection<'a, I, J> {
     position: Coordinate,
     direction: Direction,
     register_pointer: u8,
+    status_flag: u8,
+    private_registers: Option<[u8; 10]>,
     page: String,
     data_stack: &'a [u8],
     instruction_codes: I,
@@ -918,6 +933,8 @@ where
             self.position,
             self.direction,
             self.register_pointer,
+            self.status_flag,
+            self.private_registers,
             self.page.clone(),
             self.data_stack,
             self.instruction_codes.clone(),

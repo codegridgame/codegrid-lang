@@ -5,20 +5,35 @@
   "cases": [
     {
       "id": "read-and-output-byte",
-      "source": "~> ,v . ;\n",
+      "source": "~> , . ;\n",
       "run": {
         "boundary": "exit",
         "seed": "0",
         "custom_execution_limit": "100",
         "max_ticks": "10",
-        "input": [91]
+        "input": [
+          91
+        ]
       },
       "expected": {
         "process_exit_code": 0,
         "status": "halted",
         "vm_status": "halted",
-        "output": [91],
-        "registers": [91, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        "output": [
+          91
+        ],
+        "registers": [
+          91,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
         "committed_ticks": "4",
         "operation_count": "3",
         "used_cell_count": "4",
@@ -26,26 +41,45 @@
         "peak_data_stack_usage": "0",
         "peak_instruction_stack_usage": "0",
         "peak_call_stack_usage": "0",
-        "instruction_variety": ["Read", "Output", "Halt"],
+        "instruction_variety": [
+          "Read",
+          "Output",
+          "Halt"
+        ],
         "error_codes": []
       }
     },
     {
       "id": "u8-addition-wraps",
-      "source": "~> ,v + . ;\n",
+      "source": "~> , + . ;\n",
       "run": {
         "boundary": "exit",
         "seed": "0",
         "custom_execution_limit": "100",
         "max_ticks": "10",
-        "input": [255]
+        "input": [
+          255
+        ]
       },
       "expected": {
         "process_exit_code": 0,
         "status": "halted",
         "vm_status": "halted",
-        "output": [0],
-        "registers": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        "output": [
+          0
+        ],
+        "registers": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
         "committed_ticks": "5",
         "operation_count": "4",
         "used_cell_count": "5",
@@ -53,7 +87,12 @@
         "peak_data_stack_usage": "0",
         "peak_instruction_stack_usage": "0",
         "peak_call_stack_usage": "0",
-        "instruction_variety": ["Read", "Add", "Output", "Halt"],
+        "instruction_variety": [
+          "Read",
+          "Add",
+          "Output",
+          "Halt"
+        ],
         "error_codes": []
       }
     },
@@ -71,8 +110,21 @@
         "process_exit_code": 0,
         "status": "halted",
         "vm_status": "halted",
-        "output": [255],
-        "registers": [255, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        "output": [
+          255
+        ],
+        "registers": [
+          255,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
         "committed_ticks": "4",
         "operation_count": "3",
         "used_cell_count": "4",
@@ -80,13 +132,17 @@
         "peak_data_stack_usage": "0",
         "peak_instruction_stack_usage": "0",
         "peak_call_stack_usage": "0",
-        "instruction_variety": ["Sub", "Output", "Halt"],
+        "instruction_variety": [
+          "Sub",
+          "Output",
+          "Halt"
+        ],
         "error_codes": []
       }
     },
     {
-      "id": "empty-input-read-sets-direction-without-writing",
-      "source": "~> ,v _\n_ ; _\n",
+      "id": "empty-input-read-sets-flag-and-guarded-turn",
+      "source": "~> , ?!v\n_ _ ;\n",
       "run": {
         "boundary": "exit",
         "seed": "0",
@@ -99,15 +155,30 @@
         "status": "halted",
         "vm_status": "halted",
         "output": [],
-        "registers": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-        "committed_ticks": "3",
-        "operation_count": "2",
-        "used_cell_count": "3",
+        "registers": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "committed_ticks": "4",
+        "operation_count": "3",
+        "used_cell_count": "4",
         "used_memory_address_count": "0",
         "peak_data_stack_usage": "0",
         "peak_instruction_stack_usage": "0",
         "peak_call_stack_usage": "0",
-        "instruction_variety": ["Read", "Halt"],
+        "instruction_variety": [
+          "Condition",
+          "Read",
+          "Halt"
+        ],
         "error_codes": [],
         "thread_direction": "down"
       }
@@ -126,8 +197,21 @@
         "process_exit_code": 0,
         "status": "halted",
         "vm_status": "halted",
-        "output": [0],
-        "registers": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        "output": [
+          0
+        ],
+        "registers": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
         "committed_ticks": "4",
         "operation_count": "3",
         "used_cell_count": "4",
@@ -135,27 +219,46 @@
         "peak_data_stack_usage": "0",
         "peak_instruction_stack_usage": "0",
         "peak_call_stack_usage": "0",
-        "instruction_variety": ["Condition", "Output", "Halt"],
+        "instruction_variety": [
+          "Condition",
+          "Output",
+          "Halt"
+        ],
         "error_codes": [],
         "thread_direction": "down"
       }
     },
     {
       "id": "decode-and-encode-primary-instruction",
-      "source": "~> ,> & % . ;\n",
+      "source": "~> , & % . ;\n",
       "run": {
         "boundary": "exit",
         "seed": "0",
         "custom_execution_limit": "100",
         "max_ticks": "10",
-        "input": [43]
+        "input": [
+          43
+        ]
       },
       "expected": {
         "process_exit_code": 0,
         "status": "halted",
         "vm_status": "halted",
-        "output": [43],
-        "registers": [43, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        "output": [
+          43
+        ],
+        "registers": [
+          43,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
         "committed_ticks": "6",
         "operation_count": "5",
         "used_cell_count": "6",
@@ -163,26 +266,47 @@
         "peak_data_stack_usage": "0",
         "peak_instruction_stack_usage": "1",
         "peak_call_stack_usage": "0",
-        "instruction_variety": ["Read", "Output", "Decode", "Encode", "Halt"],
+        "instruction_variety": [
+          "Read",
+          "Output",
+          "Decode",
+          "Encode",
+          "Halt"
+        ],
         "error_codes": []
       }
     },
     {
       "id": "decode-and-encode-empty-instruction-stack-code",
-      "source": "~> ,> & % . ;\n",
+      "source": "~> , & % . ;\n",
       "run": {
         "boundary": "exit",
         "seed": "0",
         "custom_execution_limit": "100",
         "max_ticks": "10",
-        "input": [32]
+        "input": [
+          32
+        ]
       },
       "expected": {
         "process_exit_code": 0,
         "status": "halted",
         "vm_status": "halted",
-        "output": [32],
-        "registers": [32, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        "output": [
+          32
+        ],
+        "registers": [
+          32,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
         "committed_ticks": "6",
         "operation_count": "5",
         "used_cell_count": "6",
@@ -190,26 +314,47 @@
         "peak_data_stack_usage": "0",
         "peak_instruction_stack_usage": "1",
         "peak_call_stack_usage": "0",
-        "instruction_variety": ["Read", "Output", "Decode", "Encode", "Halt"],
+        "instruction_variety": [
+          "Read",
+          "Output",
+          "Decode",
+          "Encode",
+          "Halt"
+        ],
         "error_codes": []
       }
     },
     {
       "id": "clear-resets-register-before-output",
-      "source": "~> ,> ! . ;\n",
+      "source": "~> , ! . ;\n",
       "run": {
         "boundary": "exit",
         "seed": "0",
         "custom_execution_limit": "100",
         "max_ticks": "10",
-        "input": [37]
+        "input": [
+          37
+        ]
       },
       "expected": {
         "process_exit_code": 0,
         "status": "halted",
         "vm_status": "halted",
-        "output": [0],
-        "registers": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        "output": [
+          0
+        ],
+        "registers": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
         "committed_ticks": "5",
         "operation_count": "4",
         "used_cell_count": "5",
@@ -217,26 +362,47 @@
         "peak_data_stack_usage": "0",
         "peak_instruction_stack_usage": "0",
         "peak_call_stack_usage": "0",
-        "instruction_variety": ["Read", "Clear", "Output", "Halt"],
+        "instruction_variety": [
+          "Read",
+          "Clear",
+          "Output",
+          "Halt"
+        ],
         "error_codes": []
       }
     },
     {
       "id": "nand-complements-register-and-data-stack",
-      "source": "~> ,> ( ,> $& . ;\n",
+      "source": "~> , ( , $& . ;\n",
       "run": {
         "boundary": "exit",
         "seed": "0",
         "custom_execution_limit": "100",
         "max_ticks": "10",
-        "input": [170, 15]
+        "input": [
+          170,
+          15
+        ]
       },
       "expected": {
         "process_exit_code": 0,
         "status": "halted",
         "vm_status": "halted",
-        "output": [245],
-        "registers": [245, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        "output": [
+          245
+        ],
+        "registers": [
+          245,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
         "committed_ticks": "7",
         "operation_count": "6",
         "used_cell_count": "7",
@@ -244,26 +410,49 @@
         "peak_data_stack_usage": "1",
         "peak_instruction_stack_usage": "0",
         "peak_call_stack_usage": "0",
-        "instruction_variety": ["Read", "Output", "Push", "Nand", "Halt"],
+        "instruction_variety": [
+          "Read",
+          "Output",
+          "Push",
+          "Nand",
+          "Halt"
+        ],
         "error_codes": []
       }
     },
     {
       "id": "shift-truncates-left-and-shifts-right-logically",
-      "source": "~> ,> $< . ,> $> . ;\n",
+      "source": "~> , $< . , $> . ;\n",
       "run": {
         "boundary": "exit",
         "seed": "0",
         "custom_execution_limit": "100",
         "max_ticks": "10",
-        "input": [129, 129]
+        "input": [
+          129,
+          129
+        ]
       },
       "expected": {
         "process_exit_code": 0,
         "status": "halted",
         "vm_status": "halted",
-        "output": [2, 64],
-        "registers": [64, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        "output": [
+          2,
+          64
+        ],
+        "registers": [
+          64,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
         "committed_ticks": "8",
         "operation_count": "7",
         "used_cell_count": "8",
@@ -271,7 +460,12 @@
         "peak_data_stack_usage": "0",
         "peak_instruction_stack_usage": "0",
         "peak_call_stack_usage": "0",
-        "instruction_variety": ["Read", "Output", "Shift", "Halt"],
+        "instruction_variety": [
+          "Read",
+          "Output",
+          "Shift",
+          "Halt"
+        ],
         "error_codes": []
       }
     },
@@ -290,7 +484,18 @@
         "status": "halted",
         "vm_status": "halted",
         "output": [],
-        "registers": [1, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+        "registers": [
+          1,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          1
+        ],
         "committed_ticks": "6",
         "operation_count": "5",
         "used_cell_count": "6",
@@ -298,7 +503,11 @@
         "peak_data_stack_usage": "0",
         "peak_instruction_stack_usage": "0",
         "peak_call_stack_usage": "0",
-        "instruction_variety": ["Add", "MoveRegisterPointer", "Halt"],
+        "instruction_variety": [
+          "Add",
+          "MoveRegisterPointer",
+          "Halt"
+        ],
         "error_codes": []
       }
     },
@@ -317,7 +526,18 @@
         "status": "tick_limit_reached",
         "vm_status": "running",
         "output": [],
-        "registers": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        "registers": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
         "committed_ticks": "4",
         "operation_count": "0",
         "used_cell_count": "2",
@@ -344,7 +564,18 @@
         "status": "error",
         "vm_status": "error",
         "output": [],
-        "registers": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        "registers": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
         "committed_ticks": "1",
         "operation_count": "1",
         "used_cell_count": "2",
@@ -352,9 +583,15 @@
         "peak_data_stack_usage": "0",
         "peak_instruction_stack_usage": "0",
         "peak_call_stack_usage": "0",
-        "instruction_variety": ["Add"],
-        "error_codes": ["OutOfBounds"],
-        "error_global_ticks": ["2"]
+        "instruction_variety": [
+          "Add"
+        ],
+        "error_codes": [
+          "OutOfBounds"
+        ],
+        "error_global_ticks": [
+          "2"
+        ]
       }
     },
     {
@@ -372,7 +609,18 @@
         "status": "halted",
         "vm_status": "halted",
         "output": [],
-        "registers": [2, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        "registers": [
+          2,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
         "committed_ticks": "4",
         "operation_count": "3",
         "used_cell_count": "3",
@@ -380,7 +628,10 @@
         "peak_data_stack_usage": "0",
         "peak_instruction_stack_usage": "0",
         "peak_call_stack_usage": "0",
-        "instruction_variety": ["Add", "Halt"],
+        "instruction_variety": [
+          "Add",
+          "Halt"
+        ],
         "error_codes": []
       }
     },
@@ -398,8 +649,21 @@
         "process_exit_code": 0,
         "status": "halted",
         "vm_status": "halted",
-        "output": [5],
-        "registers": [5, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        "output": [
+          5
+        ],
+        "registers": [
+          5,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
         "committed_ticks": "8",
         "operation_count": "7",
         "used_cell_count": "4",
@@ -407,26 +671,47 @@
         "peak_data_stack_usage": "0",
         "peak_instruction_stack_usage": "0",
         "peak_call_stack_usage": "0",
-        "instruction_variety": ["Add", "Output", "Halt"],
+        "instruction_variety": [
+          "Add",
+          "Output",
+          "Halt"
+        ],
         "error_codes": []
       }
     },
     {
       "id": "repeat-read-consumes-one-input-per-execution",
-      "source": "~> ,>x3 . ;\n",
+      "source": "~> ,x3 . ;\n",
       "run": {
         "boundary": "exit",
         "seed": "0",
         "custom_execution_limit": "100",
         "max_ticks": "10",
-        "input": [4, 5, 6]
+        "input": [
+          4,
+          5,
+          6
+        ]
       },
       "expected": {
         "process_exit_code": 0,
         "status": "halted",
         "vm_status": "halted",
-        "output": [6],
-        "registers": [6, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        "output": [
+          6
+        ],
+        "registers": [
+          6,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
         "committed_ticks": "6",
         "operation_count": "5",
         "used_cell_count": "4",
@@ -434,7 +719,11 @@
         "peak_data_stack_usage": "0",
         "peak_instruction_stack_usage": "0",
         "peak_call_stack_usage": "0",
-        "instruction_variety": ["Read", "Output", "Halt"],
+        "instruction_variety": [
+          "Read",
+          "Output",
+          "Halt"
+        ],
         "error_codes": []
       }
     },
@@ -452,8 +741,21 @@
         "process_exit_code": 0,
         "status": "halted",
         "vm_status": "halted",
-        "output": [1],
-        "registers": [1, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        "output": [
+          1
+        ],
+        "registers": [
+          1,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
         "committed_ticks": "8",
         "operation_count": "3",
         "used_cell_count": "8",
@@ -461,7 +763,11 @@
         "peak_data_stack_usage": "0",
         "peak_instruction_stack_usage": "0",
         "peak_call_stack_usage": "0",
-        "instruction_variety": ["Add", "Output", "Halt"],
+        "instruction_variety": [
+          "Add",
+          "Output",
+          "Halt"
+        ],
         "error_codes": []
       }
     },
@@ -479,8 +785,21 @@
         "process_exit_code": 0,
         "status": "halted",
         "vm_status": "halted",
-        "output": [2],
-        "registers": [2, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        "output": [
+          2
+        ],
+        "registers": [
+          2,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
         "committed_ticks": "11",
         "operation_count": "4",
         "used_cell_count": "8",
@@ -488,7 +807,11 @@
         "peak_data_stack_usage": "0",
         "peak_instruction_stack_usage": "0",
         "peak_call_stack_usage": "0",
-        "instruction_variety": ["Add", "Output", "Halt"],
+        "instruction_variety": [
+          "Add",
+          "Output",
+          "Halt"
+        ],
         "error_codes": []
       }
     },
@@ -507,7 +830,18 @@
         "status": "halted",
         "vm_status": "halted",
         "output": [],
-        "registers": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        "registers": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
         "committed_ticks": "7",
         "operation_count": "6",
         "used_cell_count": "8",
@@ -515,12 +849,33 @@
         "peak_data_stack_usage": "0",
         "peak_instruction_stack_usage": "0",
         "peak_call_stack_usage": "2",
-        "instruction_variety": ["Call", "Return", "Halt"],
+        "instruction_variety": [
+          "Call",
+          "Return",
+          "Halt"
+        ],
         "error_codes": [],
-        "thread_call_stack_sizes": [0, 0],
+        "thread_call_stack_sizes": [
+          0,
+          0
+        ],
         "threads": [
-          { "id": "0", "position": { "x": 2, "y": 0 }, "direction": "right" },
-          { "id": "1", "position": { "x": 2, "y": 0 }, "direction": "left" }
+          {
+            "id": "0",
+            "position": {
+              "x": 2,
+              "y": 0
+            },
+            "direction": "right"
+          },
+          {
+            "id": "1",
+            "position": {
+              "x": 2,
+              "y": 0
+            },
+            "direction": "left"
+          }
         ]
       }
     },
@@ -538,8 +893,21 @@
         "process_exit_code": 0,
         "status": "halted",
         "vm_status": "halted",
-        "output": [2],
-        "registers": [2, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        "output": [
+          2
+        ],
+        "registers": [
+          2,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
         "committed_ticks": "8",
         "operation_count": "5",
         "used_cell_count": "8",
@@ -547,7 +915,13 @@
         "peak_data_stack_usage": "1",
         "peak_instruction_stack_usage": "0",
         "peak_call_stack_usage": "0",
-        "instruction_variety": ["Add", "Output", "Push", "PopAdd", "Halt"],
+        "instruction_variety": [
+          "Add",
+          "Output",
+          "Push",
+          "PopAdd",
+          "Halt"
+        ],
         "error_codes": []
       }
     },
@@ -566,7 +940,18 @@
         "status": "halted",
         "vm_status": "halted",
         "output": [],
-        "registers": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        "registers": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
         "committed_ticks": "9",
         "operation_count": "5",
         "used_cell_count": "8",
@@ -574,7 +959,12 @@
         "peak_data_stack_usage": "0",
         "peak_instruction_stack_usage": "0",
         "peak_call_stack_usage": "0",
-        "instruction_variety": ["Condition", "Add", "Sub", "Halt"],
+        "instruction_variety": [
+          "Condition",
+          "Add",
+          "Sub",
+          "Halt"
+        ],
         "error_codes": []
       }
     },
@@ -593,7 +983,18 @@
         "status": "halted",
         "vm_status": "halted",
         "output": [],
-        "registers": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        "registers": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
         "committed_ticks": "5",
         "operation_count": "2",
         "used_cell_count": "5",
@@ -601,7 +1002,10 @@
         "peak_data_stack_usage": "0",
         "peak_instruction_stack_usage": "0",
         "peak_call_stack_usage": "0",
-        "instruction_variety": ["Condition", "Halt"],
+        "instruction_variety": [
+          "Condition",
+          "Halt"
+        ],
         "error_codes": []
       }
     },
@@ -620,7 +1024,18 @@
         "status": "error",
         "vm_status": "error",
         "output": [],
-        "registers": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        "registers": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
         "committed_ticks": "2",
         "operation_count": "0",
         "used_cell_count": "3",
@@ -629,8 +1044,12 @@
         "peak_instruction_stack_usage": "0",
         "peak_call_stack_usage": "0",
         "instruction_variety": [],
-        "error_codes": ["OutOfBounds"],
-        "error_global_ticks": ["3"]
+        "error_codes": [
+          "OutOfBounds"
+        ],
+        "error_global_ticks": [
+          "3"
+        ]
       }
     },
     {
@@ -647,8 +1066,21 @@
         "process_exit_code": 0,
         "status": "halted",
         "vm_status": "halted",
-        "output": [2],
-        "registers": [2, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        "output": [
+          2
+        ],
+        "registers": [
+          2,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
         "committed_ticks": "11",
         "operation_count": "4",
         "used_cell_count": "8",
@@ -656,7 +1088,11 @@
         "peak_data_stack_usage": "0",
         "peak_instruction_stack_usage": "0",
         "peak_call_stack_usage": "0",
-        "instruction_variety": ["Add", "Output", "Halt"],
+        "instruction_variety": [
+          "Add",
+          "Output",
+          "Halt"
+        ],
         "error_codes": []
       }
     },
@@ -675,7 +1111,18 @@
         "status": "halted",
         "vm_status": "halted",
         "output": [],
-        "registers": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        "registers": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
         "committed_ticks": "3",
         "operation_count": "2",
         "used_cell_count": "5",
@@ -683,7 +1130,10 @@
         "peak_data_stack_usage": "0",
         "peak_instruction_stack_usage": "0",
         "peak_call_stack_usage": "0",
-        "instruction_variety": ["CustomReturn", "Halt"],
+        "instruction_variety": [
+          "CustomReturn",
+          "Halt"
+        ],
         "error_codes": []
       }
     },
@@ -702,7 +1152,18 @@
         "status": "halted",
         "vm_status": "halted",
         "output": [],
-        "registers": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        "registers": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
         "committed_ticks": "3",
         "operation_count": "2",
         "used_cell_count": "7",
@@ -710,7 +1171,10 @@
         "peak_data_stack_usage": "0",
         "peak_instruction_stack_usage": "0",
         "peak_call_stack_usage": "0",
-        "instruction_variety": ["CustomReturn", "Halt"],
+        "instruction_variety": [
+          "CustomReturn",
+          "Halt"
+        ],
         "error_codes": []
       }
     },
@@ -728,8 +1192,21 @@
         "process_exit_code": 0,
         "status": "halted",
         "vm_status": "halted",
-        "output": [139],
-        "registers": [139, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        "output": [
+          139
+        ],
+        "registers": [
+          139,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
         "committed_ticks": "8",
         "operation_count": "6",
         "used_cell_count": "7",
@@ -737,7 +1214,14 @@
         "peak_data_stack_usage": "0",
         "peak_instruction_stack_usage": "1",
         "peak_call_stack_usage": "1",
-        "instruction_variety": ["Output", "Encode", "Call", "Return", "ReadCode", "Halt"],
+        "instruction_variety": [
+          "Output",
+          "Encode",
+          "Call",
+          "Return",
+          "ReadCode",
+          "Halt"
+        ],
         "error_codes": []
       }
     },
@@ -756,7 +1240,18 @@
         "status": "halted",
         "vm_status": "halted",
         "output": [],
-        "registers": [1, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        "registers": [
+          1,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
         "committed_ticks": "7",
         "operation_count": "6",
         "used_cell_count": "6",
@@ -764,10 +1259,27 @@
         "peak_data_stack_usage": "0",
         "peak_instruction_stack_usage": "1",
         "peak_call_stack_usage": "1",
-        "instruction_variety": ["Add", "Call", "Return", "ReadCode", "WriteCode", "Halt"],
+        "instruction_variety": [
+          "Add",
+          "Call",
+          "Return",
+          "ReadCode",
+          "WriteCode",
+          "Halt"
+        ],
         "error_codes": [],
-        "runtime_main_primary_tokens": [null, "+", "+", ";"],
-        "runtime_main_attachment_tokens": [null, "*", "=", null]
+        "runtime_main_primary_tokens": [
+          null,
+          "+",
+          "+",
+          ";"
+        ],
+        "runtime_main_attachment_tokens": [
+          null,
+          "*",
+          "=",
+          null
+        ]
       }
     },
     {
@@ -785,7 +1297,18 @@
         "status": "halted",
         "vm_status": "halted",
         "output": [],
-        "registers": [1, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        "registers": [
+          1,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
         "committed_ticks": "7",
         "operation_count": "6",
         "used_cell_count": "6",
@@ -793,11 +1316,30 @@
         "peak_data_stack_usage": "0",
         "peak_instruction_stack_usage": "1",
         "peak_call_stack_usage": "1",
-        "instruction_variety": ["Add", "Call", "Return", "ReadCode", "WriteCode", "Halt"],
+        "instruction_variety": [
+          "Add",
+          "Call",
+          "Return",
+          "ReadCode",
+          "WriteCode",
+          "Halt"
+        ],
         "error_codes": [],
-        "runtime_main_primary_tokens": [null, "+", "+", ";"],
-        "runtime_main_attachment_tokens": [null, "*", "=", null],
-        "thread_instruction_stack_sizes": [0]
+        "runtime_main_primary_tokens": [
+          null,
+          "+",
+          "+",
+          ";"
+        ],
+        "runtime_main_attachment_tokens": [
+          null,
+          "*",
+          "=",
+          null
+        ],
+        "thread_instruction_stack_sizes": [
+          0
+        ]
       }
     },
     {
@@ -815,7 +1357,18 @@
         "status": "halted",
         "vm_status": "halted",
         "output": [],
-        "registers": [1, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        "registers": [
+          1,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
         "committed_ticks": "7",
         "operation_count": "5",
         "used_cell_count": "6",
@@ -823,11 +1376,29 @@
         "peak_data_stack_usage": "0",
         "peak_instruction_stack_usage": "1",
         "peak_call_stack_usage": "1",
-        "instruction_variety": ["Add", "Call", "Return", "ReadCode", "Halt"],
+        "instruction_variety": [
+          "Add",
+          "Call",
+          "Return",
+          "ReadCode",
+          "Halt"
+        ],
         "error_codes": [],
-        "runtime_main_primary_tokens": [null, "+", "[0", ";"],
-        "runtime_main_attachment_tokens": [null, "*", null, null],
-        "thread_instruction_stack_sizes": [1]
+        "runtime_main_primary_tokens": [
+          null,
+          "+",
+          "[0",
+          ";"
+        ],
+        "runtime_main_attachment_tokens": [
+          null,
+          "*",
+          null,
+          null
+        ],
+        "thread_instruction_stack_sizes": [
+          1
+        ]
       }
     },
     {
@@ -845,7 +1416,18 @@
         "status": "tick_limit_reached",
         "vm_status": "running",
         "output": [],
-        "registers": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        "registers": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
         "committed_ticks": "10",
         "operation_count": "5",
         "used_cell_count": "4",
@@ -853,26 +1435,43 @@
         "peak_data_stack_usage": "0",
         "peak_instruction_stack_usage": "0",
         "peak_call_stack_usage": "1",
-        "instruction_variety": ["Call"],
+        "instruction_variety": [
+          "Call"
+        ],
         "error_codes": []
       }
     },
     {
       "id": "memory-store-load-round-trip",
-      "source": "~> ,v ( $) $( . ;\n",
+      "source": "~> , ( $) $( . ;\n",
       "run": {
         "boundary": "exit",
         "seed": "0",
         "custom_execution_limit": "100",
         "max_ticks": "10",
-        "input": [91]
+        "input": [
+          91
+        ]
       },
       "expected": {
         "process_exit_code": 0,
         "status": "halted",
         "vm_status": "halted",
-        "output": [91],
-        "registers": [91, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        "output": [
+          91
+        ],
+        "registers": [
+          91,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
         "committed_ticks": "7",
         "operation_count": "6",
         "used_cell_count": "7",
@@ -880,9 +1479,21 @@
         "peak_data_stack_usage": "1",
         "peak_instruction_stack_usage": "0",
         "peak_call_stack_usage": "0",
-        "instruction_variety": ["Read", "Output", "Push", "MemoryLoad", "MemoryStore", "Halt"],
+        "instruction_variety": [
+          "Read",
+          "Output",
+          "Push",
+          "MemoryLoad",
+          "MemoryStore",
+          "Halt"
+        ],
         "error_codes": [],
-        "memory": [{"address": "91", "value": 91}]
+        "memory": [
+          {
+            "address": "91",
+            "value": 91
+          }
+        ]
       }
     },
     {
@@ -895,7 +1506,10 @@
         "max_ticks": "10",
         "input": [],
         "initial_memory": [
-          {"address": "340282366920938463463374607431768211507", "value": 203}
+          {
+            "address": "340282366920938463463374607431768211507",
+            "value": 203
+          }
         ]
       },
       "expected": {
@@ -903,7 +1517,18 @@
         "status": "halted",
         "vm_status": "halted",
         "output": [],
-        "registers": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        "registers": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
         "committed_ticks": "2",
         "operation_count": "1",
         "used_cell_count": "2",
@@ -911,27 +1536,47 @@
         "peak_data_stack_usage": "0",
         "peak_instruction_stack_usage": "0",
         "peak_call_stack_usage": "0",
-        "instruction_variety": ["Halt"],
+        "instruction_variety": [
+          "Halt"
+        ],
         "error_codes": [],
-        "memory": [{"address": "340282366920938463463374607431768211507", "value": 203}]
+        "memory": [
+          {
+            "address": "340282366920938463463374607431768211507",
+            "value": 203
+          }
+        ]
       }
     },
     {
       "id": "outer-self-modification-persists-in-snapshot",
-      "source": "@main\n~> ,v & >= ;\n@end main\n",
+      "source": "@main\n~> , & >= ;\n@end main\n",
       "run": {
         "boundary": "exit",
         "seed": "0",
         "custom_execution_limit": "100",
         "max_ticks": "10",
-        "input": [43]
+        "input": [
+          43
+        ]
       },
       "expected": {
         "process_exit_code": 0,
         "status": "halted",
         "vm_status": "halted",
         "output": [],
-        "registers": [43, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        "registers": [
+          43,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
         "committed_ticks": "5",
         "operation_count": "4",
         "used_cell_count": "5",
@@ -939,10 +1584,27 @@
         "peak_data_stack_usage": "0",
         "peak_instruction_stack_usage": "1",
         "peak_call_stack_usage": "0",
-        "instruction_variety": ["Read", "Decode", "WriteCode", "Halt"],
+        "instruction_variety": [
+          "Read",
+          "Decode",
+          "WriteCode",
+          "Halt"
+        ],
         "error_codes": [],
-        "runtime_main_primary_tokens": [null, ",v", "&", "+", ";"],
-        "runtime_main_attachment_tokens": [null, null, null, "=", null]
+        "runtime_main_primary_tokens": [
+          null,
+          ",",
+          "&",
+          "+",
+          ";"
+        ],
+        "runtime_main_attachment_tokens": [
+          null,
+          null,
+          null,
+          "=",
+          null
+        ]
       }
     },
     {
@@ -960,7 +1622,18 @@
         "status": "tick_limit_reached",
         "vm_status": "running",
         "output": [],
-        "registers": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        "registers": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
         "committed_ticks": "2",
         "operation_count": "1",
         "used_cell_count": "2",
@@ -968,7 +1641,9 @@
         "peak_data_stack_usage": "0",
         "peak_instruction_stack_usage": "0",
         "peak_call_stack_usage": "0",
-        "instruction_variety": ["RandomDirection"],
+        "instruction_variety": [
+          "RandomDirection"
+        ],
         "error_codes": [],
         "thread_direction": "down",
         "thread_random_state": "5989369519616587245"
@@ -989,7 +1664,18 @@
         "status": "tick_limit_reached",
         "vm_status": "running",
         "output": [],
-        "registers": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        "registers": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
         "committed_ticks": "2",
         "operation_count": "2",
         "used_cell_count": "4",
@@ -997,7 +1683,9 @@
         "peak_data_stack_usage": "0",
         "peak_instruction_stack_usage": "0",
         "peak_call_stack_usage": "0",
-        "instruction_variety": ["RandomDirection"],
+        "instruction_variety": [
+          "RandomDirection"
+        ],
         "error_codes": [],
         "thread_direction": "down",
         "thread_random_state": "3674316803529091317"
@@ -1018,7 +1706,18 @@
         "status": "error",
         "vm_status": "error",
         "output": [],
-        "registers": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        "registers": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
         "committed_ticks": "1",
         "operation_count": "1",
         "used_cell_count": "4",
@@ -1026,9 +1725,15 @@
         "peak_data_stack_usage": "0",
         "peak_instruction_stack_usage": "0",
         "peak_call_stack_usage": "0",
-        "instruction_variety": ["Halt"],
-        "error_codes": ["OutOfBounds"],
-        "error_global_ticks": ["2"]
+        "instruction_variety": [
+          "Halt"
+        ],
+        "error_codes": [
+          "OutOfBounds"
+        ],
+        "error_global_ticks": [
+          "2"
+        ]
       }
     },
     {
@@ -1046,7 +1751,18 @@
         "status": "error",
         "vm_status": "error",
         "output": [],
-        "registers": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        "registers": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
         "committed_ticks": "1",
         "operation_count": "1",
         "used_cell_count": "6",
@@ -1054,9 +1770,15 @@
         "peak_data_stack_usage": "0",
         "peak_instruction_stack_usage": "0",
         "peak_call_stack_usage": "0",
-        "instruction_variety": ["Halt"],
-        "error_codes": ["OutOfBounds"],
-        "error_global_ticks": ["2"]
+        "instruction_variety": [
+          "Halt"
+        ],
+        "error_codes": [
+          "OutOfBounds"
+        ],
+        "error_global_ticks": [
+          "2"
+        ]
       }
     },
     {
@@ -1074,7 +1796,18 @@
         "status": "halted",
         "vm_status": "halted",
         "output": [],
-        "registers": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        "registers": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
         "committed_ticks": "2",
         "operation_count": "2",
         "used_cell_count": "6",
@@ -1082,7 +1815,10 @@
         "peak_data_stack_usage": "0",
         "peak_instruction_stack_usage": "0",
         "peak_call_stack_usage": "0",
-        "instruction_variety": ["CustomReturn", "Halt"],
+        "instruction_variety": [
+          "CustomReturn",
+          "Halt"
+        ],
         "error_codes": []
       }
     },
@@ -1100,8 +1836,22 @@
         "process_exit_code": 0,
         "status": "halted",
         "vm_status": "halted",
-        "output": [0, 0],
-        "registers": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        "output": [
+          0,
+          0
+        ],
+        "registers": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
         "committed_ticks": "8",
         "operation_count": "17",
         "used_cell_count": "13",
@@ -1109,7 +1859,16 @@
         "peak_data_stack_usage": "1",
         "peak_instruction_stack_usage": "1",
         "peak_call_stack_usage": "0",
-        "instruction_variety": ["Add", "Sub", "Output", "PopAdd", "ReadCode", "WriteCode", "CustomReturn", "Halt"],
+        "instruction_variety": [
+          "Add",
+          "Sub",
+          "Output",
+          "PopAdd",
+          "ReadCode",
+          "WriteCode",
+          "CustomReturn",
+          "Halt"
+        ],
         "error_codes": []
       }
     },
@@ -1128,7 +1887,18 @@
         "status": "error",
         "vm_status": "error",
         "output": [],
-        "registers": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        "registers": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
         "committed_ticks": "2",
         "operation_count": "5",
         "used_cell_count": "9",
@@ -1136,9 +1906,16 @@
         "peak_data_stack_usage": "3",
         "peak_instruction_stack_usage": "0",
         "peak_call_stack_usage": "0",
-        "instruction_variety": ["Push", "PopAdd"],
-        "error_codes": ["ConcurrentWriteConflict"],
-        "error_global_ticks": ["3"]
+        "instruction_variety": [
+          "Push",
+          "PopAdd"
+        ],
+        "error_codes": [
+          "ConcurrentWriteConflict"
+        ],
+        "error_global_ticks": [
+          "3"
+        ]
       }
     },
     {
@@ -1156,7 +1933,18 @@
         "status": "error",
         "vm_status": "error",
         "output": [],
-        "registers": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        "registers": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
         "committed_ticks": "1",
         "operation_count": "0",
         "used_cell_count": "3",
@@ -1165,9 +1953,18 @@
         "peak_instruction_stack_usage": "0",
         "peak_call_stack_usage": "0",
         "instruction_variety": [],
-        "error_codes": ["OutOfBounds", "OutOfBounds"],
-        "error_global_ticks": ["2", "2"],
-        "error_thread_ids": ["0", "1"]
+        "error_codes": [
+          "OutOfBounds",
+          "OutOfBounds"
+        ],
+        "error_global_ticks": [
+          "2",
+          "2"
+        ],
+        "error_thread_ids": [
+          "0",
+          "1"
+        ]
       }
     },
     {
@@ -1185,7 +1982,18 @@
         "status": "error",
         "vm_status": "error",
         "output": [],
-        "registers": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        "registers": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
         "committed_ticks": "1",
         "operation_count": "1",
         "used_cell_count": "4",
@@ -1193,10 +2001,19 @@
         "peak_data_stack_usage": "0",
         "peak_instruction_stack_usage": "0",
         "peak_call_stack_usage": "1",
-        "instruction_variety": ["Call"],
-        "error_codes": ["OutOfBounds"],
-        "error_global_ticks": ["2"],
-        "thread_call_stack_sizes": [0, 0]
+        "instruction_variety": [
+          "Call"
+        ],
+        "error_codes": [
+          "OutOfBounds"
+        ],
+        "error_global_ticks": [
+          "2"
+        ],
+        "thread_call_stack_sizes": [
+          0,
+          0
+        ]
       }
     },
     {
@@ -1214,7 +2031,18 @@
         "status": "error",
         "vm_status": "error",
         "output": [],
-        "registers": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        "registers": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
         "committed_ticks": "1",
         "operation_count": "2",
         "used_cell_count": "4",
@@ -1222,9 +2050,17 @@
         "peak_data_stack_usage": "0",
         "peak_instruction_stack_usage": "0",
         "peak_call_stack_usage": "0",
-        "instruction_variety": ["Add"],
-        "error_codes": ["ConcurrentWriteConflict", "OutOfBounds"],
-        "error_global_ticks": ["2", "2"]
+        "instruction_variety": [
+          "Add"
+        ],
+        "error_codes": [
+          "ConcurrentWriteConflict",
+          "OutOfBounds"
+        ],
+        "error_global_ticks": [
+          "2",
+          "2"
+        ]
       }
     },
     {
@@ -1242,7 +2078,18 @@
         "status": "halted",
         "vm_status": "halted",
         "output": [],
-        "registers": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        "registers": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
         "committed_ticks": "2",
         "operation_count": "2",
         "used_cell_count": "4",
@@ -1250,30 +2097,60 @@
         "peak_data_stack_usage": "0",
         "peak_instruction_stack_usage": "0",
         "peak_call_stack_usage": "0",
-        "instruction_variety": ["Halt"],
+        "instruction_variety": [
+          "Halt"
+        ],
         "error_codes": [],
         "threads": [
-          { "id": "0", "position": { "x": 1, "y": 0 }, "direction": "right" },
-          { "id": "1", "position": { "x": 2, "y": 1 }, "direction": "left" }
+          {
+            "id": "0",
+            "position": {
+              "x": 1,
+              "y": 0
+            },
+            "direction": "right"
+          },
+          {
+            "id": "1",
+            "position": {
+              "x": 2,
+              "y": 1
+            },
+            "direction": "left"
+          }
         ]
       }
     },
     {
       "id": "simultaneous-nonempty-reads-roll-back-the-global-tick",
-      "source": "@main\n~> ,v\n~> ,v\n@end main\n",
+      "source": "@main\n~> ,\n~> ,\n@end main\n",
       "run": {
         "boundary": "wrap",
         "seed": "0",
         "custom_execution_limit": "100",
         "max_ticks": "10",
-        "input": [42, 84]
+        "input": [
+          42,
+          84
+        ]
       },
       "expected": {
         "process_exit_code": 5,
         "status": "error",
         "vm_status": "error",
         "output": [],
-        "registers": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        "registers": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
         "committed_ticks": "1",
         "operation_count": "2",
         "used_cell_count": "4",
@@ -1281,11 +2158,25 @@
         "peak_data_stack_usage": "0",
         "peak_instruction_stack_usage": "0",
         "peak_call_stack_usage": "0",
-        "instruction_variety": ["Read"],
-        "error_codes": ["ConcurrentInputConflict"],
-        "error_global_ticks": ["2"],
-        "error_thread_id_groups": [["0", "1"]],
-        "remaining_input": [42, 84]
+        "instruction_variety": [
+          "Read"
+        ],
+        "error_codes": [
+          "ConcurrentInputConflict"
+        ],
+        "error_global_ticks": [
+          "2"
+        ],
+        "error_thread_id_groups": [
+          [
+            "0",
+            "1"
+          ]
+        ],
+        "remaining_input": [
+          42,
+          84
+        ]
       }
     },
     {
@@ -1303,7 +2194,18 @@
         "status": "error",
         "vm_status": "error",
         "output": [],
-        "registers": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        "registers": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
         "committed_ticks": "2",
         "operation_count": "4",
         "used_cell_count": "6",
@@ -1311,11 +2213,26 @@
         "peak_data_stack_usage": "2",
         "peak_instruction_stack_usage": "0",
         "peak_call_stack_usage": "0",
-        "instruction_variety": ["Push", "MemoryStore"],
-        "error_codes": ["ConcurrentMemoryWriteConflict"],
-        "error_global_ticks": ["3"],
-        "error_thread_id_groups": [["0", "1"]],
-        "thread_data_stack_sizes": [1, 1],
+        "instruction_variety": [
+          "Push",
+          "MemoryStore"
+        ],
+        "error_codes": [
+          "ConcurrentMemoryWriteConflict"
+        ],
+        "error_global_ticks": [
+          "3"
+        ],
+        "error_thread_id_groups": [
+          [
+            "0",
+            "1"
+          ]
+        ],
+        "thread_data_stack_sizes": [
+          1,
+          1
+        ],
         "memory": []
       }
     },
@@ -1334,7 +2251,18 @@
         "status": "error",
         "vm_status": "error",
         "output": [],
-        "registers": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        "registers": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
         "committed_ticks": "1",
         "operation_count": "2",
         "used_cell_count": "4",
@@ -1342,10 +2270,21 @@
         "peak_data_stack_usage": "0",
         "peak_instruction_stack_usage": "0",
         "peak_call_stack_usage": "0",
-        "instruction_variety": ["Output"],
-        "error_codes": ["ConcurrentOutputConflict"],
-        "error_global_ticks": ["2"],
-        "error_thread_id_groups": [["0", "1"]]
+        "instruction_variety": [
+          "Output"
+        ],
+        "error_codes": [
+          "ConcurrentOutputConflict"
+        ],
+        "error_global_ticks": [
+          "2"
+        ],
+        "error_thread_id_groups": [
+          [
+            "0",
+            "1"
+          ]
+        ]
       }
     },
     {
@@ -1363,7 +2302,18 @@
         "status": "halted",
         "vm_status": "halted",
         "output": [],
-        "registers": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        "registers": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
         "committed_ticks": "3",
         "operation_count": "2",
         "used_cell_count": "6",
@@ -1371,7 +2321,10 @@
         "peak_data_stack_usage": "0",
         "peak_instruction_stack_usage": "0",
         "peak_call_stack_usage": "0",
-        "instruction_variety": ["CustomReturn", "Halt"],
+        "instruction_variety": [
+          "CustomReturn",
+          "Halt"
+        ],
         "error_codes": []
       }
     },
@@ -1390,7 +2343,18 @@
         "status": "halted",
         "vm_status": "halted",
         "output": [],
-        "registers": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        "registers": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
         "committed_ticks": "2",
         "operation_count": "1",
         "used_cell_count": "4",
@@ -1398,10 +2362,19 @@
         "peak_data_stack_usage": "0",
         "peak_instruction_stack_usage": "0",
         "peak_call_stack_usage": "0",
-        "instruction_variety": ["Halt"],
+        "instruction_variety": [
+          "Halt"
+        ],
         "error_codes": [],
         "threads": [
-          { "id": "0", "position": { "x": 1, "y": 0 }, "direction": "right" }
+          {
+            "id": "0",
+            "position": {
+              "x": 1,
+              "y": 0
+            },
+            "direction": "right"
+          }
         ]
       }
     },
@@ -1420,7 +2393,18 @@
         "status": "halted",
         "vm_status": "halted",
         "output": [],
-        "registers": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        "registers": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
         "committed_ticks": "3",
         "operation_count": "9",
         "used_cell_count": "15",
@@ -1428,12 +2412,35 @@
         "peak_data_stack_usage": "3",
         "peak_instruction_stack_usage": "0",
         "peak_call_stack_usage": "0",
-        "instruction_variety": ["Add", "Output", "Push", "CustomReturn", "Halt"],
+        "instruction_variety": [
+          "Add",
+          "Output",
+          "Push",
+          "CustomReturn",
+          "Halt"
+        ],
         "error_codes": [],
-        "thread_data_stack_sizes": [1, 0],
+        "thread_data_stack_sizes": [
+          1,
+          0
+        ],
         "threads": [
-          { "id": "0", "position": { "x": 2, "y": 0 }, "direction": "right" },
-          { "id": "1", "position": { "x": 2, "y": 1 }, "direction": "right" }
+          {
+            "id": "0",
+            "position": {
+              "x": 2,
+              "y": 0
+            },
+            "direction": "right"
+          },
+          {
+            "id": "1",
+            "position": {
+              "x": 2,
+              "y": 1
+            },
+            "direction": "right"
+          }
         ]
       }
     },
@@ -1452,7 +2459,18 @@
         "status": "tick_limit_reached",
         "vm_status": "running",
         "output": [],
-        "registers": [1, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        "registers": [
+          1,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
         "committed_ticks": "2",
         "operation_count": "2",
         "used_cell_count": "4",
@@ -1460,31 +2478,64 @@
         "peak_data_stack_usage": "0",
         "peak_instruction_stack_usage": "0",
         "peak_call_stack_usage": "0",
-        "instruction_variety": ["Condition", "Add"],
+        "instruction_variety": [
+          "Condition",
+          "Add"
+        ],
         "error_codes": [],
-        "thread_data_stack_sizes": [0, 0],
+        "thread_data_stack_sizes": [
+          0,
+          0
+        ],
         "threads": [
-          { "id": "0", "position": { "x": 1, "y": 1 }, "direction": "down" },
-          { "id": "1", "position": { "x": 2, "y": 1 }, "direction": "right" }
+          {
+            "id": "0",
+            "position": {
+              "x": 1,
+              "y": 1
+            },
+            "direction": "down"
+          },
+          {
+            "id": "1",
+            "position": {
+              "x": 2,
+              "y": 1
+            },
+            "direction": "right"
+          }
         ]
       }
     },
     {
       "id": "simultaneous-code-writes-conflict-and-roll-back-stacks",
-      "source": "@size 9x1\n@main\n~> ,> & _ (= _ & _ ~<\n@end main\n",
+      "source": "@size 9x1\n@main\n~> , & _ (= _ & _ ~<\n@end main\n",
       "run": {
         "boundary": "exit",
         "seed": "0",
         "custom_execution_limit": "100",
         "max_ticks": "10",
-        "input": [43]
+        "input": [
+          43
+        ]
       },
       "expected": {
         "process_exit_code": 5,
         "status": "error",
         "vm_status": "error",
         "output": [],
-        "registers": [43, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        "registers": [
+          43,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
         "committed_ticks": "4",
         "operation_count": "7",
         "used_cell_count": "9",
@@ -1492,19 +2543,73 @@
         "peak_data_stack_usage": "2",
         "peak_instruction_stack_usage": "2",
         "peak_call_stack_usage": "0",
-        "instruction_variety": ["Read", "Push", "Decode", "WriteCode"],
-        "error_codes": ["ConcurrentCodeWriteConflict"],
-        "error_global_ticks": ["5"],
-        "error_thread_id_groups": [["0", "1"]],
-        "remaining_input": [],
-        "thread_data_stack_sizes": [0, 0],
-        "thread_instruction_stack_sizes": [1, 1],
-        "threads": [
-          { "id": "0", "position": { "x": 4, "y": 0 }, "direction": "right" },
-          { "id": "1", "position": { "x": 4, "y": 0 }, "direction": "left" }
+        "instruction_variety": [
+          "Read",
+          "Push",
+          "Decode",
+          "WriteCode"
         ],
-        "runtime_main_primary_tokens": [null, ",>", "&", null, "(", null, "&", null, null],
-        "runtime_main_attachment_tokens": [null, null, null, null, "=", null, null, null, null]
+        "error_codes": [
+          "ConcurrentCodeWriteConflict"
+        ],
+        "error_global_ticks": [
+          "5"
+        ],
+        "error_thread_id_groups": [
+          [
+            "0",
+            "1"
+          ]
+        ],
+        "remaining_input": [],
+        "thread_data_stack_sizes": [
+          0,
+          0
+        ],
+        "thread_instruction_stack_sizes": [
+          1,
+          1
+        ],
+        "threads": [
+          {
+            "id": "0",
+            "position": {
+              "x": 4,
+              "y": 0
+            },
+            "direction": "right"
+          },
+          {
+            "id": "1",
+            "position": {
+              "x": 4,
+              "y": 0
+            },
+            "direction": "left"
+          }
+        ],
+        "runtime_main_primary_tokens": [
+          null,
+          ",",
+          "&",
+          null,
+          "(",
+          null,
+          "&",
+          null,
+          null
+        ],
+        "runtime_main_attachment_tokens": [
+          null,
+          null,
+          null,
+          null,
+          "=",
+          null,
+          null,
+          null,
+          null
+        ]
       }
     },
     {
@@ -1522,7 +2627,18 @@
         "status": "error",
         "vm_status": "error",
         "output": [],
-        "registers": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        "registers": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
         "committed_ticks": "1",
         "operation_count": "2",
         "used_cell_count": "5",
@@ -1530,12 +2646,27 @@
         "peak_data_stack_usage": "0",
         "peak_instruction_stack_usage": "0",
         "peak_call_stack_usage": "0",
-        "instruction_variety": ["Add"],
-        "error_codes": ["CustomExecutionLimitExceeded"],
-        "error_global_ticks": ["2"],
-        "error_custom_internal_ticks": ["3"],
+        "instruction_variety": [
+          "Add"
+        ],
+        "error_codes": [
+          "CustomExecutionLimitExceeded"
+        ],
+        "error_global_ticks": [
+          "2"
+        ],
+        "error_custom_internal_ticks": [
+          "3"
+        ],
         "threads": [
-          { "id": "0", "position": { "x": 1, "y": 0 }, "direction": "right" }
+          {
+            "id": "0",
+            "position": {
+              "x": 1,
+              "y": 0
+            },
+            "direction": "right"
+          }
         ]
       }
     },
@@ -1554,7 +2685,18 @@
         "status": "error",
         "vm_status": "error",
         "output": [],
-        "registers": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        "registers": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
         "committed_ticks": "1",
         "operation_count": "2",
         "used_cell_count": "6",
@@ -1562,20 +2704,42 @@
         "peak_data_stack_usage": "2",
         "peak_instruction_stack_usage": "0",
         "peak_call_stack_usage": "0",
-        "instruction_variety": ["Output"],
-        "error_codes": ["ConcurrentCallerStackWriteConflict"],
-        "error_global_ticks": ["2"],
-        "error_custom_internal_ticks": ["2"],
-        "error_thread_id_groups": [["0", "1"]],
-        "thread_data_stack_sizes": [0],
+        "instruction_variety": [
+          "Output"
+        ],
+        "error_codes": [
+          "ConcurrentCallerStackWriteConflict"
+        ],
+        "error_global_ticks": [
+          "2"
+        ],
+        "error_custom_internal_ticks": [
+          "2"
+        ],
+        "error_thread_id_groups": [
+          [
+            "0",
+            "1"
+          ]
+        ],
+        "thread_data_stack_sizes": [
+          0
+        ],
         "threads": [
-          { "id": "0", "position": { "x": 1, "y": 0 }, "direction": "right" }
+          {
+            "id": "0",
+            "position": {
+              "x": 1,
+              "y": 0
+            },
+            "direction": "right"
+          }
         ]
       }
     },
     {
       "id": "custom-nonempty-concurrent-reads-conflict-and-roll-back",
-      "source": "@main\n~> ( #0 ;\n@end main\n@C0\n@size 3x2\n~> ,> _\n~> ,> _\n@end C0\n",
+      "source": "@main\n~> ( #0 ;\n@end main\n@C0\n@size 3x2\n~> , _\n~> , _\n@end C0\n",
       "run": {
         "boundary": "exit",
         "seed": "0",
@@ -1588,7 +2752,18 @@
         "status": "error",
         "vm_status": "error",
         "output": [],
-        "registers": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        "registers": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
         "committed_ticks": "2",
         "operation_count": "3",
         "used_cell_count": "7",
@@ -1596,20 +2771,43 @@
         "peak_data_stack_usage": "1",
         "peak_instruction_stack_usage": "0",
         "peak_call_stack_usage": "0",
-        "instruction_variety": ["Read", "Push"],
-        "error_codes": ["ConcurrentCallerStackReadConflict"],
-        "error_global_ticks": ["3"],
-        "error_custom_internal_ticks": ["2"],
-        "error_thread_id_groups": [["0", "1"]],
-        "thread_data_stack_sizes": [1],
+        "instruction_variety": [
+          "Read",
+          "Push"
+        ],
+        "error_codes": [
+          "ConcurrentCallerStackReadConflict"
+        ],
+        "error_global_ticks": [
+          "3"
+        ],
+        "error_custom_internal_ticks": [
+          "2"
+        ],
+        "error_thread_id_groups": [
+          [
+            "0",
+            "1"
+          ]
+        ],
+        "thread_data_stack_sizes": [
+          1
+        ],
         "threads": [
-          { "id": "0", "position": { "x": 2, "y": 0 }, "direction": "right" }
+          {
+            "id": "0",
+            "position": {
+              "x": 2,
+              "y": 0
+            },
+            "direction": "right"
+          }
         ]
       }
     },
     {
       "id": "custom-caller-stack-read-write-conflict-rolls-back",
-      "source": "@main\n~> ( #0 ;\n@end main\n@C0\n@size 3x2\n~> ,> _\n~> . _\n@end C0\n",
+      "source": "@main\n~> ( #0 ;\n@end main\n@C0\n@size 3x2\n~> , _\n~> . _\n@end C0\n",
       "run": {
         "boundary": "exit",
         "seed": "0",
@@ -1622,7 +2820,18 @@
         "status": "error",
         "vm_status": "error",
         "output": [],
-        "registers": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        "registers": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
         "committed_ticks": "2",
         "operation_count": "3",
         "used_cell_count": "7",
@@ -1630,20 +2839,44 @@
         "peak_data_stack_usage": "2",
         "peak_instruction_stack_usage": "0",
         "peak_call_stack_usage": "0",
-        "instruction_variety": ["Read", "Output", "Push"],
-        "error_codes": ["ConcurrentCallerStackReadWriteConflict"],
-        "error_global_ticks": ["3"],
-        "error_custom_internal_ticks": ["2"],
-        "error_thread_id_groups": [["0", "1"]],
-        "thread_data_stack_sizes": [1],
+        "instruction_variety": [
+          "Read",
+          "Output",
+          "Push"
+        ],
+        "error_codes": [
+          "ConcurrentCallerStackReadWriteConflict"
+        ],
+        "error_global_ticks": [
+          "3"
+        ],
+        "error_custom_internal_ticks": [
+          "2"
+        ],
+        "error_thread_id_groups": [
+          [
+            "0",
+            "1"
+          ]
+        ],
+        "thread_data_stack_sizes": [
+          1
+        ],
         "threads": [
-          { "id": "0", "position": { "x": 2, "y": 0 }, "direction": "right" }
+          {
+            "id": "0",
+            "position": {
+              "x": 2,
+              "y": 0
+            },
+            "direction": "right"
+          }
         ]
       }
     },
     {
       "id": "custom-empty-concurrent-reads-coexist-with-output",
-      "source": "@main\n~> #0 ;\n@end main\n@C0\n@size 3x3\n~> ,> #]\n~> ,> #]\n~> . #]\n@end C0\n",
+      "source": "@main\n~> #0 ;\n@end main\n@C0\n@size 3x3\n~> , #]\n~> , #]\n~> . #]\n@end C0\n",
       "run": {
         "boundary": "exit",
         "seed": "0",
@@ -1656,7 +2889,18 @@
         "status": "halted",
         "vm_status": "halted",
         "output": [],
-        "registers": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        "registers": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
         "committed_ticks": "3",
         "operation_count": "7",
         "used_cell_count": "12",
@@ -1664,11 +2908,25 @@
         "peak_data_stack_usage": "1",
         "peak_instruction_stack_usage": "0",
         "peak_call_stack_usage": "0",
-        "instruction_variety": ["Read", "Output", "CustomReturn", "Halt"],
+        "instruction_variety": [
+          "Read",
+          "Output",
+          "CustomReturn",
+          "Halt"
+        ],
         "error_codes": [],
-        "thread_data_stack_sizes": [1],
+        "thread_data_stack_sizes": [
+          1
+        ],
         "threads": [
-          { "id": "0", "position": { "x": 2, "y": 0 }, "direction": "right" }
+          {
+            "id": "0",
+            "position": {
+              "x": 2,
+              "y": 0
+            },
+            "direction": "right"
+          }
         ]
       }
     },
@@ -1687,7 +2945,18 @@
         "status": "error",
         "vm_status": "error",
         "output": [],
-        "registers": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        "registers": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
         "committed_ticks": "1",
         "operation_count": "1",
         "used_cell_count": "4",
@@ -1695,13 +2964,30 @@
         "peak_data_stack_usage": "0",
         "peak_instruction_stack_usage": "0",
         "peak_call_stack_usage": "0",
-        "instruction_variety": ["Add"],
-        "error_codes": ["OutOfBounds"],
-        "error_global_ticks": ["2"],
-        "error_thread_ids": ["0"],
-        "error_custom_internal_ticks": ["2"],
+        "instruction_variety": [
+          "Add"
+        ],
+        "error_codes": [
+          "OutOfBounds"
+        ],
+        "error_global_ticks": [
+          "2"
+        ],
+        "error_thread_ids": [
+          "0"
+        ],
+        "error_custom_internal_ticks": [
+          "2"
+        ],
         "threads": [
-          { "id": "0", "position": { "x": 1, "y": 0 }, "direction": "right" }
+          {
+            "id": "0",
+            "position": {
+              "x": 1,
+              "y": 0
+            },
+            "direction": "right"
+          }
         ]
       }
     },
@@ -1720,7 +3006,18 @@
         "status": "halted",
         "vm_status": "halted",
         "output": [],
-        "registers": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        "registers": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
         "committed_ticks": "3",
         "operation_count": "10",
         "used_cell_count": "11",
@@ -1728,11 +3025,31 @@
         "peak_data_stack_usage": "2",
         "peak_instruction_stack_usage": "0",
         "peak_call_stack_usage": "0",
-        "instruction_variety": ["Push", "MemoryLoad", "MemoryStore", "CustomReturn", "Halt"],
+        "instruction_variety": [
+          "Push",
+          "MemoryLoad",
+          "MemoryStore",
+          "CustomReturn",
+          "Halt"
+        ],
         "error_codes": [],
         "threads": [
-          { "id": "0", "position": { "x": 2, "y": 0 }, "direction": "right" },
-          { "id": "1", "position": { "x": 2, "y": 1 }, "direction": "right" }
+          {
+            "id": "0",
+            "position": {
+              "x": 2,
+              "y": 0
+            },
+            "direction": "right"
+          },
+          {
+            "id": "1",
+            "position": {
+              "x": 2,
+              "y": 1
+            },
+            "direction": "right"
+          }
         ]
       }
     },
@@ -1751,7 +3068,18 @@
         "status": "tick_limit_reached",
         "vm_status": "running",
         "output": [],
-        "registers": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        "registers": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
         "committed_ticks": "3",
         "operation_count": "41",
         "used_cell_count": "48",
@@ -1759,30 +3087,65 @@
         "peak_data_stack_usage": "4",
         "peak_instruction_stack_usage": "1",
         "peak_call_stack_usage": "1",
-        "instruction_variety": ["Add", "Output", "Push", "Decode", "Call", "Return", "CustomReturn"],
+        "instruction_variety": [
+          "Add",
+          "Output",
+          "Push",
+          "Decode",
+          "Call",
+          "Return",
+          "CustomReturn"
+        ],
         "error_codes": [],
         "threads": [
-          { "id": "0", "position": { "x": 3, "y": 0 }, "direction": "right" },
-          { "id": "1", "position": { "x": 4, "y": 0 }, "direction": "left" }
+          {
+            "id": "0",
+            "position": {
+              "x": 3,
+              "y": 0
+            },
+            "direction": "right"
+          },
+          {
+            "id": "1",
+            "position": {
+              "x": 4,
+              "y": 0
+            },
+            "direction": "left"
+          }
         ]
       }
     },
     {
       "id": "outer-halt-loses-to-concurrent-input-conflict",
-      "source": "@main\n@size 4x2\n~> ; _ _\n~> ,v ~> ,v\n@end main\n",
+      "source": "@main\n@size 4x2\n~> ; _ _\n~> , ~> ,\n@end main\n",
       "run": {
         "boundary": "wrap",
         "seed": "0",
         "custom_execution_limit": "100",
         "max_ticks": "10",
-        "input": [65]
+        "input": [
+          65
+        ]
       },
       "expected": {
         "process_exit_code": 5,
         "status": "error",
         "vm_status": "error",
         "output": [],
-        "registers": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        "registers": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
         "committed_ticks": "1",
         "operation_count": "3",
         "used_cell_count": "6",
@@ -1790,11 +3153,25 @@
         "peak_data_stack_usage": "0",
         "peak_instruction_stack_usage": "0",
         "peak_call_stack_usage": "0",
-        "instruction_variety": ["Read", "Halt"],
-        "error_codes": ["ConcurrentInputConflict"],
-        "error_global_ticks": ["2"],
-        "error_thread_id_groups": [["1", "2"]],
-        "remaining_input": [65]
+        "instruction_variety": [
+          "Read",
+          "Halt"
+        ],
+        "error_codes": [
+          "ConcurrentInputConflict"
+        ],
+        "error_global_ticks": [
+          "2"
+        ],
+        "error_thread_id_groups": [
+          [
+            "1",
+            "2"
+          ]
+        ],
+        "remaining_input": [
+          65
+        ]
       }
     },
     {
@@ -1812,7 +3189,18 @@
         "status": "halted",
         "vm_status": "halted",
         "output": [],
-        "registers": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        "registers": [
+          2,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
         "committed_ticks": "21",
         "operation_count": "14",
         "used_cell_count": "16",
@@ -1820,13 +3208,20 @@
         "peak_data_stack_usage": "0",
         "peak_instruction_stack_usage": "0",
         "peak_call_stack_usage": "3",
-        "instruction_variety": ["Condition", "Add", "Sub", "Call", "Return", "Halt"],
+        "instruction_variety": [
+          "Condition",
+          "Add",
+          "Sub",
+          "Call",
+          "Return",
+          "Halt"
+        ],
         "error_codes": []
       }
     },
     {
       "id": "cmp-equal",
-      "source": "~> ,> ( } ,> ?= . ;\n",
+      "source": "~> , ( } , ?= . ;\n",
       "run": {
         "boundary": "exit",
         "seed": "0",
@@ -1877,7 +3272,7 @@
     },
     {
       "id": "cmp-greater-unsigned",
-      "source": "~> ,> ( } ,> ?= . ;\n",
+      "source": "~> , ( } , ?= . ;\n",
       "run": {
         "boundary": "exit",
         "seed": "0",
@@ -1928,7 +3323,7 @@
     },
     {
       "id": "cmp-less-unsigned",
-      "source": "~> ,> ( } ,> ?= . ;\n",
+      "source": "~> , ( } , ?= . ;\n",
       "run": {
         "boundary": "exit",
         "seed": "0",
@@ -1979,7 +3374,7 @@
     },
     {
       "id": "cmp-empty-preserves-register",
-      "source": "~> ,> ?= . ;\n",
+      "source": "~> , ?= . ;\n",
       "run": {
         "boundary": "exit",
         "seed": "0",
@@ -2027,7 +3422,7 @@
     },
     {
       "id": "cmp-repeat-recomputes",
-      "source": "~> ,> ( ,> ?=x3 . ;\n",
+      "source": "~> , ( , ?=x3 . ;\n",
       "run": {
         "boundary": "exit",
         "seed": "0",
@@ -2077,7 +3472,7 @@
     },
     {
       "id": "prefix-skips-complete-effects",
-      "source": "~> ?1,> ?1. ?1?? ?1; ?1+* ?0.3 ;\n",
+      "source": "~> ?1, ?1. ?1?? ?1; ?1+* ?0.3 ;\n",
       "run": {
         "boundary": "exit",
         "seed": "0",
@@ -2317,7 +3712,7 @@
     },
     {
       "id": "obsolete-random-byte-does-not-decode",
-      "source": "~> ,> & % . ;\n",
+      "source": "~> , & % . ;\n",
       "run": {
         "boundary": "exit",
         "seed": "0",
@@ -2366,7 +3761,7 @@
     },
     {
       "id": "renamed-random-byte-roundtrip",
-      "source": "~> ,> & % . ;\n",
+      "source": "~> , & % . ;\n",
       "run": {
         "boundary": "exit",
         "seed": "0",
@@ -2411,6 +3806,915 @@
         ],
         "remaining_input": [],
         "error_codes": []
+      }
+    },
+    {
+      "id": "immediate-output-repeat-three-ticks",
+      "source": "~> .3x3 ;\n",
+      "run": {
+        "boundary": "exit",
+        "seed": "0",
+        "custom_execution_limit": "100",
+        "max_ticks": "10",
+        "input": []
+      },
+      "expected": {
+        "process_exit_code": 0,
+        "status": "halted",
+        "vm_status": "halted",
+        "output": [
+          3,
+          3,
+          3
+        ],
+        "registers": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "committed_ticks": "5",
+        "operation_count": "4",
+        "used_cell_count": "3",
+        "used_memory_address_count": "0",
+        "peak_data_stack_usage": "0",
+        "peak_instruction_stack_usage": "0",
+        "peak_call_stack_usage": "0",
+        "instruction_variety": [
+          "Output",
+          "Halt"
+        ],
+        "error_codes": []
+      }
+    },
+    {
+      "id": "neg-byte-and-code-round-trip",
+      "source": "~> , $! . , & % . ;\n",
+      "run": {
+        "boundary": "exit",
+        "seed": "0",
+        "custom_execution_limit": "100",
+        "max_ticks": "20",
+        "input": [
+          5,
+          69
+        ]
+      },
+      "expected": {
+        "process_exit_code": 0,
+        "status": "halted",
+        "vm_status": "halted",
+        "output": [
+          251,
+          69
+        ],
+        "registers": [
+          69,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "committed_ticks": "9",
+        "operation_count": "8",
+        "used_cell_count": "9",
+        "used_memory_address_count": "0",
+        "peak_data_stack_usage": "0",
+        "peak_instruction_stack_usage": "1",
+        "peak_call_stack_usage": "0",
+        "instruction_variety": [
+          "Read",
+          "Output",
+          "Decode",
+          "Encode",
+          "Neg",
+          "Halt"
+        ],
+        "remaining_input": [],
+        "error_codes": []
+      }
+    },
+    {
+      "id": "neg-repeat-three-ticks",
+      "source": "~> , $!x3 . ;\n",
+      "run": {
+        "boundary": "exit",
+        "seed": "0",
+        "custom_execution_limit": "100",
+        "max_ticks": "20",
+        "input": [
+          37
+        ]
+      },
+      "expected": {
+        "process_exit_code": 0,
+        "status": "halted",
+        "vm_status": "halted",
+        "output": [
+          219
+        ],
+        "registers": [
+          219,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "committed_ticks": "7",
+        "operation_count": "6",
+        "used_cell_count": "5",
+        "used_memory_address_count": "0",
+        "peak_data_stack_usage": "0",
+        "peak_instruction_stack_usage": "0",
+        "peak_call_stack_usage": "0",
+        "instruction_variety": [
+          "Read",
+          "Output",
+          "Neg",
+          "Halt"
+        ],
+        "remaining_input": [],
+        "error_codes": []
+      }
+    },
+    {
+      "id": "function-private-registers-and-stack-return",
+      "source": "@main\n~> , [0 . ;\n@F0\n~> $! . ( } ]\n@end F0\n@end main\n",
+      "run": {
+        "boundary": "exit",
+        "seed": "0",
+        "custom_execution_limit": "100",
+        "max_ticks": "30",
+        "input": [
+          5
+        ]
+      },
+      "expected": {
+        "process_exit_code": 0,
+        "status": "halted",
+        "vm_status": "halted",
+        "output": [
+          251,
+          5
+        ],
+        "registers": [
+          5,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "committed_ticks": "12",
+        "operation_count": "9",
+        "used_cell_count": "11",
+        "used_memory_address_count": "0",
+        "peak_data_stack_usage": "1",
+        "peak_instruction_stack_usage": "0",
+        "peak_call_stack_usage": "1",
+        "instruction_variety": [
+          "Read",
+          "MoveRegisterPointer",
+          "Output",
+          "Push",
+          "Call",
+          "Return",
+          "Neg",
+          "Halt"
+        ],
+        "remaining_input": [],
+        "error_codes": []
+      }
+    },
+    {
+      "id": "custom-function-private-neg",
+      "source": "@main\n~> , ( #0 ! ) . ;\n@end main\n@C0\n~> [0 #]\n@F0\n~> , $! . ]\n@end F0\n@end C0\n",
+      "run": {
+        "boundary": "exit",
+        "seed": "0",
+        "custom_execution_limit": "100",
+        "max_ticks": "30",
+        "input": [
+          5
+        ]
+      },
+      "expected": {
+        "process_exit_code": 0,
+        "status": "halted",
+        "vm_status": "halted",
+        "output": [
+          251
+        ],
+        "registers": [
+          251,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "committed_ticks": "8",
+        "operation_count": "12",
+        "used_cell_count": "16",
+        "used_memory_address_count": "0",
+        "peak_data_stack_usage": "1",
+        "peak_instruction_stack_usage": "0",
+        "peak_call_stack_usage": "1",
+        "instruction_variety": [
+          "Read",
+          "Clear",
+          "Output",
+          "Push",
+          "PopAdd",
+          "Call",
+          "Return",
+          "Neg",
+          "CustomReturn",
+          "Halt"
+        ],
+        "remaining_input": [],
+        "error_codes": []
+      }
+    },
+    {
+      "id": "function-private-register-snapshot-yield",
+      "source": "@main\n~> , [0 . ;\n@F0\n~> $! ]\n@end F0\n@end main\n",
+      "run": {
+        "boundary": "exit",
+        "seed": "0",
+        "custom_execution_limit": "100",
+        "max_ticks": "4",
+        "input": [
+          5
+        ]
+      },
+      "expected": {
+        "process_exit_code": 6,
+        "status": "tick_limit_reached",
+        "vm_status": "running",
+        "output": [],
+        "registers": [
+          5,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "committed_ticks": "4",
+        "operation_count": "2",
+        "used_cell_count": "4",
+        "used_memory_address_count": "0",
+        "peak_data_stack_usage": "0",
+        "peak_instruction_stack_usage": "0",
+        "peak_call_stack_usage": "1",
+        "instruction_variety": [
+          "Read",
+          "Call"
+        ],
+        "remaining_input": [],
+        "error_codes": []
+      }
+    },
+    {
+      "id": "flag-read-last-byte-and-exhaustion",
+      "source": "~> , ?!.9 , ?!.1 ?!.2 ;\n",
+      "run": {
+        "boundary": "exit",
+        "seed": "0",
+        "custom_execution_limit": "100",
+        "max_ticks": "100",
+        "input": [
+          173
+        ]
+      },
+      "expected": {
+        "process_exit_code": 0,
+        "status": "halted",
+        "vm_status": "halted",
+        "output": [
+          1,
+          2
+        ],
+        "registers": [
+          173,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "committed_ticks": "7",
+        "error_codes": [],
+        "operation_count": "8",
+        "used_cell_count": "7",
+        "used_memory_address_count": "0",
+        "peak_data_stack_usage": "0",
+        "peak_instruction_stack_usage": "0",
+        "peak_call_stack_usage": "0",
+        "instruction_variety": [
+          "Condition",
+          "Read",
+          "Output",
+          "Halt"
+        ]
+      }
+    },
+    {
+      "id": "flag-inc-carry",
+      "source": "~> , + ?!.1 ;\n",
+      "run": {
+        "boundary": "exit",
+        "seed": "0",
+        "custom_execution_limit": "100",
+        "max_ticks": "100",
+        "input": [
+          255
+        ]
+      },
+      "expected": {
+        "process_exit_code": 0,
+        "status": "halted",
+        "vm_status": "halted",
+        "output": [
+          1
+        ],
+        "registers": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "committed_ticks": "5",
+        "error_codes": [],
+        "operation_count": "5",
+        "used_cell_count": "5",
+        "used_memory_address_count": "0",
+        "peak_data_stack_usage": "0",
+        "peak_instruction_stack_usage": "0",
+        "peak_call_stack_usage": "0",
+        "instruction_variety": [
+          "Condition",
+          "Read",
+          "Add",
+          "Output",
+          "Halt"
+        ]
+      }
+    },
+    {
+      "id": "flag-dec-borrow",
+      "source": "~> - ?!.1 ;\n",
+      "run": {
+        "boundary": "exit",
+        "seed": "0",
+        "custom_execution_limit": "100",
+        "max_ticks": "100",
+        "input": []
+      },
+      "expected": {
+        "process_exit_code": 0,
+        "status": "halted",
+        "vm_status": "halted",
+        "output": [
+          1
+        ],
+        "registers": [
+          255,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "committed_ticks": "4",
+        "error_codes": [],
+        "operation_count": "4",
+        "used_cell_count": "4",
+        "used_memory_address_count": "0",
+        "peak_data_stack_usage": "0",
+        "peak_instruction_stack_usage": "0",
+        "peak_call_stack_usage": "0",
+        "instruction_variety": [
+          "Condition",
+          "Sub",
+          "Output",
+          "Halt"
+        ]
+      }
+    },
+    {
+      "id": "flag-popadd-empty",
+      "source": "~> ) ?!.1 ;\n",
+      "run": {
+        "boundary": "exit",
+        "seed": "0",
+        "custom_execution_limit": "100",
+        "max_ticks": "100",
+        "input": []
+      },
+      "expected": {
+        "process_exit_code": 0,
+        "status": "halted",
+        "vm_status": "halted",
+        "output": [
+          1
+        ],
+        "registers": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "committed_ticks": "4",
+        "error_codes": [],
+        "operation_count": "4",
+        "used_cell_count": "4",
+        "used_memory_address_count": "0",
+        "peak_data_stack_usage": "0",
+        "peak_instruction_stack_usage": "0",
+        "peak_call_stack_usage": "0",
+        "instruction_variety": [
+          "Condition",
+          "Output",
+          "PopAdd",
+          "Halt"
+        ]
+      }
+    },
+    {
+      "id": "flag-popadd-carry",
+      "source": "~> , ( ) ?!.1 ;\n",
+      "run": {
+        "boundary": "exit",
+        "seed": "0",
+        "custom_execution_limit": "100",
+        "max_ticks": "100",
+        "input": [
+          128
+        ]
+      },
+      "expected": {
+        "process_exit_code": 0,
+        "status": "halted",
+        "vm_status": "halted",
+        "output": [
+          1
+        ],
+        "registers": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "committed_ticks": "6",
+        "error_codes": [],
+        "operation_count": "6",
+        "used_cell_count": "6",
+        "used_memory_address_count": "0",
+        "peak_data_stack_usage": "1",
+        "peak_instruction_stack_usage": "0",
+        "peak_call_stack_usage": "0",
+        "instruction_variety": [
+          "Condition",
+          "Read",
+          "Output",
+          "Push",
+          "PopAdd",
+          "Halt"
+        ]
+      }
+    },
+    {
+      "id": "flag-shift-left",
+      "source": "~> , $< ?!.1 ;\n",
+      "run": {
+        "boundary": "exit",
+        "seed": "0",
+        "custom_execution_limit": "100",
+        "max_ticks": "100",
+        "input": [
+          128
+        ]
+      },
+      "expected": {
+        "process_exit_code": 0,
+        "status": "halted",
+        "vm_status": "halted",
+        "output": [
+          1
+        ],
+        "registers": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "committed_ticks": "5",
+        "error_codes": [],
+        "operation_count": "5",
+        "used_cell_count": "5",
+        "used_memory_address_count": "0",
+        "peak_data_stack_usage": "0",
+        "peak_instruction_stack_usage": "0",
+        "peak_call_stack_usage": "0",
+        "instruction_variety": [
+          "Condition",
+          "Read",
+          "Output",
+          "Shift",
+          "Halt"
+        ]
+      }
+    },
+    {
+      "id": "flag-shift-right",
+      "source": "~> , $> ?!.1 ;\n",
+      "run": {
+        "boundary": "exit",
+        "seed": "0",
+        "custom_execution_limit": "100",
+        "max_ticks": "100",
+        "input": [
+          1
+        ]
+      },
+      "expected": {
+        "process_exit_code": 0,
+        "status": "halted",
+        "vm_status": "halted",
+        "output": [
+          1
+        ],
+        "registers": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "committed_ticks": "5",
+        "error_codes": [],
+        "operation_count": "5",
+        "used_cell_count": "5",
+        "used_memory_address_count": "0",
+        "peak_data_stack_usage": "0",
+        "peak_instruction_stack_usage": "0",
+        "peak_call_stack_usage": "0",
+        "instruction_variety": [
+          "Condition",
+          "Read",
+          "Output",
+          "Shift",
+          "Halt"
+        ]
+      }
+    },
+    {
+      "id": "flag-pointer-wrap",
+      "source": "~> { ?!} ?!.1 ;\n",
+      "run": {
+        "boundary": "exit",
+        "seed": "0",
+        "custom_execution_limit": "100",
+        "max_ticks": "100",
+        "input": []
+      },
+      "expected": {
+        "process_exit_code": 0,
+        "status": "halted",
+        "vm_status": "halted",
+        "output": [
+          1
+        ],
+        "registers": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "committed_ticks": "5",
+        "error_codes": [],
+        "operation_count": "6",
+        "used_cell_count": "5",
+        "used_memory_address_count": "0",
+        "peak_data_stack_usage": "0",
+        "peak_instruction_stack_usage": "0",
+        "peak_call_stack_usage": "0",
+        "instruction_variety": [
+          "Condition",
+          "MoveRegisterPointer",
+          "Output",
+          "Halt"
+        ]
+      }
+    },
+    {
+      "id": "flag-preserve-nand-neg-cmp",
+      "source": "~> ) $& $! ?= ! ?!.1 ;\n",
+      "run": {
+        "boundary": "exit",
+        "seed": "0",
+        "custom_execution_limit": "100",
+        "max_ticks": "100",
+        "input": []
+      },
+      "expected": {
+        "process_exit_code": 0,
+        "status": "halted",
+        "vm_status": "halted",
+        "output": [
+          1
+        ],
+        "registers": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "committed_ticks": "8",
+        "error_codes": [],
+        "operation_count": "8",
+        "used_cell_count": "8",
+        "used_memory_address_count": "0",
+        "peak_data_stack_usage": "0",
+        "peak_instruction_stack_usage": "0",
+        "peak_call_stack_usage": "0",
+        "instruction_variety": [
+          "Compare",
+          "Condition",
+          "Clear",
+          "Output",
+          "PopAdd",
+          "Neg",
+          "Nand",
+          "Halt"
+        ]
+      }
+    },
+    {
+      "id": "flag-repeat-cancels",
+      "source": "~> ) ?!+x5 ?!.1 . ;\n",
+      "run": {
+        "boundary": "exit",
+        "seed": "0",
+        "custom_execution_limit": "100",
+        "max_ticks": "100",
+        "input": []
+      },
+      "expected": {
+        "process_exit_code": 0,
+        "status": "halted",
+        "vm_status": "halted",
+        "output": [
+          1
+        ],
+        "registers": [
+          1,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "committed_ticks": "7",
+        "error_codes": [],
+        "operation_count": "7",
+        "used_cell_count": "6",
+        "used_memory_address_count": "0",
+        "peak_data_stack_usage": "0",
+        "peak_instruction_stack_usage": "0",
+        "peak_call_stack_usage": "0",
+        "instruction_variety": [
+          "Condition",
+          "Add",
+          "Output",
+          "PopAdd",
+          "Halt"
+        ]
+      }
+    },
+    {
+      "id": "flag-function-restore",
+      "source": "@main\n~> ) [0 ?!.1 ;\n@F0\n~> ?!.3 + ] _\n@end F0\n@end main\n",
+      "run": {
+        "boundary": "exit",
+        "seed": "0",
+        "custom_execution_limit": "100",
+        "max_ticks": "100",
+        "input": []
+      },
+      "expected": {
+        "process_exit_code": 0,
+        "status": "halted",
+        "vm_status": "halted",
+        "output": [
+          3,
+          1
+        ],
+        "registers": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "committed_ticks": "10",
+        "error_codes": [],
+        "operation_count": "9",
+        "used_cell_count": "9",
+        "used_memory_address_count": "0",
+        "peak_data_stack_usage": "0",
+        "peak_instruction_stack_usage": "0",
+        "peak_call_stack_usage": "1",
+        "instruction_variety": [
+          "Condition",
+          "Add",
+          "Output",
+          "PopAdd",
+          "Call",
+          "Return",
+          "Halt"
+        ]
+      }
+    },
+    {
+      "id": "flag-custom-copy-discard",
+      "source": "@main\n~> ) #0 ?!.2 ;\n@end main\n@C0\n~> ?!.4 , ?!.9 #]\n@end C0\n",
+      "run": {
+        "boundary": "exit",
+        "seed": "0",
+        "custom_execution_limit": "100",
+        "max_ticks": "100",
+        "input": []
+      },
+      "expected": {
+        "process_exit_code": 0,
+        "status": "halted",
+        "vm_status": "halted",
+        "output": [
+          2
+        ],
+        "registers": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "committed_ticks": "5",
+        "error_codes": [],
+        "operation_count": "9",
+        "used_cell_count": "10",
+        "used_memory_address_count": "0",
+        "peak_data_stack_usage": "1",
+        "peak_instruction_stack_usage": "0",
+        "peak_call_stack_usage": "0",
+        "instruction_variety": [
+          "Condition",
+          "Read",
+          "Output",
+          "PopAdd",
+          "CustomReturn",
+          "Halt"
+        ]
+      }
+    },
+    {
+      "id": "flag-fold-shares",
+      "source": "@main\n~> $0 ?!.1 ;\n@M0 ) ?!.3 ^ _\n@end main\n",
+      "run": {
+        "boundary": "exit",
+        "seed": "0",
+        "custom_execution_limit": "100",
+        "max_ticks": "100",
+        "input": []
+      },
+      "expected": {
+        "process_exit_code": 0,
+        "status": "halted",
+        "vm_status": "halted",
+        "output": [
+          3,
+          1
+        ],
+        "registers": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "committed_ticks": "7",
+        "error_codes": [],
+        "operation_count": "6",
+        "used_cell_count": "7",
+        "used_memory_address_count": "0",
+        "peak_data_stack_usage": "0",
+        "peak_instruction_stack_usage": "0",
+        "peak_call_stack_usage": "0",
+        "instruction_variety": [
+          "Condition",
+          "Output",
+          "PopAdd",
+          "Halt"
+        ]
       }
     }
   ]

@@ -25,6 +25,7 @@ pub enum InstructionKind {
     Encode,
     Call,
     Return,
+    Neg,
     Nand,
     MemoryLoad,
     MemoryStore,
@@ -56,6 +57,7 @@ impl InstructionKind {
             Self::Encode => "Encode",
             Self::Call => "Call",
             Self::Return => "Return",
+            Self::Neg => "Neg",
             Self::Nand => "Nand",
             Self::MemoryLoad => "MemoryLoad",
             Self::MemoryStore => "MemoryStore",
@@ -77,7 +79,7 @@ impl InstructionKind {
             | PrimaryInstruction::Custom(_) => None,
             PrimaryInstruction::RandomDirection => Some(Self::RandomDirection),
             PrimaryInstruction::Compare => Some(Self::Compare),
-            PrimaryInstruction::Read(_) => Some(Self::Read),
+            PrimaryInstruction::Read => Some(Self::Read),
             PrimaryInstruction::Clear => Some(Self::Clear),
             PrimaryInstruction::Add => Some(Self::Add),
             PrimaryInstruction::Sub => Some(Self::Sub),
@@ -91,6 +93,7 @@ impl InstructionKind {
             PrimaryInstruction::Encode => Some(Self::Encode),
             PrimaryInstruction::Call(_) => Some(Self::Call),
             PrimaryInstruction::Return => Some(Self::Return),
+            PrimaryInstruction::Neg => Some(Self::Neg),
             PrimaryInstruction::Nand => Some(Self::Nand),
             PrimaryInstruction::MemoryLoad => Some(Self::MemoryLoad),
             PrimaryInstruction::MemoryStore => Some(Self::MemoryStore),
@@ -405,14 +408,17 @@ mod tests {
     }
 
     #[test]
-    fn instruction_variety_mapping_covers_the_mvp_source_inventory() {
+    fn instruction_variety_mapping_covers_the_full_source_inventory() {
         let mut observed = std::collections::BTreeSet::new();
 
-        for (token, instruction) in PrimaryInstruction::MVP_SOURCE_TOKENS {
+        for instruction in PrimaryInstruction::source_forms() {
             let expected = match instruction {
-                PrimaryInstruction::Direction(_) => None,
+                PrimaryInstruction::Direction(_)
+                | PrimaryInstruction::FoldedBlock(_)
+                | PrimaryInstruction::Custom(_) => None,
+                PrimaryInstruction::RandomDirection => Some(InstructionKind::RandomDirection),
                 PrimaryInstruction::Compare => Some(InstructionKind::Compare),
-                PrimaryInstruction::Read(_) => Some(InstructionKind::Read),
+                PrimaryInstruction::Read => Some(InstructionKind::Read),
                 PrimaryInstruction::Add => Some(InstructionKind::Add),
                 PrimaryInstruction::Sub => Some(InstructionKind::Sub),
                 PrimaryInstruction::Output | PrimaryInstruction::OutputImmediate(_) => {
@@ -420,7 +426,22 @@ mod tests {
                 }
                 PrimaryInstruction::Shift(_) => Some(InstructionKind::Shift),
                 PrimaryInstruction::Halt => Some(InstructionKind::Halt),
-                _ => panic!("{token} is outside the MVP source inventory"),
+                PrimaryInstruction::Clear => Some(InstructionKind::Clear),
+                PrimaryInstruction::MoveRegisterPointer(_) => {
+                    Some(InstructionKind::MoveRegisterPointer)
+                }
+                PrimaryInstruction::Push => Some(InstructionKind::Push),
+                PrimaryInstruction::PopAdd => Some(InstructionKind::PopAdd),
+                PrimaryInstruction::Decode => Some(InstructionKind::Decode),
+                PrimaryInstruction::Encode => Some(InstructionKind::Encode),
+                PrimaryInstruction::Call(_) => Some(InstructionKind::Call),
+                PrimaryInstruction::Return => Some(InstructionKind::Return),
+                PrimaryInstruction::Neg => Some(InstructionKind::Neg),
+                PrimaryInstruction::Nand => Some(InstructionKind::Nand),
+                PrimaryInstruction::MemoryLoad => Some(InstructionKind::MemoryLoad),
+                PrimaryInstruction::MemoryStore => Some(InstructionKind::MemoryStore),
+                PrimaryInstruction::MovePage(_) => Some(InstructionKind::MovePage),
+                PrimaryInstruction::CustomReturn => Some(InstructionKind::CustomReturn),
             };
             let actual = InstructionKind::from_primary(instruction);
             assert_eq!(
@@ -431,19 +452,30 @@ mod tests {
         }
 
         let expected_kinds = [
+            InstructionKind::RandomDirection,
+            InstructionKind::Compare,
             InstructionKind::Read,
             InstructionKind::Add,
             InstructionKind::Sub,
             InstructionKind::Output,
             InstructionKind::Shift,
             InstructionKind::Halt,
+            InstructionKind::Clear,
+            InstructionKind::MoveRegisterPointer,
+            InstructionKind::Push,
+            InstructionKind::PopAdd,
+            InstructionKind::Decode,
+            InstructionKind::Encode,
+            InstructionKind::Call,
+            InstructionKind::Return,
+            InstructionKind::Neg,
+            InstructionKind::Nand,
+            InstructionKind::MemoryLoad,
+            InstructionKind::MemoryStore,
+            InstructionKind::MovePage,
+            InstructionKind::CustomReturn,
         ];
         assert_eq!(observed, expected_kinds.into_iter().collect());
-
-        assert_eq!(
-            observed.iter().map(|kind| kind.name()).collect::<Vec<_>>(),
-            ["Read", "Add", "Sub", "Output", "Shift", "Halt"]
-        );
     }
 
     #[test]

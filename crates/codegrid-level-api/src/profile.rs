@@ -1,5 +1,4 @@
 use serde::Deserialize;
-use serde_json::Value;
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct ApiError {
@@ -20,39 +19,23 @@ impl ApiError {
 }
 
 /// Immutable trusted host ceilings; never loaded from a player's level or source.
-#[derive(Clone, Debug, Deserialize, serde::Serialize)]
-#[serde(deny_unknown_fields)]
-pub struct SafetyProfile {
-    pub profile_version: u32,
+#[derive(Clone, Debug)]
+pub(crate) struct CommonLimits {
     pub profile_id: String,
     pub provenance: String,
-    #[serde(deserialize_with = "positive")]
     pub max_level_bytes: u64,
-    #[serde(deserialize_with = "positive")]
     pub max_source_bytes: u64,
-    #[serde(deserialize_with = "positive")]
     pub max_tests: u64,
-    #[serde(deserialize_with = "positive")]
     pub max_total_test_bytes: u64,
-    #[serde(deserialize_with = "positive")]
     pub max_program_cells: u64,
-    #[serde(deserialize_with = "positive")]
     pub max_program_boards: u64,
-    #[serde(deserialize_with = "positive")]
     pub max_state_bytes: u64,
-    #[serde(deserialize_with = "positive")]
     pub max_state_units: u64,
-    #[serde(deserialize_with = "positive")]
     pub max_output_bytes: u64,
-    #[serde(deserialize_with = "positive")]
     pub max_handles: u64,
-    #[serde(deserialize_with = "positive")]
     pub max_response_bytes: u64,
-    #[serde(deserialize_with = "positive")]
     pub max_ticks_per_test: u64,
-    #[serde(deserialize_with = "positive")]
     pub max_work_per_call: u64,
-    #[serde(deserialize_with = "positive")]
     pub max_total_work: u64,
 }
 
@@ -72,20 +55,8 @@ pub(crate) fn parse_decimal(text: &str) -> Option<u64> {
     text.parse().ok()
 }
 
-impl SafetyProfile {
-    pub fn from_json(json: &str) -> Result<Self, ApiError> {
-        let profile: Self = serde_json::from_str(json)
-            .map_err(|e| ApiError::new("level_api.invalid_profile", e.to_string()))?;
-        profile.validate()?;
-        Ok(profile)
-    }
+impl CommonLimits {
     pub fn validate(&self) -> Result<(), ApiError> {
-        if self.profile_version != 1 {
-            return Err(ApiError::new(
-                "level_api.unsupported_profile_version",
-                "Unsupported safety profile version",
-            ));
-        }
         if self.profile_id.is_empty()
             || self.profile_id.trim() != self.profile_id
             || self.provenance.is_empty()
@@ -127,29 +98,5 @@ impl SafetyProfile {
             ));
         }
         Ok(())
-    }
-    pub fn identity_json(&self) -> Value {
-        serde_json::json!({"profile_id":self.profile_id,"profile_version":self.profile_version})
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    #[test]
-    fn exact_integer_contract() {
-        assert_eq!(parse_decimal("18446744073709551615"), Some(u64::MAX));
-        for s in ["", "01", "+1", "-1", "1.0", "18446744073709551616"] {
-            assert_eq!(parse_decimal(s), None);
-        }
-    }
-    #[test]
-    fn local_profile_and_duplicate_fields() {
-        let json = include_str!("../../../fixtures/levels/profiles/local-v1.json");
-        assert!(SafetyProfile::from_json(json).is_ok());
-        assert!(
-            SafetyProfile::from_json(&json.replacen("{", "{\"profile_version\":1,", 1)).is_err()
-        );
-        assert!(SafetyProfile::from_json(&json.replace("\"1048576\"", "\"0\"")).is_err());
     }
 }

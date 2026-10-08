@@ -24,4 +24,4 @@ Provide CodeGrid file association, TextMate syntax highlighting, language config
 
 ## Validation
 
-Test grammar/token scopes, formatting idempotence and preservation, provider behavior, activation, and the optional-LSP failure fallback. Keep English as the default package language. Explicitly requested localization catalogs, translated UI, and localized extension introductions may use their target languages. Preserve CodeGrid syntax, configuration keys, protocol fields, and stable error identifiers across locales.
+Test grammar/token scopes, formatting idempotence and preservation, provider behavior, activation, and the optional-LSP failure fallback. Keep English as the default package language and use English for ordinary documentation, including the extension README. Dedicated localization catalogs and their translated UI may use their target languages. Preserve CodeGrid syntax, configuration keys, protocol fields, and stable error identifiers across locales.

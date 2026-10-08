@@ -93,7 +93,7 @@ fn v3_compile_and_program_view_use_verified_handle_lifecycle() {
             program,
         })
         .expect("live program can be inspected through a borrowed view");
-    assert_eq!(borrowed.view.ir_format_version(), 2);
+    assert_eq!(borrowed.view.ir_format_version(), 3);
     assert_eq!(borrowed.view.program().customs.len(), 1);
     let owned = borrowed.into_owned();
     assert_eq!(owned.api_version, RUNTIME_API_VERSION);
@@ -249,7 +249,7 @@ fn initial_memory_and_configuration_rejections_do_not_allocate_instances() {
 
 #[test]
 fn run_deltas_match_the_ordered_results_of_repeated_step_calls() {
-    let source = "~> ,v . ;\n";
+    let source = "~> , . ;\n";
     let mut run_api = runtime();
     let run_program = compile_source(&mut run_api, source);
     let run_instance = create_instance(

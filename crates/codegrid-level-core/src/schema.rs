@@ -458,7 +458,7 @@ fn parse_metric_policy(
 mod tests {
     use super::*;
     fn level() -> Value {
-        serde_json::json!({"format_version":1,"level_id":"测试.level","level_version":1,"evaluation_type":"ExactIO","program_rules":{"allowed_instructions":["HALT"],"allowed_attachments":[],"main_board":{"width":10,"height":10},"function_board":{"width":10,"height":10},"max_functions":0,"max_custom":0,"max_threads":1,"memory_enabled":false},"constraints":{},"scoring":{"metrics":{}},"evaluation":{"tests":[{"visible":true,"input":[],"expected_output":[]}]}})
+        serde_json::json!({"format_version":1,"level_id":"\u{6d4b}\u{8bd5}.level","level_version":1,"evaluation_type":"ExactIO","program_rules":{"allowed_instructions":["HALT"],"allowed_attachments":[],"main_board":{"width":10,"height":10},"function_board":{"width":10,"height":10},"max_functions":0,"max_custom":0,"max_threads":1,"memory_enabled":false},"constraints":{},"scoring":{"metrics":{}},"evaluation":{"tests":[{"visible":true,"input":[],"expected_output":[]}]}})
     }
     fn load(v: &Value) -> Result<ValidatedLevel, LevelError> {
         load_level_json(v.to_string().as_bytes(), 100_000)

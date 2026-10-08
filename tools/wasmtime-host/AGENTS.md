@@ -6,7 +6,7 @@ This standalone tool embeds the built `codegrid-wasm-server` artifact in the
 official Wasmtime Rust runtime. It verifies the server ABI, no-import boundary,
 runtime limits, and the shared Full conformance fixtures.
 The `level-parity` binary also verifies the independently versioned Level ABI
-v1 against actual native CLI level responses using the shared level manifest.
+2 against actual native CLI scene responses using the shared scene manifest.
 
 ## Dependencies and boundaries
 
@@ -26,6 +26,6 @@ tool with the artifact path and the same configured memory value. Keep the
 Wasmtime dependency pinned and review fuel, memory, and stack behavior whenever
 the pinned Wasmtime release changes.
 
-`level-parity --scene-v2` verifies ABI/API 2 against shared format-v1 scene levels,
-complete native CLI results, and permitted Debug event traces. Keep these reports
-separate from the v1 regression report and preserve exact original input text.
+`level-parity` verifies ABI/API 2 against shared format-v1 scene levels,
+complete native CLI results, and permitted Debug event traces. The current manifest includes converted ExactIO regression cases; preserve
+exact original input text. No historical ABI-1 path remains.

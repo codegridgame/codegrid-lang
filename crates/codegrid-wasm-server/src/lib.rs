@@ -552,7 +552,7 @@ mod tests {
         );
 
         let mut valid_compile = operation("compile");
-        valid_compile["source"] = json!("~> ,v . ;\n");
+        valid_compile["source"] = json!("~> , . ;\n");
         assert_eq!(dispatch(&mut adapter, valid_compile)["status"], "compiled");
 
         let mut oversized_check = operation("check");
@@ -580,12 +580,12 @@ mod tests {
         );
         assert_eq!(dispatch(&mut adapter, initialize)["status"], "initialized");
 
-        let source = "~> ,v . ;\n";
+        let source = "~> , . ;\n";
         let mut compile = operation("compile");
         compile["source"] = json!(source);
         let compiled = dispatch(&mut adapter, compile);
         assert_eq!(compiled["status"], "compiled");
-        assert_eq!(compiled["view"]["ir_format_version"], 2);
+        assert_eq!(compiled["view"]["ir_format_version"], 3);
         let program = compiled["program"].as_str().unwrap().to_owned();
         let mut program_view_request = operation("program_view");
         program_view_request["program"] = json!(program.clone());
@@ -680,7 +680,7 @@ mod tests {
         let cases = suite["cases"]
             .as_array()
             .expect("suite cases must be an array");
-        assert_eq!(cases.len(), 75);
+        assert_eq!(cases.len(), 94);
 
         let mut adapter = ServerAdapter::new();
         let mut initialize = operation("initialize");

@@ -36,11 +36,11 @@ suite('Full editor metadata', () => {
   });
 
   test('recognizes complete source atoms without accepting split or malformed tokens', () => {
-    for (const token of ['+x3', ',<*', '[0=', ']=', '$&x2', '?=', '?==', '?=*', '?=x3', '?1?=', '?0??', '?2;', '?1.3']) {
+    for (const token of ['$!', '$!*', '$!=', '$!x3', '?0$!', '+x3', ',*', '?!,x3', '?!}', '[0=', ']=', '$&x2', '?=', '?==', '?=*', '?=x3', '?1?=', '?0??', '?2;', '?1.3']) {
       assert.ok(parseCellToken(token), `${token} is a complete attached cell token`);
     }
     for (const token of [
-      '?', '#^', '#v', '#<', '#>', '?0', '?3+', '?0?1+', '?0_', '?0~>', '?x1', '+x6', '+x2x3', '^*=', '[0x2', ']x2', '$0*', ';=', '#00', '[10', '$10', '#vextra', '~V', '~v*', '_x2', '++', ';x2',
+      ',^', ',v', ',<', ',>', '?!,vx3', '?!?0+', '?', '#^', '#v', '#<', '#>', '?0', '?3+', '?0?1+', '?0_', '?0~>', '?x1', '+x6', '+x2x3', '^*=', '[0x2', ']x2', '$0*', ';=', '#00', '[10', '$10', '#vextra', '~V', '~v*', '_x2', '++', ';x2',
     ]) {
       assert.strictEqual(parseCellToken(token), null, `${token} must not be split into a known token`);
     }
@@ -51,7 +51,7 @@ suite('Full editor metadata', () => {
       const encodable = primary.code !== null;
       assert.strictEqual(Boolean(parseCellToken(`${primary.token}*`)), encodable, `${primary.token} ReadCode`);
       assert.strictEqual(Boolean(parseCellToken(`${primary.token}=`)), encodable, `${primary.token} WriteCode`);
-      const repeatable = encodable && primary.family !== 'call' && primary.family !== 'return';
+      const repeatable = (encodable || primary.family === 'output') && primary.family !== 'call' && primary.family !== 'return';
       for (const count of [2, 3, 4, 5]) {
         assert.strictEqual(Boolean(parseCellToken(`${primary.token}x${count}`)), repeatable, `${primary.token} Repeat ${count}`);
       }
@@ -73,7 +73,7 @@ suite('Full editor metadata', () => {
 
 suite('Full hover descriptions', () => {
   test('describes established instructions and generic Full instruction names', () => {
-    assert.ok(describeToken(',>')?.includes('input is exhausted'));
+    assert.ok(describeToken(',')?.includes('F=1'));
     assert.ok(describeToken('?0^')?.includes('register equals 0'));
     assert.ok(describeToken('$>')?.includes('logically'));
     assert.ok(describeToken('+')?.includes('8-bit wrapping'));

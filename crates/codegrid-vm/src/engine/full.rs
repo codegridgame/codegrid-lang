@@ -100,6 +100,12 @@ pub(super) fn evaluate_thread(
         return;
     }
 
+    let active_registers = thread.private_registers.unwrap_or(*registers);
+    let registers = &active_registers;
+    if thread.private_registers.is_some() {
+        draft.effects.private_register_threads.insert(thread.id);
+    }
+
     match thread.phase {
         ExecutionPhase::Normal => execute_normal(
             thread,
@@ -484,7 +490,8 @@ fn execute_primary(
                 stage_register(thread, result, draft);
             }
         }
-        PrimaryInstruction::Read(direction) => {
+        PrimaryInstruction::Neg => stage_register(thread, value.wrapping_neg(), draft),
+        PrimaryInstruction::Read => {
             if mode.scope == ExecutionScope::Outer {
                 let value = input.front().copied();
                 draft.effects.input_reads.push(InputRead {
@@ -492,9 +499,7 @@ fn execute_primary(
                     register: thread.register_pointer,
                     value,
                 });
-                if value.is_none() {
-                    thread.direction = direction;
-                }
+                thread.status_flag = u8::from(value.is_none());
             } else {
                 let value = caller_stack.and_then(|stack| stack.last().copied());
                 draft.effects.caller_stack_reads.push(CallerStackRead {
@@ -502,15 +507,23 @@ fn execute_primary(
                     register: thread.register_pointer,
                     value,
                 });
-                if value.is_none() {
-                    thread.direction = direction;
-                }
+                thread.status_flag = u8::from(value.is_none());
             }
         }
         PrimaryInstruction::Clear => stage_register(thread, 0, draft),
-        PrimaryInstruction::Add => stage_register(thread, value.wrapping_add(1), draft),
-        PrimaryInstruction::Sub => stage_register(thread, value.wrapping_sub(1), draft),
+        PrimaryInstruction::Add => {
+            thread.status_flag = u8::from(value == 255);
+            stage_register(thread, value.wrapping_add(1), draft);
+        }
+        PrimaryInstruction::Sub => {
+            thread.status_flag = u8::from(value == 0);
+            stage_register(thread, value.wrapping_sub(1), draft);
+        }
         PrimaryInstruction::MoveRegisterPointer(direction) => {
+            thread.status_flag = u8::from(match direction {
+                PointerDirection::Left => thread.register_pointer == 0,
+                PointerDirection::Right => thread.register_pointer == 9,
+            });
             thread.register_pointer = match direction {
                 PointerDirection::Left => (thread.register_pointer + 9) % 10,
                 PointerDirection::Right => (thread.register_pointer + 1) % 10,
@@ -535,7 +548,9 @@ fn execute_primary(
         }
         PrimaryInstruction::Push => thread.data_stack.push(value),
         PrimaryInstruction::PopAdd => {
+            thread.status_flag = 1;
             if let Some(popped) = thread.data_stack.pop() {
+                thread.status_flag = u8::from(u16::from(value) + u16::from(popped) > 255);
                 stage_register(thread, value.wrapping_add(popped), draft);
             }
         }
@@ -586,8 +601,12 @@ fn execute_primary(
                     caller_board: thread.board,
                     call_position: thread.position,
                     saved_direction: thread.direction,
+                    saved_registers: thread.private_registers,
+                    saved_register_pointer: thread.register_pointer,
+                    saved_status_flag: thread.status_flag,
                 });
             }
+            thread.private_registers = Some(*registers);
             thread.board = BoardId::Function(function);
             thread.position = position;
             thread.direction = direction;
@@ -606,6 +625,9 @@ fn execute_primary(
                 ));
                 return Flow::Stay;
             };
+            thread.private_registers = frame.saved_registers;
+            thread.register_pointer = frame.saved_register_pointer;
+            thread.status_flag = frame.saved_status_flag;
             thread.board = frame.caller_board;
             thread.position = frame.call_position;
             thread.direction = frame.saved_direction;
@@ -638,14 +660,20 @@ fn execute_primary(
             PageDirection::Increment => thread.page += BigInt::from(1u8),
             PageDirection::Decrement => thread.page -= BigInt::from(1u8),
         },
-        PrimaryInstruction::Shift(direction) => stage_register(
-            thread,
-            match direction {
-                ShiftDirection::Left => value.wrapping_shl(1),
-                ShiftDirection::Right => value >> 1,
-            },
-            draft,
-        ),
+        PrimaryInstruction::Shift(direction) => {
+            thread.status_flag = match direction {
+                ShiftDirection::Left => value >> 7,
+                ShiftDirection::Right => value & 1,
+            };
+            stage_register(
+                thread,
+                match direction {
+                    ShiftDirection::Left => value.wrapping_shl(1),
+                    ShiftDirection::Right => value >> 1,
+                },
+                draft,
+            );
+        }
         PrimaryInstruction::FoldedBlock(fold_id) => {
             let saved_outer_direction = thread.direction;
             thread.phase = ExecutionPhase::Fold {
@@ -764,6 +792,9 @@ fn execute_custom(
     let mut input = VecDeque::new();
     let invocation_seed = custom_invocation_seed(config.seed(), caller.id, tick, custom_id);
     let mut threads = initial_custom_threads(&runtime, invocation_seed);
+    for internal in &mut threads {
+        internal.status_flag = caller.status_flag;
+    }
     let limit = config.custom_execution_limit().get();
 
     for internal_tick in 1..=limit {
@@ -848,6 +879,7 @@ fn execute_custom(
         let mut unused_output = Vec::new();
         commit_effects(
             &mut registers,
+            &mut threads,
             &mut memory,
             &mut input,
             &mut unused_output,
@@ -1103,5 +1135,8 @@ fn condition_matches(
         return true;
     };
     record_operation(metrics, InstructionKind::Condition, draft);
-    registers[usize::from(thread.register_pointer)] == prefix.value()
+    match prefix {
+        codegrid_model::ConditionPrefix::Flag => thread.status_flag == 1,
+        _ => registers[usize::from(thread.register_pointer)] == prefix.value(),
+    }
 }

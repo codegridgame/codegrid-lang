@@ -1,6 +1,6 @@
 //! API-2 wire projection of the core's privacy-safe scene result.
 use crate::{
-    session::{bounded_json, common_result_json, response_too_large, CommonResult},
+    common::{bounded_json, common_result_json, response_too_large, CommonResult},
     ApiError,
 };
 use codegrid_level_core::{

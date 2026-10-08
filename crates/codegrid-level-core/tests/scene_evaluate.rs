@@ -18,7 +18,7 @@ fn visible_metrics_and_comparison_ignore_hidden_cases_and_match_slices() {
         {"visible":true,"input":[2],"expected_output":[2]},
         {"visible":false,"input":[211],"expected_output":[211]}]);
     v["scoring"]["metrics"] = json!({"ticks":{"target":6}});
-    let p = program(&[",>", ".", ";"]);
+    let p = program(&[",", ".", ";"]);
     let large = run_eval(
         start_scene_evaluation(
             load(&v),
@@ -112,7 +112,7 @@ fn register_input_and_scene_state_reset_for_every_case() {
         {"visible":true,"input":[],"expected_output":[0]}]);
     let result = evaluate_scene(
         load(&v),
-        program(&[",>", ".", ";"]),
+        program(&[",", ".", ";"]),
         EvaluationMode::Official,
         config(),
         limits(),
@@ -174,7 +174,7 @@ fn evaluation_work_and_feedback_limits_do_not_reset_between_cases() {
     c.safety.cumulative_work = n(3);
     let result = evaluate_scene(
         load(&v),
-        program(&[",>", ".", ";"]),
+        program(&[",", ".", ";"]),
         EvaluationMode::Official,
         c,
         limits(),
@@ -186,7 +186,7 @@ fn evaluation_work_and_feedback_limits_do_not_reset_between_cases() {
     l.max_scene_feedback_bytes = n(1);
     let result = evaluate_scene(
         load(&v),
-        program(&[",>", ".", ";"]),
+        program(&[",", ".", ";"]),
         EvaluationMode::Official,
         config(),
         l,
@@ -242,7 +242,7 @@ fn failure_tick_is_local_to_case_and_runtime_pairs_keep_registry_identity() {
         {"visible":true,"input":[2],"expected_output":[3]}]);
     let result = evaluate_scene(
         load(&v),
-        program(&[",>", ".", ";"]),
+        program(&[",", ".", ";"]),
         EvaluationMode::Debug,
         config(),
         limits(),

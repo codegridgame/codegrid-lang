@@ -9,6 +9,6 @@ linear-memory maximum in actual-host tests. This ceiling does not cap browser
 process or JavaScript heap memory. Test actual browser worker execution before
 claiming browser parity. Native tests and Node are supplemental evidence.
 
-Keep legacy `LevelSession` on API/profile 1. `SceneLevelSession` explicitly uses
-API/profile 2 and shares bounded JS-string conversion. Native binding tests
+Expose only `SceneLevelSession` on API/profile 2 with bounded JS-string conversion.
+Do not retain historical API-1 bindings. Native binding tests
 do not replace actual Worker execution tests.

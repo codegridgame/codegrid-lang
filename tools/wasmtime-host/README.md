@@ -4,7 +4,7 @@ This standalone Rust tool embeds the no-import `wasm32-unknown-unknown`
 `codegrid-wasm-server` artifact in Wasmtime 49.0.1. It verifies the Server ABI
 v4 exports and configured linear-memory maximum, applies per-store memory and
 Wasm stack limits, initializes one persistent module instance, and executes all
-75 shared Full fixtures through the exported JSON ABI. For each case it invokes
+81 shared Full fixtures through the exported JSON ABI. For each case it invokes
 the Native CLI as an oracle and compares the complete observable run projection:
 status, ordered events, newly emitted output, and the full snapshot including
 program mutation, threads, memory, metrics, errors, and faults. It writes the
@@ -41,11 +41,11 @@ server artifact.
 
 ## Scene API 2
 
-Pass `--scene-v2` after the root/artifact arguments to `level-parity`. It executes
+`level-parity` uses the current Scene API without a version-selection flag. It executes
 the `format_version: 1` scene author levels through Level ABI/API 2 and compares
-complete native CLI results. The `v2` option and directory refer to the host API
+complete native CLI results. The `v2` directory refers to the host API
 generation, not the author JSON format.
 The scene report also contains Debug event traces for cross-host comparison.
-Run `scripts/test-scene-wasm.ps1` from the repository root for both v1 regression
+Run `scripts/test-scene-wasm.ps1` from the repository root for current ExactIO regression
 and the scene comparison pipeline. This remains a local harness, not a
 production backend integration.

@@ -26,7 +26,7 @@ mod tests {
     }
 
     #[test]
-    fn immediate_output_rejects_all_attachments_at_ir_boundary() {
+    fn immediate_output_accepts_only_repeat_at_ir_boundary() {
         let primary = PrimaryInstruction::from_token(".3").unwrap();
         for attachment in AttachmentInstruction::ALL {
             let result = VerifiedProgram::new(program(
@@ -36,7 +36,11 @@ mod tests {
                 ],
                 2,
             ));
-            assert!(result.is_err(), "{attachment:?}");
+            assert_eq!(
+                result.is_ok(),
+                matches!(attachment, AttachmentInstruction::Repeat(_)),
+                "{attachment:?}"
+            );
         }
     }
 

@@ -227,6 +227,10 @@ impl ThreadSnapshotView<'_> {
         self.thread.register_pointer
     }
 
+    pub const fn status_flag(&self) -> u8 {
+        self.thread.status_flag
+    }
+
     pub fn page(&self) -> &crate::Page {
         &self.thread.page
     }
@@ -239,6 +243,10 @@ impl ThreadSnapshotView<'_> {
         &self.thread.instruction_stack
     }
 
+    pub const fn private_registers(&self) -> Option<&[Value; 10]> {
+        self.thread.private_registers.as_ref()
+    }
+
     pub fn call_frames(&self) -> impl Iterator<Item = CallFrameSnapshot> + '_ {
         self.thread
             .call_stack
@@ -247,6 +255,9 @@ impl ThreadSnapshotView<'_> {
                 caller_board: frame.caller_board,
                 call_position: frame.call_position,
                 saved_direction: frame.saved_direction,
+                saved_registers: frame.saved_registers,
+                saved_register_pointer: frame.saved_register_pointer,
+                saved_status_flag: frame.saved_status_flag,
             })
     }
 
@@ -341,6 +352,9 @@ pub struct CallFrameSnapshot {
     pub caller_board: codegrid_ir::BoardId,
     pub call_position: Coordinate,
     pub saved_direction: Direction,
+    pub saved_registers: Option<[Value; 10]>,
+    pub saved_register_pointer: u8,
+    pub saved_status_flag: u8,
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -350,6 +364,8 @@ pub struct ThreadSnapshot {
     pub position: Coordinate,
     pub direction: Direction,
     pub register_pointer: u8,
+    pub status_flag: u8,
+    pub private_registers: Option<[Value; 10]>,
     pub page: crate::Page,
     pub data_stack: Vec<Value>,
     pub instruction_stack: Vec<InstructionStackItem>,
@@ -391,6 +407,8 @@ impl From<&ThreadState> for ThreadSnapshot {
             position: thread.position,
             direction: thread.direction,
             register_pointer: thread.register_pointer,
+            status_flag: thread.status_flag,
+            private_registers: thread.private_registers,
             page: thread.page.clone(),
             data_stack: thread.data_stack.clone(),
             instruction_stack: thread.instruction_stack.clone(),
@@ -401,6 +419,9 @@ impl From<&ThreadState> for ThreadSnapshot {
                     caller_board: frame.caller_board,
                     call_position: frame.call_position,
                     saved_direction: frame.saved_direction,
+                    saved_registers: frame.saved_registers,
+                    saved_register_pointer: frame.saved_register_pointer,
+                    saved_status_flag: frame.saved_status_flag,
                 })
                 .collect(),
             phase,
@@ -410,4 +431,4 @@ impl From<&ThreadState> for ThreadSnapshot {
 }
 
 #[cfg(test)]
-include!("../tests/historical/state_tests_full_v2.rs");
+include!("state_tests.rs");

@@ -1,0 +1,4 @@
+@main
+@size 4x1
+~> +x3 . ;
+@end main

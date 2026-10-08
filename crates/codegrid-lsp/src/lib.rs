@@ -523,7 +523,7 @@ fn hover_cell(source: &str, index: &LineIndex, offset: usize) -> Value {
         ),
         Ok(CellToken::Instruction { prefix, primary, attachment }) => {
             let mut description = primary_description(primary);
-            if let Some(prefix) = prefix { description.push_str(&format!("\n\nPrefix: execute only when the selected tick-start register equals {}; otherwise skip the complete cell.", prefix.value())); }
+            if let Some(prefix) = prefix { if prefix == codegrid_model::ConditionPrefix::Flag { description.push_str("\n\nPrefix: execute only when the tick-start status flag F equals 1; otherwise skip the complete cell."); } else { description.push_str(&format!("\n\nPrefix: execute only when the selected tick-start register equals {}; otherwise skip the complete cell.", prefix.value())); } }
             if let Some(attachment) = attachment { description.push_str(&format!("\n\nAttachment: {}.", attachment_description(attachment))); }
             description
         },
@@ -601,10 +601,7 @@ fn primary_description(primary: PrimaryInstruction) -> String {
             "Choose a direction from the thread's deterministic random stream.".to_owned()
         }
         PrimaryInstruction::Compare => "Compare Data Stack top A without popping with selected register B; write 0 for equality, 1 for A > B, or 2 for A < B. An empty stack leaves the register unchanged.".to_owned(),
-        PrimaryInstruction::Read(direction) => format!(
-            "Read from the outer input or the Custom caller's data stack into the selected register. If the source is empty, keep the register and set direction to {}.",
-            direction_name(direction)
-        ),
+        PrimaryInstruction::Read => "Read a byte into the selected register and set F=0; on exhaustion preserve the register and set F=1. Direction is unchanged.".to_owned(),
         PrimaryInstruction::Clear => "Set the selected register to zero.".to_owned(),
         PrimaryInstruction::Add => "Increment the selected register with 8-bit wrapping.".to_owned(),
         PrimaryInstruction::Sub => "Decrement the selected register with 8-bit wrapping.".to_owned(),
@@ -647,6 +644,7 @@ fn primary_description(primary: PrimaryInstruction) -> String {
             "Pop a byte and replace the selected register with the 8-bit complement of its AND with that byte; an empty stack does nothing."
                 .to_owned()
         }
+        PrimaryInstruction::Neg => "Replace the selected byte with its additive inverse modulo 256; preserve the pointer and use ordinary movement.".to_owned(),
         PrimaryInstruction::MemoryLoad => {
             "Read the byte at Page × 256 plus the selected register and push it onto the data stack."
                 .to_owned()
@@ -1136,7 +1134,7 @@ mod tests {
             .into_iter()
             .map(|candidate| candidate.label)
             .collect::<Vec<_>>();
-        for supported in ["[0", "$0", "??", "!", ",^*", "+x2"] {
+        for supported in ["[0", "$0", "??", "!", ",*", "+x2"] {
             assert!(all_labels.iter().any(|label| label == supported));
         }
 
@@ -1187,14 +1185,14 @@ mod tests {
 
     #[test]
     fn hover_identifies_full_primary_instructions_and_attachments() {
-        let source = "~> ,> ?0^ $> + - . ;
+        let source = "~> , ?0^ $> + - . ;
 ";
         let index = LineIndex::new(source);
         let hover = |token: &str| {
             let offset = source.find(token).expect("source contains the token");
             super::hover_cell(source, &index, offset + 1)
         };
-        for token in [",>", "?0^", "$>", "+", ";"] {
+        for token in [",", "?0^", "$>", "+", ";"] {
             assert!(hover(token)["contents"]["value"]
                 .as_str()
                 .unwrap()

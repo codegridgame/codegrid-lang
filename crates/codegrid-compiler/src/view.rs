@@ -138,7 +138,7 @@ mod tests {
         let program = compile(source).expect("Full view fixture must compile");
         let view = ProgramView::from_verified(&program);
 
-        assert_eq!(view.ir_format_version, 2);
+        assert_eq!(view.ir_format_version, 3);
         assert_eq!(view.outer.main.width, 4);
         assert_eq!(view.outer.main.height, 1);
         assert_eq!(view.outer.main.cells[0].entry.as_deref(), Some("~>"));

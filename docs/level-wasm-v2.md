@@ -3,12 +3,12 @@
 The [Scene Host Contract v2](../spec/codegrid-scene-host-contract-v2.md) defines
 semantics and wire fields. Both adapters invoke shared `LevelApiV2`; they do
 not implement scene validation, action processing, scoring, or feedback policy.
-API/profile 1 remain available on their existing paths.
+Only current API/profile 2 is supported; historical entry points are removed.
 
 ## Browser binding 2
 
-The generated browser module exports `SceneLevelSession` alongside legacy
-`LevelSession`. Initialize the scene class with original trusted profile-2 JSON,
+The generated browser module exports only `SceneLevelSession`.
+Initialize the class with original trusted profile-2 JSON,
 then pass original API-2 request JSON strings to `request`. `shutdown` permanently
 closes that session. JS type and UTF-8 byte checks share the existing bounded
 string conversion. Canonical wide integers remain strings throughout.
@@ -20,17 +20,15 @@ const capabilities = JSON.parse(session.request(JSON.stringify({
 })));
 ```
 
-Each constructor selects its API/profile version explicitly. A profile-2 string
-is not accepted by the legacy constructor. Worker scheduling and rendering are
+The constructor validates the current profile version. Worker scheduling and rendering are
 host responsibilities; no animation timing or hidden VM state is exposed.
 
 ## Portable ABI 2
 
 The no-import artifact retains `memory`, `level_alloc`, `level_dealloc`, and
 `level_request` with the [v1 exact buffer rules](level-wasm-v1.md).
-`level_abi_version()` remains 1; `level_abi_version_v2()` returns 2. Initialization
-selects ABI/API/profile 1 or 2 explicitly and permanently for that module session.
-A later request cannot switch the initialized version.
+`level_abi_version()` returns 2; no version-specific alias export remains.
+Initialization accepts only ABI/API/profile 2. Unsupported versions are rejected.
 
 ```json
 {"abi_version":2,"api_version":2,"operation":"initialize","profile_json":"<original profile-2 JSON>"}

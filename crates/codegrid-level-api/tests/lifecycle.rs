@@ -1,9 +1,9 @@
-use codegrid_level_api::{LevelApi, SafetyProfile};
+use codegrid_level_api::{LevelApiV2, SafetyProfileV2};
 use serde_json::{json, Value};
-fn api() -> LevelApi {
-    LevelApi::new(
-        SafetyProfile::from_json(include_str!(
-            "../../../fixtures/levels/profiles/local-v1.json"
+fn api() -> LevelApiV2 {
+    LevelApiV2::new(
+        SafetyProfileV2::from_json(include_str!(
+            "../../../examples/scene-host-v2/profile-local-v2.json"
         ))
         .unwrap(),
     )
@@ -29,19 +29,19 @@ fn errors_and_diagnostics_include_stable_four_digit_numbers() {
     assert_eq!(bad_level["error"]["code"], "level.invalid");
     assert_eq!(bad_level["error"]["error_number"], "9000");
 }
-fn request(api: &mut LevelApi, mut fields: Value) -> Value {
-    fields["api_version"] = json!(1);
+fn request(api: &mut LevelApiV2, mut fields: Value) -> Value {
+    fields["api_version"] = json!(2);
     serde_json::from_str(&api.request_json(&fields.to_string())).unwrap()
 }
-fn loaded(api: &mut LevelApi) -> (String, String) {
+fn loaded(api: &mut LevelApiV2) -> (String, String) {
     let l = request(
         api,
-        json!({"operation":"load_level","level_json":include_str!("../../../fixtures/levels/echo.json")}),
+        json!({"operation":"load_level","level_json":include_str!("../../../fixtures/levels-scene/echo.json")}),
     );
     assert_eq!(l["status"], "ok", "{l}");
     let p = request(
         api,
-        json!({"operation":"compile_program","source":include_str!("../../../fixtures/levels/echo.cg")}),
+        json!({"operation":"compile_program","source":include_str!("../../../fixtures/levels-scene/echo.cg")}),
     );
     assert_eq!(p["status"], "ok", "{p}");
     (
@@ -115,8 +115,8 @@ fn isolation_versions_unknown_duplicates_and_shutdown() {
         "level_api.invalid_handle"
     );
     for raw in [
-        r#"{"api_version":1,"operation":"capabilities","unknown":0}"#,
-        r#"{"api_version":1,"api_version":1,"operation":"capabilities"}"#,
+        r#"{"api_version":2,"operation":"capabilities","unknown":0}"#,
+        r#"{"api_version":2,"api_version":2,"operation":"capabilities"}"#,
     ] {
         let r: Value = serde_json::from_str(&a.request_json(raw)).unwrap();
         assert_eq!(r["status"], "error");
@@ -189,17 +189,13 @@ fn rejection_seed_source_response_and_resource_limits() {
     assert_eq!(request(&mut a, r)["status"], "ok");
     let mut profile = a.profile().clone();
     profile.max_response_bytes = 512;
-    let mut b = LevelApi::new(profile).unwrap();
+    let mut b = LevelApiV2::new(profile).unwrap();
     let (l, p) = loaded(&mut b);
     let e = request(
         &mut b,
         json!({"operation":"start_evaluation","level":l,"program":p,"mode":"Official","boundary_mode":"Exit","shuffle_seed":"0","custom_execution_limit":"1"}),
     );
-    let r = request(
-        &mut b,
-        json!({"operation":"advance_evaluation","evaluation":e["handle"],"work_budget":"1000"}),
-    );
-    assert_eq!(r["error"]["code"], "level_api.response_too_large");
+    assert_eq!(e["error"]["code"], "level_api.resource_limit");
 }
 
 #[test]
@@ -220,16 +216,16 @@ fn trusted_load_source_handle_and_state_ceilings_are_host_errors() {
             "source_bytes" => profile.max_source_bytes = 1,
             _ => profile.max_state_bytes = 1,
         };
-        let mut a = LevelApi::new(profile).unwrap();
+        let mut a = LevelApiV2::new(profile).unwrap();
         let r = if kind == "source_bytes" {
             request(
                 &mut a,
-                json!({"operation":"compile_program","source":include_str!("../../../fixtures/levels/echo.cg")}),
+                json!({"operation":"compile_program","source":include_str!("../../../fixtures/levels-scene/echo.cg")}),
             )
         } else {
             request(
                 &mut a,
-                json!({"operation":"load_level","level_json":include_str!("../../../fixtures/levels/echo.json")}),
+                json!({"operation":"load_level","level_json":include_str!("../../../fixtures/levels-scene/echo.json")}),
             )
         };
         assert_eq!(r["status"], "error", "{kind}: {r}");
@@ -240,18 +236,18 @@ fn trusted_load_source_handle_and_state_ceilings_are_host_errors() {
     }
     let mut profile = base;
     profile.max_handles = 1;
-    let mut a = LevelApi::new(profile).unwrap();
+    let mut a = LevelApiV2::new(profile).unwrap();
     assert_eq!(
         request(
             &mut a,
-            json!({"operation":"compile_program","source":include_str!("../../../fixtures/levels/echo.cg")})
+            json!({"operation":"compile_program","source":include_str!("../../../fixtures/levels-scene/echo.cg")})
         )["status"],
         "ok"
     );
     assert_eq!(
         request(
             &mut a,
-            json!({"operation":"compile_program","source":include_str!("../../../fixtures/levels/echo.cg")})
+            json!({"operation":"compile_program","source":include_str!("../../../fixtures/levels-scene/echo.cg")})
         )["error"]["code"],
         "level_api.resource_limit"
     );
@@ -260,7 +256,12 @@ fn trusted_load_source_handle_and_state_ceilings_are_host_errors() {
 fn release_inputs_preserves_evaluation_and_release_pending_invalidates_it() {
     let mut a = api();
     let (l, p) = loaded(&mut a);
-    let e=request(&mut a,json!({"operation":"start_evaluation","level":l,"program":p,"mode":"Official","boundary_mode":"Exit","shuffle_seed":"0","custom_execution_limit":"100"}))["handle"].clone();
+    let start = request(
+        &mut a,
+        json!({"operation":"start_evaluation","level":l,"program":p,"mode":"Official","boundary_mode":"Exit","shuffle_seed":"0","custom_execution_limit":"100"}),
+    );
+    assert_eq!(start["status"], "ok", "{start}");
+    let e = start["handle"].clone();
     assert_eq!(
         request(
             &mut a,
@@ -280,6 +281,13 @@ fn release_inputs_preserves_evaluation_and_release_pending_invalidates_it() {
         json!({"operation":"advance_evaluation","evaluation":e,"work_budget":"1000"}),
     );
     assert_eq!(r["result"]["status"], "Passed");
+    assert_eq!(
+        request(
+            &mut a,
+            json!({"operation":"release","kind":"evaluation","handle":e})
+        )["status"],
+        "ok"
+    );
     let (l, p) = loaded(&mut a);
     let e=request(&mut a,json!({"operation":"start_evaluation","level":l,"program":p,"mode":"Official","boundary_mode":"Exit","shuffle_seed":"0","custom_execution_limit":"100"}))["handle"].clone();
     assert_eq!(
@@ -300,8 +308,8 @@ fn release_inputs_preserves_evaluation_and_release_pending_invalidates_it() {
 #[test]
 fn hidden_results_and_pending_projection_disclose_no_private_payload_or_metrics() {
     let mut a = api();
-    let l=request(&mut a,json!({"operation":"load_level","level_json":include_str!("../../../fixtures/levels/hidden-wrong-official.json")}))["handle"].clone();
-    let p=request(&mut a,json!({"operation":"compile_program","source":include_str!("../../../fixtures/levels/echo.cg")}))["handle"].clone();
+    let l=request(&mut a,json!({"operation":"load_level","level_json":include_str!("../../../fixtures/levels-scene/hidden-wrong-official.json")}))["handle"].clone();
+    let p=request(&mut a,json!({"operation":"compile_program","source":include_str!("../../../fixtures/levels-scene/echo.cg")}))["handle"].clone();
     let e=request(&mut a,json!({"operation":"start_evaluation","level":l,"program":p,"mode":"Official","boundary_mode":"Exit","shuffle_seed":"0","custom_execution_limit":"100"}))["handle"].clone();
     let terminal = loop {
         let r = request(
@@ -320,11 +328,11 @@ fn hidden_results_and_pending_projection_disclose_no_private_payload_or_metrics(
     assert!(result["final_metrics"].is_null());
     assert!(result["rating"].is_null());
     assert_eq!(result["hidden_failure"]["category"], "HiddenTestFailed");
-    for visible in result["visible_tests"].as_array().unwrap() {
+    for visible in result["visible_cases"].as_array().unwrap() {
         assert_eq!(visible["source_index"], "0");
-        assert_eq!(visible["input"], json!([9]));
-        assert_eq!(visible["expected_output"], json!([9]));
-        assert_eq!(visible["actual_output"], json!([9]));
+        assert_eq!(visible["comparison"]["input"], json!([9]));
+        assert_eq!(visible["comparison"]["expected_output"], json!([9]));
+        assert_eq!(visible["comparison"]["actual_output"], json!([9]));
     }
     for forbidden in ["snapshot", "events", "trace", "order", "hidden_index"] {
         assert!(result.get(forbidden).is_none());
@@ -340,7 +348,7 @@ fn hidden_results_and_pending_projection_disclose_no_private_payload_or_metrics(
 fn reservations_are_released_and_small_responses_stay_complete() {
     let mut profile = api().profile().clone();
     profile.max_state_bytes = 20000;
-    let mut a = LevelApi::new(profile).unwrap();
+    let mut a = LevelApiV2::new(profile).unwrap();
     let (l, p) = loaded(&mut a);
     let start = json!({"operation":"start_evaluation","level":l,"program":p,"mode":"Official","boundary_mode":"Exit","shuffle_seed":"0","custom_execution_limit":"100"});
     let first = request(&mut a, start.clone());
@@ -357,9 +365,9 @@ fn reservations_are_released_and_small_responses_stay_complete() {
     assert_eq!(request(&mut a, start)["status"], "ok");
     let mut profile = api().profile().clone();
     profile.max_response_bytes = 512;
-    let mut a = LevelApi::new(profile).unwrap();
+    let mut a = LevelApiV2::new(profile).unwrap();
     let raw = a.request_json(
-        &json!({"api_version":1,"operation":"compile_program","source":"bad\n".repeat(1000)})
+        &json!({"api_version":2,"operation":"compile_program","source":"bad\n".repeat(1000)})
             .to_string(),
     );
     assert!(raw.len() <= 512);

@@ -23,18 +23,6 @@ impl VmConfig {
         }
     }
 
-    /// Creates an MVP configuration with fixed, inert legacy settings.
-    ///
-    /// Verified MVP programs cannot execute random or Custom instructions, so
-    /// these retained fields do not affect MVP language results.
-    pub const fn mvp(boundary_mode: BoundaryMode) -> Self {
-        Self {
-            boundary_mode,
-            seed: 0,
-            custom_execution_limit: NonZeroU64::MIN,
-        }
-    }
-
     pub const fn boundary_mode(self) -> BoundaryMode {
         self.boundary_mode
     }

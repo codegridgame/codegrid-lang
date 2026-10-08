@@ -1,5 +1,13 @@
 # Level Core v1 ExactIO Implementation Contract
 
+**Approved next-generation amendment (2026-10-08; not implemented):**
+[Status Flag and directionless READ](../docs/status-flag-and-read.md)
+defines the pending F state, `?!`, directionless `,`, empty POPADD flag,
+current Level permissions and host synchronization gates without unpublished compatibility.
+It supersedes affected contracts for the next generation only. The current
+implementation, versions and acceptance evidence below remain unchanged;
+they do not establish implementation or parity for this amendment.
+
 Status: decided for the first implementation phase on 2026-09-30.
 
 This contract supplements [Level Core v1](codegrid-level-core-spec-v1.md).
@@ -62,11 +70,18 @@ saturation, `TestFailed`, or `ConstraintExceeded`.
 
 ## 2. Fixed capability vocabulary
 
+Implemented addition (2026-10-08): `NEG` is an independent
+capability for the new `Neg` Primary (`$!`, Instruction Code 69). It is not an
+alias for SUB, NAND, STACK or CODEC and is not an always-permitted instruction.
+Omitting it rejects initial NEG cells and committed generated NEG code under
+the existing whitelist rules. NEG contributes one distinct static instruction
+kind and the dynamic `Neg` variety kind. Shared validators and rebuilt WASM enforce this capability.
+
 Following the explicit 2026-10-02 user decision, grouped names are accepted:
 
 | Group | Allowed Primaries |
 | --- | --- |
-| READ | READ_UP, READ_DOWN, READ_LEFT, READ_RIGHT |
+| READ | Directionless READ `,` |
 | REGISTER_POINTER | POINTER_LEFT, POINTER_RIGHT |
 | STACK | PUSH, POP_ADD |
 | CODEC | DECODE, ENCODE |
@@ -97,9 +112,9 @@ until explicitly added to a later capability contract.
 | MOVE_UP, MOVE_DOWN, MOVE_LEFT, MOVE_RIGHT | Direction of the named orientation |
 | RANDOM_DIRECTION | RandomDirection (`??`, code 126) |
 | CMP | Non-consuming comparison (`?=`, code 124) |
-| READ | All four Read orientations |
-| READ_UP, READ_DOWN, READ_LEFT, READ_RIGHT | Only the named Read orientation |
+| READ | Directionless READ only; directional READ capability names are invalid |
 | CLEAR, ADD, SUB | Clear, Add, Sub |
+| NEG | Neg (`$!`, code 69) |
 | POINTER_LEFT, POINTER_RIGHT | MoveRegisterPointer of the named orientation |
 | OUTPUT, PUSH, POP_ADD, DECODE, ENCODE | Corresponding model variants |
 
@@ -112,14 +127,13 @@ until explicitly added to a later capability contract.
 OUTPUT includes both register output `.` and immediate outputs `.0` through
 `.9`. These forms share the OUTPUT permission and one static instruction kind.
 
-`READ` and directional READ names may coexist; membership is the union of
-their permitted variants. Empty and Entry are structural cells and need no
+`READ` permits only the directionless Primary. Removed directional READ names are invalid. Empty and Entry are structural cells and need no
 instruction permission. Folded Block and Custom invocation shells do require
 their named permissions. Function/Custom definitions remain subject to counts
 and their bodies are checked regardless of invocation permissions.
 
 `allowed_attachments` independently permits `READ_CODE`, `WRITE_CODE`,
-`REPEAT`, `CONDITION_0`, `CONDITION_1`, and `CONDITION_2`. The three conditional
+`REPEAT`, `CONDITION_0`, `CONDITION_1`, and `CONDITION_2`, `CONDITION_FLAG`. The four conditional
 capabilities permit only the corresponding fixed prefix and are counted
 separately in static instruction kinds. All evaluated prefixes, including
 false ones, cost one VM operation and share the Condition runtime kind. CMP
@@ -163,7 +177,7 @@ and does not redefine VM raw metrics.
 | max_instruction_stack_depth | VM Peak Instruction Stack Usage | MAX | max_instruction_stack_depth |
 | max_call_stack_depth | VM Peak Call Stack Usage | MAX | max_call_stack_depth |
 | non_empty_cells | Cells with an initial Primary or Entry, including structural invocation shells and Folded Block bodies; an Attachment adds no extra cell | STATIC | max_non_empty_cells |
-| instruction_kinds | Distinct permitted Primary capability kinds present in initial code, with all READ orientations one kind; count each distinct Attachment kind as well; exclude Empty and Entry | STATIC | max_instruction_kinds |
+| instruction_kinds | Distinct permitted Primary capability kinds present in initial code, with READ as one kind; count each distinct Attachment kind as well; exclude Empty and Entry | STATIC | max_instruction_kinds |
 | functions_used | Number of defined Functions across outer and Custom code grids | STATIC | max_functions_used |
 | boards_used | Number of Main, Function, and Folded Block boards across outer and Custom code grids | STATIC | max_boards_used |
 

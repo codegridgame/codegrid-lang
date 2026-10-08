@@ -1,68 +1,8 @@
-//! Worker-compatible browser binding over the shared level API.
+//! Browser binding over the current shared scene level API.
 use codegrid_level_api::error_number;
-use codegrid_level_api::{ApiError, LevelApi, LevelApiV2, SafetyProfile, SafetyProfileV2};
+use codegrid_level_api::{ApiError, LevelApiV2, SafetyProfileV2};
 use wasm_bindgen::prelude::*;
 const MAX_TEXT_BYTES: usize = 8 * 1024 * 1024;
-fn error(code: &str, message: &str) -> String {
-    serde_json::json!({"api_version":1,"status":"error","error":{"code":code,"error_number":error_number("level",code),"message":message}})
-        .to_string()
-}
-#[wasm_bindgen]
-pub struct LevelSession {
-    api: LevelApi,
-}
-impl LevelSession {
-    pub fn from_profile_json(profile: &str) -> Result<Self, ApiError> {
-        if profile.len() > MAX_TEXT_BYTES {
-            return Err(ApiError {
-                code: "level_api.resource_limit",
-                message: "Profile exceeds adapter byte ceiling".into(),
-            });
-        }
-        Ok(Self {
-            api: LevelApi::new(SafetyProfile::from_json(profile)?)?,
-        })
-    }
-    pub fn request_text(&mut self, request: &str) -> String {
-        if request.len() > MAX_TEXT_BYTES {
-            error(
-                "level_api.resource_limit",
-                "Request exceeds adapter byte ceiling",
-            )
-        } else {
-            self.api.request_json(request)
-        }
-    }
-    pub fn shutdown_text(&mut self) -> String {
-        self.api
-            .request_json(r#"{"api_version":1,"operation":"shutdown"}"#)
-    }
-}
-#[wasm_bindgen]
-impl LevelSession {
-    #[wasm_bindgen(constructor)]
-    pub fn new(profile: JsValue) -> Result<LevelSession, JsValue> {
-        let profile = bounded_js_string(profile).map_err(|_| {
-            JsValue::from_str(&error(
-                "level_api.invalid_profile",
-                "Expected a profile string within the adapter byte ceiling",
-            ))
-        })?;
-        Self::from_profile_json(&profile).map_err(|e| JsValue::from_str(&error(e.code, &e.message)))
-    }
-    pub fn request(&mut self, request: JsValue) -> String {
-        match bounded_js_string(request) {
-            Ok(s) => self.request_text(&s),
-            Err(_) => error(
-                "level_api.invalid_request",
-                "Expected a string within the adapter byte ceiling",
-            ),
-        }
-    }
-    pub fn shutdown(&mut self) -> String {
-        self.shutdown_text()
-    }
-}
 fn scene_error(code: &str, message: &str) -> String {
     serde_json::json!({"api_version":2,"status":"error","error":{"code":code,"error_number":error_number("level",code),"message":message}}).to_string()
 }
@@ -158,33 +98,6 @@ fn bounded_js_string(value: JsValue) -> Result<String, JsValue> {
     Ok(String::from(string))
 }
 #[cfg(test)]
-mod tests {
-    use super::*;
-    #[test]
-    fn lifecycle_and_original_profile_validation() {
-        let profile = include_str!("../../../fixtures/levels/profiles/local-v1.json");
-        let mut session = LevelSession::from_profile_json(profile).unwrap();
-        let response: serde_json::Value = serde_json::from_str(
-            &session.request_text(r#"{"api_version":1,"operation":"capabilities"}"#),
-        )
-        .unwrap();
-        assert_eq!(response["status"], "ok");
-        session.shutdown_text();
-        let response: serde_json::Value = serde_json::from_str(
-            &session.request_text(r#"{"api_version":1,"operation":"capabilities"}"#),
-        )
-        .unwrap();
-        assert_eq!(response["error"]["code"], "level_api.shutdown");
-        assert!(LevelSession::from_profile_json(&profile.replacen(
-            "{",
-            "{\"profile_version\":1,",
-            1
-        ))
-        .is_err());
-    }
-}
-
-#[cfg(test)]
 mod scene_tests {
     use super::*;
     #[test]
@@ -210,6 +123,9 @@ mod scene_tests {
         assert!(session
             .request_text(r#"{"api_version":2,"operation":"capabilities"}"#)
             .contains("level_api.shutdown"));
-        assert!(LevelSession::from_profile_json(profile).is_err());
+        assert!(SceneLevelSession::from_profile_json(include_str!(
+            "../../../fixtures/levels/profiles/local-v1.json"
+        ))
+        .is_err());
     }
 }

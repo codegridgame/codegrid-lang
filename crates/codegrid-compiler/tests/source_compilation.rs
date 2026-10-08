@@ -27,9 +27,23 @@ fn conditional_prefixes_preserve_references_and_fold_restrictions() {
 }
 
 #[test]
-fn immediate_outputs_are_complete_atoms_without_attachments() {
+fn immediate_outputs_allow_only_repeat_suffixes() {
     compile("~> .0 .1 .2 .3 .4 .5 .6 .7 .8 .9 . ;\n").unwrap();
-    for atom in [".10", ".00", ".-1", ".９", ".3*", ".3=", ".3x2"] {
+    for digit in 0..10 {
+        for count in 2..=5 {
+            for prefix in ["", "?0", "?1", "?2"] {
+                let token = format!("{prefix}.{digit}x{count}");
+                let program = compile(&format!("~> {token} ;\n")).unwrap();
+                assert_eq!(
+                    program.program().outer.main.cells[1].attachment,
+                    Some(AttachmentInstruction::Repeat(count))
+                );
+            }
+        }
+    }
+    for atom in [
+        ".10", ".00", ".-1", ".９", ".3*", ".3=", ".3x1", ".3x6", ".3x3*", ".3x3x2",
+    ] {
         let errors = compile(&format!("~> {atom} ;\n")).unwrap_err();
         assert!(
             errors.iter().any(|e| e.code == "source.invalid_cell"),
@@ -68,6 +82,38 @@ fn stable_diagnostic_codes_are_assigned_at_validation_origins() {
             assert!(source.is_char_boundary(diagnostic.span.start));
             assert!(source.is_char_boundary(diagnostic.span.end));
         }
+    }
+}
+
+#[test]
+fn invalid_cells_identify_the_atom_and_specific_rule_without_masking_prefix_errors() {
+    for (atom, reason) in [
+        (".3*", "Immediate output .0 through .9 allows only Repeat"),
+        ("?0.3*", "Immediate output .0 through .9 allows only Repeat"),
+        (
+            ".3x6",
+            "Repeat count must be a single digit from 2 through 5",
+        ),
+        (".10", "exactly one ASCII digit"),
+        ("[0x3", "Repeat is not allowed on Function CALL"),
+        ("+x2*", "only one suffix Attachment"),
+        ("?0?1+", "nested or repeated prefixes"),
+        ("?0_", "cannot apply to an Empty cell or Entry marker"),
+        ("abc", "Unknown or malformed Full cell token"),
+    ] {
+        let source = format!("// \u{6587}\n~> {atom} ;\n");
+        let errors = compile(&source).unwrap_err();
+        let diagnostic = errors
+            .iter()
+            .find(|error| error.code == "source.invalid_cell")
+            .unwrap();
+        assert!(
+            diagnostic.message.contains(&format!("'{atom}'")),
+            "{diagnostic:?}"
+        );
+        assert!(diagnostic.message.contains(reason), "{diagnostic:?}");
+        assert_eq!(&source[diagnostic.span.start..diagnostic.span.end], atom);
+        assert_eq!(diagnostic.error_number(), Some("1004"));
     }
 }
 
@@ -728,7 +774,7 @@ fn compiles_highest_numbered_custom_function_and_folded_block_paths() {
 
 #[test]
 fn compiles_specified_complete_cell_tokens_without_splitting_invalid_tokens() {
-    let source = "~> $<x2 ,<* +=\n";
+    let source = "~> $<x2 ,* +=\n";
     let program = compile(source).expect("the specified complete cell tokens are valid");
     let cells = &program.program().outer.main.cells;
 
@@ -739,7 +785,7 @@ fn compiles_specified_complete_cell_tokens_without_splitting_invalid_tokens() {
     assert_eq!(cells[1].attachment, Some(AttachmentInstruction::Repeat(2)));
     assert_eq!(
         cells[2].primary.map(|primary| primary.token()),
-        Some(",<".to_owned())
+        Some(",".to_owned())
     );
     assert_eq!(cells[2].attachment, Some(AttachmentInstruction::ReadCode));
     assert_eq!(
@@ -938,8 +984,8 @@ fn validates_missing_extra_and_mismatched_end_closures() {
 #[test]
 fn accepts_every_primary_category_allowed_in_an_outer_folded_block() {
     let allowed = [
-        "_", "^", "v", "<", ">", "??", "?=", ",<", ",>", ",^", ",v", "!", "+", "-", "{", "}", ".",
-        "(", ")", "&", "%", "$&", "$(", "$)", "$+", "$-", "$<", "$>", ";", "#0",
+        "_", "^", "v", "<", ">", "??", "?=", ",", ",", ",", ",", "!", "+", "-", "{", "}", ".", "(",
+        ")", "&", "%", "$&", "$(", "$)", "$+", "$-", "$<", "$>", ";", "#0",
     ];
     let mut main_cells = vec!["~>".to_owned(), "$0".to_owned()];
     main_cells.resize(allowed.len(), "_".to_owned());
@@ -1603,19 +1649,19 @@ fn rejects_the_required_source_validation_failures() {
         (
             "multiple Attachments",
             "~> +*x2\n",
-            "invalid Primary-Attachment combination",
+            "only one suffix Attachment",
             "+*x2",
         ),
         (
             "detached Attachment",
             "~> + x2\n",
-            "Unknown or malformed Full cell token",
+            "cannot stand alone",
             "x2",
         ),
         (
             "Attachment on HALT",
             "~> ;x2\n",
-            "invalid Primary-Attachment combination",
+            "HALT (;) cannot carry",
             ";x2",
         ),
         (
@@ -1661,7 +1707,7 @@ fn rejects_the_required_source_validation_failures() {
 
 #[test]
 fn rejects_each_standalone_primary_prefix_at_its_source_span() {
-    for token in ["#", "$", ",", "[", "x"] {
+    for token in ["#", "$", "[", "x"] {
         let source = format!("~> {token}\n");
         let diagnostics = compile(&source)
             .expect_err("a Primary prefix without its required suffix must be rejected");

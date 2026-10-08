@@ -505,8 +505,8 @@ mod tests {
             Some("@C0.F0 // function\n~v ]\n@end C0.F0 // close\n")
         );
         assert_eq!(
-            format_source("@MAIN.M0    +x3  ,<* // inline\n").as_deref(),
-            Some("@main.M0 +x3 ,<* // inline\n")
+            format_source("@MAIN.M0    +x3  ,* // inline\n").as_deref(),
+            Some("@main.M0 +x3 ,* // inline\n")
         );
         assert_eq!(
             format_source("@main.F0.M0\n+x2 _\n@end main.F0.M0\n").as_deref(),

@@ -1,5 +1,5 @@
 @main
 @size 4x2
 ~> ; _ _
-~> ,v ~> ,v
+~> , ~> ,
 @end main

@@ -112,7 +112,7 @@ jobs:
         shell: bash
         run: |
           if [[ "$GITHUB_REF_TYPE" == "tag" ]]; then
-            if [[ "$GITHUB_REF_NAME" =~ ^wasm-mvp-v([0-9]+\.[0-9]+\.[0-9]+)$ ]]; then
+            if [[ "$GITHUB_REF_NAME" =~ ^wasm-full-v([0-9]+\.[0-9]+\.[0-9]+)$ ]]; then
               value="${BASH_REMATCH[1]}"
             else
               echo "Unsupported release tag: $GITHUB_REF_NAME" >&2
@@ -124,13 +124,13 @@ jobs:
           echo "value=$value" >> "$GITHUB_OUTPUT"
       - name: Create deterministic versioned package
         run: >-
-          python3 scripts/package_wasm_mvp.py
+          python3 scripts/package_wasm_full.py
           --version "${{ steps.package-version.outputs.value }}"
       - name: Upload package artifact
         uses: actions/upload-artifact@v4
         with:
-          name: wasm-mvp-${{ steps.package-version.outputs.value }}
-          path: dist/wasm-mvp-${{ steps.package-version.outputs.value }}.zip
+          name: wasm-full-${{ steps.package-version.outputs.value }}
+          path: dist/wasm-full-${{ steps.package-version.outputs.value }}.zip
           if-no-files-found: error
           retention-days: 30
 
@@ -186,15 +186,15 @@ jobs:
     steps:
       - uses: actions/download-artifact@v4
         with:
-          name: wasm-mvp-${{ needs.browser-smoke.outputs.package_version }}
+          name: wasm-full-${{ needs.browser-smoke.outputs.package_version }}
           path: dist
       - name: Create GitHub Release with the verified package
         env:
           GH_TOKEN: ${{ github.token }}
           VERSION: ${{ needs.browser-smoke.outputs.package_version }}
         run: >-
-          gh release create "wasm-mvp-v${VERSION}"
-          "dist/wasm-mvp-${VERSION}.zip"
+          gh release create "wasm-full-v${VERSION}"
+          "dist/wasm-full-${VERSION}.zip"
           --repo "$GITHUB_REPOSITORY"
-          --title "CodeGrid WASM MVP ${VERSION}"
+          --title "CodeGrid WASM Full ${VERSION}"
           --generate-notes --verify-tag

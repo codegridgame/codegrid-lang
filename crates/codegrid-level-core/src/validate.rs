@@ -23,6 +23,7 @@ pub fn attachment_identifiers() -> &'static [&'static str] {
         "CONDITION_0",
         "CONDITION_1",
         "CONDITION_2",
+        "CONDITION_FLAG",
     ]
 }
 pub fn instruction_identifiers() -> &'static [&'static str] {
@@ -40,10 +41,6 @@ pub fn instruction_identifiers() -> &'static [&'static str] {
         "RANDOM_DIRECTION",
         "CMP",
         "READ",
-        "READ_UP",
-        "READ_DOWN",
-        "READ_LEFT",
-        "READ_RIGHT",
         "CLEAR",
         "ADD",
         "SUB",
@@ -56,6 +53,7 @@ pub fn instruction_identifiers() -> &'static [&'static str] {
         "ENCODE",
         "CALL",
         "RETURN",
+        "NEG",
         "NAND",
         "MEMORY_LOAD",
         "MEMORY_STORE",
@@ -77,7 +75,7 @@ pub fn instruction_kind(p: PrimaryInstruction) -> &'static str {
         PrimaryInstruction::Direction(Direction::Right) => "MOVE_RIGHT",
         PrimaryInstruction::RandomDirection => "RANDOM_DIRECTION",
         PrimaryInstruction::Compare => "CMP",
-        PrimaryInstruction::Read(_) => "READ",
+        PrimaryInstruction::Read => "READ",
         PrimaryInstruction::Clear => "CLEAR",
         PrimaryInstruction::Add => "ADD",
         PrimaryInstruction::Sub => "SUB",
@@ -90,6 +88,7 @@ pub fn instruction_kind(p: PrimaryInstruction) -> &'static str {
         PrimaryInstruction::Encode => "ENCODE",
         PrimaryInstruction::Call(_) => "CALL",
         PrimaryInstruction::Return => "RETURN",
+        PrimaryInstruction::Neg => "NEG",
         PrimaryInstruction::Nand => "NAND",
         PrimaryInstruction::MemoryLoad => "MEMORY_LOAD",
         PrimaryInstruction::MemoryStore => "MEMORY_STORE",
@@ -108,6 +107,7 @@ pub fn condition_kind(prefix: ConditionPrefix) -> &'static str {
         ConditionPrefix::Zero => "CONDITION_0",
         ConditionPrefix::One => "CONDITION_1",
         ConditionPrefix::Two => "CONDITION_2",
+        ConditionPrefix::Flag => "CONDITION_FLAG",
     }
 }
 pub fn attachment_kind(a: AttachmentInstruction) -> &'static str {
@@ -140,13 +140,6 @@ pub fn validate_primary(
             "",
         ));
     }
-    let directional = match p {
-        PrimaryInstruction::Read(Direction::Up) => Some("READ_UP"),
-        PrimaryInstruction::Read(Direction::Down) => Some("READ_DOWN"),
-        PrimaryInstruction::Read(Direction::Left) => Some("READ_LEFT"),
-        PrimaryInstruction::Read(Direction::Right) => Some("READ_RIGHT"),
-        _ => None,
-    };
     let default_allowed = matches!(
         p,
         PrimaryInstruction::Direction(_)
@@ -155,7 +148,7 @@ pub fn validate_primary(
             | PrimaryInstruction::Halt
     );
     let group = match p {
-        PrimaryInstruction::Read(_) => Some("READ"),
+        PrimaryInstruction::Read => Some("READ"),
         PrimaryInstruction::MoveRegisterPointer(_) => Some("REGISTER_POINTER"),
         PrimaryInstruction::Push | PrimaryInstruction::PopAdd => Some("STACK"),
         PrimaryInstruction::Decode | PrimaryInstruction::Encode => Some("CODEC"),
@@ -169,7 +162,6 @@ pub fn validate_primary(
     if !default_allowed
         && !group.is_some_and(|name| r.allowed_instructions.contains(name))
         && !r.allowed_instructions.contains(instruction_kind(p))
-        && !directional.is_some_and(|name| r.allowed_instructions.contains(name))
     {
         return Err(reject(
             if generated {
@@ -306,11 +298,10 @@ mod tests {
             assert!(validate_primary(&r, Some(p), false).is_ok(), "{p:?}");
         }
         let mut r = r;
-        r.allowed_instructions = BTreeSet::from(["READ_UP".into()]);
-        assert!(validate_primary(&r, Some(PrimaryInstruction::Read(Direction::Up)), false).is_ok());
-        assert!(
-            validate_primary(&r, Some(PrimaryInstruction::Read(Direction::Down)), false).is_err()
-        );
+        r.allowed_instructions = BTreeSet::from(["READ".into()]);
+        assert!(validate_primary(&r, Some(PrimaryInstruction::Read), false).is_ok());
+        r.allowed_instructions.clear();
+        assert!(validate_primary(&r, Some(PrimaryInstruction::Read), false).is_err());
         let mut r = rules();
         r.allowed_attachments.clear();
         let mut b = board(PrimaryInstruction::Add);
@@ -346,10 +337,10 @@ mod tests {
             (
                 "READ",
                 vec![
-                    PrimaryInstruction::Read(Direction::Up),
-                    PrimaryInstruction::Read(Direction::Down),
-                    PrimaryInstruction::Read(Direction::Left),
-                    PrimaryInstruction::Read(Direction::Right),
+                    PrimaryInstruction::Read,
+                    PrimaryInstruction::Read,
+                    PrimaryInstruction::Read,
+                    PrimaryInstruction::Read,
                 ],
             ),
             (
@@ -612,6 +603,10 @@ mod tests {
         r.allowed_attachments.insert("CONDITION_0".into());
         assert!(super::board(&r, &b, true, "main").is_err());
         r.allowed_attachments.insert("CONDITION_1".into());
+        assert!(super::board(&r, &b, true, "main").is_ok());
+        b.cells[1].prefix = Some(codegrid_model::ConditionPrefix::Flag);
+        assert!(super::board(&r, &b, true, "main").is_err());
+        r.allowed_attachments.insert("CONDITION_FLAG".into());
         assert!(super::board(&r, &b, true, "main").is_ok());
         r.allowed_instructions.remove("CMP");
         r.allowed_instructions.insert("STACK".into());

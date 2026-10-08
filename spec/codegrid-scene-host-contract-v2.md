@@ -1,5 +1,13 @@
 # CodeGrid Scene Host Contract v2
 
+**Approved next-generation amendment (2026-10-08; not implemented):**
+[Status Flag and directionless READ](../docs/status-flag-and-read.md)
+defines the pending F state, `?!`, directionless `,`, empty POPADD flag,
+current Level permissions and host synchronization gates without unpublished compatibility.
+It supersedes affected contracts for the next generation only. The current
+implementation, versions and acceptance evidence below remain unchanged;
+they do not establish implementation or parity for this amendment.
+
 Status: decided integration contract; Rust scene core, v2 profile loader, native API-2 dispatch, and the selected format-v1 author loader/examples are implemented. Full direct protocol/resource coverage and production host deployment evidence remain open.
 Recorded: 2026-10-05.
 Authorities: [Scene Spec v1](codegrid-scene-spec-v1.md),
@@ -11,16 +19,16 @@ Authorities: [Scene Spec v1](codegrid-scene-spec-v1.md),
 Introduce Level Host API 2, trusted safety profile 2, browser level binding 2,
 and portable Level ABI 2 when this contract is implemented. Language Runtime
 API 3 and language server ABI 4 are unchanged. Logical author format and
-scene protocol versions remain independently versioned. Existing Level API,
-profile, browser binding, and portable ABI 1 remain supported on their existing
-path; do not silently reinterpret a v1 request or profile as v2.
+scene protocol versions remain independently versioned. Only API/profile/browser binding/portable ABI 2 is supported. Historical API 1
+entry points and the version-specific alias export are removed;
+`level_abi_version()` reports 2.
 
 Keep the operation names and opaque-handle lifecycle from
 [Level API v1](../docs/level-api-v1.md), with `api_version: 2`. Responses retain
 `schema: "codegrid.level.response"` and use api_version 2. Portable transport
 uses abi_version 2, exact buffer ownership, original JSON text, and the existing
-packed response-pointer/length convention. An artifact/session dispatches by
-explicit version; incompatible profile/API combinations fail before evaluation.
+packed response-pointer/length convention. The session validates the one current version; unsupported profile/API
+combinations fail before evaluation.
 No v2 operation executes through a v1 fallback.
 
 API 2 accepts the selected Scene Level author envelope with
@@ -370,3 +378,10 @@ Removed scene compatibility: Baudot, QualityControl, and Elevator are unsupporte
 Published error identities remain reserved for compatibility. Removed scene
 reason spellings are not part of the current validation table.
 The current runtime catalog is ExactIO, Robot, MechanicalArm.
+
+## Status flag projection (2026-10-08)
+
+Current thread snapshots and ThreadChanged before/after projections include required
+`status_flag` (integer 0 or 1). Call frames include `saved_status_flag` with the
+same range. Custom/internal thread events use the same fields. The active flag
+is independent of registers; suspended frames retain the caller flag.

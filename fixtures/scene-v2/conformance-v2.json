@@ -155,6 +155,426 @@
       "seed": "18446744073709551615",
       "custom_limit": "1000",
       "expected_status": "ConstraintExceeded"
+    },
+    {
+      "id": "exactio-regression.echo-duplicates",
+      "level": "../levels-scene/echo-duplicates.json",
+      "program": "../levels-scene/echo.cg",
+      "mode": "Official",
+      "boundary": "Exit",
+      "seed": "18446744073709551615",
+      "custom_limit": "1000",
+      "expected_status": "Passed"
+    },
+    {
+      "id": "exactio-regression.wrong-output",
+      "level": "../levels-scene/wrong-output.json",
+      "program": "../levels-scene/echo.cg",
+      "mode": "Official",
+      "boundary": "Exit",
+      "seed": "18446744073709551615",
+      "custom_limit": "1000",
+      "expected_status": "TestFailed"
+    },
+    {
+      "id": "exactio-regression.incomplete-output",
+      "level": "../levels-scene/incomplete-output.json",
+      "program": "../levels-scene/halt.cg",
+      "mode": "Official",
+      "boundary": "Exit",
+      "seed": "18446744073709551615",
+      "custom_limit": "1000",
+      "expected_status": "TestFailed"
+    },
+    {
+      "id": "exactio-regression.empty-output",
+      "level": "../levels-scene/empty-output.json",
+      "program": "../levels-scene/halt.cg",
+      "mode": "Official",
+      "boundary": "Exit",
+      "seed": "18446744073709551615",
+      "custom_limit": "1000",
+      "expected_status": "Passed"
+    },
+    {
+      "id": "exactio-regression.unexpected-output",
+      "level": "../levels-scene/unexpected-output.json",
+      "program": "../levels-scene/echo.cg",
+      "mode": "Official",
+      "boundary": "Exit",
+      "seed": "18446744073709551615",
+      "custom_limit": "1000",
+      "expected_status": "TestFailed"
+    },
+    {
+      "id": "exactio-regression.hidden-wrong-official",
+      "level": "../levels-scene/hidden-wrong-official.json",
+      "program": "../levels-scene/echo.cg",
+      "mode": "Official",
+      "boundary": "Exit",
+      "seed": "18446744073709551615",
+      "custom_limit": "1000",
+      "expected_status": "TestFailed"
+    },
+    {
+      "id": "exactio-regression.hidden-wrong-debug",
+      "level": "../levels-scene/hidden-wrong-debug.json",
+      "program": "../levels-scene/echo.cg",
+      "mode": "Debug",
+      "boundary": "Exit",
+      "seed": "18446744073709551615",
+      "custom_limit": "1000",
+      "expected_status": "Passed"
+    },
+    {
+      "id": "exactio-regression.static-constraint",
+      "level": "../levels-scene/static-constraint.json",
+      "program": "../levels-scene/echo.cg",
+      "mode": "Official",
+      "boundary": "Exit",
+      "seed": "18446744073709551615",
+      "custom_limit": "1000",
+      "expected_status": "ConstraintExceeded"
+    },
+    {
+      "id": "exactio-regression.dynamic-constraint",
+      "level": "../levels-scene/dynamic-constraint.json",
+      "program": "../levels-scene/echo.cg",
+      "mode": "Official",
+      "boundary": "Exit",
+      "seed": "18446744073709551615",
+      "custom_limit": "1000",
+      "expected_status": "ConstraintExceeded"
+    },
+    {
+      "id": "exactio-regression.rating-zero",
+      "level": "../levels-scene/rating-zero.json",
+      "program": "../levels-scene/echo.cg",
+      "mode": "Official",
+      "boundary": "Exit",
+      "seed": "18446744073709551615",
+      "custom_limit": "1000",
+      "expected_status": "Passed"
+    },
+    {
+      "id": "exactio-regression.read-exhaustion",
+      "level": "../levels-scene/read-exhaustion.json",
+      "program": "../levels-scene/read-exhaustion.cg",
+      "mode": "Official",
+      "boundary": "Exit",
+      "seed": "18446744073709551615",
+      "custom_limit": "1000",
+      "expected_status": "Passed"
+    },
+    {
+      "id": "exactio-regression.functions",
+      "level": "../levels-scene/functions.json",
+      "program": "../levels-scene/functions.cg",
+      "mode": "Official",
+      "boundary": "Exit",
+      "seed": "18446744073709551615",
+      "custom_limit": "1000",
+      "expected_status": "Passed"
+    },
+    {
+      "id": "exactio-regression.folded",
+      "level": "../levels-scene/folded.json",
+      "program": "../levels-scene/folded.cg",
+      "mode": "Official",
+      "boundary": "Exit",
+      "seed": "18446744073709551615",
+      "custom_limit": "1000",
+      "expected_status": "Passed"
+    },
+    {
+      "id": "exactio-regression.custom-memory",
+      "level": "../levels-scene/custom-memory.json",
+      "program": "../levels-scene/custom-memory.cg",
+      "mode": "Official",
+      "boundary": "Exit",
+      "seed": "18446744073709551615",
+      "custom_limit": "1000",
+      "expected_status": "Passed"
+    },
+    {
+      "id": "exactio-regression.custom-limit",
+      "level": "../levels-scene/custom-limit.json",
+      "program": "../levels-scene/custom-limit.cg",
+      "mode": "Official",
+      "boundary": "Exit",
+      "seed": "18446744073709551615",
+      "custom_limit": "1",
+      "expected_status": "RuntimeError"
+    },
+    {
+      "id": "exactio-regression.thread-conflict",
+      "level": "../levels-scene/thread-conflict.json",
+      "program": "../levels-scene/thread-conflict.cg",
+      "mode": "Official",
+      "boundary": "Exit",
+      "seed": "18446744073709551615",
+      "custom_limit": "1000",
+      "expected_status": "RuntimeError"
+    },
+    {
+      "id": "exactio-regression.repeat",
+      "level": "../levels-scene/repeat.json",
+      "program": "../levels-scene/repeat.cg",
+      "mode": "Official",
+      "boundary": "Exit",
+      "seed": "18446744073709551615",
+      "custom_limit": "1000",
+      "expected_status": "Passed"
+    },
+    {
+      "id": "exactio-regression.generated-custom",
+      "level": "../levels-scene/generated-custom.json",
+      "program": "../levels-scene/generated-custom.cg",
+      "mode": "Official",
+      "boundary": "Exit",
+      "seed": "18446744073709551615",
+      "custom_limit": "1000",
+      "expected_status": "ProgramRejected"
+    },
+    {
+      "id": "exactio-regression.generated-outer",
+      "level": "../levels-scene/generated-outer.json",
+      "program": "../levels-scene/generated-outer.cg",
+      "mode": "Official",
+      "boundary": "Exit",
+      "seed": "18446744073709551615",
+      "custom_limit": "1000",
+      "expected_status": "ProgramRejected"
+    },
+    {
+      "id": "exactio-regression.attachments",
+      "level": "../levels-scene/attachments.json",
+      "program": "../levels-scene/attachments.cg",
+      "mode": "Official",
+      "boundary": "Exit",
+      "seed": "18446744073709551615",
+      "custom_limit": "1000",
+      "expected_status": "Passed"
+    },
+    {
+      "id": "exactio-regression.instruction-stack",
+      "level": "../levels-scene/instruction-stack.json",
+      "program": "../levels-scene/instruction-stack.cg",
+      "mode": "Official",
+      "boundary": "Exit",
+      "seed": "18446744073709551615",
+      "custom_limit": "1000",
+      "expected_status": "Passed"
+    },
+    {
+      "id": "exactio-regression.memory",
+      "level": "../levels-scene/memory.json",
+      "program": "../levels-scene/memory.cg",
+      "mode": "Official",
+      "boundary": "Exit",
+      "seed": "18446744073709551615",
+      "custom_limit": "1000",
+      "expected_status": "Passed"
+    },
+    {
+      "id": "exactio-regression.randomness",
+      "level": "../levels-scene/randomness.json",
+      "program": "../levels-scene/randomness.cg",
+      "mode": "Official",
+      "boundary": "Exit",
+      "seed": "18446744073709551615",
+      "custom_limit": "1000",
+      "expected_status": "Passed"
+    },
+    {
+      "id": "exactio-regression.halt-output-error-priority",
+      "level": "../levels-scene/halt-output-error-priority.json",
+      "program": "../levels-scene/halt-output-error-priority.cg",
+      "mode": "Official",
+      "boundary": "Exit",
+      "seed": "18446744073709551615",
+      "custom_limit": "1000",
+      "expected_status": "RuntimeError"
+    },
+    {
+      "id": "exactio-regression.constraint-max_boards_used",
+      "level": "../levels-scene/constraint-max_boards_used.json",
+      "program": "../levels-scene/functions.cg",
+      "mode": "Official",
+      "boundary": "Exit",
+      "seed": "18446744073709551615",
+      "custom_limit": "1000",
+      "expected_status": "ConstraintExceeded"
+    },
+    {
+      "id": "exactio-regression.constraint-max_call_stack_depth",
+      "level": "../levels-scene/constraint-max_call_stack_depth.json",
+      "program": "../levels-scene/functions.cg",
+      "mode": "Official",
+      "boundary": "Exit",
+      "seed": "18446744073709551615",
+      "custom_limit": "1000",
+      "expected_status": "ConstraintExceeded"
+    },
+    {
+      "id": "exactio-regression.constraint-max_data_stack_depth",
+      "level": "../levels-scene/constraint-max_data_stack_depth.json",
+      "program": "../levels-scene/memory.cg",
+      "mode": "Official",
+      "boundary": "Exit",
+      "seed": "18446744073709551615",
+      "custom_limit": "1000",
+      "expected_status": "ConstraintExceeded"
+    },
+    {
+      "id": "exactio-regression.constraint-max_functions_used",
+      "level": "../levels-scene/constraint-max_functions_used.json",
+      "program": "../levels-scene/functions.cg",
+      "mode": "Official",
+      "boundary": "Exit",
+      "seed": "18446744073709551615",
+      "custom_limit": "1000",
+      "expected_status": "ConstraintExceeded"
+    },
+    {
+      "id": "exactio-regression.constraint-max_instruction_kinds",
+      "level": "../levels-scene/constraint-max_instruction_kinds.json",
+      "program": "../levels-scene/echo.cg",
+      "mode": "Official",
+      "boundary": "Exit",
+      "seed": "18446744073709551615",
+      "custom_limit": "1000",
+      "expected_status": "ConstraintExceeded"
+    },
+    {
+      "id": "exactio-regression.constraint-max_instruction_stack_depth",
+      "level": "../levels-scene/constraint-max_instruction_stack_depth.json",
+      "program": "../levels-scene/instruction-stack.cg",
+      "mode": "Official",
+      "boundary": "Exit",
+      "seed": "18446744073709551615",
+      "custom_limit": "1000",
+      "expected_status": "ConstraintExceeded"
+    },
+    {
+      "id": "exactio-regression.constraint-max_memory_addresses",
+      "level": "../levels-scene/constraint-max_memory_addresses.json",
+      "program": "../levels-scene/memory.cg",
+      "mode": "Official",
+      "boundary": "Exit",
+      "seed": "18446744073709551615",
+      "custom_limit": "1000",
+      "expected_status": "ConstraintExceeded"
+    },
+    {
+      "id": "exactio-regression.constraint-max_operation_count",
+      "level": "../levels-scene/constraint-max_operation_count.json",
+      "program": "../levels-scene/echo.cg",
+      "mode": "Official",
+      "boundary": "Exit",
+      "seed": "18446744073709551615",
+      "custom_limit": "1000",
+      "expected_status": "ConstraintExceeded"
+    },
+    {
+      "id": "exactio-regression.constraint-max_ticks",
+      "level": "../levels-scene/constraint-max_ticks.json",
+      "program": "../levels-scene/echo.cg",
+      "mode": "Official",
+      "boundary": "Exit",
+      "seed": "18446744073709551615",
+      "custom_limit": "1000",
+      "expected_status": "ConstraintExceeded"
+    },
+    {
+      "id": "exactio-regression.rating-max-alias",
+      "level": "../levels-scene/rating-max-alias.json",
+      "program": "../levels-scene/echo.cg",
+      "mode": "Official",
+      "boundary": "Exit",
+      "seed": "18446744073709551615",
+      "custom_limit": "1000",
+      "expected_status": "Passed"
+    },
+    {
+      "id": "exactio-regression.generated-memory",
+      "level": "../levels-scene/generated-memory.json",
+      "program": "../levels-scene/generated-outer.cg",
+      "mode": "Official",
+      "boundary": "Exit",
+      "seed": "18446744073709551615",
+      "custom_limit": "1000",
+      "expected_status": "ProgramRejected"
+    },
+    {
+      "id": "exactio-regression.hidden-generated",
+      "level": "../levels-scene/hidden-generated.json",
+      "program": "../levels-scene/generated-outer.cg",
+      "mode": "Official",
+      "boundary": "Exit",
+      "seed": "18446744073709551615",
+      "custom_limit": "1000",
+      "expected_status": "ProgramRejected"
+    },
+    {
+      "id": "exactio-regression.cmp-prefix",
+      "level": "../levels-scene/cmp-prefix.json",
+      "program": "../levels-scene/cmp-prefix.cg",
+      "mode": "Official",
+      "boundary": "Exit",
+      "seed": "18446744073709551615",
+      "custom_limit": "1000",
+      "expected_status": "Passed"
+    },
+    {
+      "id": "exactio-regression.cmp-denied",
+      "level": "../levels-scene/cmp-denied.json",
+      "program": "../levels-scene/cmp-prefix.cg",
+      "mode": "Official",
+      "boundary": "Exit",
+      "seed": "18446744073709551615",
+      "custom_limit": "1000",
+      "expected_status": "ProgramRejected"
+    },
+    {
+      "id": "exactio-regression.prefix-denied",
+      "level": "../levels-scene/prefix-denied.json",
+      "program": "../levels-scene/cmp-prefix.cg",
+      "mode": "Official",
+      "boundary": "Exit",
+      "seed": "18446744073709551615",
+      "custom_limit": "1000",
+      "expected_status": "ProgramRejected"
+    },
+    {
+      "id": "exactio-regression.prefix-static-kinds",
+      "level": "../levels-scene/prefix-static-kinds.json",
+      "program": "../levels-scene/cmp-prefix.cg",
+      "mode": "Official",
+      "boundary": "Exit",
+      "seed": "18446744073709551615",
+      "custom_limit": "1000",
+      "expected_status": "ConstraintExceeded"
+    },
+    {
+      "id": "exactio-regression.prefix-operation-cost",
+      "level": "../levels-scene/prefix-operation-cost.json",
+      "program": "../levels-scene/cmp-prefix.cg",
+      "mode": "Official",
+      "boundary": "Exit",
+      "seed": "18446744073709551615",
+      "custom_limit": "1000",
+      "expected_status": "ConstraintExceeded"
+    },
+    {
+      "id": "status-flag.pass",
+      "level": "status-flag.json",
+      "program": "status-flag.cg",
+      "mode": "Debug",
+      "boundary": "Exit",
+      "seed": "0",
+      "custom_limit": "100",
+      "expected_status": "Passed"
     }
   ]
 }

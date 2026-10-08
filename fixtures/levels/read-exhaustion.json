@@ -40,7 +40,8 @@
       "READ_CODE",
       "WRITE_CODE",
       "REPEAT",
-      "CONDITION_0"
+      "CONDITION_0",
+      "CONDITION_FLAG"
     ],
     "main_board": {
       "width": 100,

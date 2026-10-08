@@ -6,7 +6,7 @@ use std::path::PathBuf;
 
 use codegrid_compiler::compile;
 use codegrid_ir::{Board, BoardId, CodeGridId, ScopedProgram};
-use codegrid_level_api::{ApiError, LevelApi, LevelApiV2, SafetyProfile, SafetyProfileV2};
+use codegrid_level_api::{LevelApiV2, SafetyProfileV2};
 use codegrid_model::error_number;
 use codegrid_model::{
     AttachmentInstruction, BoundaryMode, Direction, InstructionStackItem, PrimaryInstruction, Slot,
@@ -46,7 +46,7 @@ const USAGE: &str = concat!(
     "  codegrid evaluate <level.json> <program.cg>\n",
     "    --mode <debug|official> --boundary <exit|wrap> --seed <u64>\n",
     "    --custom-limit <positive-u64> --limits-file <trusted-profile.json>\n",
-    "    [--format <json|human>] [--api-version <1|2>]\n",
+    "    [--format <json|human>] [--api-version <2>]\n",
 );
 
 struct RunOptions {
@@ -61,7 +61,6 @@ struct RunOptions {
 }
 
 struct EvaluateOptions {
-    api_version: u32,
     level_path: PathBuf,
     source_path: PathBuf,
     mode: EvaluationModeArg,
@@ -356,9 +355,8 @@ fn parse_evaluate_arguments(
                     return Err("--api-version may be specified only once".to_owned());
                 }
                 api_version = Some(match option_value_text(arguments, option)?.as_str() {
-                    "1" => 1,
                     "2" => 2,
-                    _ => return Err("--api-version must be 1 or 2".to_owned()),
+                    _ => return Err("--api-version must be 2".to_owned()),
                 });
             }
             "--help" | "-h" => return Ok(Command::Help),
@@ -367,7 +365,6 @@ fn parse_evaluate_arguments(
     }
 
     Ok(Command::Evaluate(EvaluateOptions {
-        api_version: api_version.unwrap_or(1),
         level_path: PathBuf::from(level_path),
         source_path: PathBuf::from(source_path),
         mode: mode.ok_or_else(|| "evaluate requires --mode".to_owned())?,
@@ -656,53 +653,6 @@ fn run_file(options: RunOptions) -> i32 {
     exit_code
 }
 
-enum CliLevelProfile {
-    Legacy(SafetyProfile),
-    Scene(SafetyProfileV2),
-}
-impl CliLevelProfile {
-    fn from_json(text: &str, version: u32) -> Result<Self, ApiError> {
-        match version {
-            1 => SafetyProfile::from_json(text).map(Self::Legacy),
-            2 => SafetyProfileV2::from_json(text).map(Self::Scene),
-            _ => Err(ApiError {
-                code: "level_api.unsupported_version",
-                message: "Unsupported level API version".into(),
-            }),
-        }
-    }
-    fn limits(&self) -> (u64, u64, u64) {
-        match self {
-            Self::Legacy(p) => (p.max_level_bytes, p.max_source_bytes, p.max_work_per_call),
-            Self::Scene(p) => (p.max_level_bytes, p.max_source_bytes, p.max_work_per_call),
-        }
-    }
-    fn initialize(self) -> Result<CliLevelApi, ApiError> {
-        match self {
-            Self::Legacy(p) => LevelApi::new(p).map(CliLevelApi::Legacy),
-            Self::Scene(p) => LevelApiV2::new(p).map(CliLevelApi::Scene),
-        }
-    }
-}
-enum CliLevelApi {
-    Legacy(LevelApi),
-    Scene(LevelApiV2),
-}
-impl CliLevelApi {
-    fn version(&self) -> u32 {
-        match self {
-            Self::Legacy(_) => 1,
-            Self::Scene(_) => 2,
-        }
-    }
-    fn request_json(&mut self, text: &str) -> String {
-        match self {
-            Self::Legacy(api) => api.request_json(text),
-            Self::Scene(api) => api.request_json(text),
-        }
-    }
-}
-
 fn evaluate_files(options: EvaluateOptions) -> i32 {
     let profile_text = match read_limited_utf8_file(
         &options.limits_path,
@@ -731,7 +681,7 @@ fn evaluate_files(options: EvaluateOptions) -> i32 {
             return EXIT_INVALID_ARGUMENTS;
         }
     };
-    let profile = match CliLevelProfile::from_json(&profile_text, options.api_version) {
+    let profile = match SafetyProfileV2::from_json(&profile_text) {
         Ok(profile) => profile,
         Err(error) => {
             eprintln!(
@@ -744,7 +694,11 @@ fn evaluate_files(options: EvaluateOptions) -> i32 {
             return EXIT_INVALID_ARGUMENTS;
         }
     };
-    let (max_level_bytes, max_source_bytes, work_budget) = profile.limits();
+    let (max_level_bytes, max_source_bytes, work_budget) = (
+        profile.max_level_bytes,
+        profile.max_source_bytes,
+        profile.max_work_per_call,
+    );
     let level_text = match read_limited_utf8_file(&options.level_path, max_level_bytes) {
         Ok(text) => text,
         Err(error) => return report_evaluation_file_error(&options.level_path, "level", error),
@@ -754,7 +708,7 @@ fn evaluate_files(options: EvaluateOptions) -> i32 {
         Err(error) => return report_evaluation_file_error(&options.source_path, "source", error),
     };
 
-    let mut api = match profile.initialize() {
+    let mut api = match LevelApiV2::new(profile) {
         Ok(api) => api,
         Err(error) => {
             eprintln!(
@@ -941,11 +895,11 @@ fn report_evaluation_file_error(path: &PathBuf, label: &str, error: EvaluationFi
 }
 
 fn level_api_request(
-    api: &mut CliLevelApi,
+    api: &mut LevelApiV2,
     operation: &str,
     fields: JsonValue,
 ) -> Result<JsonValue, String> {
-    let mut request = json!({ "api_version": api.version(), "operation": operation });
+    let mut request = json!({ "api_version": 2, "operation": operation });
     let request_object = request
         .as_object_mut()
         .ok_or_else(|| "internal request construction did not produce a JSON object".to_owned())?;
@@ -1215,6 +1169,11 @@ fn thread_json(thread: &ThreadSnapshot, include_code_grid: bool) -> JsonValue {
             "register_pointer".to_owned(),
             json!(thread.register_pointer),
         ),
+        ("status_flag".to_owned(), json!(thread.status_flag)),
+        (
+            "private_registers".to_owned(),
+            json!(thread.private_registers),
+        ),
         ("page".to_owned(), json!(thread.page.to_string())),
         ("data_stack".to_owned(), json!(thread.data_stack)),
         (
@@ -1234,6 +1193,9 @@ fn thread_json(thread: &ThreadSnapshot, include_code_grid: bool) -> JsonValue {
                     "caller_board": board_id_json(frame.caller_board),
                     "call_position": coordinate_json(frame.call_position),
                     "saved_direction": direction_name(frame.saved_direction),
+                    "saved_registers": frame.saved_registers,
+                    "saved_register_pointer": frame.saved_register_pointer,
+                    "saved_status_flag": frame.saved_status_flag,
                 }))
                 .collect::<Vec<_>>()),
         ),

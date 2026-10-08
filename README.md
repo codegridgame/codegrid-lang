@@ -1,6 +1,11 @@
 # CodeGrid Language
 
-The current language includes fixed conditional prefixes `?0`–`?2`, CMP `?=`, and random direction `??`; executable IR is format 2. See the [migration manual](docs/conditional-prefix-migration.md) for semantics, retired forms, compatibility, and verification.
+**Release policy:** No release has been published by the user. Until the user
+explicitly publishes a release, update contracts and consumers directly without
+backward-compatibility requirements. Internal version numbers and historical
+verification reports are not release baselines. See [repository rules](AGENTS.md#release-and-compatibility-policy).
+
+The current language includes fixed conditional prefixes `?0`–`?2` and `?!` (F=1), CMP `?=`, and random direction `??`; READ is directionless `,` (code 44), with F=0 on success and F=1 on exhaustion; Function registers are private copies and `$!` provides NEG (code 69); executable IR is format 3. See the [migration manual](docs/conditional-prefix-migration.md) for semantics, retired forms, compatibility, and verification.
 
 CodeGrid is a grid-based programming language built around a shared Rust compiler and deterministic VM. The development target is the complete language, including multiple execution threads, functions, Custom instructions, Folded Blocks, stacks, memory, attachments, and deterministic randomness.
 
@@ -13,7 +18,7 @@ The existing native CLI provides:
 - `codegrid check <program.cg>` using the shared compiler;
 - `codegrid run <program.cg>` using the compiler and verified IR in the shared VM.
 - `codegrid debug --stdio` providing compiler source locations and atomic VM steps to the editor debugger.
-- `codegrid evaluate <level.json> <program.cg>` using the shared Rust ExactIO level API; see [the CLI contract](docs/cli.md#evaluate-level-command).
+- `codegrid evaluate <level.json> <program.cg>` using the shared Rust Scene API 2 for ExactIO, Robot and MechanicalArm; see [the CLI contract](docs/cli.md#evaluate-level-command).
 
 The [VS Code extension](editors/vscode/README.md) opens `.cg` files with Run
 and Debug buttons, F5/Ctrl+F5 launch, Main/Function/Folded Block breakpoints,

@@ -1,9 +1,13 @@
 # CodeGrid Full Source Language Specification
 
+**Current amendment (2026-10-08):** [Status Flag and directionless READ](../docs/status-flag-and-read.md) records the approved decision implemented by the current source and VM contract.
+
 **Status:** Normative Full source contract; source decisions and implementation gates are recorded in §11  
 **File extension:** `.cg`  
 **Execution semantics:** [CodeGrid VM Specification](codegrid-vm-spec.md)  
 **Authority:** This document defines accepted Full source syntax and static validation. The shared syntax/compiler implementation is the sole source-acceptance authority for every host.
+
+**Implemented (2026-10-08):** `$!` / NEG is accepted by the shared compiler and rebuilt WASM hosts; see §11.
 
 ## 1. Source text and lexical units
 
@@ -116,9 +120,10 @@ Every Primary token in the canonical language inventory is listed here. Instruct
 | `^`, `v`, `<`, `>` | Set direction. |
 | `??` | Choose a random direction. |
 | `?=` | Compare thread Data Stack top A without popping with selected register B; write 0 if equal, 1 if A > B, or 2 if A < B. Empty stack preserves the register. |
-| `,^`, `,v`, `,<`, `,>` | Read input; the suffix gives the direction used when input is exhausted. |
+| `,` | Read a byte and set F=0; on exhaustion retain the register and set F=1. Direction is unchanged. |
 | `!` | Clear the current register. |
 | `+`, `-` | Add to or subtract from the current register. |
+| `$!` | NEG: replace the selected byte with its additive inverse modulo 256. |
 | `{`, `}` | Move the register pointer left or right. |
 | `.` | Output the current register. |
 | `.0`–`.9` | Output the raw byte 0–9 without changing registers or the register pointer. |
@@ -139,7 +144,7 @@ Prefixes are not tokens by themselves. In particular, standalone `#`, `$`, `,`, 
 
 ## 6. Attachments
 
-A conditional prefix `?0`, `?1`, or `?2` may precede every otherwise valid Primary, requiring equality of the selected register to byte 0, 1, or 2. A cell may have at most one prefix and one suffix, concatenated without whitespace in that order. Initial Empty and Entry cells cannot carry either. Prefixes are allowed inside Folded Blocks; suffixes remain forbidden there. Prefixes do not relax placement or reference validation. Examples: `?0+`, `?1#0`, `?2;`, `?0.3`, `?1?=`, `?0??`, and `?1+x3`. Standalone or repeated prefixes and values outside 0–2 are invalid. `?=` is one complete CMP Primary; `?==` adds WriteCode and `?=*` adds ReadCode.
+A conditional prefix `?0`, `?1`, `?2`, or `?!` may precede every otherwise valid Primary, requiring equality of the selected register to byte 0, 1, or 2, or active F=1 for `?!`. A cell may have at most one prefix and one suffix, concatenated without whitespace in that order. Initial Empty and Entry cells cannot carry either. Prefixes are allowed inside Folded Blocks; suffixes remain forbidden there. Prefixes do not relax placement or reference validation. Examples: `?0+`, `?1#0`, `?2;`, `?0.3`, `?1?=`, `?0??`, and `?1+x3`. Standalone or repeated prefixes and values outside 0–2 are invalid. The removed directional READ atoms `,^`, `,v`, `,<`, and `,>` are invalid, including prefixed and suffixed forms; they are never split into two cells. `?=` is one complete CMP Primary; `?==` adds WriteCode and `?=*` adds ReadCode.
 
 The rules below describe suffix Attachments independently of prefixes.
 
@@ -151,14 +156,21 @@ An Attachment is concatenated directly to a Primary token in the same cell. The 
 | `=` | WriteCode. |
 | `x2`, `x3`, `x4`, `x5` | Repeat with the stated count. |
 
-Examples of complete attached cells are `+x3`, `,<*`, and `[0=`. An Attachment separated by whitespace from its Primary is detached and invalid. A cell cannot contain more than one suffix Attachment. Entry markers and HALT cannot carry a suffix. Folded Block rows cannot contain suffix Attachments.
+Examples of complete attached cells are `+x3`, `,*`, and `[0=`. An Attachment separated by whitespace from its Primary is detached and invalid. A cell cannot contain more than one suffix Attachment. Entry markers and HALT cannot carry a suffix. Folded Block rows cannot contain suffix Attachments.
 
-ReadCode and WriteCode may be attached to any encodable Primary, defined as a Primary with a normative Instruction Code. Repeat may be attached to any encodable Primary except CALL and RETURN. Folded Block calls, Custom calls, Custom returns, and HALT are not encodable and cannot carry suffix Attachments. No other Primary-suffix combination is valid. Conditional prefix eligibility is independent.
+NEG is an encodable ordinary Primary. Its complete forms include `$!`,
+`?0$!`, `$!*`, `$!=`, `$!x2`, and `?1$!x3`. Unicode multiplication signs
+are not Repeat syntax; `$!×2` and whitespace-separated `?0 $!` or `$! x2`
+are invalid. NEG is allowed on outer and Custom Main and Function Boards,
+and in Folded Blocks without a suffix, under the existing placement rules.
+
+ReadCode and WriteCode may be attached to any encodable Primary, defined as a Primary with a normative Instruction Code. Repeat may be attached to any encodable Primary except CALL and RETURN, and to immediate output Primaries `.0`–`.9`. Folded Block calls, Custom calls, Custom returns, and HALT are not encodable and cannot carry suffix Attachments. No other Primary-suffix combination is valid. Conditional prefix eligibility is independent.
 
 ## 7. Contextual placement and name resolution
 
-Immediate output Primaries `.0`–`.9` have no Instruction Code and cannot carry
-any suffix Attachment; conditional prefixes are allowed. Forms such as `.3*`, `.3=`, `.3x2`, `.10`, `.00`, and `.-1`
+Immediate output Primaries `.0`–`.9` have no Instruction Code and may carry only
+Repeat suffixes `x2`–`x5`; conditional prefixes are allowed. `.3x3` executes
+three immediate outputs on separate ticks before moving. Forms such as `.3*`, `.3=`, `.3x1`, `.10`, `.00`, and `.-1`
 are rejected as whole atoms. Ordinary `.` retains its encoding and Attachments.
 
 Static validation checks each Primary against its owning CodeGrid and Board:
@@ -198,10 +210,12 @@ This contract was reconstructed from the complete instruction and Attachment inv
 
 ## 11. Resolution record and implementation gate
 
+The 2026-10-08 NEG decision is implemented in the shared model/compiler, verified IR, level capability validation, editor metadata, and actual native/browser/Node/Wasmtime fixtures. See [implementation evidence](../docs/function-registers-and-neg.md).
+
 The source-language decisions are resolved in the [source decision record](../docs/decisions.md#resolved-source-language-decisions), and the rules in §§1–8 are the normative Full acceptance contract. The implementation gate is covered by focused compiler and IR tests: `compiles_every_resolved_attachment_pair_for_each_encodable_primary`, `verifies_the_complete_full_primary_attachment_compatibility_matrix`, `rejects_invalid_attachment_placement_and_repeat_counts`, `rejects_dimensions_and_total_cells_above_the_portable_source_limit`, `rejects_board_dimensions_and_cell_counts_above_portable_full_bounds`, `size_between_rows_applies_to_the_complete_lexical_scope`, `implicit_main_accepts_qualified_folded_blocks_after_its_grid`, `accepts_named_end_aliases_for_custom_and_function_folded_blocks`, and `rejects_mismatched_custom_and_function_folded_block_end_aliases`. The latter cover explicit Custom Main, outer Function, and Custom Function Folded Blocks with matching local and qualified aliases, plus mismatches. These cases verify implementation coverage; they are not unresolved language decisions.
 
 This Full contract replaces the source restrictions recorded by earlier language profiles. No earlier profile's rejection list narrows Full source acceptance.
 
 ## 12. Conditional prefix and CMP migration (2026-10-03)
 
-The approved [decision record](../docs/decisions.md#conditional-prefix-migration-design-2026-10-03) removes the four IfZero forms and standalone random `?`. They are rejected as complete atoms. RandomDirection is `??` and CMP is `?=`. Prefixes and suffixes are separate categories; references and forbidden Primaries remain invalid even when guarded. The executable IR format is 2.
+The approved [decision record](../docs/decisions.md#conditional-prefix-migration-design-2026-10-03) removes the four IfZero forms and standalone random `?`. They are rejected as complete atoms. RandomDirection is `??` and CMP is `?=`. Prefixes and suffixes are separate categories; references and forbidden Primaries remain invalid even when guarded. This migration introduced executable IR format 2. The 2026-10-08 Function/NEG implementation uses format 3 and rejects formats 1 and 2; recompile source.

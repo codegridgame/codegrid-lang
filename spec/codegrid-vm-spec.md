@@ -1,8 +1,12 @@
 # CodeGrid Full Virtual Machine Specification
 
+**Current amendment (2026-10-08):** [Status Flag and directionless READ](../docs/status-flag-and-read.md) records the approved decision implemented by the current source and VM contract.
+
 **Status:** Normative Full execution contract. Direct acceptance cases listed in Section 17 remain implementation conformance gates.  
 **Source contract:** [CodeGrid Source Language Specification](codegrid-source-spec.md)  
 **Executable input:** verifier-produced Full IR only
+
+**Implemented (2026-10-08):** Function-private register banks and NEG are covered by direct VM tests and 81 complete native/browser/Node/Wasmtime fixtures. See [implementation evidence](../docs/function-registers-and-neg.md).
 
 This specification covers deterministic execution of a verified Full CodeGrid program: state transitions, concurrent effects, instructions, calls, Folded Blocks, Custom invocations, mutable code, diagnostics, events, metrics, and seeded randomness. Source parsing, host JSON schemas, UI behavior, game scoring, levels, and deployment policy are outside this document.
 
@@ -17,7 +21,7 @@ Historical Full VM tests and existing helper code informed the explicit decision
 - A **static cell** is identified by code grid, board, optional Folded Block ID, and coordinate. A Custom invocation does not change the static identity of its definition's cells.
 - A **committed state** is VM state after an accepted Global Tick. Effects produced during a tick remain staged until the transaction commits.
 
-Values are unsigned 8-bit bytes. Each execution context has one ten-byte register bank. Each thread has its own register pointer selecting R0 through R9. Threads in one context share registers, sparse memory, and the mutable program copy; each thread retains its own direction, pointer, Page, stacks, call frames, phase, and PRNG stream.
+Values are unsigned 8-bit bytes. Each execution context has a ten-byte Main register bank shared by its Main threads. Each Function invocation has a private ten-byte bank and register pointer copied by value from its caller. Each thread selects R0 through R9 in its active bank. Threads in one context share sparse memory and mutable code; direction, pointer, F, Page, stacks, call frames, phase and PRNG remain thread-owned. Function banks are not shared between threads or recursive invocations.
 
 The outer context owns the host input queue, output byte sequence, outer memory, and mutable outer program. A Custom invocation owns a fresh register bank, memory, runtime copy of its Custom definition, internal threads, and local PRNG streams. Custom READ and OUTPUT interact with the invoking outer thread's data stack as specified in Sections 5 and 7. Custom register values, memory, code mutations, and PRNG state do not merge back into the outer context.
 
@@ -29,9 +33,9 @@ The host supplies a normal-board boundary mode, Exit or Wrap; an ordered input b
 
 All outer registers start at zero. Outer output starts empty. The input queue contains the supplied bytes in order. Zero-valued initial-memory entries are observably equivalent to absent entries.
 
-The VM creates one outer thread for each Entry in the outer Main Board, in row-major board order. IDs start at zero and increase in that order. Each starts at its Entry cell and direction, with pointer R0, Page zero, empty data and instruction stacks, empty call stack, Normal phase, and deterministic outer PRNG state. Revisiting an Entry does not create another thread.
+The VM creates one outer thread for each Entry in the outer Main Board, in row-major board order. IDs start at zero and increase in that order. Each starts at its Entry cell and direction, with pointer R0, F=0, Page zero, empty data and instruction stacks, empty call stack, Normal phase, and deterministic outer PRNG state. Revisiting an Entry does not create another thread.
 
-Each Custom invocation creates internal threads for every Entry in its Custom Main Board, also in row-major order with invocation-local IDs starting at zero. Registers, Page, pointers, stacks, call frames, memory, and runtime code start fresh. Custom memory is zero-initialized; outer initial memory is not copied into it. One invocation's code changes do not persist into a later invocation.
+Each Custom invocation creates internal threads for every Entry in its Custom Main Board, also in row-major order with invocation-local IDs starting at zero. Registers, Page, pointers, stacks, call frames, memory, and runtime code start fresh. Each internal Entry copies the invoking caller's active F independently. Custom memory is zero-initialized; outer initial memory is not copied into it. One invocation's code changes do not persist into a later invocation.
 
 ## 3. Coordinates and movement
 
@@ -47,13 +51,13 @@ A Folded Block has its owner's width and one row. Horizontal movement wraps insi
 
 For attempted Global Tick N, where N is the prior committed count plus one, the VM evaluates every outer thread present at tick start. Thread IDs give deterministic evaluation and reporting order only; they do not determine which thread wins a write.
 
-Every outer thread reads shared registers, memory, input, and code from the same tick-start snapshot. Private thread changes and shared effects are staged. A synchronous Custom invocation runs its internal ticks within the caller's staged transition. All dispatches in one context tick observe the same tick-start snapshot for that context.
+Every outer thread reads its active register bank and shared memory, input and code from the same tick-start snapshot. Private thread and Function-bank changes and shared effects are staged. A synchronous Custom invocation runs its internal ticks within the caller's staged transition. All dispatches in one context tick observe the same tick-start snapshot for that context.
 
 The VM evaluates all outer threads for the attempted tick, even if a dispatch requested Halt or another dispatch already produced an error. It collects local errors and shared-effect conflicts before deciding whether to commit.
 
 If no runtime error, conflict, or VM fault occurred, the VM atomically commits staged thread transitions and register, memory, input, output, code, caller-stack, and Custom effects, then increments the committed Global Tick. A successful Halt tick commits and increments the counter, then changes overall status to Halted. Halt ends the whole VM after all dispatches and conflict checks for that Global Tick.
 
-If any runtime error or conflict occurs, the entire attempted Global Tick is rejected. Registers, thread positions and phases, stacks, call frames, PRNG state, Page values, input consumption, output, memory, mutable code, and caller-stack effects revert to their tick-start state. The committed Global Tick counter does not advance. Attempt metrics remain as described in Section 14. Runtime errors take precedence over a same-tick Halt request.
+If any runtime error or conflict occurs, the entire attempted Global Tick is rejected. Registers, active and suspended F, thread positions and phases, stacks, call frames, PRNG state, Page values, input consumption, output, memory, mutable code, and caller-stack effects revert to their tick-start state. The committed Global Tick counter does not advance. Attempt metrics remain as described in Section 14. Runtime errors take precedence over a same-tick Halt request.
 
 A step request on a terminal Halted or Error VM performs no work. The attempt number is committed tick count plus one. A failed attempt does not increment the committed tick count.
 
@@ -91,9 +95,18 @@ The IR verifier rejects forbidden Primaries in Folded Blocks. They cannot contai
 
 CALL consumes a tick and transfers the thread to the target Function Board's Entry. It saves the caller board, CALL-cell coordinate, and caller direction in a call frame. The caller stays at the CALL cell while the function executes. The Function Entry itself executes on a later tick.
 
-Function execution retains the thread's register pointer, Page, data stack, instruction stack, and PRNG stream. These are not reset by CALL. Registers, memory, and runtime code remain shared within the execution context.
+CALL saves the caller's register-bank ownership and pointer and creates a private Function bank by copying all ten values and the pointer from the caller's active tick-start state. A sibling's same-tick shared-register writes do not affect that copy. Nested calls and ordinary recursion copy the current Function's private bank into a new independent invocation. Page, data stack, instruction stack and PRNG retain their existing thread ownership and are not copied or restored by CALL/RETURN. Memory and runtime code retain their context ownership. Outer input/output and Custom caller-stack I/O routing are unchanged; the language VM owns no scene state.
 
-RETURN consumes a tick. It restores the caller board and CALL-cell coordinate and the saved caller direction, then enters AfterCall. A separate AfterCall tick advances from the call site in the saved direction and returns to Normal. Changes the function made to registers, pointer, Page, stacks, memory, code, and PRNG stream remain visible after return.
+RETURN consumes a tick. It discards the callee's private bank and pointer without copying either back, restores caller bank ownership and saved pointer, restores the caller board, CALL-cell coordinate and direction, then enters AfterCall. A separate AfterCall tick advances from the call site in the saved direction and returns to Normal. Page, stacks, memory, code, PRNG and I/O changes retain their existing behavior. Return to Main reselects the live shared Main bank: it must not overwrite sibling writes with an old CALL snapshot. Return to a suspended Function resumes that caller's unchanged private bank. AfterCall uses the restored caller state.
+
+Folded Blocks introduce no register scope and use their caller's active bank.
+Functions inside Custom use the same copy/discard rule within that invocation;
+Custom initialization and isolation remain unchanged. Self-tail CALL frame
+reuse preserves the current active register values and pointer as the next
+invocation's initial state, but retains the original suspended caller state
+for the eventual RETURN. Tail eligibility, ticks and call-depth metrics are
+unchanged. Errors, Halt and work yield do not synthesize a RETURN. Ordinary
+whole-tick rollback includes private banks and suspended callers.
 
 RETURN without an active call frame is a ReturnWithoutCall runtime error. Source and verified IR should reject RETURN in Main, but self-modifying code can place one there.
 
@@ -105,9 +118,9 @@ Executing a Custom Primary starts a fresh isolated invocation of the referenced 
 
 Custom calls are available only from the outer execution context, including allowed outer Folded Blocks. A Custom CodeGrid cannot invoke another Custom. A Custom definition may contain Functions and Folded Blocks; its Function calls remain within that Custom CodeGrid.
 
-Custom Main may have multiple internal Entry threads. Its registers and memory are shared within the invocation; direction, pointer, Page, stacks, call frames, phase, and PRNG stream are thread-local. Custom READ and OUTPUT use the invoking outer thread's data stack. Local memory and mutable code belong only to that invocation.
+Custom Main may have multiple internal Entry threads. Its Main registers and memory are shared within the invocation; Functions use private banks under Section 5.4. Direction, pointer, Page, stacks, call frames, phase, and PRNG stream are thread-local. Custom READ and OUTPUT use the invoking outer thread's data stack. Local memory and mutable code belong only to that invocation.
 
-Custom READ consumes the top value of the caller's data stack when available and writes it to the selected Custom register. When the caller's stack is empty, it leaves the selected register unchanged and sets the encoded direction, matching exhausted outer READ behavior. Custom OUTPUT stages a push of the selected Custom register byte onto the caller's data stack. These effects are transactional with the outer Global Tick.
+Custom READ consumes the top value of the caller's data stack when available and writes it to the selected Custom register. When the caller's stack is empty, it leaves the selected register unchanged and sets F=1; success sets F=0. Direction is unchanged in both cases. Custom OUTPUT stages a push of the selected Custom register byte onto the caller's data stack. These effects are transactional with the outer Global Tick.
 
 CustomReturn is allowed only in Custom Main. It consumes a Custom internal tick and terminates only the executing internal thread. Other internal threads continue on later aligned internal ticks. The invocation returns normally when every internal Entry thread has terminated through CustomReturn. On successful return, the caller advances once from the Custom call cell in its pre-invocation direction, in the same outer Global Tick. Custom direction changes do not alter caller direction. A Custom Halt requests whole-VM termination and does not advance the caller; a same-tick Halt takes precedence over normal Custom return, and any runtime error takes precedence over Halt.
 
@@ -117,7 +130,7 @@ The Custom execution limit bounds internal ticks in one invocation. Entry-only t
 
 ### 6.1 Registers and pointer
 
-Each context has ten shared unsigned-byte registers, initially zero. Every thread's pointer starts at R0. Moving left from R0 selects R9; moving right from R9 selects R0. Instructions that access a register use the executing thread's pointer.
+Each context's Main bank has ten shared unsigned-byte registers, initially zero. Every Main thread's pointer starts at R0. A Function starts with its caller's active bank and pointer copied by value. Moving left from R0 selects R9; moving right from R9 selects R0. Every register access, including prefixes, CMP, READ, OUTPUT, memory addressing, DECODE/ENCODE and Attachments, uses the executing thread's active bank and pointer.
 
 ### 6.2 Data stack
 
@@ -147,6 +160,29 @@ MEMORY_LOAD reads the effective address and pushes the byte onto the current thr
 
 Initial outer-memory addresses and Pages are signed arbitrary-precision values. Hosts preserve them without narrowing to JavaScript Number or machine integers.
 
+### 6.4 Status flag F
+
+F is a thread-owned bit in the active Main or Function context. INC sets it
+on carry from 255; DEC on borrow from 0; POPADD on an empty stack or unsigned
+sum above 255. Nonempty POPADD without carry sets it to zero. SHIFT LEFT uses
+old bit7 and SHIFT RIGHT uses old bit0. Pointer left sets it on R0-to-R9 wrap;
+pointer right sets it on R9-to-R0 wrap. Each of these operations overwrites F
+with zero when its stated condition is false. READ follows Section 7.
+
+All other instructions preserve F, including empty/nonempty NAND, NEG, CMP,
+CLEAR, codec, memory, Page, output, direction, Attachments and movement.
+An empty POPADD preserves the register and stack while setting F=1.
+False prefixes preserve F and skip both Primary and suffix. Repeat checks the
+current flag before every attempted execution; a false test cancels the rest.
+
+CALL copies active F into the callee and saves it as saved_status_flag in the
+frame. RETURN discards callee F and restores the saved caller value. Self-tail
+reuse retains current callee F and the original suspended caller flag. Folded
+Blocks share their caller's F. Custom completion discards internal flags and
+preserves the outer flag. Flags are staged and rolled back with the whole tick,
+including suspended frames and work-limit interruption. ThreadChanged carries
+status_flag before/after; no shared flag conflict or separate metric exists.
+
 ## 7. Primary instruction behavior
 
 Every ordinary Primary except Halt is followed by its defined movement or control transition. Attachments and operation metrics are specified in Sections 8 and 14.
@@ -156,9 +192,10 @@ Every ordinary Primary except Halt is followed by its defined movement or contro
 | Direction(up/down/left/right) | Set the thread direction to the encoded direction. |
 | RandomDirection | Draw once from that thread's deterministic PRNG and set its direction. |
 | Compare | Peek thread Data Stack top A without popping, compare against selected register B as unsigned bytes, and stage 0 if equal, 1 if A > B, or 2 if A < B. With an empty stack, preserve the register and stack. Use ordinary movement and count one operation. Custom CMP uses the internal thread stack, not the caller stack. |
-| Read(direction) | Outer context: consume one front input byte if available and stage it into the selected register. If empty, retain the register and set the encoded direction. Custom context: use the caller's stack as specified in Section 5.5; on empty, retain the register and set the encoded direction. |
+| Read | Consume the next outer input byte or Custom caller-stack top and write the selected register with F=0; on exhaustion preserve the register with F=1. Preserve direction in both cases. |
 | Clear | Set the selected register to zero. |
 | Add / Sub | Increment / decrement the selected register modulo 256. |
+| Neg | Set the selected byte to `(0 - value) mod 256`, equivalently `0u8.wrapping_sub(value)`. Preserve the pointer and every other register; use ordinary movement. |
 | MoveRegisterPointer(left/right) | Move the thread pointer one slot in the encoded direction, wrapping between R0 and R9. |
 | Output | Outer context: stage the selected byte into the shared output sequence. Custom context: stage a push onto the caller's data stack. |
 | OutputImmediate(digit 0 through 9) | Stage the literal raw byte into outer output, or onto the Custom caller's data stack. Preserve all registers and the register pointer. Use ordinary Output movement, conflicts, rollback, tick and work accounting. |
@@ -176,7 +213,13 @@ Every ordinary Primary except Halt is followed by its defined movement or contro
 | CustomReturn | Return from Custom Main using Section 5.5. |
 | Halt | Request successful whole-VM termination after the current Global Tick dispatches and conflict checks. |
 
-Outer READ uses one shared input queue. When the queue is nonempty and exactly one thread reads in a tick, the first byte is consumed and staged for that thread's selected register. Multiple reads while the queue is nonempty conflict rather than receiving the same byte or consuming successive bytes. When input is empty, READ does not write a register or consume a byte; it sets the encoded direction and empty-queue reads do not conflict.
+Outer READ uses one shared input queue. When the queue is nonempty and exactly one thread reads in a tick, the first byte is consumed and staged for that thread's selected register. Multiple reads while the queue is nonempty conflict rather than receiving the same byte or consuming successive bytes. When input is empty, READ does not write a register or consume a byte; it sets F=1 and preserves direction. Empty-queue reads do not conflict; a successful read sets F=0, including the last byte.
+
+NEG is an encodable ordinary Primary with Instruction Code 69 and distinct
+metric kind `Neg`. It accepts the existing conditional prefixes and suffix
+matrix, including per-tick Repeat and prefix rechecks. Every execution counts
+one operation; work remains one unit per scheduled dispatch. It introduces no
+special cost or overflow error. Its level-layer capability is `NEG`.
 
 ## 8. Attachments
 
@@ -184,7 +227,7 @@ A cell has at most one conditional prefix and one suffix Attachment.
 
 ### 8.0 Conditional prefixes
 
-Before executing a cell's Primary, evaluate its fixed `?0`, `?1`, or `?2` prefix against the executing thread's selected register in the context tick-start snapshot. Every evaluation counts one operation and the shared Condition instruction kind, including false results. On false, skip both Primary and suffix and move once in the current direction; normal boundary and Fold movement rules still apply. The visited cell, dispatch, and tick are still counted. Skipped effects, calls, PRNG draws, Halt requests, and skipped instruction metrics do not occur.
+Before executing a cell's Primary, evaluate its fixed `?0`, `?1`, or `?2` prefix against the executing thread's selected register in the context tick-start snapshot, or `?!` against its active tick-start F=1. Testing F preserves it. Every evaluation counts one operation and the shared Condition instruction kind, including false results. On false, skip both Primary and suffix and move once in the current direction; normal boundary and Fold movement rules still apply. The visited cell, dispatch, and tick are still counted. Skipped effects, calls, PRNG draws, Halt requests, and skipped instruction metrics do not occur.
 
 Repeat rechecks before each Primary execution. A false result cancels remaining repetitions, restores Normal phase, and moves once. CALL checks only before invocation; AfterCall runs its existing deferred suffix and movement without rechecking. FoldResume also does not recheck. Prefixes are allowed on all otherwise valid Primaries, including Folded Block contents, but do not relax static restrictions.
 
@@ -224,10 +267,12 @@ These encodable Primaries have canonical byte Instruction Codes and may be store
 | ( | 40 |
 | ) | 41 |
 | + | 43 |
+| , | 44 |
 | - | 45 |
 | . | 46 |
 | < | 60 |
 | > | 62 |
+| $! | 69 |
 | ?? | 126 |
 | ?= | 124 |
 | $& | 74 |
@@ -239,25 +284,29 @@ These encodable Primaries have canonical byte Instruction Codes and may be store
 | ^ | 94 |
 | $< | 96 |
 | $> | 98 |
-| ,< | 104 |
-| ,> | 106 |
 | v | 118 |
 | { | 123 |
 | } | 125 |
-| ,^ | 138 |
 | Call(slot 0 through 9) | 139 through 148, respectively |
-| ,v | 162 |
 
 FoldedBlock, Custom, CustomReturn, and Halt have no Instruction Code. EMPTY has code 32 but is not a Primary. Attachment tokens are not Instruction Codes.
 
 ## 10. Concurrent effects and conflicts
 
-OutputImmediate has no Instruction Code and accepts no suffix Attachment; conditional prefixes are permitted. It cannot
+Function register accesses target the executing invocation's private tick-start
+bank. Register conflict identity includes bank ownership: writes to R0 in
+different Function invocations, or to Function R0 and Main R0, do not conflict.
+Input, output, memory, mutable-code and Custom caller-stack conflicts are
+unchanged. Private writes roll back when any shared effect rejects the tick.
+NEG is a write even for fixed points 0 and 128; it obeys existing equal-value
+write conflict rules. Main threads still share the Main bank.
+
+OutputImmediate has no Instruction Code and accepts only Repeat suffixes x2 through x5; conditional prefixes are permitted. Repeat uses the ordinary per-tick Primary execution, movement, conflicts, rollback, work accounting, and Custom caller-stack routing. ReadCode and WriteCode remain invalid. It cannot
 be represented on the Instruction Stack. Existing Instruction Codes remain
 unchanged. All immediate forms count as the existing Output metric kind, not
 as separate kinds for each digit.
 
-Threads within one context read that context's shared register, memory, input, and code snapshots from the beginning of the context tick. Reads do not see sibling writes from that tick. An overlapping memory or code read and write is not itself a conflict; the read sees the old value.
+Threads read their active register bank and their context's shared memory, input and code from the beginning of the context tick. Reads do not see sibling writes from that tick. An overlapping memory or code read and write is not itself a conflict; the read sees the old value.
 
 ### 10.1 Normative conflict matrix
 
@@ -310,11 +359,13 @@ Metric counter overflow and impossible internal state are VM faults, not source 
 
 ## 12. Snapshots and events
 
+Each thread exposes nullable `private_registers`: null selects the shared Main bank; otherwise it contains ten private bytes. Each call frame exposes nullable `saved_registers` and `saved_register_pointer` for its suspended caller. Outer `registers` retains its shared Main-bank meaning. Private bank changes are exposed by the existing `ThreadChanged` before/after snapshots with thread and context identity; `RegisterChanged` describes the shared Main bank. No new event kind is introduced.
+
 Owned snapshots and borrowed read-only views expose the same semantic state without forcing a clone merely for inspection. A Full snapshot includes:
 
 - overall status and committed Global Tick count;
 - ten outer registers, outer sparse memory, remaining input, accumulated output, and the mutable outer program copy;
-- each outer thread's ID, board, coordinate, direction, register pointer, Page, data and instruction stacks, call frames, phase, and PRNG state;
+- each outer thread's ID, board, coordinate, direction, register pointer, status_flag (0 or 1), Page, data and instruction stacks, call frames, phase, and PRNG state;
 - cumulative raw metrics, structured runtime errors, and any VM fault.
 
 A successful step may emit ordered events for reached cells, consumed input, committed register/memory/code changes, and thread changes. Failed or rolled-back ticks emit no events and no newly committed output. A state-change event is emitted only when the committed value changes. Empty input, empty-stack WriteCode, and invalid DECODE no-ops do not emit a change event.
@@ -422,6 +473,10 @@ Determinism requires tick-start snapshots for shared reads; conflict and commit 
 
 ## 17. Conformance coverage gates
 
+### Implemented 2026-10-08 changes
+
+`function_registers_and_neg.rs` covers all byte values, stack returns, nested/private banks and pointers, concurrent Main/private writes, rollback, work yields and self-tail reuse. Five additional shared fixtures compare complete state across native CLI, browser, Node and Wasmtime, including private snapshots and Custom calls.
+
 The VM decisions recorded in [Full Language Decisions](../docs/decisions.md#resolved-vm-semantic-decisions) are normative. The historical evidence identified there is not a substitute for direct acceptance coverage. Before claiming Full conformance, add deterministic cases for:
 
 1. Multiple Custom internal threads returning on different and matching ticks, including a surviving thread, same-tick Halt, error, and Custom execution-limit exhaustion.
@@ -436,7 +491,7 @@ Tail-call eligibility and the Custom limit boundary follow the verifier metadata
 
 ### Coverage audit (2026-09-29)
 
-The following status is based on direct cases in the active `state_tests_full_v2.rs` module and the VM unit tests. A fixture or implementation inspection alone does not count as a direct acceptance case.
+The following status is based on direct cases in the active `state_tests.rs` module and the VM unit tests. A fixture or implementation inspection alone does not count as a direct acceptance case.
 
 | Gate | Status | Direct evidence and remaining work |
 | --- | --- | --- |
@@ -444,7 +499,7 @@ The following status is based on direct cases in the active `state_tests_full_v2
 | 2. CALL/RETURN attachments and mutable CALL site | Covered | `calls_consume_a_tick_and_return_uses_a_separate_resume_tick`, `call_write_code_runs_after_return_using_the_callees_instruction_stack`, `write_code_attached_to_return_is_inert`, `recursive_callee_aftercall_uses_the_current_mutable_call_site`, and `deferred_call_attachments_do_not_run_when_the_callee_halts_or_errors` cover both attachment kinds, successful AfterCall behavior, inert RETURN attachments, recursive site mutation, and the callee halt/error cases. |
 | 3. ReadCode, WriteCode, and code 32 | Covered for reachable behavior | `read_code_pushes_the_tick_start_primary_onto_an_empty_stack`, `cleared_primary_keeps_write_code_attachment_for_later_noop_visits`, and reachable DECODE/ENCODE code-32 cases cover the acceptance requirements. The Empty-Primary ReadCode state after mutation is unreachable under verified IR and is intentionally not an execution gate. |
 | 4. POPADD/NAND | Covered | `empty_popadd_and_nand_are_counted_noops`, `nonempty_popadd_updates_register_and_consumes_one_stack_value`, and `nand_complements_the_bitwise_and_of_register_and_stack_values` cover empty and nonempty state, movement, and metrics. |
-| 5. Custom READ | Covered | `custom_read_transactionally_pops_the_outer_callers_data_stack`, `empty_custom_read_preserves_register_and_turns_before_later_output`, `concurrent_custom_reads_of_a_nonempty_caller_stack_conflict`, `successful_custom_read_and_output_conflict_atomically`, and `exhausted_custom_read_can_coexist_with_one_caller_stack_output` cover nonempty/empty reads, direction, caller-stack conflict, and coexistence with output. |
+| 5. Custom READ | Covered | `custom_read_transactionally_pops_the_outer_callers_data_stack`, `empty_custom_read_preserves_register_and_sets_flag_before_later_output`, `concurrent_custom_reads_of_a_nonempty_caller_stack_conflict`, `successful_custom_read_and_output_conflict_atomically`, and `exhausted_custom_read_can_coexist_with_one_caller_stack_output` cover nonempty/empty reads, direction, caller-stack conflict, and coexistence with output. |
 | 6a. Cross-effect conflict matrix and canonical errors | Covered | The 10 `effects::tests` directly exercise the resolver rules: `rejected_input_reads_do_not_create_register_conflicts`, `empty_input_allows_multiple_reads_without_consumption_conflict`, `rejected_caller_stack_reads_do_not_create_register_conflicts`, `exhausted_caller_read_can_coexist_with_one_output`, `successful_caller_read_and_output_conflict_atomically`, `successful_caller_read_with_multiple_outputs_reports_both_conflicts`, `equal_shared_writes_still_conflict_and_participants_are_sorted`, `custom_memory_conflicts_are_scoped_to_the_address`, `code_write_conflict_uses_static_program_location`, and `combined_outer_and_custom_conflicts_have_exact_canonical_order`. The combined case asserts exact Outer/Custom scope, error-code/resource ordering, and normalized participants for register, memory, code, input, output, and caller-stack errors. Active VM cases cover successful input/caller-stack reads as register writers, simultaneous equal register/memory/code/output writes, Custom invocation state isolation, transaction rollback, and end-to-end multi-error ordering (`successful_outer_input_read_conflicts_with_a_sibling_register_write`, `successful_custom_caller_read_conflicts_with_a_sibling_register_write`, `simultaneous_writes_conflict_without_thread_order_winners`, `equal_memory_writes_conflict_and_roll_back_the_entire_tick`, `equal_code_writes_conflict_and_leave_the_primary_unchanged`, `concurrent_outer_outputs_conflict_and_roll_back_the_global_tick`, `simultaneous_custom_invocations_isolate_registers_and_local_memory`, and `concurrent_writes_and_out_of_bounds_are_reported_together`). `error.rs` unit cases cover canonical scope/code/resource/participant comparisons. No additional duplicate per-row integration cases are required for this gate. |
 | 6b. Event order | Covered | `successful_tick_emits_a_complete_ordered_outer_and_custom_event_golden` asserts the full event sequence across multiple Outer threads, Custom visits, and every state-event category. Failed ticks explicitly assert an empty event sequence in cases including `concurrent_writes_and_out_of_bounds_are_reported_together`, `concurrent_outer_outputs_conflict_and_roll_back_the_global_tick`, Custom caller-stack conflicts, and `deferred_call_attachments_do_not_run_when_the_callee_halts_or_errors`. |
 | 6c. Stack high-water formula | Covered | `failed_aligned_custom_tick_preserves_integrated_stack_high_water_formula` drives one failing Outer tick with a Custom invocation containing two aligned internal threads. It asserts the combined Data/Instruction/Call peaks (`7/3/3`), counts the caller stack once while replacing its aligned sample, includes staged pushes without reducing peaks for staged pops, and verifies full state rollback with attempted peaks retained. `failed_aligned_custom_tick_preserves_the_aggregate_stack_high_water_formula` independently checks the arithmetic helpers and metric merge. |
@@ -458,4 +513,4 @@ Core source spans remain UTF-8 byte offsets; conversion for editors is outside t
 
 ## 18. Encoding migration (2026-10-03)
 
-Instruction Codes follow single-symbol ASCII values or the sum of both symbols' ASCII values. RandomDirection is 126 and CMP is 124. All other retained encodings and EMPTY 32 remain unchanged. Codes 63, 95, 97, 129, and 153 are no longer decoded and are not reused; DECODE handles them by the existing invalid-byte counted-no-op rule. Prefixes and suffixes are not encodable Primaries. Existing non-encodable structural, immediate-output, and Halt forms remain excluded. Executable IR format 2 rejects format 1.
+Instruction Codes follow single-symbol ASCII values or the sum of both symbols' ASCII values. RandomDirection is 126 and CMP is 124. All other retained encodings and EMPTY 32 remain unchanged. Codes 63, 95, 97, 129, and 153 are no longer decoded and are not reused; DECODE handles them by the existing invalid-byte counted-no-op rule. Prefixes and suffixes are not encodable Primaries. Existing non-encodable structural, immediate-output, and Halt forms remain excluded. This migration introduced IR format 2. Current executable IR format 3 rejects formats 1 and 2 after the Function/NEG semantic change.

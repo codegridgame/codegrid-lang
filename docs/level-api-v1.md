@@ -1,4 +1,8 @@
-# Level Host API v1
+# Level Host API v1 (historical design)
+
+The API-1 implementation and compatibility entry points were removed on
+2026-10-08. This document is historical evidence, not a supported host contract.
+Use the [current Scene Host contract](../spec/codegrid-scene-host-contract-v2.md).
 
 This contract versions level operations independently of Language Runtime API
 v3. The logical level format and evaluator contract remain version 1. All hosts

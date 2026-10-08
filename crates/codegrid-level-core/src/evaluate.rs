@@ -528,8 +528,16 @@ pub fn retained_state_units(vm: &Vm, program: &VerifiedProgram) -> Option<u64> {
             .checked_add(1)?
             .checked_add(thread.page().bits().div_ceil(8))?
             .checked_add(thread.data_stack().len() as u64)?
-            .checked_add(thread.instruction_stack().len() as u64)?
-            .checked_add(thread.call_frames().count() as u64)?;
+            .checked_add(thread.instruction_stack().len() as u64)?;
+        if thread.private_registers().is_some() {
+            total = total.checked_add(10)?;
+        }
+        for frame in thread.call_frames() {
+            total = total.checked_add(2)?;
+            if frame.saved_registers.is_some() {
+                total = total.checked_add(10)?;
+            }
+        }
     }
     let metrics = view.metrics();
     total = total
@@ -565,7 +573,7 @@ mod diagnostic_tests {
                     height: 1,
                     cells: vec![
                         Cell::entry(Direction::Right),
-                        Cell::instruction(P::Read(Direction::Right), None),
+                        Cell::instruction(P::Read, None),
                         Cell::instruction(P::Decode, None),
                         Cell::instruction(P::Direction(Direction::Right), Some(A::WriteCode)),
                         Cell::instruction(P::Output, None),

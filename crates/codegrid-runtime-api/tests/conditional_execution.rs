@@ -15,7 +15,7 @@ fn machine(source: &str, input: &[u8]) -> Vm {
 #[test]
 fn cmp_peeks_unsigned_values_and_uses_the_selected_register() {
     for (a, b, expected) in [(7, 7, 0), (255, 0, 1), (0, 255, 2)] {
-        let mut vm = machine("~> ,> ( } ,> ?= . ;", &[a, b]);
+        let mut vm = machine("~> , ( } , ?= . ;", &[a, b]);
         assert_eq!(vm.run(30), RunOutcome::Halted);
         let state = vm.snapshot();
         assert_eq!(state.output, vec![expected]);
@@ -32,11 +32,11 @@ fn cmp_peeks_unsigned_values_and_uses_the_selected_register() {
 
 #[test]
 fn empty_cmp_preserves_register_and_repeat_recomputes_results() {
-    let mut empty = machine("~> ,> ?= . ;", &[9]);
+    let mut empty = machine("~> , ?= . ;", &[9]);
     assert_eq!(empty.run(20), RunOutcome::Halted);
     assert_eq!(empty.snapshot().output, vec![9]);
     assert_eq!(empty.snapshot().metrics.operation_count(), 4);
-    let mut repeated = machine("~> ,> ( ,> ?=x3 . ;", &[2, 5]);
+    let mut repeated = machine("~> , ( , ?=x3 . ;", &[2, 5]);
     assert_eq!(repeated.run(20), RunOutcome::Halted);
     assert_eq!(repeated.snapshot().output, vec![1]);
     assert_eq!(repeated.snapshot().threads[0].data_stack, vec![2]);
@@ -44,7 +44,7 @@ fn empty_cmp_preserves_register_and_repeat_recomputes_results() {
 
 #[test]
 fn false_prefix_skips_read_output_random_halt_and_suffix() {
-    let mut vm = machine("~> ?1,> ?1. ?1?? ?1; ?1+* ?0.3 ;", &[9]);
+    let mut vm = machine("~> ?1, ?1. ?1?? ?1; ?1+* ?0.3 ;", &[9]);
     assert_eq!(vm.run(20), RunOutcome::Halted);
     let state = vm.snapshot();
     assert_eq!(state.input, vec![9]);
@@ -85,13 +85,13 @@ fn false_calls_and_returns_preserve_control_flow() {
     );
     assert_eq!(vm.run(40), RunOutcome::Halted);
     let state = vm.snapshot();
-    assert_eq!(state.registers[0], 2);
-    assert_eq!(state.output, vec![2, 3]);
+    assert_eq!(state.registers[0], 1);
+    assert_eq!(state.output, vec![1, 3]);
 }
 
 #[test]
 fn cmp_readcode_suffix_exposes_only_primary_encoding() {
-    let mut vm = machine("~> ,> ( ,> ?0?=* % . ;", &[7, 0]);
+    let mut vm = machine("~> , ( , ?0?=* % . ;", &[7, 0]);
     assert_eq!(vm.run(20), RunOutcome::Halted);
     let state = vm.snapshot();
     assert_eq!(state.output, vec![124]);
@@ -100,7 +100,7 @@ fn cmp_readcode_suffix_exposes_only_primary_encoding() {
 
 #[test]
 fn cleared_code_retains_prefix_and_true_suffix_behavior() {
-    let mut vm = machine("~> ,> & ?0+= % . ;", &[32]);
+    let mut vm = machine("~> , & ?0+= % . ;", &[32]);
     assert_eq!(vm.run(20), RunOutcome::Halted);
     let state = vm.snapshot();
     // Register 32 fails the prefix, so neither Add nor WriteCode executes.
@@ -110,7 +110,7 @@ fn cleared_code_retains_prefix_and_true_suffix_behavior() {
         Some(ConditionPrefix::Zero)
     );
     assert_eq!(state.output, vec![32]);
-    let mut cleared = machine("~> ,> & ! ?0+= ;", &[32]);
+    let mut cleared = machine("~> , & ! ?0+= ;", &[32]);
     assert_eq!(cleared.run(20), RunOutcome::Halted);
     let state = cleared.snapshot();
     assert!(state.runtime_program.main.cells[4].primary.is_none());
@@ -151,13 +151,13 @@ fn concurrent_conditions_read_tick_start_and_skips_still_obey_bounds() {
 #[test]
 fn obsolete_instruction_bytes_no_longer_decode() {
     for value in [63, 95, 97, 129, 153] {
-        let mut vm = machine("~> ,> & % . ;", &[value]);
+        let mut vm = machine("~> , & % . ;", &[value]);
         assert_eq!(vm.run(20), RunOutcome::Halted);
         assert!(vm.snapshot().threads[0].instruction_stack.is_empty());
         assert_eq!(vm.snapshot().output, vec![value]);
     }
     for value in [124, 126] {
-        let mut vm = machine("~> ,> & % . ;", &[value]);
+        let mut vm = machine("~> , & % . ;", &[value]);
         assert_eq!(vm.run(20), RunOutcome::Halted);
         assert_eq!(vm.snapshot().output, vec![value]);
     }
@@ -166,7 +166,7 @@ fn obsolete_instruction_bytes_no_longer_decode() {
 #[test]
 fn cleared_cells_recheck_conditions_before_the_retained_suffix() {
     for (primary, expected_register, revisit_cost) in [("!", 0, 2), ("+", 1, 1)] {
-        let source = format!("~> ,> & ! ?0{primary}= <");
+        let source = format!("~> , & ! ?0{primary}= <");
         let mut vm = machine(&source, &[32]);
         for _ in 0..6 {
             vm.step();
@@ -203,7 +203,7 @@ fn cmp_register_conflicts_roll_back_without_popping_stacks() {
 
 #[test]
 fn conditional_run_matches_repeated_steps() {
-    let source = "~> ,> ( ,> ?= ?1+x3 ?2. ;";
+    let source = "~> , ( , ?= ?1+x3 ?2. ;";
     let mut bounded = machine(source, &[255, 0]);
     let mut stepped = machine(source, &[255, 0]);
     assert_eq!(bounded.run(30), RunOutcome::Halted);

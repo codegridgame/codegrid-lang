@@ -202,8 +202,8 @@ fn main() -> Result<()> {
         .as_array()
         .context("conformance fixture cases must be an array")?;
     ensure!(
-        cases.len() == 75,
-        "shared Full fixture must contain all 75 cases, found {}",
+        cases.len() == 94,
+        "shared Full fixture must contain all 94 cases, found {}",
         cases.len()
     );
 
@@ -1135,6 +1135,8 @@ fn normalize_thread(thread: &Value, shape: ResultShape, snapshot: bool) -> Resul
         "position",
         "random_state",
         "register_pointer",
+        "private_registers",
+        "status_flag",
     ];
     if snapshot || is_server {
         expected_keys.push("code_grid");
@@ -1201,6 +1203,11 @@ fn normalize_thread(thread: &Value, shape: ResultShape, snapshot: bool) -> Resul
         "register_pointer".to_owned(),
         thread["register_pointer"].clone(),
     );
+    result.insert(
+        "private_registers".to_owned(),
+        thread["private_registers"].clone(),
+    );
+    result.insert("status_flag".to_owned(), thread["status_flag"].clone());
     result.insert("page".to_owned(), thread["page"].clone());
     result.insert("data_stack".to_owned(), thread["data_stack"].clone());
     result.insert("instruction_stack".to_owned(), json!(instruction_stack));
@@ -1213,13 +1220,23 @@ fn normalize_thread(thread: &Value, shape: ResultShape, snapshot: bool) -> Resul
 fn normalize_call_frame(frame: &Value) -> Result<Value> {
     assert_exact_keys(
         frame,
-        &["call_position", "caller_board", "saved_direction"],
+        &[
+            "call_position",
+            "caller_board",
+            "saved_direction",
+            "saved_registers",
+            "saved_register_pointer",
+            "saved_status_flag",
+        ],
         "thread call frame",
     )?;
     Ok(json!({
         "caller_board": normalize_board_name(&frame["caller_board"])? ,
         "call_position": frame["call_position"],
         "saved_direction": frame["saved_direction"],
+        "saved_registers": frame["saved_registers"],
+        "saved_register_pointer": frame["saved_register_pointer"],
+        "saved_status_flag": frame["saved_status_flag"],
     }))
 }
 

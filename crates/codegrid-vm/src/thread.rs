@@ -31,6 +31,9 @@ pub(super) struct CallFrame {
     pub caller_board: BoardId,
     pub call_position: Coordinate,
     pub saved_direction: Direction,
+    pub saved_registers: Option<[Value; 10]>,
+    pub saved_register_pointer: u8,
+    pub saved_status_flag: u8,
 }
 
 /// Mutable state private to one outer or Custom-internal thread.
@@ -41,6 +44,8 @@ pub(super) struct ThreadState {
     pub position: Coordinate,
     pub direction: Direction,
     pub register_pointer: u8,
+    pub status_flag: u8,
+    pub private_registers: Option<[Value; 10]>,
     pub page: BigInt,
     pub data_stack: Vec<Value>,
     pub instruction_stack: Vec<InstructionStackItem>,
@@ -57,6 +62,8 @@ impl ThreadState {
             position,
             direction,
             register_pointer: 0,
+            status_flag: 0,
+            private_registers: None,
             page: BigInt::from(0u8),
             data_stack: Vec::new(),
             instruction_stack: Vec::new(),

@@ -1,0 +1,5 @@
+@main
+@size 3x2
+~> . ;
+~> . ;
+@end main

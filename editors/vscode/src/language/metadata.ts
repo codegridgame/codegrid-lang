@@ -41,10 +41,7 @@ export const PRIMARIES: PrimaryInfo[] = [
   primary('>', 'Direction Right', 62, 'direction', 'Sets the direction to Right.'),
   primary('??', 'Random Direction', 126, 'random'),
   primary('?=', 'CMP', 124, 'compare', 'Compares Data Stack top A without popping with the selected register B. Writes 0 if equal, 1 if A > B, or 2 if A < B. An empty stack preserves the register.'),
-  primary(',^', 'READ Up', 138, 'read', 'Reads one input byte into R0. If input is exhausted, leaves R0 unchanged and turns Up.'),
-  primary(',v', 'READ Down', 162, 'read', 'Reads one input byte into R0. If input is exhausted, leaves R0 unchanged and turns Down.'),
-  primary(',<', 'READ Left', 104, 'read', 'Reads one input byte into R0. If input is exhausted, leaves R0 unchanged and turns Left.'),
-  primary(',>', 'READ Right', 106, 'read', 'Reads one input byte into R0. If input is exhausted, leaves R0 unchanged and turns Right.'),
+  primary(',', 'READ', 44, 'read', 'Reads a byte into the selected register and sets F=0. Exhaustion preserves the register and sets F=1; direction is unchanged.'),
   primary('!', 'CLEAR', 33, 'clear'),
   primary('+', 'ADD', 43, 'arithmetic', 'Increments R0 with 8-bit wrapping.'),
   primary('-', 'SUB', 45, 'arithmetic', 'Decrements R0 with 8-bit wrapping.'),
@@ -53,7 +50,7 @@ export const PRIMARIES: PrimaryInfo[] = [
   primary('.', 'OUTPUT', 46, 'output', 'Appends the current R0 byte to output.'),
   ...Array.from({ length: 10 }, (_, digit) =>
     primary(`.${digit}`, `Immediate Output ${digit}`, null, 'output',
-      'Outputs a literal byte without changing registers or the register pointer. In Custom code, pushes onto the caller stack. No Instruction Code or suffix Attachments; conditional prefixes are allowed.')
+      'Outputs a literal byte without changing registers or the register pointer. In Custom code, pushes onto the caller stack. Repeat x2 through x5 and conditional prefixes are allowed; no Instruction Code, ReadCode or WriteCode.')
   ),
   primary('(', 'PUSH', 40, 'stack'),
   primary(')', 'POP_ADD', 41, 'stack'),
@@ -63,6 +60,7 @@ export const PRIMARIES: PrimaryInfo[] = [
     primary(`[${slot}`, `CALL ${slot}`, 139 + slot, 'call')
   ),
   primary(']', 'RETURN', 93, 'return'),
+  primary('$!', 'NEG', 69, 'arithmetic', 'Replaces the selected byte with its additive inverse modulo 256.'),
   primary('$&', 'NAND', 74, 'nand'),
   primary('$(', 'MEMORY_LOAD', 76, 'memory'),
   primary('$)', 'MEMORY_STORE', 77, 'memory'),
@@ -97,8 +95,8 @@ export type CellToken =
   | { kind: 'entry'; entry: EntryInfo }
   | { kind: 'primary'; primary: PrimaryInfo; prefix?: ConditionToken; attachment?: AttachmentToken };
 
-export type ConditionToken = '?0' | '?1' | '?2';
-export const CONDITIONS: ConditionToken[] = ['?0', '?1', '?2'];
+export type ConditionToken = '?0' | '?1' | '?2' | '?!';
+export const CONDITIONS: ConditionToken[] = ['?0', '?1', '?2', '?!'];
 
 export type AttachmentToken = '*' | '=' | 'x2' | 'x3' | 'x4' | 'x5';
 
@@ -116,11 +114,11 @@ export const PRIMARY_CELL_SPELLINGS: PrimaryCellSpelling[] = PRIMARIES.flatMap((
       { token: `${item.token}*`, primary: item, attachment: '*' },
       { token: `${item.token}=`, primary: item, attachment: '=' }
     );
-    if (item.family !== 'call' && item.family !== 'return') {
-      for (const count of [2, 3, 4, 5] as const) {
-        const attachment = `x${count}` as AttachmentToken;
-        spellings.push({ token: `${item.token}${attachment}`, primary: item, attachment });
-      }
+  }
+  if ((item.code !== null || item.family === 'output') && item.family !== 'call' && item.family !== 'return') {
+    for (const count of [2, 3, 4, 5] as const) {
+      const attachment = `x${count}` as AttachmentToken;
+      spellings.push({ token: `${item.token}${attachment}`, primary: item, attachment });
     }
   }
   return spellings.flatMap((spelling) => [spelling, ...CONDITIONS.map((prefix) => ({ ...spelling, token: `${prefix}${spelling.token}`, prefix }))]);
@@ -141,9 +139,8 @@ export function parseCellToken(token: string): CellToken | null {
 
 /** Notes for incomplete multi-character spellings shown by hover. */
 export const PREFIX_NOTES: Record<string, string> = {
-  '?': vscode.l10n.t('Complete as ?? for random direction, ?= for CMP, or ?0/?1/?2 before a Primary for a conditional prefix.'),
+  '?': vscode.l10n.t('Complete as ?? for random direction, ?= for CMP, or ?0/?1/?2/?! before a Primary for a conditional prefix.'),
   '#': vscode.l10n.t('`#` must be completed as a Custom call or Custom return token.'),
-  $: vscode.l10n.t('`$` must be completed as a NAND, memory, Page, shift, or Folded Block token.'),
-  ',': vscode.l10n.t('`,` must be completed with one of the four READ directions.'),
+  $: vscode.l10n.t('`$` must be completed as a NEG, NAND, memory, Page, shift, or Folded Block token.'),
   '[': vscode.l10n.t('`[` must be followed by one Function ID digit (`0` through `9`).'),
 };

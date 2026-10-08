@@ -17,12 +17,14 @@ async function version(command,args) {
   }
 }
 function sha(path) {return createHash('sha256').update(readFileSync(resolve(root,path))).digest('hex');}
-const cli=JSON.parse(readFileSync(resolve(root,'target/level-cli-report.json'),'utf8'));
+const cli=JSON.parse(readFileSync(resolve(root,'target/scene-native-report.json'),'utf8'));
 const buildIds=[...new Set(cli.results.map(record=>record.result.evaluator_build))];
 if(buildIds.length!==1 || !/^codegrid-level-source-sha256:[0-9a-f]{64}$/.test(buildIds[0])) throw new Error('Results lack one exact evaluator source build identity');
 const report={
   schema:'codegrid.level.build-provenance',schema_version:1,
-  evaluator_build:buildIds[0],api_version:1,browser_binding_version:1,portable_abi_version:1,logical_format_version:1,
+  evaluator_build:buildIds[0],api_version:2,browser_binding_version:2,portable_abi_version:2,logical_format_version:1,
+  source_commit:await version('git',['rev-parse','HEAD']),
+  source_dirty:spawnSync('git',['status','--porcelain'],{cwd:root,encoding:'utf8',windowsHide:true}).stdout.trim().length > 0,
   rustc:await version('rustc',['-Vv']),cargo:await version('cargo',['--version']),wasm_bindgen:await version('wasm-bindgen',['--version']),node:process.version,
   targets:{native:'host reported by rustc -Vv',wasm:'wasm32-unknown-unknown'},
   wasm_build:{profile:'release',locked_dependencies:true,maximum_memory_bytes:process.env.CODEGRID_WASM_MAX_MEMORY_BYTES ?? '67108864'},

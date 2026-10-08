@@ -250,7 +250,9 @@ mod tests {
     #[test]
     fn debug_steps_use_shared_vm_and_preserve_utf16_source_locations() {
         let mut session = Session::default();
-        let loaded = session.request(launch("/*馃檪*/ ~> ,v . ;\r\n")).unwrap();
+        let loaded = session
+            .request(launch("/*\u{9983}\u{6aaa}*/ ~> , . ;\r\n"))
+            .unwrap();
         assert_eq!(
             loaded["locations"]
                 .as_array()

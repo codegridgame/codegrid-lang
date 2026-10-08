@@ -5,7 +5,7 @@ from the [complete error table](../spec/codegrid-error-numbers.md). Human messag
 show `[number] [original_code]`; JSON diagnostics/errors/faults add `error_number`.
 Existing textual codes and process exit codes retain their meanings.
 
-The native CLI provides a local process boundary for the Full language and level evaluation. It owns command-line parsing, file access, input conversion, JSON serialization, terminal diagnostics, presentation, and process exit codes. The shared compiler owns source acceptance and verified-program construction under the [source specification](../spec/codegrid-source-spec.md); the shared VM owns execution and snapshots under the [VM specification](../spec/codegrid-vm-spec.md). The `check`, `run`, and `debug` commands compose the compiler and VM directly. The `evaluate` command delegates all level semantics to the shared [Level Host API](level-api-v1.md). No CLI command implements a second parser, validator, instruction table, interpreter, metric calculator, or scoring policy.
+The native CLI provides a local process boundary for the Full language and level evaluation. It owns command-line parsing, file access, input conversion, JSON serialization, terminal diagnostics, presentation, and process exit codes. The shared compiler owns source acceptance and verified-program construction under the [source specification](../spec/codegrid-source-spec.md); the shared VM owns execution and snapshots under the [VM specification](../spec/codegrid-vm-spec.md). The `check`, `run`, and `debug` commands compose the compiler and VM directly. The `evaluate` command delegates all level semantics to the shared [Scene Level Host API](../spec/codegrid-scene-host-contract-v2.md). No CLI command implements a second parser, validator, instruction table, interpreter, metric calculator, or scoring policy.
 
 This contract describes the local Full target. It does not select deployment authentication, multi-user quotas, or production service policy.
 
@@ -181,12 +181,13 @@ Byte values, register indexes, slots, coordinates, dimensions, bounded Repeat co
 ## `evaluate` level command
 
 `codegrid evaluate <level.json> <program.cg>` runs the shared Rust level
-evaluator through [Level Host API v1](level-api-v1.md). It does not compile,
+evaluator through [Level Host API 2](../spec/codegrid-scene-host-contract-v2.md). It does not compile,
 validate, execute, score, or rate levels independently. The command requires
 `--mode <debug|official>`, `--boundary <exit|wrap>`, `--seed <u64>`,
 `--custom-limit <positive-u64>`, and `--limits-file <trusted-profile.json>`.
 Each option may appear exactly once. `--format <json|human>` is optional and
-defaults to `json`.
+defaults to `json`. Evaluation always uses API/profile 2; optional
+`--api-version 2` validates the current version and `--api-version 1` is rejected.
 
 Level `allowed_instructions` accepts group names: `READ`,
 `REGISTER_POINTER`, `STACK` (PUSH and POP_ADD), `CODEC` (DECODE and ENCODE),
@@ -218,7 +219,7 @@ These pre-evaluation file failures write only to stderr and produce no JSON.
 Malformed profiles, invalid profile values, and invalid command-line values
 return code `2` and produce no JSON.
 
-In JSON mode, stdout contains exactly one complete Level Host API v1 response,
+In JSON mode, stdout contains exactly one complete Level Host API 2 response,
 pretty-printed with a trailing newline. This is the same semantic `result`
 projection used by the WASM level adapters. A reached API rejection is still
 returned as one response: compiler diagnostics use `source_rejected`, while
@@ -254,7 +255,7 @@ The `evaluate` exit-code mapping is specific to this command. Existing `check`,
 For a complete repository fixture run, use:
 
 ```text
-cargo run -p codegrid-cli -- evaluate fixtures/levels/echo.json fixtures/levels/echo.cg --mode official --boundary exit --seed 18446744073709551615 --custom-limit 1000 --limits-file fixtures/levels/profiles/local-v1.json
+cargo run -p codegrid-cli -- evaluate fixtures/levels-scene/echo.json fixtures/levels-scene/echo.cg --mode official --boundary exit --seed 18446744073709551615 --custom-limit 1000 --limits-file examples/scene-host-v2/profile-local-v2.json
 ```
 
 Acceptance for `evaluate` compares the parsed CLI JSON result with a direct
@@ -275,6 +276,17 @@ See the [complete error specification](../spec/codegrid-error-codes.md). Host/ar
 
 ## Conditional prefix and CMP migration (2026-10-03)
 
-The approved source/VM migration uses executable IR format 2, RandomDirection `??` (126), CMP `?=` (124), and fixed conditional prefixes `?0`–`?2`. Normal code-view cells expose an additive nullable `prefix` field containing the canonical prefix spelling. This field survives Primary mutation and clearing. Folded Block views keep their existing arrays of nullable strings; nonempty strings include any prefix followed by the Primary token. These are read-only projections, not executable interchange data.
+The earlier conditional-prefix migration introduced executable IR format 2 (superseded by format 3 for Function-private registers and NEG), RandomDirection `??` (126), CMP `?=` (124), and fixed conditional prefixes `?0`–`?2`. Normal code-view cells expose an additive nullable `prefix` field containing the canonical prefix spelling. This field survives Primary mutation and clearing. Folded Block views keep their existing arrays of nullable strings; nonempty strings include any prefix followed by the Primary token. These are read-only projections, not executable interchange data.
 
 The Runtime API v3, browser binding envelope, server ABI v4, CLI JSON schema 1, and debug protocol 2 remain unchanged; existing lifecycle and transport fields are preserved. Language source acceptance, IR version, capability vocabulary, and new code-view fields follow the recorded migration decision. Removed source forms and obsolete instruction bytes are not compatibility aliases. Consumers displaying cells should include the prefix.
+
+## Function register snapshot migration (2026-10-08)
+
+Executable IR uses format 3; recompile formats 1 and 2 from source. Thread JSON includes nullable ten-byte `private_registers`. Call frames include nullable `saved_registers` and `saved_register_pointer`. Null denotes the live shared Main bank. ThreadChanged before/after snapshots expose private mutations with thread/context identity; RegisterChanged retains its shared-bank meaning. Debugger register scopes select the active or suspended frame bank.
+
+## Status flag projection (2026-10-08)
+
+Current thread snapshots and ThreadChanged before/after projections include required
+`status_flag` (integer 0 or 1). Call frames include `saved_status_flag` with the
+same range. Custom/internal thread events use the same fields. The active flag
+is independent of registers; suspended frames retain the caller flag.

@@ -1,5 +1,13 @@
 # CodeGrid Runtime API Specification
 
+**Approved next-generation amendment (2026-10-08; not implemented):**
+[Status Flag and directionless READ](../docs/status-flag-and-read.md)
+defines the pending F state, `?!`, directionless `,`, empty POPADD flag,
+current Level permissions and host synchronization gates without unpublished compatibility.
+It supersedes affected contracts for the next generation only. The current
+implementation, versions and acceptance evidence below remain unchanged;
+they do not establish implementation or parity for this amendment.
+
 **Status:** Normative Full Runtime API v3 contract.
 **Version:** Runtime API v3.
 **Language semantics:** [Source specification](codegrid-source-spec.md) and [VM specification](codegrid-vm-spec.md)
@@ -221,6 +229,8 @@ Deterministic work units are defined in [VM Spec Section 15](codegrid-vm-spec.md
 A v3 Full snapshot carries the full public snapshot defined by the VM
 specification:
 
+Implemented on 2026-10-08: thread snapshots expose nullable ten-byte `private_registers`; call frames expose nullable `saved_registers` and `saved_register_pointer`. Existing `ThreadChanged` before/after snapshots carry private changes with owning thread/context identity. These additive fields preserve Runtime API v3, browser binding v3 and server ABI v4. Bounded response serialization includes the new fields, and evaluator retained-state accounting includes active and suspended banks. Executable IR format is 3; formats 1 and 2 must be recompiled from source.
+
 - overall VM status and committed Global Tick count;
 - ten outer registers, normalized sparse outer memory, remaining input,
   accumulated output, and the mutable outer program copy;
@@ -318,6 +328,13 @@ settle the separate host gates listed above.
 
 ## Conditional prefix and CMP migration (2026-10-03)
 
-The approved source/VM migration uses executable IR format 2, RandomDirection `??` (126), CMP `?=` (124), and fixed conditional prefixes `?0`–`?2`. Normal code-view cells expose an additive nullable `prefix` field containing the canonical prefix spelling. This field survives Primary mutation and clearing. Folded Block views keep their existing arrays of nullable strings; nonempty strings include any prefix followed by the Primary token. These are read-only projections, not executable interchange data.
+The earlier conditional-prefix migration introduced executable IR format 2 (superseded by format 3 for Function-private registers and NEG), RandomDirection `??` (126), CMP `?=` (124), and fixed conditional prefixes `?0`–`?2`. Normal code-view cells expose an additive nullable `prefix` field containing the canonical prefix spelling. This field survives Primary mutation and clearing. Folded Block views keep their existing arrays of nullable strings; nonempty strings include any prefix followed by the Primary token. These are read-only projections, not executable interchange data.
 
 The Runtime API v3, browser binding envelope, server ABI v4, CLI JSON schema 1, and debug protocol 2 remain unchanged; existing lifecycle and transport fields are preserved. Language source acceptance, IR version, capability vocabulary, and new code-view fields follow the recorded migration decision. Removed source forms and obsolete instruction bytes are not compatibility aliases. Consumers displaying cells should include the prefix.
+
+## Status flag projection (2026-10-08)
+
+Current thread snapshots and ThreadChanged before/after projections include required
+`status_flag` (integer 0 or 1). Call frames include `saved_status_flag` with the
+same range. Custom/internal thread events use the same fields. The active flag
+is independent of registers; suspended frames retain the caller flag.

@@ -322,7 +322,7 @@ assert.equal(unsupportedAbi.error.code, "unsupported_abi_version");
 
 const suite = JSON.parse(await readFile(fixturePath, "utf8"));
 assert.equal(suite.schema_version, 1);
-assert(suite.cases.length === 75, "the Full shared conformance suite must include all 75 runtime cases");
+assert(suite.cases.length === 94, "the Full shared conformance suite must include all 94 runtime cases");
 const simpleWrapSource = suite.cases.find((fixture) => fixture.id === "wrap-boundary-yields-after-bounded-run").source;
 
 function assertPresentExpectedFields(fixture, result) {
@@ -621,7 +621,7 @@ const lifecycleProgram = dispatch({
   abi_version: 4,
   api_version: 3,
   operation: "compile",
-  source: "~> ,v . ;\n",
+  source: "~> , . ;\n",
 });
 assert.equal(lifecycleProgram.status, "compiled", "lifecycle source must compile");
 function createLifecycleInstance(input) {
@@ -654,7 +654,7 @@ const isolatedProgram = isolatedDispatch({
   abi_version: 4,
   api_version: 3,
   operation: "compile",
-  source: "~> ,v . ;\n",
+  source: "~> , . ;\n",
 });
 assert.equal(isolatedProgram.status, "compiled", "the second module must own an independent program registry");
 const isolatedCreated = isolatedDispatch({
@@ -687,14 +687,14 @@ const isolatedOverLimit = isolatedDispatch({
   abi_version: 4,
   api_version: 3,
   operation: "compile",
-  source: "~> ,v . ;\n",
+  source: "~> , . ;\n",
 });
 assert.equal(isolatedOverLimit.error.code, "program_limit_reached", "the second module must enforce its own configured quota");
 const primaryWithinLimit = dispatch({
   abi_version: 4,
   api_version: 3,
   operation: "compile",
-  source: "~> ,v . ;\n",
+  source: "~> , . ;\n",
 });
 assert.equal(primaryWithinLimit.status, "compiled", "another module's quota must not restrict this module");
 assert.equal(

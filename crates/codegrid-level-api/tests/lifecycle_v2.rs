@@ -1,4 +1,4 @@
-use codegrid_level_api::{LevelApi, LevelApiV2, SafetyProfile, SafetyProfileV2};
+use codegrid_level_api::{LevelApiV2, SafetyProfileV2};
 use serde_json::{json, Value};
 fn api() -> LevelApiV2 {
     LevelApiV2::new(
@@ -151,18 +151,6 @@ fn version_separation_strict_fields_and_shutdown() {
         let response: Value = serde_json::from_str(&a.request_json(text)).unwrap();
         assert_eq!(response["error"]["code"],"level_api.invalid_request");
     }
-    let mut old = LevelApi::new(
-        SafetyProfile::from_json(include_str!(
-            "../../../fixtures/levels/profiles/local-v1.json"
-        ))
-        .unwrap(),
-    )
-    .unwrap();
-    let rejected: Value = serde_json::from_str(
-        &old.request_json("{\"api_version\":2,\"operation\":\"capabilities\"}"),
-    )
-    .unwrap();
-    assert_eq!(rejected["error"]["code"], "level_api.unsupported_version");
     assert_eq!(
         request(&mut a, json!({"operation":"shutdown"}))["status"],
         "ok"

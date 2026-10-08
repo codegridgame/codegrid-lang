@@ -1,5 +1,5 @@
 //! Strict trusted scene profile conversion. Scene semantics remain in level core.
-use crate::profile::{positive, ApiError, SafetyProfile};
+use crate::profile::{positive, ApiError, CommonLimits};
 use codegrid_level_core::scene_session::SceneLimits;
 use serde::Deserialize;
 use serde_json::{json, Value};
@@ -81,10 +81,9 @@ impl SafetyProfileV2 {
         self.scene_limits.to_core()?;
         Ok(())
     }
-    // Share v1 ceiling validation without creating or routing through a v1 session.
-    pub(crate) fn common_limits(&self) -> SafetyProfile {
-        SafetyProfile {
-            profile_version: 1,
+    // Validate shared resource ceilings without another public profile format.
+    pub(crate) fn common_limits(&self) -> CommonLimits {
+        CommonLimits {
             profile_id: self.profile_id.clone(),
             provenance: self.provenance.clone(),
             max_level_bytes: self.max_level_bytes,

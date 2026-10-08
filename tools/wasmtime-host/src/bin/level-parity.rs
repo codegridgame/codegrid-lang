@@ -1,4 +1,4 @@
-//! Actual portable Level ABI v1 execution against native CLI permitted results.
+//! Actual portable Scene Level ABI 2 execution against native CLI permitted results.
 use serde_json::{json, Value};
 use sha2::{Digest, Sha256};
 use std::{fs, path::Path, process::Command};
@@ -15,13 +15,6 @@ struct Host {
     request: TypedFunc<(u32, u32), u64>,
 }
 impl Host {
-    fn new(
-        engine: &Engine,
-        module: &Module,
-        memory_limit: usize,
-    ) -> Result<Self, Box<dyn std::error::Error>> {
-        Self::new_versioned(engine, module, memory_limit, 1)
-    }
     fn new_versioned(
         engine: &Engine,
         module: &Module,
@@ -44,16 +37,8 @@ impl Host {
             instance
                 .get_typed_func::<(), u32>(&mut store, "level_abi_version")?
                 .call(&mut store, ())?,
-            1
+            2
         );
-        if version == 2 {
-            assert_eq!(
-                instance
-                    .get_typed_func::<(), u32>(&mut store, "level_abi_version_v2")?
-                    .call(&mut store, ())?,
-                2
-            );
-        }
         Ok(Self {
             version,
             memory: instance
@@ -107,13 +92,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             .ok_or("Usage: level-parity <repository-root> <wasm-artifact>")?,
     );
     let wasm = args.get(2).ok_or("Missing WASM path")?;
-    let scene = args.iter().any(|arg| arg == "--scene-v2");
-    let version = if scene { 2 } else { 1 };
-    let fixtures = root.join(if scene {
-        "fixtures/scene-v2"
-    } else {
-        "fixtures/levels"
-    });
+    let version = 2;
+    let fixtures = root.join("fixtures/scene-v2");
     let memory_limit = std::env::var("CODEGRID_WASM_MAX_MEMORY_BYTES")
         .unwrap_or_else(|_| "67108864".into())
         .parse::<usize>()?;
@@ -136,17 +116,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     if memory_type.maximum() != Some((memory_limit / 65536) as u64) {
         return Err("Artifact memory maximum differs from configured host ceiling".into());
     }
-    let profile = root.join(if scene {
-        "examples/scene-host-v2/profile-local-v2.json"
-    } else {
-        "fixtures/levels/profiles/local-v1.json"
-    });
+    let profile = root.join("examples/scene-host-v2/profile-local-v2.json");
     let profile_json = fs::read_to_string(&profile)?;
-    let manifest_path = fixtures.join(if scene {
-        "conformance-v2.json"
-    } else {
-        "conformance-v1.json"
-    });
+    let manifest_path = fixtures.join("conformance-v2.json");
     let cases: Vec<Value> = if manifest_path.exists() {
         serde_json::from_str::<Value>(&fs::read_to_string(manifest_path)?)?["cases"]
             .as_array()
@@ -219,7 +191,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         let mut portable = response;
         portable.as_object_mut().unwrap().remove("abi_version");
         assert_eq!(portable, native, "Fixture {}", case["id"]);
-        if scene {
+        {
             assert_eq!(portable["result"]["status"], case["expected_status"]);
             let mut events = Vec::new();
             if mode == "Debug" {
@@ -241,11 +213,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 }
             }
             records.push(json!({"id":case["id"],"result":portable["result"],"events":events}));
-        } else {
-            records.push(json!({"id":case["id"],"response":portable}));
         }
     }
-    if scene {
+    {
         let mut fuel_probe = Host::new_versioned(&engine, &module, memory_limit, 2)?;
         fuel_probe.store.set_fuel(1)?;
         assert!(fuel_probe.alloc.call(&mut fuel_probe.store, 1).is_err());
@@ -260,51 +230,4 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         );
         return Ok(());
     }
-    let mut probe = Host::new(&engine, &module, memory_limit)?;
-    assert_eq!(probe.exchange(json!({"abi_version":1,"api_version":1,"operation":"initialize","profile_json":profile_json}))?["status"],"ok");
-    assert_eq!(
-        probe.api(json!({"operation":"compile_program","source":"INVALID"}))?["status"],
-        "source_rejected"
-    );
-    assert_eq!(
-        probe.api(json!({"operation":"load_level","level_json":"{}"}))?["status"],
-        "level_rejected"
-    );
-    let environment = serde_json::json!({"format_version":1,"level_id":"unsupported","level_version":1,"evaluation_type":"Environment","program_rules":{},"constraints":{},"scoring":{},"evaluation":{"scene_type":"Elevator"}});
-    assert_eq!(
-        probe.api(json!({"operation":"load_level","level_json":environment.to_string()}))?["error"]
-            ["code"],
-        "level.unsupported_scene_type"
-    );
-    assert_eq!(
-        probe.exchange(
-            json!({"abi_version":1,"api_version":1,"operation":"request","request_json":"{"})
-        )?["error"]["code"],
-        "level_api.invalid_request"
-    );
-    assert_eq!(
-        probe.api(json!({"operation":"evaluation_result","evaluation":"0"}))?["error"]["code"],
-        "level_api.invalid_handle"
-    );
-    let mut tiny_profile: Value = serde_json::from_str(&profile_json)?;
-    tiny_profile["max_response_bytes"] = json!("512");
-    let mut small = Host::new(&engine, &module, memory_limit)?;
-    assert_eq!(small.exchange(json!({"abi_version":1,"api_version":1,"operation":"initialize","profile_json":tiny_profile.to_string()}))?["status"],"ok");
-    assert_eq!(small.api(json!({"operation":"compile_program","source":format!("~> {}",vec!["INVALID";50].join(" "))}))?["error"]["code"],"level_api.response_too_large");
-    probe.store.set_fuel(1)?;
-    assert!(
-        probe.alloc.call(&mut probe.store, 1).is_err(),
-        "Fuel exhaustion must trap rather than certify a result"
-    );
-    let artifact_digest = format!("{:x}", Sha256::digest(fs::read(wasm)?));
-    let report = json!({"runtime":"Wasmtime 49.0.1","surface":"Local portable backend/desktop harness; not production integration","memory_limit_bytes":memory_limit.to_string(),"artifact_sha256":artifact_digest,"profile":serde_json::from_str::<Value>(&profile_json)?,"negative_cases":["source-rejection","level-rejection","unsupported-scene","malformed-request","invalid-handle","response-ceiling","fuel-trap"],"cases":records});
-    fs::write(
-        root.join("target/level-wasmtime-report.json"),
-        serde_json::to_vec_pretty(&report)?,
-    )?;
-    println!(
-        "Wasmtime level parity passed: {} complete CLI responses",
-        records.len()
-    );
-    Ok(())
 }

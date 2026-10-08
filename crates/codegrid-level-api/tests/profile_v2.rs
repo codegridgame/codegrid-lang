@@ -1,4 +1,4 @@
-use codegrid_level_api::{SafetyProfile, SafetyProfileV2};
+use codegrid_level_api::SafetyProfileV2;
 use serde_json::{json, Value};
 
 const PROFILE: &str = include_str!("../../../examples/scene-host-v2/profile-local-v2.json");
@@ -26,9 +26,7 @@ fn version_paths_remain_explicit() {
             .get(),
         65536
     );
-    assert!(SafetyProfile::from_json(PROFILE).is_err());
     let old = include_str!("../../../fixtures/levels/profiles/local-v1.json");
-    assert!(SafetyProfile::from_json(old).is_ok());
     assert!(SafetyProfileV2::from_json(old).is_err());
     let mut value: Value = serde_json::from_str(PROFILE).unwrap();
     value["profile_version"] = json!(1);

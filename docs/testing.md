@@ -2,7 +2,7 @@
 
 Stable error identifiers are checked with `node scripts/check_error_codes.js`. Focused suites assert source/IR codes, CLI and debug protocol 2 errors, LSP/CLI diagnostic parity, and browser/server diagnostic projections. The registry and normative catalog live in `spec/codegrid-error-codes.json` and `spec/codegrid-error-codes.md`. Compare codes and structured fields rather than message wording alone.
 
-Test each behavior at the layer that owns it, then verify the public host boundaries. The Full source and VM specifications define normative acceptance. The active shared suite contains 75 Full execution cases; add direct cases whenever a normative behavior is not yet represented. Historical tests are supplemental evidence unless their expectations are reviewed against the specifications.
+Test each behavior at the layer that owns it, then verify the public host boundaries. The Full source and VM specifications define normative acceptance. The active shared suite contains 81 Full execution cases; add direct cases whenever a normative behavior is not yet represented. Historical tests are supplemental evidence unless their expectations are reviewed against the specifications.
 
 ## Syntax, compiler, and IR
 

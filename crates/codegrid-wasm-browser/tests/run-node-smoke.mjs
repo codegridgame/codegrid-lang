@@ -38,7 +38,7 @@ const fixtureCount = runFullSmoke(
 );
 
 const runtime = createRuntime(BrowserRuntime);
-const compiled = parseJson(runtime.compile("~> ,v . ;\n"), "compile cross-realm fixture");
+const compiled = parseJson(runtime.compile("~> , . ;\n"), "compile cross-realm fixture");
 assert.equal(compiled.outcome.kind, "compiled");
 const crossRealmInput = runInNewContext("new Uint8Array([97])");
 const created = parseJson(

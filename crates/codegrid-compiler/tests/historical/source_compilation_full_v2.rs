@@ -570,7 +570,7 @@ fn compiles_highest_numbered_custom_function_and_folded_block_paths() {
 
 #[test]
 fn compiles_specified_complete_cell_tokens_without_splitting_invalid_tokens() {
-    let source = "~> $<x2 ,<* +=\n";
+    let source = "~> $<x2 ,* +=\n";
     let program = compile(source).expect("the specified complete cell tokens are valid");
     let cells = &program.program().outer.main.cells;
 
@@ -581,7 +581,7 @@ fn compiles_specified_complete_cell_tokens_without_splitting_invalid_tokens() {
     assert_eq!(cells[1].attachment, Some(AttachmentInstruction::Repeat(2)));
     assert_eq!(
         cells[2].primary.map(|primary| primary.token()),
-        Some(",<".to_owned())
+        Some(",".to_owned())
     );
     assert_eq!(cells[2].attachment, Some(AttachmentInstruction::ReadCode));
     assert_eq!(
@@ -718,7 +718,7 @@ fn validates_missing_extra_and_mismatched_end_closures() {
 #[test]
 fn accepts_every_primary_category_allowed_in_an_outer_folded_block() {
     let allowed = [
-        "_", "^", "v", "<", ">", "?", "#<", "#>", "#^", "#v", ",<", ",>", ",^", ",v", "!", "+",
+        "_", "^", "v", "<", ">", "?", "#<", "#>", "#^", "#v", ",", ",", ",", ",", "!", "+",
         "-", "{", "}", ".", "(", ")", "&", "%", "$&", "$(", "$)", "$+", "$-", "$<", "$>", ";",
         "#0",
     ];

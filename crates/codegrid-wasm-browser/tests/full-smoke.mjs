@@ -2,7 +2,7 @@ export const RUNTIME_API_VERSION = 3;
 
 export function runFullSmoke(BrowserRuntime, suite, baseline, assert, deepEqual) {
   assert(suite.schema_version === 1, "the shared Full fixture suite must use schema version 1");
-  assert(Array.isArray(suite.cases) && suite.cases.length === 75, "all 75 Full fixtures must be available");
+  assert(Array.isArray(suite.cases) && suite.cases.length === 94, "all 94 Full fixtures must be available");
   assert(baseline?.schema === "codegrid.native-cli.full-run-baseline", "the generated Native CLI baseline must be available");
   assert(baseline.schema_version === 1 && baseline.api_version === RUNTIME_API_VERSION, "the Native CLI baseline must target Runtime API v3");
   assert(baseline.suite_id === suite.suite_id, "the Native CLI baseline must belong to this fixture suite");
@@ -13,6 +13,11 @@ export function runFullSmoke(BrowserRuntime, suite, baseline, assert, deepEqual)
   const runtime = createRuntime(BrowserRuntime);
   assert(runtime.api_version() === RUNTIME_API_VERSION, "the adapter must expose Runtime API v3");
 
+  for (const [atom, reason] of [[".3*", "ReadCode"], ["?0.3*", "ReadCode"], [".3x6", "2 through 5"], ["[0x3", "Function CALL"]]) {
+    const response = parseJson(runtime.compile(`~> ${atom} ;\n`), `${atom}: diagnostic`);
+    const diagnostic = response.outcome.items.find((item) => item.code === "source.invalid_cell");
+    assert(diagnostic && diagnostic.message.includes(`'${atom}'`) && diagnostic.message.includes(reason), `${atom}: identify the invalid atom and forbidden rule`);
+  }
   for (const fixture of suite.cases) {
     const { id, source, run, expected } = fixture;
     const compiled = parseJson(runtime.compile(source), `${id}: compile`);
@@ -153,6 +158,8 @@ function normalizeThread(thread, includeCodeGrid) {
     position: thread.position,
     direction: thread.direction,
     register_pointer: thread.register_pointer,
+    status_flag: thread.status_flag,
+    private_registers: thread.private_registers,
     page: thread.page,
     data_stack: thread.data_stack,
     instruction_stack: thread.instruction_stack,
@@ -160,6 +167,9 @@ function normalizeThread(thread, includeCodeGrid) {
       caller_board: normalizeBoard(frame.caller_board),
       call_position: frame.call_position,
       saved_direction: frame.saved_direction,
+      saved_registers: frame.saved_registers,
+      saved_register_pointer: frame.saved_register_pointer,
+      saved_status_flag: frame.saved_status_flag,
     })),
     phase: thread.phase,
     random_state: thread.random_state,
@@ -306,7 +316,7 @@ function assertFullSnapshot(snapshot, expected, id, assert, deepEqual) {
 
 function verifyHostBoundaries(BrowserRuntime, assert, deepEqual) {
   const programRuntime = createRuntime(BrowserRuntime);
-  const compiled = parseJson(programRuntime.compile("~> ,v . ;\n"), "compile host-boundary source");
+  const compiled = parseJson(programRuntime.compile("~> , . ;\n"), "compile host-boundary source");
   assertSuccess(compiled, "compile host-boundary source", assert);
 
   const disguised = new Uint16Array([73]);

@@ -4,7 +4,7 @@ use std::path::PathBuf;
 use std::process::{Command, Output};
 use std::sync::atomic::{AtomicUsize, Ordering};
 
-use codegrid_level_api::{LevelApi, SafetyProfile, LEVEL_API_VERSION};
+use codegrid_level_api::{LevelApiV2, SafetyProfileV2, LEVEL_API_VERSION};
 use serde_json::{json, Value};
 
 static NEXT_TEMP_FILE: AtomicUsize = AtomicUsize::new(0);
@@ -81,6 +81,8 @@ fn exact_io_level(expected_output: &[u8]) -> String {
         "level_id": "cli.evaluate.test",
         "level_version": 1,
         "evaluation_type": "ExactIO",
+        "scene_type": "ExactIO",
+        "scene_config": {},
         "program_rules": {
             "allowed_instructions": ["HALT", "OUTPUT"],
             "allowed_attachments": [],
@@ -120,7 +122,7 @@ fn evaluate_args<'a>(level: &'a str, source: &'a str, profile: &'a str) -> Vec<&
     ]
 }
 
-fn level_api_call(api: &mut LevelApi, operation: &str, extra: Value) -> Value {
+fn level_api_call(api: &mut LevelApiV2, operation: &str, extra: Value) -> Value {
     let mut request = json!({"api_version": LEVEL_API_VERSION, "operation": operation});
     request
         .as_object_mut()
@@ -132,10 +134,10 @@ fn level_api_call(api: &mut LevelApi, operation: &str, extra: Value) -> Value {
 }
 
 fn direct_api_evaluate(level_text: &str, source: &str, mode: &str) -> Value {
-    let profile_text = include_str!("../../../fixtures/levels/profiles/local-v1.json");
-    let profile = SafetyProfile::from_json(profile_text).expect("shared local profile is valid");
+    let profile_text = include_str!("../../../examples/scene-host-v2/profile-local-v2.json");
+    let profile = SafetyProfileV2::from_json(profile_text).expect("shared local profile is valid");
     let work_budget = profile.max_work_per_call.to_string();
-    let mut api = LevelApi::new(profile).expect("level API must initialize");
+    let mut api = LevelApiV2::new(profile).expect("level API must initialize");
     let loaded = level_api_call(&mut api, "load_level", json!({"level_json": level_text}));
     let level = loaded["handle"]
         .as_str()
@@ -181,16 +183,16 @@ fn direct_api_evaluate(level_text: &str, source: &str, mode: &str) -> Value {
 
 #[test]
 fn level_manifest_cli_matches_direct_rust_api_complete_results() {
-    let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../fixtures/levels");
+    let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../fixtures/levels-scene");
     let manifest: Value =
         serde_json::from_str(&std::fs::read_to_string(root.join("conformance-v1.json")).unwrap())
             .unwrap();
     for case in manifest["cases"].as_array().unwrap() {
-        let profile = SafetyProfile::from_json(
+        let profile = SafetyProfileV2::from_json(
             &std::fs::read_to_string(root.join(manifest["profile"].as_str().unwrap())).unwrap(),
         )
         .unwrap();
-        let mut api = LevelApi::new(profile.clone()).unwrap();
+        let mut api = LevelApiV2::new(profile.clone()).unwrap();
         let level_path = root.join(case["level"].as_str().unwrap());
         let source_path = root.join(case["program"].as_str().unwrap());
         let level = level_api_call(
@@ -686,7 +688,7 @@ fn evaluate_cli_result_matches_the_direct_shared_level_api() {
     let source = TempFile::new("cg", b"~> ;\n");
     let profile = TempFile::new(
         "json",
-        include_str!("../../../fixtures/levels/profiles/local-v1.json").as_bytes(),
+        include_str!("../../../examples/scene-host-v2/profile-local-v2.json").as_bytes(),
     );
     let args = evaluate_args(level.text_path(), source.text_path(), profile.text_path());
     let output = run_cli(&args);
@@ -704,7 +706,7 @@ fn evaluate_cli_result_matches_the_direct_shared_level_api() {
     );
     let cli_response = parse_result(&output);
     assert_eq!(cli_response["schema"], "codegrid.level.response");
-    assert_eq!(cli_response["api_version"], 1);
+    assert_eq!(cli_response["api_version"], 2);
     assert_eq!(cli_response["status"], "result");
     assert_eq!(cli_response["result"]["status"], "Passed");
     assert_eq!(
@@ -762,28 +764,28 @@ fn evaluate_cli_result_matches_the_direct_shared_level_api() {
 fn evaluate_grouped_permissions_and_default_instructions() {
     let profile = TempFile::new(
         "json",
-        include_str!("../../../fixtures/levels/profiles/local-v1.json").as_bytes(),
+        include_str!("../../../examples/scene-host-v2/profile-local-v2.json").as_bytes(),
     );
     let cases = [
         (
-            include_str!("../../../fixtures/levels/echo.json"),
-            include_str!("../../../fixtures/levels/echo.cg"),
+            include_str!("../../../fixtures/levels-scene/echo.json"),
+            include_str!("../../../fixtures/levels-scene/echo.cg"),
         ),
         (
-            include_str!("../../../fixtures/levels/functions.json"),
-            include_str!("../../../fixtures/levels/functions.cg"),
+            include_str!("../../../fixtures/levels-scene/functions.json"),
+            include_str!("../../../fixtures/levels-scene/functions.cg"),
         ),
         (
-            include_str!("../../../fixtures/levels/custom-memory.json"),
-            include_str!("../../../fixtures/levels/custom-memory.cg"),
+            include_str!("../../../fixtures/levels-scene/custom-memory.json"),
+            include_str!("../../../fixtures/levels-scene/custom-memory.cg"),
         ),
         (
-            include_str!("../../../fixtures/levels/memory.json"),
-            include_str!("../../../fixtures/levels/memory.cg"),
+            include_str!("../../../fixtures/levels-scene/memory.json"),
+            include_str!("../../../fixtures/levels-scene/memory.cg"),
         ),
         (
-            include_str!("../../../fixtures/levels/instruction-stack.json"),
-            include_str!("../../../fixtures/levels/instruction-stack.cg"),
+            include_str!("../../../fixtures/levels-scene/instruction-stack.json"),
+            include_str!("../../../fixtures/levels-scene/instruction-stack.cg"),
         ),
     ];
     for (level_text, source_text) in cases {
@@ -838,14 +840,14 @@ fn evaluate_grouped_permissions_and_default_instructions() {
 #[test]
 fn evaluate_official_echo_u64_max_matches_the_direct_level_api() {
     let mut level_value: Value = serde_json::from_str(&exact_io_level(&[42])).unwrap();
-    level_value["program_rules"]["allowed_instructions"] = json!(["HALT", "OUTPUT", "READ_RIGHT"]);
+    level_value["program_rules"]["allowed_instructions"] = json!(["HALT", "OUTPUT", "READ"]);
     level_value["evaluation"]["tests"][0]["input"] = json!([42]);
     let level_text = level_value.to_string();
     let level = TempFile::new("json", level_text.as_bytes());
-    let source = TempFile::new("cg", b"~> ,> . ;\n");
+    let source = TempFile::new("cg", b"~> , . ;\n");
     let profile = TempFile::new(
         "json",
-        include_str!("../../../fixtures/levels/profiles/local-v1.json").as_bytes(),
+        include_str!("../../../examples/scene-host-v2/profile-local-v2.json").as_bytes(),
     );
     let mut args = evaluate_args(level.text_path(), source.text_path(), profile.text_path());
     let mode_index = args.iter().position(|arg| *arg == "--mode").unwrap();
@@ -862,16 +864,16 @@ fn evaluate_official_echo_u64_max_matches_the_direct_level_api() {
     assert_eq!(cli_response["result"]["mode"], "Official");
     assert_eq!(cli_response["result"]["status"], "Passed");
     assert_eq!(
-        cli_response["result"]["visible_tests"][0]["input"],
+        cli_response["result"]["visible_cases"][0]["comparison"]["input"],
         json!([42])
     );
     assert_eq!(
-        cli_response["result"]["visible_tests"][0]["actual_output"],
+        cli_response["result"]["visible_cases"][0]["comparison"]["actual_output"],
         json!([42])
     );
     assert_eq!(
         cli_response["result"],
-        direct_api_evaluate(&level_text, "~> ,> . ;\n", "Official"),
+        direct_api_evaluate(&level_text, "~> , . ;\n", "Official"),
         "CLI must preserve the complete shared result for the same official request"
     );
 }
@@ -880,7 +882,7 @@ fn evaluate_official_echo_u64_max_matches_the_direct_level_api() {
 fn evaluate_reports_source_and_level_rejections_as_complete_api_responses() {
     let profile = TempFile::new(
         "json",
-        include_str!("../../../fixtures/levels/profiles/local-v1.json").as_bytes(),
+        include_str!("../../../examples/scene-host-v2/profile-local-v2.json").as_bytes(),
     );
 
     let level = TempFile::new("json", exact_io_level(&[]).as_bytes());
@@ -922,7 +924,7 @@ fn evaluate_reports_source_and_level_rejections_as_complete_api_responses() {
     );
 
     let mut unsupported_value: Value = serde_json::from_str(&exact_io_level(&[])).unwrap();
-    unsupported_value["evaluation_type"] = json!("Environment");
+    unsupported_value["scene_type"] = json!("Elevator");
     unsupported_value["evaluation"] = json!({
         "scene_type": "Elevator",
         "scene_data": {},
@@ -948,7 +950,7 @@ fn evaluate_reports_source_and_level_rejections_as_complete_api_responses() {
 fn evaluate_maps_player_rejection_failure_constraints_and_hidden_redaction() {
     let profile = TempFile::new(
         "json",
-        include_str!("../../../fixtures/levels/profiles/local-v1.json").as_bytes(),
+        include_str!("../../../examples/scene-host-v2/profile-local-v2.json").as_bytes(),
     );
     let level = TempFile::new("json", exact_io_level(&[]).as_bytes());
     let forbidden_source = TempFile::new("cg", b"~> + ;\n");
@@ -966,11 +968,11 @@ fn evaluate_maps_player_rejection_failure_constraints_and_hidden_redaction() {
 
     let mut generated_value: Value = serde_json::from_str(&exact_io_level(&[])).unwrap();
     generated_value["program_rules"]["allowed_instructions"] =
-        json!(["READ_RIGHT", "DECODE", "MOVE_RIGHT", "HALT"]);
+        json!(["READ", "DECODE", "MOVE_RIGHT", "HALT"]);
     generated_value["program_rules"]["allowed_attachments"] = json!(["WRITE_CODE"]);
     generated_value["evaluation"]["tests"][0]["input"] = json!([43]);
     let generated_level = TempFile::new("json", generated_value.to_string().as_bytes());
-    let generated_source = TempFile::new("cg", b"@main\n~> ,> & >= ;\n@end main\n");
+    let generated_source = TempFile::new("cg", b"@main\n~> , & >= ;\n@end main\n");
     let args = evaluate_args(
         generated_level.text_path(),
         generated_source.text_path(),
@@ -1052,7 +1054,7 @@ fn evaluate_maps_player_rejection_failure_constraints_and_hidden_redaction() {
     let hidden = parse_result(&hidden_failure);
     // Content digests may contain the same decimal substring as a private byte.
     // Check semantic disclosure fields rather than searching opaque hash text.
-    assert!(hidden["result"]["visible_tests"]
+    assert!(hidden["result"]["visible_cases"]
         .as_array()
         .unwrap()
         .iter()
@@ -1076,7 +1078,7 @@ fn evaluate_rejects_bad_arguments_profiles_and_files_without_json() {
     let source = TempFile::new("cg", b"~> ;\n");
     let profile = TempFile::new(
         "json",
-        include_str!("../../../fixtures/levels/profiles/local-v1.json").as_bytes(),
+        include_str!("../../../examples/scene-host-v2/profile-local-v2.json").as_bytes(),
     );
 
     let mut missing = evaluate_args(level.text_path(), source.text_path(), profile.text_path());
@@ -1127,7 +1129,7 @@ fn evaluate_rejects_bad_arguments_profiles_and_files_without_json() {
 #[test]
 fn evaluate_returns_resource_status_and_rejects_oversized_inputs() {
     let mut profile_value: Value = serde_json::from_str(include_str!(
-        "../../../fixtures/levels/profiles/local-v1.json"
+        "../../../examples/scene-host-v2/profile-local-v2.json"
     ))
     .unwrap();
     profile_value["max_total_work"] = json!("1");
@@ -1166,13 +1168,19 @@ fn evaluate_returns_resource_status_and_rejects_oversized_inputs() {
 #[test]
 fn evaluate_response_ceiling_returns_resource_exit_code() {
     let mut profile: Value = serde_json::from_str(include_str!(
-        "../../../fixtures/levels/profiles/local-v1.json"
+        "../../../examples/scene-host-v2/profile-local-v2.json"
     ))
     .unwrap();
     profile["max_response_bytes"] = json!("512");
     let profile = TempFile::new("json", profile.to_string().as_bytes());
-    let level = TempFile::new("json", include_bytes!("../../../fixtures/levels/echo.json"));
-    let source = TempFile::new("cg", include_bytes!("../../../fixtures/levels/echo.cg"));
+    let level = TempFile::new(
+        "json",
+        include_bytes!("../../../fixtures/levels-scene/echo.json"),
+    );
+    let source = TempFile::new(
+        "cg",
+        include_bytes!("../../../fixtures/levels-scene/echo.cg"),
+    );
     let output = run_cli(&evaluate_args(
         level.text_path(),
         source.text_path(),
@@ -1181,12 +1189,12 @@ fn evaluate_response_ceiling_returns_resource_exit_code() {
     assert_eq!(output.status.code(), Some(11));
     assert_eq!(
         parse_result(&output)["error"]["code"],
-        "level_api.response_too_large"
+        "level_api.resource_limit"
     );
 }
 
 #[test]
-fn scene_api_two_manifest_executes_and_legacy_profile_path_stays_explicit() {
+fn current_scene_api_is_the_default_and_executes_manifest() {
     let root = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../..");
     let profile = root.join("examples/scene-host-v2/profile-local-v2.json");
     let manifest: Value = serde_json::from_str(include_str!(
@@ -1213,7 +1221,7 @@ fn scene_api_two_manifest_executes_and_legacy_profile_path_stays_explicit() {
             "--seed",
             case["seed"].as_str().unwrap(),
             "--custom-limit",
-            "1000",
+            case["custom_limit"].as_str().unwrap(),
             "--limits-file",
             profile.to_str().unwrap(),
         ]);
@@ -1256,6 +1264,6 @@ fn scene_api_two_manifest_executes_and_legacy_profile_path_stays_explicit() {
         "--limits-file",
         profile.to_str().unwrap(),
     ]);
-    assert_eq!(output.status.code(), Some(2));
-    assert!(String::from_utf8_lossy(&output.stderr).contains("level_api.invalid_profile"));
+    assert_eq!(output.status.code(), Some(0));
+    assert_eq!(parse_result(&output)["api_version"], 2);
 }

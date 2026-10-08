@@ -1,9 +1,9 @@
 //! Version-2 host lifecycle; all scene behavior is delegated to level core.
-use crate::profile::parse_decimal;
-use crate::session::{
+use crate::common::{
     bounded_json, invalid_config, invalid_handle, level_code, parse_versioned_request, positive,
     program_size, response_too_large, sha256, Operation, NEXT_SESSION,
 };
+use crate::profile::parse_decimal;
 use crate::{project_scene_result, ApiError, SafetyProfileV2};
 use codegrid_ir::VerifiedProgram;
 use codegrid_level_core::{

@@ -57,6 +57,24 @@ suite('Native Run and Debug', () => {
     return program;
   }
 
+  test('active and suspended Function frames expose independent F values', async () => {
+    await client.launch(file('@main\n~> ) [0 ?!.1 ;\n@F0\n~> + ] _ _\n@end F0\n@end main\n'));
+    await client.wait((message) => message.event === 'stopped');
+    for (let tick = 0; tick < 5; tick++) {
+      const mark = client.messages.length;
+      await client.request('stepIn', { threadId: 1 });
+      await client.wait((message) => message.event === 'stopped', mark);
+    }
+    const frames = await client.request('stackTrace', { threadId: 1 });
+    assert.strictEqual(frames.stackFrames.length, 2);
+    assert.strictEqual((await client.request('evaluate', { expression: 'thread.status_flag', frameId: frames.stackFrames[0].id })).result, '0');
+    assert.strictEqual((await client.request('evaluate', { expression: 'thread.status_flag', frameId: frames.stackFrames[1].id })).result, '1');
+    const mark = client.messages.length;
+    await client.request('stepIn', { threadId: 1 });
+    await client.wait((message) => message.event === 'stopped', mark);
+    assert.strictEqual((await client.request('evaluate', { expression: 'thread.status_flag' })).result, '1');
+  });
+
   test('entry, tick step, UTF-16 source frame and watch use the actual VM', async () => {
     await client.launch(file('/*🙂*/ ~> + . ;\r\n'), { seed: '18446744073709551615' });
     await client.wait((message) => message.event === 'stopped' && message.body.reason === 'entry');
@@ -92,7 +110,7 @@ suite('Native Run and Debug', () => {
   });
 
   test('run without debugging emits input/output and terminates', async () => {
-    await client.launch(file('~> ,v . ;\n'), { noDebug: true, input: [65] });
+    await client.launch(file('~> , . ;\n'), { noDebug: true, input: [65] });
     await client.wait((message) => message.event === 'terminated');
     assert.ok(client.messages.some((message) => message.event === 'output' && message.body.output.includes('Output bytes: 65')));
     assert.ok(client.messages.some((message) => message.event === 'exited' && message.body.exitCode === 0));
@@ -146,7 +164,7 @@ suite('Native Run and Debug', () => {
     assert.strictEqual(manifest.contributes.breakpoints[0].language, 'codegrid');
   });
 
-  test('Function call frames and step out retain shared VM behavior', async () => {
+  test('Function call frames and step out discard private registers', async () => {
     await client.launch(file('@main\n@size 4x1\n~> [0 . ;\n@F0\n@size 3x1\n~> + ]\n@end F0\n@end main\n'));
     for (let count = 0; count < 2; count++) {
       const mark = client.messages.length;
@@ -160,7 +178,28 @@ suite('Native Run and Debug', () => {
     await client.request('stepOut', { threadId: 1 });
     await client.wait((message) => message.event === 'stopped', mark);
     assert.strictEqual((await client.request('evaluate', { expression: 'thread.call_stack' })).result, 'Array(0)');
-    assert.strictEqual((await client.request('evaluate', { expression: 'registers[0]' })).result, '1');
+    assert.strictEqual((await client.request('evaluate', { expression: 'registers[0]' })).result, '0');
+  });
+
+  test('Function and suspended caller scopes expose different register banks', async () => {
+    await client.launch(file('@main\n~> , [0 . ;\n@F0\n~> $! } ]\n@end F0\n@end main\n'), { input: [5] });
+    for (let count = 0; count < 5; count++) {
+      const mark = client.messages.length;
+      await client.request('next', { threadId: 1 });
+      await client.wait((message) => message.event === 'stopped', mark);
+    }
+    const frames = await client.request('stackTrace', { threadId: 1 });
+    assert.strictEqual(frames.stackFrames.length, 2);
+    assert.strictEqual((await client.request('evaluate', { expression: 'registers[0]', frameId: frames.stackFrames[0].id })).result, '251');
+    assert.strictEqual((await client.request('evaluate', { expression: 'registers[0]', frameId: frames.stackFrames[1].id })).result, '5');
+    const scopes = await client.request('scopes', { frameId: frames.stackFrames[0].id });
+    const registers = await client.request('variables', { variablesReference: scopes.scopes[0].variablesReference });
+    assert.strictEqual(registers.variables[0].value, '251');
+    const mark = client.messages.length;
+    await client.request('stepOut', { threadId: 1 });
+    await client.wait((message) => message.event === 'stopped', mark);
+    assert.strictEqual((await client.request('evaluate', { expression: 'registers[0]' })).result, '5');
+    assert.strictEqual((await client.request('evaluate', { expression: 'thread.register_pointer' })).result, '0');
   });
 
   test('pause remains responsive during a continuing wrapped program', async () => {
@@ -214,7 +253,7 @@ suite('Native Run and Debug', () => {
       });
     });
     try {
-      assert.ok(await vscode.debug.startDebugging(undefined, { name, type: 'codegrid', request: 'launch', program: file('~> ,v . ;\n'), runtimePath: executable, noDebug: true, input: [65] }, { noDebug: true }));
+      assert.ok(await vscode.debug.startDebugging(undefined, { name, type: 'codegrid', request: 'launch', program: file('~> , . ;\n'), runtimePath: executable, noDebug: true, input: [65] }, { noDebug: true }));
       await terminated;
     } finally { subscription?.dispose(); }
   });

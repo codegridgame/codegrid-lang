@@ -1,5 +1,13 @@
 # CodeGrid Scene Level JSON Format v1
 
+**Approved next-generation amendment (2026-10-08; not implemented):**
+[Status Flag and directionless READ](../docs/status-flag-and-read.md)
+defines the pending F state, `?!`, directionless `,`, empty POPADD flag,
+current Level permissions and host synchronization gates without unpublished compatibility.
+It supersedes affected contracts for the next generation only. The current
+implementation, versions and acceptance evidence below remain unchanged;
+they do not establish implementation or parity for this amendment.
+
 Status: revised author-file contract; the existing loader and fixtures require migration to this revision. The filename retains its earlier name until the documentation layout is consolidated.
 Recorded: 2026-10-05.
 Authorities: [Scene Spec v1](codegrid-scene-spec-v1.md) and the

@@ -46,7 +46,7 @@ fn level(tests: serde_json::Value, constraints: serde_json::Value) -> ValidatedL
 fn fresh_state_visible_only_metrics_and_slices() {
     let tests = serde_json::json!([{"visible":true,"input":[9],"expected_output":[9]},{"visible":true,"input":[2],"expected_output":[2]},{"visible":false,"input":[4],"expected_output":[4]}]);
     let l = level(tests, serde_json::json!({}));
-    let p = program(&[P::Read(Direction::Right), P::Output, P::Halt]);
+    let p = program(&[P::Read, P::Output, P::Halt]);
     let expected = evaluate(l.clone(), p.clone(), EvaluationMode::Official, config());
     assert_eq!(expected.status, EvaluationStatus::Passed, "{expected:?}");
     assert_eq!(expected.final_metrics.as_ref().unwrap()["ticks"], 6);
@@ -175,14 +175,9 @@ fn custom_generated_forbidden_primary_is_checked_after_commit() {
     use codegrid_model::{AttachmentInstruction as A, ShiftDirection, Slot};
     let slot = Slot::new(0).unwrap();
     let forbidden = P::Shift(ShiftDirection::Left).instruction_code().unwrap();
-    let mut p = program(&[
-        P::Read(Direction::Right),
-        P::Push,
-        P::Direction(Direction::Right),
-        P::Halt,
-    ])
-    .program()
-    .clone();
+    let mut p = program(&[P::Read, P::Push, P::Direction(Direction::Right), P::Halt])
+        .program()
+        .clone();
     p.outer.main.cells[3].primary = Some(P::Custom(slot));
     p.customs.insert(
         slot,
@@ -193,7 +188,58 @@ fn custom_generated_forbidden_primary_is_checked_after_commit() {
                     height: 1,
                     cells: vec![
                         Cell::entry(Direction::Right),
-                        Cell::instruction(P::Read(Direction::Right), None),
+                        Cell::instruction(P::Read, None),
+                        Cell::instruction(P::Decode, None),
+                        Cell::instruction(P::Direction(Direction::Right), Some(A::WriteCode)),
+                        Cell::instruction(P::CustomReturn, None),
+                    ],
+                    folded_blocks: BTreeMap::new(),
+                },
+                functions: BTreeMap::new(),
+            },
+        },
+    );
+    let p = VerifiedProgram::new(p).unwrap();
+    let value = serde_json::json!({"format_version":1,"level_id":"generated","level_version":1,"evaluation_type":"ExactIO","program_rules":{"allowed_instructions":["READ","PUSH","DECODE","CUSTOM","CUSTOM_RETURN","HALT","MOVE_RIGHT"],"allowed_attachments":["WRITE_CODE"],"main_board":{"width":100,"height":1},"function_board":{"width":100,"height":1},"max_functions":10,"max_custom":10,"max_threads":1,"memory_enabled":true},"constraints":{},"scoring":{"metrics":{}},"evaluation":{"tests":[{"visible":true,"input":[forbidden],"expected_output":[]}]}});
+    let l = load_level_json(value.to_string().as_bytes(), 100000).unwrap();
+    let r = evaluate(l.clone(), p.clone(), EvaluationMode::Official, config());
+    let mut sliced = start_evaluation(l, p, EvaluationMode::Official, config());
+    for _ in 0..4 {
+        assert_eq!(sliced.advance(NonZeroU64::MIN), EvaluationProgress::Pending);
+    }
+    let retried = loop {
+        if let EvaluationProgress::Complete(result) = sliced.advance(NonZeroU64::new(100).unwrap())
+        {
+            break result;
+        }
+    };
+    assert_eq!(retried, r);
+    assert!(
+        matches!(r.status, EvaluationStatus::ProgramRejected(_)),
+        "{r:?}"
+    );
+    assert!(r.final_metrics.is_none());
+}
+#[test]
+fn custom_generated_neg_requires_its_independent_permission() {
+    use codegrid_ir::CustomDefinition;
+    use codegrid_model::{AttachmentInstruction as A, Slot};
+    let slot = Slot::new(0).unwrap();
+    let forbidden = P::Neg.instruction_code().unwrap();
+    let mut p = program(&[P::Read, P::Push, P::Direction(Direction::Right), P::Halt])
+        .program()
+        .clone();
+    p.outer.main.cells[3].primary = Some(P::Custom(slot));
+    p.customs.insert(
+        slot,
+        CustomDefinition {
+            program: ScopedProgram {
+                main: Board {
+                    width: 5,
+                    height: 1,
+                    cells: vec![
+                        Cell::entry(Direction::Right),
+                        Cell::instruction(P::Read, None),
                         Cell::instruction(P::Decode, None),
                         Cell::instruction(P::Direction(Direction::Right), Some(A::WriteCode)),
                         Cell::instruction(P::CustomReturn, None),
@@ -308,7 +354,7 @@ fn function_folded_and_repeat_static_and_dynamic_metrics() {
         },
     );
     let r = evaluate(
-        permissive_level(&[1], serde_json::json!({})),
+        permissive_level(&[0], serde_json::json!({})),
         VerifiedProgram::new(p).unwrap(),
         EvaluationMode::Official,
         config(),
