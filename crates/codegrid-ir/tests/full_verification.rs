@@ -4,9 +4,7 @@ mod tests {
         Board, Cell, CustomDefinition, FoldedBlock, Program, ScopedProgram, TailCallSite,
         VerifiedProgram, IR_FORMAT_VERSION,
     };
-    use codegrid_model::{
-        AttachmentInstruction, BoundaryMode, Direction, PrimaryInstruction, Slot,
-    };
+    use codegrid_model::{AttachmentInstruction, Direction, PrimaryInstruction, Slot};
     use std::collections::BTreeMap;
 
     fn program(cells: Vec<Cell>, width: usize) -> Program {
@@ -312,7 +310,7 @@ mod tests {
                 name: "function board has multiple Entries",
                 program: invalid_function_entry_count,
                 expected_path: "@main.F0",
-                expected_message: "A function board must contain exactly one Entry.",
+                expected_message: "A function board must contain at most one Entry.",
             },
             InvalidCase {
                 name: "Fold width differs from owner board",
@@ -392,38 +390,19 @@ mod tests {
             .expect("tail-call fixture is a valid IR program");
         let function_id = Slot::new(0).expect("zero is valid");
 
-        assert!(program.is_tail_call(
-            codegrid_ir::CodeGridId::Outer,
-            function_id,
-            1,
-            BoundaryMode::Exit,
-        ));
-        assert!(program.is_tail_call(
-            codegrid_ir::CodeGridId::Outer,
-            function_id,
-            1,
-            BoundaryMode::Wrap,
-        ));
+        assert!(program.is_tail_call(codegrid_ir::CodeGridId::Outer, function_id, 1,));
+        assert!(program.is_tail_call(codegrid_ir::CodeGridId::Outer, function_id, 1,));
         assert_eq!(
             program
                 .tail_call_sites()
                 .iter()
                 .copied()
                 .collect::<Vec<_>>(),
-            vec![
-                TailCallSite {
-                    code_grid: codegrid_ir::CodeGridId::Outer,
-                    function: function_id,
-                    cell_index: 1,
-                    boundary_mode: BoundaryMode::Exit,
-                },
-                TailCallSite {
-                    code_grid: codegrid_ir::CodeGridId::Outer,
-                    function: function_id,
-                    cell_index: 1,
-                    boundary_mode: BoundaryMode::Wrap,
-                }
-            ]
+            vec![TailCallSite {
+                code_grid: codegrid_ir::CodeGridId::Outer,
+                function: function_id,
+                cell_index: 1,
+            }]
         );
     }
 
@@ -437,12 +416,7 @@ mod tests {
             .expect("non-tail recursive fixture is valid IR");
         let function_id = Slot::new(0).expect("zero is valid");
 
-        assert!(!program.is_tail_call(
-            codegrid_ir::CodeGridId::Outer,
-            function_id,
-            1,
-            BoundaryMode::Exit,
-        ));
+        assert!(!program.is_tail_call(codegrid_ir::CodeGridId::Outer, function_id, 1,));
     }
 
     #[test]
@@ -465,12 +439,7 @@ mod tests {
         let program = VerifiedProgram::new(program_with_function(function))
             .expect("CALL with a code Attachment is valid IR");
 
-        assert!(!program.is_tail_call(
-            codegrid_ir::CodeGridId::Outer,
-            function_id,
-            1,
-            BoundaryMode::Exit,
-        ));
+        assert!(!program.is_tail_call(codegrid_ir::CodeGridId::Outer, function_id, 1,));
     }
 
     #[test]
@@ -489,16 +458,11 @@ mod tests {
         let program = VerifiedProgram::new(program_with_function(function))
             .expect("self-call fixture is valid IR");
 
-        assert!(!program.is_tail_call(
-            codegrid_ir::CodeGridId::Outer,
-            function_id,
-            1,
-            BoundaryMode::Exit,
-        ));
+        assert!(!program.is_tail_call(codegrid_ir::CodeGridId::Outer, function_id, 1,));
     }
 
     #[test]
-    fn tail_call_proof_is_specific_to_the_configured_boundary_mode() {
+    fn tail_call_proof_follows_toroidal_navigation() {
         let function_id = Slot::new(0).expect("zero is valid");
         let function = Board {
             width: 4,
@@ -512,19 +476,9 @@ mod tests {
             folded_blocks: BTreeMap::new(),
         };
         let program = VerifiedProgram::new(program_with_function(function))
-            .expect("boundary-specific tail-call fixture is valid IR");
+            .expect("toroidal tail-call fixture is valid IR");
 
-        assert!(!program.is_tail_call(
-            codegrid_ir::CodeGridId::Outer,
-            function_id,
-            3,
-            BoundaryMode::Exit,
-        ));
-        assert!(program.is_tail_call(
-            codegrid_ir::CodeGridId::Outer,
-            function_id,
-            3,
-            BoundaryMode::Wrap,
-        ));
+        assert!(program.is_tail_call(codegrid_ir::CodeGridId::Outer, function_id, 3,));
+        assert!(program.is_tail_call(codegrid_ir::CodeGridId::Outer, function_id, 3,));
     }
 }

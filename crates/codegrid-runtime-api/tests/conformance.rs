@@ -1,10 +1,10 @@
 use std::num::NonZeroU64;
 
 use codegrid_runtime_api::{
-    ApiError, BoundaryMode, CheckRequest, CompileOutcome, CompileRequest, CreateInstanceRequest,
-    HostLimits, MemoryAddress, MemoryEntry, ProgramHandle, ProgramViewRequest,
-    ReleaseInstanceRequest, ReleaseProgramRequest, RunRequest, RunStatus, RuntimeApi,
-    RuntimeConfiguration, SnapshotRequest, StepRequest, VmStatus, YieldReason, RUNTIME_API_VERSION,
+    ApiError, CheckRequest, CompileOutcome, CompileRequest, CreateInstanceRequest, HostLimits,
+    MemoryAddress, MemoryEntry, ProgramHandle, ProgramViewRequest, ReleaseInstanceRequest,
+    ReleaseProgramRequest, RunRequest, RunStatus, RuntimeApi, RuntimeConfiguration,
+    SnapshotRequest, StepRequest, VmStatus, YieldReason, RUNTIME_API_VERSION,
 };
 
 fn limits(
@@ -48,7 +48,6 @@ fn compile_source(runtime: &mut RuntimeApi, source: &str) -> ProgramHandle {
 
 fn configuration(seed: u64, custom_execution_limit: u64) -> RuntimeConfiguration {
     RuntimeConfiguration {
-        boundary_mode: BoundaryMode::Wrap,
         seed,
         custom_execution_limit,
     }

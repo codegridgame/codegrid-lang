@@ -126,7 +126,7 @@ suite('Native Run and Debug', () => {
   });
 
   test('tick ceiling pauses and stop terminates the native process', async () => {
-    await client.launch(file('~> _\n'), { boundary: 'wrap', maxTicks: '2' });
+    await client.launch(file('~> _\n'), { maxTicks: '2' });
     await client.request('continue');
     const failure = await client.wait((message) => message.event === 'stopped' && message.body.reason === 'exception');
     assert.strictEqual(failure.body.code, 'debug.tick_limit_exceeded');
@@ -203,7 +203,7 @@ suite('Native Run and Debug', () => {
   });
 
   test('pause remains responsive during a continuing wrapped program', async () => {
-    await client.launch(file('~> _\n'), { boundary: 'wrap', maxTicks: '1000000' });
+    await client.launch(file('~> _\n'), { maxTicks: '1000000' });
     const mark = client.messages.length;
     await client.request('continue');
     await client.request('pause');

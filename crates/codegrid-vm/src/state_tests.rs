@@ -5,7 +5,7 @@ mod tests {
     use codegrid_ir::{
         Board, Cell, CustomDefinition, Program, ScopedProgram, VerifiedProgram, IR_FORMAT_VERSION,
     };
-    use codegrid_model::{BoundaryMode, Direction};
+    use codegrid_model::{Direction};
     use std::collections::BTreeMap;
     use std::num::NonZeroU64;
 
@@ -150,9 +150,60 @@ mod tests {
         .expect("test program must satisfy IR validation")
     }
 
-    fn config(boundary: BoundaryMode) -> VmConfig {
+    #[test]
+    fn implicit_main_entry_executes_origin_without_an_entry_operation() {
+        use codegrid_model::PrimaryInstruction;
+        for cells in [
+            vec![Cell::empty(), Cell::instruction(PrimaryInstruction::Halt, None)],
+            vec![Cell::instruction(PrimaryInstruction::Add, None), Cell::instruction(PrimaryInstruction::Halt, None)],
+        ] {
+            let adds = cells[0].primary.is_some();
+            let mut vm = Vm::new(verified_cells(cells, 2), [], config()).unwrap();
+            let snapshot = vm.snapshot();
+            assert_eq!(snapshot.threads.len(), 1);
+            assert_eq!(snapshot.threads[0].position, Coordinate { x: 0, y: 0 });
+            assert_eq!(snapshot.threads[0].direction, Direction::Right);
+            assert_eq!(vm.step().status, VmStatus::Running);
+            assert_eq!(vm.snapshot().registers[0], u8::from(adds));
+            assert_eq!(vm.step().status, VmStatus::Halted);
+            assert_eq!(vm.snapshot().metrics.operation_count(), 1 + u64::from(adds));
+        }
+    }
+
+    #[test]
+    fn implicit_function_entry_executes_origin_and_returns_to_caller() {
+        use codegrid_model::{PrimaryInstruction, Slot};
+        let program = verified_with_function(
+            vec![Cell::instruction(PrimaryInstruction::Call(Slot::new(0).unwrap()), None), Cell::instruction(PrimaryInstruction::Halt, None)],
+            vec![Cell::instruction(PrimaryInstruction::Add, None), Cell::instruction(PrimaryInstruction::Return, None)],
+        );
+        let mut vm = Vm::new(program, [], config()).unwrap();
+        assert_eq!(vm.step().status, VmStatus::Running);
+        assert_eq!(vm.snapshot().threads[0].position, Coordinate { x: 0, y: 0 });
+        assert_eq!(vm.snapshot().threads[0].direction, Direction::Right);
+        assert_eq!(vm.step().status, VmStatus::Running);
+        assert_eq!(vm.snapshot().threads[0].private_registers.unwrap()[0], 1);
+        assert_eq!(vm.step().status, VmStatus::Running);
+        assert_eq!(vm.step().status, VmStatus::Running); // Function Resume moves past CALL.
+        assert_eq!(vm.step().status, VmStatus::Halted);
+        assert_eq!(vm.snapshot().metrics.operation_count(), 4);
+    }
+
+    #[test]
+    fn implicit_custom_entry_executes_origin_and_returns() {
+        use codegrid_model::{PrimaryInstruction, Slot};
+        let program = verified_with_custom(
+            vec![Cell::instruction(PrimaryInstruction::Custom(Slot::new(0).unwrap()), None), Cell::instruction(PrimaryInstruction::Halt, None)],
+            vec![Cell::instruction(PrimaryInstruction::CustomReturn, None)],
+        );
+        let mut vm = Vm::new(program, [], config()).unwrap();
+        assert_eq!(vm.step().status, VmStatus::Running);
+        assert_eq!(vm.step().status, VmStatus::Halted);
+        assert_eq!(vm.snapshot().metrics.operation_count(), 2);
+    }
+
+    fn config() -> VmConfig {
         VmConfig::new(
-            boundary,
             0,
             NonZeroU64::new(100).expect("limit is positive"),
         )
@@ -163,7 +214,7 @@ mod tests {
         let mut vm = Vm::new(
             verified(&[Direction::Right, Direction::Right]),
             [],
-            config(BoundaryMode::Wrap),
+            config(),
         )
         .expect("two initial threads fit in u64");
         let before = vm.snapshot();
@@ -197,7 +248,7 @@ mod tests {
                 codegrid_ir::Cell::instruction(PrimaryInstruction::CustomReturn, None),
             ],
         );
-        let mut vm = Vm::new(program, [], config(BoundaryMode::Wrap))
+        let mut vm = Vm::new(program, [], config())
             .expect("one outer initial thread fits in u64");
         assert_eq!(vm.step().status, VmStatus::Running);
         let before_invocation = vm.snapshot();
@@ -234,7 +285,7 @@ mod tests {
             ],
             custom_cells,
         );
-        let mut vm = Vm::new(program, [], config(BoundaryMode::Wrap))
+        let mut vm = Vm::new(program, [], config())
             .expect("one outer thread and two Custom threads fit in u64");
 
         assert_eq!(vm.step().status, VmStatus::Running);
@@ -282,7 +333,7 @@ mod tests {
             8,
             2,
         );
-        let mut vm = Vm::new(program, [], config(BoundaryMode::Wrap))
+        let mut vm = Vm::new(program, [], config())
             .expect("one outer thread and two Custom threads fit in u64");
 
         assert_eq!(vm.step().status, VmStatus::Running);
@@ -320,7 +371,7 @@ mod tests {
         let mut vm = Vm::new(
             verified(&[Direction::Right]),
             [],
-            config(BoundaryMode::Wrap),
+            config(),
         )
         .expect("one initial thread fits in u64");
 
@@ -346,7 +397,7 @@ mod tests {
             ],
             3,
         );
-        let mut vm = Vm::new(program, [], config(BoundaryMode::Wrap))
+        let mut vm = Vm::new(program, [], config())
             .expect("one initial thread fits in u64");
 
         let result = vm.run_with_work_limit_detailed(
@@ -369,7 +420,6 @@ mod tests {
             verified(&[Direction::Right, Direction::Down, Direction::Left]),
             [8, 9],
             VmConfig::new(
-                BoundaryMode::Wrap,
                 0,
                 NonZeroU64::new(100).expect("limit is positive"),
             ),
@@ -408,7 +458,7 @@ mod tests {
             Direction::Down,
             Direction::Left,
         ];
-        let vm = Vm::new(verified(&directions), [], config(BoundaryMode::Wrap))
+        let vm = Vm::new(verified(&directions), [], config())
             .expect("eleven Main initial threads are valid");
         let snapshot = vm.snapshot();
 
@@ -428,7 +478,7 @@ mod tests {
                 3,
             ),
             [],
-            config(BoundaryMode::Wrap),
+            config(),
         )
         .expect("one initial thread fits in u64");
 
@@ -455,7 +505,6 @@ mod tests {
             std::iter::empty::<u8>(),
             initial_memory,
             VmConfig::new(
-                BoundaryMode::Exit,
                 1,
                 NonZeroU64::new(1).expect("limit is positive"),
             ),
@@ -481,7 +530,7 @@ mod tests {
             ],
             3,
         );
-        let mut vm = Vm::new(program, [], config(BoundaryMode::Exit))
+        let mut vm = Vm::new(program, [], config())
             .expect("one initial thread fits in u64");
 
         let first = vm.step();
@@ -545,7 +594,7 @@ mod tests {
             ],
             4,
         );
-        let mut vm = Vm::new(program, [], config(BoundaryMode::Exit))
+        let mut vm = Vm::new(program, [], config())
             .expect("two initial threads fit in u64");
 
         assert_eq!(vm.step().status, VmStatus::Running);
@@ -591,7 +640,7 @@ mod tests {
                 codegrid_ir::Cell::instruction(PrimaryInstruction::CustomReturn, None),
             ],
         );
-        let mut vm = Vm::new(program, [], config(BoundaryMode::Exit))
+        let mut vm = Vm::new(program, [], config())
             .expect("two initial threads fit in u64");
 
         assert_eq!(vm.step().status, VmStatus::Running);
@@ -622,7 +671,7 @@ mod tests {
                 codegrid_ir::Cell::instruction(PrimaryInstruction::Halt, None),
             ],
         );
-        let mut vm = Vm::new(program, [], config(BoundaryMode::Exit))
+        let mut vm = Vm::new(program, [], config())
             .expect("one outer initial thread fits in u64");
 
         assert_eq!(vm.step().status, VmStatus::Running);
@@ -653,19 +702,16 @@ mod tests {
             ],
             4,
         );
-        let mut vm = Vm::new(program, [], config(BoundaryMode::Exit))
+        let mut vm = Vm::new(program, [], config())
             .expect("two initial threads fit in u64");
 
         assert_eq!(vm.step().status, VmStatus::Running);
         let failed = vm.step();
 
-        assert_eq!(failed.status, VmStatus::Error);
-        assert!(failed
-            .errors
-            .iter()
-            .any(|error| error.code() == "OutOfBounds"));
-        assert_eq!(failed.committed_ticks, 1);
-        assert_eq!(vm.snapshot().status, VmStatus::Error);
+        assert_eq!(failed.status, VmStatus::Halted);
+        assert!(failed.errors.is_empty());
+        assert_eq!(failed.committed_ticks, 2);
+        assert_eq!(vm.snapshot().status, VmStatus::Halted);
 
         let custom_id = codegrid_model::Slot::new(0).expect("zero is a valid Custom ID");
         let custom_halt_program = verified_with_custom(
@@ -681,7 +727,6 @@ mod tests {
             ],
         );
         let custom_limit = VmConfig::new(
-            BoundaryMode::Exit,
             0,
             NonZeroU64::new(2).expect("limit is positive"),
         );
@@ -691,16 +736,13 @@ mod tests {
         assert_eq!(custom_vm.step().status, VmStatus::Running);
         let custom_failed = custom_vm.step();
 
-        assert_eq!(custom_failed.status, VmStatus::Error);
-        assert!(custom_failed
-            .errors
-            .iter()
-            .any(|error| error.code() == "OutOfBounds"));
-        assert_eq!(custom_failed.committed_ticks, 1);
+        assert_eq!(custom_failed.status, VmStatus::Halted);
+        assert!(custom_failed.errors.is_empty());
+        assert_eq!(custom_failed.committed_ticks, 2);
     }
 
     #[test]
-    fn same_cell_out_of_bounds_errors_are_ordered_by_thread_id() {
+    fn threads_wrap_from_the_same_cell_and_keep_their_directions() {
         let program = VerifiedProgram::new(Program {
             format_version: IR_FORMAT_VERSION,
             outer: ScopedProgram {
@@ -720,21 +762,17 @@ mod tests {
             customs: BTreeMap::new(),
         })
         .expect("two distinct Main entries make a valid program");
-        let mut vm = Vm::new(program, [], config(BoundaryMode::Exit))
+        let mut vm = Vm::new(program, [], config())
             .expect("two initial threads fit in u64");
 
         assert_eq!(vm.step().status, VmStatus::Running);
-        let failed = vm.step();
-        assert_eq!(failed.status, VmStatus::Error);
-        let thread_ids = failed
-            .errors
-            .iter()
-            .filter_map(|error| match error.kind() {
-                crate::RuntimeErrorKind::OutOfBounds { thread_id, .. } => Some(*thread_id),
-                _ => None,
-            })
-            .collect::<Vec<_>>();
-        assert_eq!(thread_ids, vec![0, 1]);
+        let step = vm.step();
+        assert_eq!(step.status, VmStatus::Running);
+        let snapshot = vm.snapshot();
+        assert_eq!(snapshot.threads[0].position, Coordinate { x: 1, y: 0 });
+        assert_eq!(snapshot.threads[1].position, Coordinate { x: 0, y: 1 });
+        assert_eq!(snapshot.threads[0].direction, Direction::Left);
+        assert_eq!(snapshot.threads[1].direction, Direction::Up);
     }
 
     #[test]
@@ -782,7 +820,6 @@ mod tests {
             program,
             [],
             VmConfig::new(
-                BoundaryMode::Exit,
                 0,
                 NonZeroU64::new(10).expect("limit is positive"),
             ),
@@ -839,10 +876,12 @@ mod tests {
                     program: ScopedProgram {
                         main: Board {
                             width: 2,
-                            height: 2,
+                            height: 3,
                             cells: vec![
                                 Cell::entry(Direction::Right),
                                 Cell::instruction(PrimaryInstruction::Halt, None),
+                                Cell::entry(Direction::Right),
+                                Cell::instruction(PrimaryInstruction::Add, None),
                                 Cell::entry(Direction::Right),
                                 Cell::instruction(PrimaryInstruction::Add, None),
                             ],
@@ -854,7 +893,7 @@ mod tests {
             )]),
         })
         .expect("the Custom Main may define multiple initial threads");
-        let mut vm = Vm::new(program, [], config(BoundaryMode::Exit))
+        let mut vm = Vm::new(program, [], config())
             .expect("one outer initial thread fits in u64");
 
         assert_eq!(vm.step().status, VmStatus::Running);
@@ -862,7 +901,7 @@ mod tests {
 
         assert_eq!(failed.status, VmStatus::Error);
         assert!(failed.errors.iter().any(|error| {
-            error.code() == "OutOfBounds"
+            error.code() == "ConcurrentWriteConflict"
                 && error.scope()
                     == crate::ExecutionScope::Custom {
                         caller_thread_id: 0,
@@ -887,7 +926,7 @@ mod tests {
             ],
             3,
         );
-        let mut input_vm = Vm::new(input_program, [17], config(BoundaryMode::Exit))
+        let mut input_vm = Vm::new(input_program, [17], config())
             .expect("one initial thread fits in u64");
         assert_eq!(input_vm.step().status, VmStatus::Running);
         let input_step = input_vm.step();
@@ -918,7 +957,7 @@ mod tests {
             ],
             3,
         );
-        let mut memory_vm = Vm::new(memory_program, [], config(BoundaryMode::Exit))
+        let mut memory_vm = Vm::new(memory_program, [], config())
             .expect("one initial thread fits in u64");
         memory_vm.registers[0] = 7;
         memory_vm.threads[0].data_stack.push(42);
@@ -952,7 +991,7 @@ mod tests {
             ],
             3,
         );
-        let mut vm = Vm::new(program, [], config(BoundaryMode::Exit))
+        let mut vm = Vm::new(program, [], config())
             .expect("one initial thread fits in u64");
 
         assert_eq!(vm.step().status, VmStatus::Running);
@@ -971,7 +1010,7 @@ mod tests {
     }
 
     #[test]
-    fn failed_tick_retains_accessed_memory_address_metric() {
+    fn wrapped_tick_retains_accessed_memory_address_metric() {
         use codegrid_model::PrimaryInstruction;
         use num_bigint::BigInt;
 
@@ -982,18 +1021,18 @@ mod tests {
             ],
             2,
         );
-        let mut vm = Vm::new(program, [], config(BoundaryMode::Exit))
+        let mut vm = Vm::new(program, [], config())
             .expect("one initial thread fits in u64");
 
         assert_eq!(vm.step().status, VmStatus::Running);
         let failed = vm.step();
-        assert_eq!(failed.status, VmStatus::Error);
-        assert_eq!(failed.errors[0].code(), "OutOfBounds");
+        assert_eq!(failed.status, VmStatus::Running);
+        assert!(failed.errors.is_empty());
 
         let snapshot = vm.snapshot();
-        assert_eq!(snapshot.committed_ticks, 1);
-        assert_eq!(snapshot.threads[0].position, Coordinate { x: 1, y: 0 });
-        assert!(snapshot.threads[0].data_stack.is_empty());
+        assert_eq!(snapshot.committed_ticks, 2);
+        assert_eq!(snapshot.threads[0].position, Coordinate { x: 0, y: 0 });
+        assert_eq!(snapshot.threads[0].data_stack, vec![0]);
         assert_eq!(snapshot.metrics.operation_count(), 1);
         assert_eq!(snapshot.metrics.used_memory_address_count(), 1);
         assert!(snapshot
@@ -1029,7 +1068,7 @@ mod tests {
         );
         let initial_memory = BTreeMap::from([(BigInt::from(-256), 42)]);
         let mut vm =
-            Vm::with_initial_memory(program, [], initial_memory, config(BoundaryMode::Exit))
+            Vm::with_initial_memory(program, [], initial_memory, config())
                 .expect("one initial thread fits in u64");
 
         assert_eq!(vm.step().status, VmStatus::Running);
@@ -1055,7 +1094,7 @@ mod tests {
             ],
             3,
         );
-        let mut large_page_vm = Vm::new(large_program, [], config(BoundaryMode::Exit))
+        let mut large_page_vm = Vm::new(large_program, [], config())
             .expect("one initial thread fits in u64");
         let large_page = BigInt::from(1u8) << 256usize;
         large_page_vm.threads[0].page = large_page.clone();
@@ -1087,7 +1126,7 @@ mod tests {
             ],
             4,
         );
-        let mut vm = Vm::new(program, [], config(BoundaryMode::Exit))
+        let mut vm = Vm::new(program, [], config())
             .expect("one initial thread fits in u64");
         let initial_page = (BigInt::from(1u8) << 64usize) + BigInt::from(41u8);
         vm.threads[0].page = initial_page.clone();
@@ -1108,7 +1147,7 @@ mod tests {
     }
 
     #[test]
-    fn failed_move_rolls_back_instruction_effects_but_keeps_attempt_metrics() {
+    fn wrapped_move_commits_instruction_effects_and_metrics() {
         use codegrid_model::PrimaryInstruction;
 
         let program = verified_cells(
@@ -1118,28 +1157,26 @@ mod tests {
             ],
             2,
         );
-        let mut vm = Vm::new(program, [], config(BoundaryMode::Exit))
+        let mut vm = Vm::new(program, [], config())
             .expect("one initial thread fits in u64");
 
         assert_eq!(vm.step().status, VmStatus::Running);
         let result = vm.step();
         let snapshot = vm.snapshot();
 
-        assert_eq!(result.status, VmStatus::Error);
+        assert_eq!(result.status, VmStatus::Running);
         assert_eq!(result.attempted_tick, 2);
-        assert_eq!(result.committed_ticks, 1);
-        assert!(result.events.is_empty());
-        assert_eq!(result.metrics.global_tick(), 1);
+        assert_eq!(result.committed_ticks, 2);
+        assert_eq!(result.metrics.global_tick(), 2);
         assert_eq!(result.metrics.operation_count(), 1);
         assert_eq!(result.metrics.used_cell_count(), 2);
         assert!(result
             .metrics
             .instruction_variety()
             .contains(&crate::InstructionKind::Add));
-        assert_eq!(result.errors.len(), 1);
-        assert_eq!(result.errors[0].code(), "OutOfBounds");
-        assert_eq!(snapshot.registers[0], 0);
-        assert_eq!(snapshot.committed_ticks, 1);
+        assert!(result.errors.is_empty());
+        assert_eq!(snapshot.registers[0], 1);
+        assert_eq!(snapshot.committed_ticks, 2);
         assert_eq!(snapshot.metrics.operation_count(), 1);
         assert_eq!(snapshot.metrics.used_cell_count(), 2);
         assert!(snapshot
@@ -1149,7 +1186,7 @@ mod tests {
     }
 
     #[test]
-    fn concurrent_writes_and_out_of_bounds_are_reported_together() {
+    fn concurrent_writes_at_wrapped_edges_are_reported() {
         use codegrid_model::PrimaryInstruction;
 
         let program = verified_cells(
@@ -1161,7 +1198,7 @@ mod tests {
             ],
             4,
         );
-        let mut vm = Vm::new(program, [], config(BoundaryMode::Exit))
+        let mut vm = Vm::new(program, [], config())
             .expect("two initial threads fit in u64");
 
         assert_eq!(vm.step().status, VmStatus::Running);
@@ -1174,7 +1211,7 @@ mod tests {
                 .iter()
                 .map(|error| error.code())
                 .collect::<Vec<_>>(),
-            ["ConcurrentWriteConflict", "OutOfBounds"]
+            ["ConcurrentWriteConflict"]
         );
         assert!(failed.events.is_empty());
         assert_eq!(vm.snapshot().registers[0], 0);
@@ -1182,7 +1219,7 @@ mod tests {
     }
 
     #[test]
-    fn failed_tick_preserves_peak_call_stack_usage_after_call_frame_rollback() {
+    fn wrapped_tick_commits_call_frame_and_preserves_peak_usage() {
         use codegrid_model::PrimaryInstruction;
 
         let function_id = codegrid_model::Slot::new(0).expect("zero is a valid function ID");
@@ -1213,22 +1250,19 @@ mod tests {
             customs: BTreeMap::new(),
         })
         .expect("CALL and function Entry satisfy IR validation");
-        let mut vm = Vm::new(program, [], config(BoundaryMode::Exit))
+        let mut vm = Vm::new(program, [], config())
             .expect("two initial threads fit in u64");
 
         assert_eq!(vm.step().status, VmStatus::Running);
         let failed = vm.step();
 
-        assert_eq!(failed.status, VmStatus::Error);
-        assert!(failed
-            .errors
-            .iter()
-            .any(|error| error.code() == "OutOfBounds"));
+        assert_eq!(failed.status, VmStatus::Running);
+        assert!(failed.errors.is_empty());
         let snapshot = vm.snapshot();
-        assert_eq!(snapshot.committed_ticks, 1);
-        assert_eq!(snapshot.threads[0].board, codegrid_ir::BoardId::Main);
-        assert_eq!(snapshot.threads[0].position, Coordinate { x: 1, y: 0 });
-        assert!(snapshot.threads[0].call_stack.is_empty());
+        assert_eq!(snapshot.committed_ticks, 2);
+        assert_eq!(snapshot.threads[0].board, codegrid_ir::BoardId::Function(function_id));
+        assert_eq!(snapshot.threads[0].position, Coordinate { x: 0, y: 0 });
+        assert_eq!(snapshot.threads[0].call_stack.len(), 1);
         assert_eq!(snapshot.metrics.peak_call_stack_usage(), 1);
     }
 
@@ -1244,7 +1278,7 @@ mod tests {
             ],
             3,
         );
-        let mut vm = Vm::new(program, [], config(BoundaryMode::Exit))
+        let mut vm = Vm::new(program, [], config())
             .expect("two initial threads fit in u64");
 
         assert_eq!(vm.step().status, VmStatus::Running);
@@ -1285,7 +1319,7 @@ mod tests {
             4,
             3,
         );
-        let mut vm = Vm::new(program, [], config(BoundaryMode::Wrap))
+        let mut vm = Vm::new(program, [], config())
             .expect("three initial threads fit in u64");
 
         assert_eq!(vm.step().status, VmStatus::Running);
@@ -1331,7 +1365,7 @@ mod tests {
         let encoded_add =
             codegrid_model::InstructionStackItem::from_primary(PrimaryInstruction::Add)
                 .expect("ADD has a valid instruction code");
-        let mut vm = Vm::new(program, [], config(BoundaryMode::Exit))
+        let mut vm = Vm::new(program, [], config())
             .expect("three initial threads fit in u64");
 
         assert_eq!(vm.step().status, VmStatus::Running);
@@ -1370,7 +1404,7 @@ mod tests {
             3,
             3,
         );
-        let mut vm = Vm::new(program, [], config(BoundaryMode::Exit))
+        let mut vm = Vm::new(program, [], config())
             .expect("two initial threads fit in u64");
 
         assert_eq!(vm.step().status, VmStatus::Running);
@@ -1397,7 +1431,7 @@ mod tests {
             4,
             1,
         );
-        let mut vm = Vm::new(program, [9], config(BoundaryMode::Wrap))
+        let mut vm = Vm::new(program, [9], config())
             .expect("two Main entries must initialize");
 
         assert_eq!(vm.step().status, VmStatus::Running);
@@ -1434,7 +1468,7 @@ mod tests {
                 Cell::entry(Direction::Left),
             ],
         );
-        let mut vm = Vm::new(program, [], config(BoundaryMode::Wrap))
+        let mut vm = Vm::new(program, [], config())
             .expect("the Custom program has two internal Entry threads");
 
         for _ in 0..3 {
@@ -1472,7 +1506,7 @@ mod tests {
             3,
             3,
         );
-        let mut vm = Vm::new(program, [], config(BoundaryMode::Exit))
+        let mut vm = Vm::new(program, [], config())
             .expect("one initial thread fits in u64");
         vm.registers[0] = 1;
 
@@ -1505,7 +1539,7 @@ mod tests {
         let mut initial_memory = BTreeMap::new();
         initial_memory.insert(address.clone(), 7);
         let mut vm =
-            Vm::with_initial_memory(program, [], initial_memory, config(BoundaryMode::Exit))
+            Vm::with_initial_memory(program, [], initial_memory, config())
                 .expect("two initial threads fit in u64");
 
         assert_eq!(vm.step().status, VmStatus::Running);
@@ -1532,7 +1566,7 @@ mod tests {
             4,
         );
         let address = MemoryAddress::from(0);
-        let mut vm = Vm::new(program, [], config(BoundaryMode::Exit))
+        let mut vm = Vm::new(program, [], config())
             .expect("one initial thread fits in u64");
         vm.threads[0].data_stack.push(42);
 
@@ -1568,7 +1602,7 @@ mod tests {
             3,
         );
         let address = MemoryAddress::from(0);
-        let mut vm = Vm::new(program, [], config(BoundaryMode::Exit))
+        let mut vm = Vm::new(program, [], config())
             .expect("three initial threads fit in u64");
 
         assert_eq!(vm.step().status, VmStatus::Running);
@@ -1618,7 +1652,7 @@ mod tests {
         let encoded_add =
             codegrid_model::InstructionStackItem::from_primary(PrimaryInstruction::Add)
                 .expect("ADD has a valid instruction code");
-        let mut vm = Vm::new(program, [], config(BoundaryMode::Exit))
+        let mut vm = Vm::new(program, [], config())
             .expect("two initial threads fit in u64");
 
         assert_eq!(vm.step().status, VmStatus::Running);
@@ -1644,7 +1678,7 @@ mod tests {
     }
 
     #[test]
-    fn attachment_code_write_remains_a_conflict_candidate_after_move_failure() {
+    fn attachment_code_write_remains_a_conflict_candidate_at_wrapped_edge() {
         use codegrid_model::{AttachmentInstruction, PrimaryInstruction};
 
         let program = verified_cells(
@@ -1661,7 +1695,7 @@ mod tests {
         let encoded_add =
             codegrid_model::InstructionStackItem::from_primary(PrimaryInstruction::Add)
                 .expect("ADD has a valid instruction code");
-        let mut vm = Vm::new(program, [], config(BoundaryMode::Exit))
+        let mut vm = Vm::new(program, [], config())
             .expect("two initial threads fit in u64");
 
         assert_eq!(vm.step().status, VmStatus::Running);
@@ -1671,18 +1705,11 @@ mod tests {
         let snapshot = vm.snapshot();
 
         assert_eq!(step.status, VmStatus::Error);
-        assert_eq!(step.errors.len(), 3);
+        assert_eq!(step.errors.len(), 1);
         assert!(step
             .errors
             .iter()
             .any(|error| error.code() == "ConcurrentCodeWriteConflict"));
-        assert_eq!(
-            step.errors
-                .iter()
-                .filter(|error| error.code() == "OutOfBounds")
-                .count(),
-            2
-        );
         assert_eq!(
             snapshot.runtime_program.main.cells[1].primary,
             Some(PrimaryInstruction::Direction(Direction::Up))
@@ -1693,7 +1720,7 @@ mod tests {
     }
 
     #[test]
-    fn custom_failure_is_reported_alongside_an_outer_error_in_the_same_tick() {
+    fn custom_limit_failure_rolls_back_outer_wrapping_in_the_same_tick() {
         use codegrid_ir::{Program, ScopedProgram};
         use codegrid_model::PrimaryInstruction;
 
@@ -1730,7 +1757,7 @@ mod tests {
             )]),
         })
         .expect("the test program must satisfy IR validation");
-        let mut vm = Vm::new(program, [], config(BoundaryMode::Exit))
+        let mut vm = Vm::new(program, [], config())
             .expect("two initial threads fit in u64");
 
         assert_eq!(vm.step().status, VmStatus::Running);
@@ -1738,17 +1765,14 @@ mod tests {
         let snapshot = vm.snapshot();
 
         assert_eq!(step.status, VmStatus::Error);
-        assert_eq!(step.errors.len(), 2);
+        assert_eq!(step.errors.len(), 1);
         assert!(step.errors.iter().any(|error| {
-            error.code() == "OutOfBounds" && error.scope() == crate::ExecutionScope::Outer
-        }));
-        assert!(step.errors.iter().any(|error| {
-            error.code() == "OutOfBounds"
+            error.code() == "CustomExecutionLimitExceeded"
                 && error.scope()
                     == crate::ExecutionScope::Custom {
                         caller_thread_id: 0,
                         custom_id,
-                        internal_tick: 1,
+                        internal_tick: 100,
                     }
         }));
         assert_eq!(snapshot.committed_ticks, 1);
@@ -1772,7 +1796,7 @@ mod tests {
             ],
             4,
         );
-        let mut vm = Vm::new(program, [], config(BoundaryMode::Wrap))
+        let mut vm = Vm::new(program, [], config())
             .expect("one initial thread fits in u64");
 
         assert_eq!(vm.step().status, VmStatus::Running);
@@ -1816,7 +1840,7 @@ mod tests {
     }
 
     #[test]
-    fn failed_random_direction_tick_rolls_back_rng_but_keeps_attempt_metrics() {
+    fn vertical_random_direction_wraps_a_single_row_and_commits_rng() {
         use codegrid_model::PrimaryInstruction;
 
         let program = verified_cells(
@@ -1826,7 +1850,7 @@ mod tests {
             ],
             2,
         );
-        let mut vm = Vm::new(program, [], config(BoundaryMode::Exit))
+        let mut vm = Vm::new(program, [], config())
             .expect("one initial thread fits in u64");
 
         assert_eq!(vm.step().status, VmStatus::Running);
@@ -1834,15 +1858,16 @@ mod tests {
         assert_eq!(
             crate::SplitMix64::new(initial_state).next_direction(),
             Direction::Down,
-            "seed zero makes the attempted direction leave this one-row board"
+            "seed zero makes the attempted direction wrap this one-row board"
         );
 
         let step = vm.step();
         let snapshot = vm.snapshot();
 
-        assert_eq!(step.status, VmStatus::Error);
-        assert_eq!(step.errors[0].code(), "OutOfBounds");
-        assert_eq!(snapshot.threads[0].random_state, initial_state);
+        assert_eq!(step.status, VmStatus::Running);
+        assert!(step.errors.is_empty());
+        assert_ne!(snapshot.threads[0].random_state, initial_state);
+        assert_eq!(snapshot.threads[0].position, Coordinate { x: 1, y: 0 });
         assert_eq!(snapshot.metrics.operation_count(), 1);
         assert!(snapshot
             .metrics
@@ -1865,7 +1890,7 @@ mod tests {
             ],
             3,
         );
-        let mut vm = Vm::new(program, [], config(BoundaryMode::Exit))
+        let mut vm = Vm::new(program, [], config())
             .expect("one initial thread fits in u64");
 
         assert_eq!(vm.step().status, VmStatus::Running);
@@ -1909,7 +1934,7 @@ mod tests {
             customs: BTreeMap::new(),
         })
         .expect("test program must satisfy IR validation");
-        let mut vm = Vm::new(program, [], config(BoundaryMode::Exit))
+        let mut vm = Vm::new(program, [], config())
             .expect("one initial thread fits in u64");
 
         assert_eq!(vm.step().status, VmStatus::Running);
@@ -1993,7 +2018,7 @@ mod tests {
             )]),
         })
         .expect("test program must satisfy IR validation");
-        let mut vm = Vm::new(program, [], config(BoundaryMode::Exit))
+        let mut vm = Vm::new(program, [], config())
             .expect("one initial thread fits in u64");
 
         assert_eq!(vm.step().status, VmStatus::Running);
@@ -2064,7 +2089,7 @@ mod tests {
             customs: BTreeMap::new(),
         })
         .expect("test program must satisfy IR validation");
-        let mut vm = Vm::new(program, [], config(BoundaryMode::Wrap))
+        let mut vm = Vm::new(program, [], config())
             .expect("one initial thread fits in u64");
         vm.registers[1] = 17;
         vm.threads[0].data_stack.push(42);
@@ -2118,7 +2143,7 @@ mod tests {
             customs: BTreeMap::new(),
         })
         .expect("test program must satisfy IR validation");
-        let mut vm = Vm::new(program, [], config(BoundaryMode::Exit))
+        let mut vm = Vm::new(program, [], config())
             .expect("one initial thread fits in u64");
         let add = InstructionStackItem::from_primary(PrimaryInstruction::Add)
             .expect("ADD has a valid instruction code");
@@ -2175,7 +2200,7 @@ mod tests {
             customs: BTreeMap::new(),
         })
         .expect("test program must satisfy IR validation");
-        let mut vm = Vm::new(program, [], config(BoundaryMode::Exit))
+        let mut vm = Vm::new(program, [], config())
             .expect("one initial thread fits in u64");
         vm.registers[0] = 0x2A;
 
@@ -2229,7 +2254,7 @@ mod tests {
             customs: BTreeMap::new(),
         })
         .expect("test program must satisfy IR validation");
-        let mut vm = Vm::new(program, [0xA5], config(BoundaryMode::Exit))
+        let mut vm = Vm::new(program, [0xA5], config())
             .expect("one initial thread fits in u64");
 
         for _ in 0..5 {
@@ -2277,7 +2302,7 @@ mod tests {
             customs: BTreeMap::new(),
         })
         .expect("test program must satisfy IR validation");
-        let mut vm = Vm::new(program, [], config(BoundaryMode::Exit))
+        let mut vm = Vm::new(program, [], config())
             .expect("one initial thread fits in u64");
 
         assert_eq!(vm.step().status, VmStatus::Running);
@@ -2337,7 +2362,7 @@ mod tests {
             customs: BTreeMap::new(),
         })
         .expect("test program must satisfy IR validation");
-        let mut vm = Vm::new(program, [], config(BoundaryMode::Exit))
+        let mut vm = Vm::new(program, [], config())
             .expect("one initial thread fits in u64");
 
         let mut invocation_events = Vec::new();
@@ -2445,7 +2470,7 @@ mod tests {
             customs: BTreeMap::new(),
         };
         let program = VerifiedProgram::new(program).expect("recursive program must verify");
-        let mut vm = Vm::new(program, [], config(BoundaryMode::Exit))
+        let mut vm = Vm::new(program, [], config())
             .expect("one initial thread fits in u64");
         vm.registers[0] = 3;
 
@@ -2534,7 +2559,7 @@ mod tests {
             customs: BTreeMap::new(),
         })
         .expect("RETURN with WriteCode is valid and its attachment is inert");
-        let mut vm = Vm::new(program, [], config(BoundaryMode::Exit))
+        let mut vm = Vm::new(program, [], config())
             .expect("one initial thread fits in u64");
         let encoded_add = InstructionStackItem::from_primary(PrimaryInstruction::Add)
             .expect("ADD has a valid instruction code");
@@ -2588,7 +2613,7 @@ mod tests {
                 codegrid_ir::Cell::instruction(PrimaryInstruction::Return, None),
             ],
         );
-        let mut vm = Vm::new(program, [], config(BoundaryMode::Exit))
+        let mut vm = Vm::new(program, [], config())
             .expect("one initial thread fits in u64");
         vm.registers[0] = InstructionStackItem::from_primary(PrimaryInstruction::Add)
             .expect("ADD has a valid instruction code")
@@ -2661,7 +2686,7 @@ mod tests {
             customs: BTreeMap::new(),
         })
         .expect("test program must satisfy IR validation");
-        let mut vm = Vm::new(program, [], config(BoundaryMode::Exit))
+        let mut vm = Vm::new(program, [], config())
             .expect("one initial thread fits in u64");
 
         for _ in 0..4 {
@@ -2720,7 +2745,7 @@ mod tests {
             customs: BTreeMap::new(),
         })
         .expect("both Main threads may call the same function");
-        let mut vm = Vm::new(program, [], config(BoundaryMode::Exit))
+        let mut vm = Vm::new(program, [], config())
             .expect("two Main initial threads fit in u64");
 
         assert_eq!(vm.step().status, VmStatus::Running);
@@ -2824,7 +2849,7 @@ mod tests {
             customs: BTreeMap::new(),
         })
         .expect("test program must satisfy IR validation");
-        let mut vm = Vm::new(program, [41], config(BoundaryMode::Exit))
+        let mut vm = Vm::new(program, [41], config())
             .expect("one initial thread fits in u64");
 
         for _ in 0..13 {
@@ -2882,7 +2907,7 @@ mod tests {
             customs: BTreeMap::new(),
         })
         .expect("test program must satisfy IR validation");
-        let mut vm = Vm::new(program, [], config(BoundaryMode::Exit))
+        let mut vm = Vm::new(program, [], config())
             .expect("one initial thread fits in u64");
         let add = InstructionStackItem::from_primary(PrimaryInstruction::Add)
             .expect("ADD has a valid instruction code");
@@ -2937,7 +2962,7 @@ mod tests {
             customs: BTreeMap::new(),
         })
         .expect("test program must satisfy IR validation");
-        let mut vm = Vm::new(program, [], config(BoundaryMode::Exit))
+        let mut vm = Vm::new(program, [], config())
             .expect("one initial thread fits in u64");
 
         assert_eq!(vm.step().status, VmStatus::Running);
@@ -2991,7 +3016,7 @@ mod tests {
             customs: BTreeMap::new(),
         })
         .expect("test program must satisfy IR validation");
-        let mut vm = Vm::new(program, [0x5A], config(BoundaryMode::Exit))
+        let mut vm = Vm::new(program, [0x5A], config())
             .expect("one initial thread fits in u64");
 
         for _ in 0..7 {
@@ -3047,9 +3072,8 @@ mod tests {
             codegrid_ir::CodeGridId::Outer,
             function_id,
             1,
-            BoundaryMode::Wrap,
-        ));
-        let mut vm = Vm::new(program, [], config(BoundaryMode::Wrap))
+            ));
+        let mut vm = Vm::new(program, [], config())
             .expect("one initial thread fits in u64");
 
         assert_eq!(vm.run(40), crate::RunOutcome::TickLimitReached);
@@ -3116,13 +3140,11 @@ mod tests {
             CodeGridId::Custom(custom_id),
             function_id,
             1,
-            BoundaryMode::Wrap,
-        ));
+            ));
         let mut vm = Vm::new(
             program,
             [],
             VmConfig::new(
-                BoundaryMode::Wrap,
                 0,
                 NonZeroU64::new(12).expect("Custom limit is positive"),
             ),
@@ -3154,7 +3176,7 @@ mod tests {
             ],
             4,
         );
-        let mut vm = Vm::new(program, [19], config(BoundaryMode::Exit))
+        let mut vm = Vm::new(program, [19], config())
             .expect("one initial thread fits in u64");
 
         assert_eq!(vm.step().status, VmStatus::Running);
@@ -3179,7 +3201,7 @@ mod tests {
             ],
             3,
         );
-        let mut vm = Vm::new(program, [], config(BoundaryMode::Exit))
+        let mut vm = Vm::new(program, [], config())
             .expect("two initial threads fit in u64");
 
         assert_eq!(vm.step().status, VmStatus::Running);
@@ -3221,7 +3243,7 @@ mod tests {
                 codegrid_ir::Cell::instruction(PrimaryInstruction::CustomReturn, None),
             ],
         );
-        let mut vm = Vm::new(program, [], config(BoundaryMode::Exit))
+        let mut vm = Vm::new(program, [], config())
             .expect("one initial thread fits in u64");
 
         for _ in 0..4 {
@@ -3255,7 +3277,7 @@ mod tests {
                 codegrid_ir::Cell::instruction(PrimaryInstruction::CustomReturn, None),
             ],
         );
-        let mut vm = Vm::new(program, [], config(BoundaryMode::Exit))
+        let mut vm = Vm::new(program, [], config())
             .expect("one initial thread fits in u64");
 
         let mut invocation = None;
@@ -3330,7 +3352,7 @@ mod tests {
                 codegrid_ir::Cell::instruction(PrimaryInstruction::CustomReturn, None),
             ],
         );
-        let mut vm = Vm::new(program, [], config(BoundaryMode::Wrap))
+        let mut vm = Vm::new(program, [], config())
             .expect("both Main entries must initialize");
         assert_eq!(vm.snapshot().threads.len(), 2);
         assert_eq!(vm.step().status, VmStatus::Running);
@@ -3428,7 +3450,7 @@ mod tests {
                 codegrid_ir::Cell::instruction(PrimaryInstruction::Output, None),
             ],
         );
-        let mut vm = Vm::new(program, [], config(BoundaryMode::Exit))
+        let mut vm = Vm::new(program, [], config())
             .expect("one initial thread fits in u64");
 
         assert_eq!(vm.step().status, VmStatus::Running);
@@ -3445,12 +3467,12 @@ mod tests {
         assert!(failed
             .errors
             .iter()
-            .any(|error| error.code() == "OutOfBounds"));
+            .any(|error| error.code() == "CustomExecutionLimitExceeded"));
 
         let snapshot = vm.snapshot();
         assert_eq!(snapshot.threads[0].data_stack, vec![1]);
         assert_eq!(snapshot.committed_ticks, 3);
-        assert_eq!(snapshot.metrics.peak_data_stack_usage(), 2);
+        assert_eq!(snapshot.metrics.peak_data_stack_usage(), 51);
     }
 
     #[test]
@@ -3470,7 +3492,6 @@ mod tests {
             ],
         );
         let limit_two = VmConfig::new(
-            BoundaryMode::Exit,
             0,
             NonZeroU64::new(2).expect("limit is positive"),
         );
@@ -3556,7 +3577,7 @@ mod tests {
                 codegrid_ir::Cell::entry(Direction::Left),
             ],
         );
-        let mut vm = Vm::new(program, [], config(BoundaryMode::Exit))
+        let mut vm = Vm::new(program, [], config())
             .expect("one outer initial thread fits in u64");
 
         assert_eq!(vm.step().status, VmStatus::Running);
@@ -3590,7 +3611,7 @@ mod tests {
             5,
             2,
         );
-        let mut vm = Vm::new(program, [], config(BoundaryMode::Exit))
+        let mut vm = Vm::new(program, [], config())
             .expect("one outer thread fits in u64");
 
         assert_eq!(vm.step().status, VmStatus::Running);
@@ -3635,7 +3656,7 @@ mod tests {
                 codegrid_ir::Cell::entry(Direction::Left),
             ],
         );
-        let mut vm = Vm::new(program, [], config(BoundaryMode::Wrap))
+        let mut vm = Vm::new(program, [], config())
             .expect("one outer initial thread fits in u64");
 
         for _ in 0..3 {
@@ -3676,7 +3697,7 @@ mod tests {
                 codegrid_ir::Cell::entry(Direction::Left),
             ],
         );
-        let mut vm = Vm::new(program, [], config(BoundaryMode::Exit))
+        let mut vm = Vm::new(program, [], config())
             .expect("one outer thread and two Custom threads fit in u64");
 
         for _ in 0..3 {
@@ -3725,7 +3746,7 @@ mod tests {
                 codegrid_ir::Cell::entry(Direction::Left),
             ],
         );
-        let mut vm = Vm::new(program, [], config(BoundaryMode::Wrap))
+        let mut vm = Vm::new(program, [], config())
             .expect("one outer initial thread fits in u64");
 
         for _ in 0..3 {
@@ -3759,7 +3780,7 @@ mod tests {
                 codegrid_ir::Cell::entry(Direction::Left),
             ],
         );
-        let mut vm = Vm::new(program, [], config(BoundaryMode::Exit))
+        let mut vm = Vm::new(program, [], config())
             .expect("one outer initial thread fits in u64");
 
         for _ in 0..4 {
@@ -3784,19 +3805,19 @@ mod tests {
                 codegrid_ir::Cell::instruction(PrimaryInstruction::Push, None),
             ],
         );
-        let mut vm = Vm::new(program, [], config(BoundaryMode::Exit))
+        let mut vm = Vm::new(program, [], config())
             .expect("one outer initial thread fits in u64");
 
         assert_eq!(vm.step().status, VmStatus::Running);
         let failed = vm.step();
         assert_eq!(failed.status, VmStatus::Error);
-        assert_eq!(failed.errors[0].code(), "OutOfBounds");
+        assert_eq!(failed.errors[0].code(), "CustomExecutionLimitExceeded");
         assert!(matches!(
             failed.errors[0].scope(),
             crate::ExecutionScope::Custom {
                 caller_thread_id: 0,
                 custom_id: id,
-                internal_tick: 2,
+                internal_tick: 100,
             } if id == custom_id
         ));
 
@@ -3804,7 +3825,7 @@ mod tests {
         assert_eq!(snapshot.committed_ticks, 1);
         assert_eq!(snapshot.threads[0].position, Coordinate { x: 1, y: 0 });
         assert!(snapshot.threads[0].data_stack.is_empty());
-        assert_eq!(snapshot.metrics.peak_data_stack_usage(), 1);
+        assert_eq!(snapshot.metrics.peak_data_stack_usage(), 50);
     }
 
     #[test]
@@ -3876,7 +3897,7 @@ mod tests {
             )]),
         })
         .expect("the test program must satisfy IR validation");
-        let mut vm = Vm::new(program, [], config(BoundaryMode::Exit))
+        let mut vm = Vm::new(program, [], config())
             .expect("two initial threads fit in u64");
         vm.threads[0].data_stack.push(1);
         vm.threads[1].data_stack.push(0);
@@ -3913,7 +3934,6 @@ mod tests {
         );
         let config_with_limit = |limit| {
             VmConfig::new(
-                BoundaryMode::Exit,
                 0,
                 NonZeroU64::new(limit).expect("test limits are positive"),
             )
@@ -3955,7 +3975,7 @@ mod tests {
                 codegrid_ir::Cell::instruction(PrimaryInstruction::CustomReturn, None),
             ],
         );
-        let mut vm = Vm::new(program, [], config(BoundaryMode::Exit))
+        let mut vm = Vm::new(program, [], config())
             .expect("two outer initial threads fit in u64");
 
         assert_eq!(vm.step().status, VmStatus::Running);
@@ -4044,7 +4064,7 @@ mod tests {
             customs: BTreeMap::from([(custom_zero, short_custom), (custom_one, long_custom)]),
         })
         .expect("the test program must satisfy IR validation");
-        let mut vm = Vm::new(program, [], config(BoundaryMode::Exit))
+        let mut vm = Vm::new(program, [], config())
             .expect("two initial threads fit in u64");
 
         assert_eq!(vm.step().status, VmStatus::Running);
@@ -4075,7 +4095,7 @@ mod tests {
                 codegrid_ir::Cell::instruction(PrimaryInstruction::CustomReturn, None),
             ],
         );
-        let mut vm = Vm::new(program, [], config(BoundaryMode::Exit))
+        let mut vm = Vm::new(program, [], config())
             .expect("one outer thread fits in u64");
         vm.threads[0].data_stack.push(99);
 
@@ -4108,7 +4128,6 @@ mod tests {
             program,
             [],
             VmConfig::new(
-                BoundaryMode::Wrap,
                 0,
                 NonZeroU64::new(2).expect("limit is positive"),
             ),
@@ -4150,7 +4169,7 @@ mod tests {
             ],
             4,
         );
-        let mut vm = Vm::new(program, [], config(BoundaryMode::Exit))
+        let mut vm = Vm::new(program, [], config())
             .expect("one initial thread fits in u64");
         // Tests can seed state to isolate the ENCODE/DECODE machine path; the
         // public language still initializes every register to zero.
@@ -4194,7 +4213,7 @@ mod tests {
             ],
             4,
         );
-        let mut vm = Vm::new(program, [], config(BoundaryMode::Wrap))
+        let mut vm = Vm::new(program, [], config())
             .expect("one initial thread fits in u64");
         vm.registers[0] = 32;
 
@@ -4258,7 +4277,7 @@ mod tests {
         let encoded_sub =
             codegrid_model::InstructionStackItem::from_primary(PrimaryInstruction::Sub)
                 .expect("SUB has a valid instruction code");
-        let mut vm = Vm::new(program, [], config(BoundaryMode::Exit))
+        let mut vm = Vm::new(program, [], config())
             .expect("one initial thread fits in u64");
         vm.threads[0].instruction_stack.push(encoded_sub);
 
@@ -4330,7 +4349,7 @@ mod tests {
             )]),
         })
         .expect("the static Custom program must be valid");
-        let mut vm = Vm::new(program, [], config(BoundaryMode::Exit))
+        let mut vm = Vm::new(program, [], config())
             .expect("one outer initial thread fits in u64");
 
         assert_eq!(vm.step().status, VmStatus::Running);
@@ -4369,7 +4388,7 @@ mod tests {
             ],
             4,
         );
-        let mut vm = Vm::new(program, [], config(BoundaryMode::Exit))
+        let mut vm = Vm::new(program, [], config())
             .expect("one initial thread fits in u64");
 
         for _ in 0..3 {
@@ -4399,7 +4418,7 @@ mod tests {
             ],
             4,
         );
-        let mut vm = Vm::new(program, [], config(BoundaryMode::Exit))
+        let mut vm = Vm::new(program, [], config())
             .expect("one initial thread fits in u64");
         vm.registers[0] = u8::MAX;
 
@@ -4431,7 +4450,7 @@ mod tests {
             ],
             5,
         );
-        let mut vm = Vm::new(program, [37], config(BoundaryMode::Exit))
+        let mut vm = Vm::new(program, [37], config())
             .expect("one initial thread fits in u64");
 
         assert_eq!(vm.step().status, VmStatus::Running);
@@ -4466,7 +4485,7 @@ mod tests {
             ],
             7,
         );
-        let mut vm = Vm::new(program, [0xAA, 0x0F], config(BoundaryMode::Exit))
+        let mut vm = Vm::new(program, [0xAA, 0x0F], config())
             .expect("one initial thread fits in u64");
 
         for _ in 0..7 {
@@ -4501,7 +4520,7 @@ mod tests {
             ],
             4,
         );
-        let mut vm = Vm::new(program, [], config(BoundaryMode::Exit))
+        let mut vm = Vm::new(program, [], config())
             .expect("one initial thread fits in u64");
         vm.registers[0] = 73;
 
@@ -4536,7 +4555,7 @@ mod tests {
             ],
             4,
         );
-        let mut vm = Vm::new(program, [], config(BoundaryMode::Exit))
+        let mut vm = Vm::new(program, [], config())
             .expect("one initial thread fits in u64");
         vm.registers[0] = 7;
 
@@ -4569,7 +4588,7 @@ mod tests {
             ],
             8,
         );
-        let mut vm = Vm::new(program, [0x81, 0x81], config(BoundaryMode::Exit))
+        let mut vm = Vm::new(program, [0x81, 0x81], config())
             .expect("one initial thread fits in u64");
 
         for _ in 0..8 {
@@ -4608,7 +4627,7 @@ mod tests {
             ],
             6,
         );
-        let mut vm = Vm::new(program, [], config(BoundaryMode::Exit))
+        let mut vm = Vm::new(program, [], config())
             .expect("one initial thread fits in u64");
 
         for _ in 0..6 {
@@ -4632,7 +4651,7 @@ mod tests {
         cells[2] = Cell::instruction(PrimaryInstruction::Read, None);
         cells[3] = Cell::instruction(PrimaryInstruction::Halt, None);
         let program = verified_grid(cells, 4, 2);
-        let mut vm = Vm::new(program, [0xAB], config(BoundaryMode::Exit))
+        let mut vm = Vm::new(program, [0xAB], config())
             .expect("one initial thread fits in u64");
 
         assert_eq!(vm.step().status, VmStatus::Running);
@@ -4666,7 +4685,7 @@ mod tests {
         let encoded_return =
             codegrid_model::InstructionStackItem::from_primary(PrimaryInstruction::Return)
                 .expect("RETURN has an instruction code");
-        let mut vm = Vm::new(program, [], config(BoundaryMode::Exit))
+        let mut vm = Vm::new(program, [], config())
             .expect("one initial thread fits in u64");
         vm.threads[0].instruction_stack.push(encoded_return);
 
@@ -4716,7 +4735,7 @@ mod tests {
         );
         let encoded_add = InstructionStackItem::from_primary(PrimaryInstruction::Add)
             .expect("ADD has a valid instruction code");
-        let mut vm = Vm::new(program, [], config(BoundaryMode::Exit))
+        let mut vm = Vm::new(program, [], config())
             .expect("one initial thread fits in u64");
         vm.threads[0].instruction_stack.push(encoded_add);
 
@@ -4764,7 +4783,7 @@ mod tests {
             ],
             4,
         );
-        let mut vm = Vm::new(program, [], config(BoundaryMode::Exit))
+        let mut vm = Vm::new(program, [], config())
             .expect("one initial thread fits in u64");
         vm.registers[0] = 32;
 
@@ -4805,7 +4824,7 @@ mod tests {
             ],
             3,
         );
-        let mut vm = Vm::new(program, [], config(BoundaryMode::Exit))
+        let mut vm = Vm::new(program, [], config())
             .expect("one initial thread fits in u64");
         vm.registers[0] = 35;
 
@@ -4841,7 +4860,7 @@ mod tests {
             ],
             3,
         );
-        let mut vm = Vm::new(program, [], config(BoundaryMode::Exit))
+        let mut vm = Vm::new(program, [], config())
             .expect("one initial thread fits in u64");
         vm.registers[0] = 0xC7;
 
@@ -4880,7 +4899,7 @@ mod tests {
             ],
             3,
         );
-        let mut vm = Vm::new(program, [], config(BoundaryMode::Exit))
+        let mut vm = Vm::new(program, [], config())
             .expect("one initial thread fits in u64");
 
         assert_eq!(vm.step().status, VmStatus::Running);
@@ -4928,7 +4947,7 @@ mod tests {
             ],
             3,
         );
-        let mut vm = Vm::new(program, [], config(BoundaryMode::Exit))
+        let mut vm = Vm::new(program, [], config())
             .expect("one initial thread fits in u64");
 
         assert_eq!(vm.step().status, VmStatus::Running);
@@ -4971,7 +4990,7 @@ mod tests {
             ],
             4,
         );
-        let mut vm = Vm::new(program, [], config(BoundaryMode::Exit))
+        let mut vm = Vm::new(program, [], config())
             .expect("two initial threads fit in u64");
 
         assert_eq!(vm.step().status, VmStatus::Running);
@@ -5049,7 +5068,7 @@ mod tests {
             customs: BTreeMap::new(),
         })
         .expect("test program must satisfy IR validation");
-        let mut vm = Vm::new(program, [], config(BoundaryMode::Exit))
+        let mut vm = Vm::new(program, [], config())
             .expect("two initial threads fit in u64");
         vm.threads[1].register_pointer = 1;
 
@@ -5171,7 +5190,7 @@ mod tests {
             customs: BTreeMap::from([(custom_id, custom)]),
         })
         .expect("test program must satisfy IR validation");
-        let mut vm = Vm::new(program, [], config(BoundaryMode::Exit))
+        let mut vm = Vm::new(program, [], config())
             .expect("two initial threads fit in u64");
 
         assert_eq!(vm.step().status, VmStatus::Running);
@@ -5229,7 +5248,7 @@ mod tests {
     }
 
     #[test]
-    fn deferred_call_attachments_do_not_run_when_the_callee_halts_or_errors() {
+    fn deferred_call_attachments_do_not_run_when_the_callee_halts_or_keeps_wrapping() {
         use codegrid_model::{AttachmentInstruction, InstructionStackItem, PrimaryInstruction};
 
         let function_id = codegrid_model::Slot::new(0).expect("zero is a valid Function ID");
@@ -5244,7 +5263,7 @@ mod tests {
                 (PrimaryInstruction::Halt, VmStatus::Halted),
                 (
                     PrimaryInstruction::Direction(Direction::Right),
-                    VmStatus::Error,
+                    VmStatus::Running,
                 ),
             ] {
                 let program = VerifiedProgram::new(Program {
@@ -5278,7 +5297,7 @@ mod tests {
                     customs: BTreeMap::new(),
                 })
                 .expect("the verifier accepts deferred CALL attachments");
-                let mut vm = Vm::new(program, [], config(BoundaryMode::Exit))
+                let mut vm = Vm::new(program, [], config())
                     .expect("one initial thread fits in u64");
                 vm.threads[0].instruction_stack.push(sentinel);
 
@@ -5292,7 +5311,7 @@ mod tests {
                     assert!(outcome
                         .errors
                         .iter()
-                        .any(|error| error.code() == "OutOfBounds"));
+                        .any(|error| error.code() == "ReturnWithoutCall"));
                     assert!(outcome.events.is_empty());
                 } else {
                     assert!(outcome.errors.is_empty());
@@ -5372,7 +5391,7 @@ mod tests {
             )]),
         })
         .expect("test program must satisfy IR validation");
-        let mut vm = Vm::new(program, [17], config(BoundaryMode::Exit))
+        let mut vm = Vm::new(program, [17], config())
             .expect("three initial threads fit in u64");
         let encoded_direction =
             codegrid_model::InstructionStackItem::from_primary(PrimaryInstruction::Direction(
@@ -5575,7 +5594,7 @@ mod tests {
             )]),
         })
         .expect("the nested Outer and Custom program must verify");
-        let mut vm = Vm::new(program, [], config(BoundaryMode::Exit))
+        let mut vm = Vm::new(program, [], config())
             .expect("five outer initial threads fit in u64");
         let encoded_add = InstructionStackItem::from_primary(PrimaryInstruction::Add)
             .expect("ADD has a valid instruction code")

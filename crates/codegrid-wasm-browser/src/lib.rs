@@ -5,15 +5,15 @@
 
 use codegrid_runtime_api::error_number;
 use codegrid_runtime_api::{
-    ApiError, BoardId, BoardView, BoundaryMode, CallFrameSnapshot, CheckRequest, CodeGridId,
-    CodeGridView, CompileOutcome, CompileRequest, Coordinate, CreateInstanceRequest, Diagnostic,
-    Direction, ExecutionScope, HostLimits, InstanceHandle, InstructionKind, MemoryAddress,
-    MemoryEntry, MemoryLocationId, MemorySpaceId, MetricCounterOverflow, ProgramHandle,
-    ProgramView, ProgramViewRequest, ReleaseInstanceRequest, ReleaseProgramRequest, RunRequest,
-    RunStatus, RuntimeApi, RuntimeConfiguration, RuntimeError, RuntimeErrorKind,
-    RuntimeMetricSummary, RuntimeMetrics, RuntimeSnapshotView, RuntimeThreadSnapshotView, Severity,
-    SnapshotRequest, StaticCellId, StepRequest, StepResponseView, ThreadPhaseSnapshot, VmEvent,
-    VmFault, VmStatus, YieldReason, RUNTIME_API_VERSION,
+    ApiError, BoardId, BoardView, CallFrameSnapshot, CheckRequest, CodeGridId, CodeGridView,
+    CompileOutcome, CompileRequest, Coordinate, CreateInstanceRequest, Diagnostic, Direction,
+    ExecutionScope, HostLimits, InstanceHandle, InstructionKind, MemoryAddress, MemoryEntry,
+    MemoryLocationId, MemorySpaceId, MetricCounterOverflow, ProgramHandle, ProgramView,
+    ProgramViewRequest, ReleaseInstanceRequest, ReleaseProgramRequest, RunRequest, RunStatus,
+    RuntimeApi, RuntimeConfiguration, RuntimeError, RuntimeErrorKind, RuntimeMetricSummary,
+    RuntimeMetrics, RuntimeSnapshotView, RuntimeThreadSnapshotView, Severity, SnapshotRequest,
+    StaticCellId, StepRequest, StepResponseView, ThreadPhaseSnapshot, VmEvent, VmFault, VmStatus,
+    YieldReason, RUNTIME_API_VERSION,
 };
 use js_sys::Uint8Array;
 use serde::ser::{SerializeMap, SerializeSeq, Serializer};
@@ -43,7 +43,6 @@ const RESPONSE_LIMIT_ERROR: &str = r#"{"api_version":3,"error":{"code":"response
 #[derive(Deserialize)]
 #[serde(deny_unknown_fields)]
 struct ConfigurationWire {
-    boundary_mode: String,
     seed: String,
     custom_execution_limit: String,
 }
@@ -779,22 +778,12 @@ impl BrowserRuntime {
                 value: entry.value,
             });
         }
-        let configuration: ConfigurationWire =
-            match serde_json::from_str(&configuration_json) {
-                Ok(configuration) => configuration,
-                Err(_) => return input_error_json(
-                    "invalid_configuration",
-                    "configuration must contain boundary_mode, seed, and custom_execution_limit",
-                    self.max_response_bytes as usize,
-                ),
-            };
-        let boundary_mode = match configuration.boundary_mode.as_str() {
-            "exit" => BoundaryMode::Exit,
-            "wrap" => BoundaryMode::Wrap,
-            _ => {
+        let configuration: ConfigurationWire = match serde_json::from_str(&configuration_json) {
+            Ok(configuration) => configuration,
+            Err(_) => {
                 return input_error_json(
-                    "invalid_boundary_mode",
-                    "boundary_mode must be exit or wrap",
+                    "invalid_configuration",
+                    "configuration must contain seed and custom_execution_limit",
                     self.max_response_bytes as usize,
                 )
             }
@@ -815,7 +804,6 @@ impl BrowserRuntime {
             input,
             initial_memory,
             configuration: RuntimeConfiguration {
-                boundary_mode,
                 seed,
                 custom_execution_limit,
             },
@@ -2168,17 +2156,6 @@ impl Serialize for RuntimeErrorDetailsProjection<'_> {
             RuntimeErrorKind::CustomExecutionLimitExceeded { limit } => {
                 serialize_object!(serializer, { "limit" => DisplayValue(limit) })
             }
-            RuntimeErrorKind::OutOfBounds {
-                thread_id,
-                board,
-                position,
-                direction,
-            } => serialize_object!(serializer, {
-                "thread_id" => DisplayValue(thread_id),
-                "board" => BoardIdProjection(*board),
-                "position" => CoordinateProjection(*position),
-                "direction" => direction_name(*direction),
-            }),
             RuntimeErrorKind::ReturnWithoutCall {
                 thread_id,
                 board,
@@ -2456,7 +2433,7 @@ mod tests {
 
     fn fixture_run_configuration(run: &Value) -> String {
         json!({
-            "boundary_mode": run["boundary"],
+
             "seed": run["seed"],
             "custom_execution_limit": run["custom_execution_limit"],
         })
@@ -2755,7 +2732,7 @@ mod tests {
             program.clone(),
             vec![73],
             "[]".to_owned(),
-            json!({ "boundary_mode": "exit", "seed": "9007199254740993", "custom_execution_limit": "100" }).to_string(),
+            json!({  "seed": "9007199254740993", "custom_execution_limit": "100" }).to_string(),
         ));
         let instance = created["instance"].as_str().unwrap().to_owned();
 
@@ -2801,15 +2778,12 @@ mod tests {
         let compiled =
             parse(&adapter.compile_source(include_str!("../../../examples/echo.cg").to_owned()));
         let program = compiled["outcome"]["program"].as_str().unwrap().to_owned();
-        let created = parse(
-            &adapter.create_instance_data(
-                program.clone(),
-                vec![9],
-                "[]".to_owned(),
-                json!({ "boundary_mode": "exit", "seed": "0", "custom_execution_limit": "100" })
-                    .to_string(),
-            ),
-        );
+        let created = parse(&adapter.create_instance_data(
+            program.clone(),
+            vec![9],
+            "[]".to_owned(),
+            json!({  "seed": "0", "custom_execution_limit": "100" }).to_string(),
+        ));
         let instance = created["instance"].as_str().unwrap().to_owned();
 
         let rejected = parse(&adapter.run_handle(&instance, "3"));
@@ -2850,15 +2824,12 @@ mod tests {
             .as_str()
             .unwrap()
             .to_owned();
-        let reference_instance = parse(
-            &reference.create_instance_data(
-                reference_program,
-                Vec::new(),
-                "[]".to_owned(),
-                json!({ "boundary_mode": "wrap", "seed": "0", "custom_execution_limit": "100" })
-                    .to_string(),
-            ),
-        )["instance"]
+        let reference_instance = parse(&reference.create_instance_data(
+            reference_program,
+            Vec::new(),
+            "[]".to_owned(),
+            json!({  "seed": "0", "custom_execution_limit": "100" }).to_string(),
+        ))["instance"]
             .as_str()
             .unwrap()
             .to_owned();
@@ -2881,15 +2852,12 @@ mod tests {
             .as_str()
             .unwrap()
             .to_owned();
-        let instance = parse(
-            &adapter.create_instance_data(
-                program.clone(),
-                Vec::new(),
-                "[]".to_owned(),
-                json!({ "boundary_mode": "wrap", "seed": "0", "custom_execution_limit": "100" })
-                    .to_string(),
-            ),
-        )["instance"]
+        let instance = parse(&adapter.create_instance_data(
+            program.clone(),
+            Vec::new(),
+            "[]".to_owned(),
+            json!({  "seed": "0", "custom_execution_limit": "100" }).to_string(),
+        ))["instance"]
             .as_str()
             .unwrap()
             .to_owned();
@@ -2918,15 +2886,12 @@ mod tests {
             .as_str()
             .unwrap()
             .to_owned();
-        let created = parse(
-            &adapter.create_instance_data(
-                program.clone(),
-                vec![],
-                "[]".to_owned(),
-                json!({ "boundary_mode": "wrap", "seed": "0", "custom_execution_limit": "10" })
-                    .to_string(),
-            ),
-        );
+        let created = parse(&adapter.create_instance_data(
+            program.clone(),
+            vec![],
+            "[]".to_owned(),
+            json!({  "seed": "0", "custom_execution_limit": "10" }).to_string(),
+        ));
         let instance = created["instance"].as_str().unwrap();
         let response = parse(&adapter.run_handle(instance, "10"));
         assert_eq!(

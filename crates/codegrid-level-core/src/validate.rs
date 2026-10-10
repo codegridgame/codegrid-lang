@@ -47,6 +47,7 @@ pub fn instruction_identifiers() -> &'static [&'static str] {
         "POINTER_LEFT",
         "POINTER_RIGHT",
         "OUTPUT",
+        "OUTPUT_IMMEDIATE",
         "PUSH",
         "POP_ADD",
         "DECODE",
@@ -142,10 +143,7 @@ pub fn validate_primary(
     }
     let default_allowed = matches!(
         p,
-        PrimaryInstruction::Direction(_)
-            | PrimaryInstruction::Output
-            | PrimaryInstruction::OutputImmediate(_)
-            | PrimaryInstruction::Halt
+        PrimaryInstruction::Direction(_) | PrimaryInstruction::Output | PrimaryInstruction::Halt
     );
     let group = match p {
         PrimaryInstruction::Read => Some("READ"),
@@ -159,9 +157,14 @@ pub fn validate_primary(
         PrimaryInstruction::CustomReturn => Some("CUSTOM"),
         _ => None,
     };
+    let permission = if matches!(p, PrimaryInstruction::OutputImmediate(_)) {
+        "OUTPUT_IMMEDIATE"
+    } else {
+        instruction_kind(p)
+    };
     if !default_allowed
         && !group.is_some_and(|name| r.allowed_instructions.contains(name))
-        && !r.allowed_instructions.contains(instruction_kind(p))
+        && !r.allowed_instructions.contains(permission)
     {
         return Err(reject(
             if generated {
@@ -199,7 +202,14 @@ fn scoped(r: &ProgramRules, s: &ScopedProgram, path: &str) -> Result<(), Program
     if s.functions.len() > r.max_functions as usize {
         return Err(reject("FunctionCountExceeded", path));
     }
-    if s.main.cells.iter().filter(|c| c.entry.is_some()).count() > r.max_threads as usize {
+    if s.main
+        .cells
+        .iter()
+        .filter(|c| c.entry.is_some())
+        .count()
+        .max(1)
+        > r.max_threads as usize
+    {
         return Err(reject("ThreadCountExceeded", path));
     }
     board(r, &s.main, true, &format!("{path}.main"))?;
@@ -292,6 +302,26 @@ mod tests {
         }
     }
     #[test]
+    fn implicit_main_entry_counts_as_one_thread() {
+        let scope = ScopedProgram {
+            main: Board {
+                width: 1,
+                height: 1,
+                cells: vec![Cell::instruction(PrimaryInstruction::Halt, None)],
+                folded_blocks: BTreeMap::new(),
+            },
+            functions: BTreeMap::new(),
+        };
+        let mut r = rules();
+        r.max_threads = 1;
+        assert!(scoped(&r, &scope, "outer").is_ok());
+        r.max_threads = 0;
+        assert_eq!(
+            scoped(&r, &scope, "outer").unwrap_err().reason,
+            "ThreadCountExceeded"
+        );
+    }
+    #[test]
     fn all_canonical_variants_and_independent_attachments() {
         let r = rules();
         for p in PrimaryInstruction::source_forms() {
@@ -312,6 +342,24 @@ mod tests {
         );
     }
     #[test]
+    fn immediate_output_requires_its_own_permission_for_every_digit() {
+        let mut r = rules();
+        r.allowed_instructions = BTreeSet::from(["OUTPUT".into()]);
+        for digit in 0..10 {
+            let primary = PrimaryInstruction::from_token(&format!(".{digit}")).unwrap();
+            for generated in [false, true] {
+                assert!(validate_primary(&r, Some(primary), generated).is_err());
+            }
+        }
+        r.allowed_instructions = BTreeSet::from(["OUTPUT_IMMEDIATE".into()]);
+        for digit in 0..10 {
+            let primary = PrimaryInstruction::from_token(&format!(".{digit}")).unwrap();
+            for generated in [false, true] {
+                assert!(validate_primary(&r, Some(primary), generated).is_ok());
+            }
+        }
+    }
+    #[test]
     fn grouped_permissions_defaults_returns_and_generated_code() {
         let mut r = rules();
         r.allowed_instructions.clear();
@@ -320,7 +368,6 @@ mod tests {
                 p,
                 PrimaryInstruction::Direction(_)
                     | PrimaryInstruction::Output
-                    | PrimaryInstruction::OutputImmediate(_)
                     | PrimaryInstruction::Halt
             );
             for generated in [false, true] {
@@ -333,6 +380,13 @@ mod tests {
         }
         let slot = Slot::new(0).unwrap();
         let groups = [
+            (
+                "OUTPUT_IMMEDIATE",
+                PrimaryInstruction::source_forms()
+                    .into_iter()
+                    .filter(|p| matches!(p, PrimaryInstruction::OutputImmediate(_)))
+                    .collect(),
+            ),
             ("CMP", vec![PrimaryInstruction::Compare]),
             (
                 "READ",
@@ -398,7 +452,6 @@ mod tests {
                     p,
                     PrimaryInstruction::Direction(_)
                         | PrimaryInstruction::Output
-                        | PrimaryInstruction::OutputImmediate(_)
                         | PrimaryInstruction::Halt
                 );
                 let member = members.contains(&p)

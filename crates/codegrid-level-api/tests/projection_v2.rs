@@ -35,7 +35,6 @@ fn run(value: Value, mode: EvaluationMode) -> SceneEvaluationResult {
     let program =
         codegrid_compiler::compile(include_str!("../../../fixtures/levels/echo.cg")).unwrap();
     let config = EvaluationConfig {
-        boundary_mode: codegrid_model::BoundaryMode::Exit,
         shuffle_seed: 42,
         custom_execution_limit: n(100),
         safety: ExecutionSafetyProfile {

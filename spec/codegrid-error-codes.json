@@ -319,17 +319,8 @@
     },
     {
       "layer": "source",
-      "code": "source.main_entry_count",
-      "condition": "An Outer or Custom Main board has no Entry.",
-      "surface": "Diagnostic.code in core, CLI JSON, LSP diagnostics, browser/server diagnostics and debug diagnostics. CLI check renders [code].",
-      "state_effect": "Compilation rejection: no executable IR or VM instance.",
-      "code_type": "string",
-      "error_number": "1035"
-    },
-    {
-      "layer": "source",
       "code": "source.function_entry_count",
-      "condition": "A Function board does not have exactly one Entry.",
+      "condition": "A Function board has more than one explicit Entry.",
       "surface": "Diagnostic.code in core, CLI JSON, LSP diagnostics, browser/server diagnostics and debug diagnostics. CLI check renders [code].",
       "state_effect": "Compilation rejection: no executable IR or VM instance.",
       "code_type": "string",
@@ -445,17 +436,8 @@
     },
     {
       "layer": "ir",
-      "code": "ir.main_entry_count",
-      "condition": "A Main board has no Entry.",
-      "surface": "IrError.code; compiler forwards the original IR code into Diagnostic.code with compiler source spans.",
-      "state_effect": "IR verification fails; unchecked IR cannot execute.",
-      "code_type": "string",
-      "error_number": "2004"
-    },
-    {
-      "layer": "ir",
       "code": "ir.function_entry_count",
-      "condition": "A Function does not have exactly one Entry.",
+      "condition": "A Function board has more than one explicit Entry.",
       "surface": "IrError.code; compiler forwards the original IR code into Diagnostic.code with compiler source spans.",
       "state_effect": "IR verification fails; unchecked IR cannot execute.",
       "code_type": "string",
@@ -658,16 +640,6 @@
       "details": "limit",
       "code_type": "string",
       "error_number": "3008"
-    },
-    {
-      "layer": "vm",
-      "code": "OutOfBounds",
-      "condition": "Execution violates the VM contract for a required board position.",
-      "surface": "RuntimeError.code, CLI/WASM snapshot.errors and step results. DAP displays the same codes.",
-      "state_effect": "Entire failing outer tick rolls back; committed events/output are empty; attempted metrics follow the VM specification.",
-      "details": "thread_id, board, position, direction",
-      "code_type": "string",
-      "error_number": "3009"
     },
     {
       "layer": "vm",
@@ -961,7 +933,7 @@
     {
       "layer": "debug",
       "code": "debug.invalid_configuration",
-      "condition": "Seed/limit/boundary configuration is invalid or exceeds u64.",
+      "condition": "Seed/limit configuration is invalid or exceeds u64.",
       "surface": "Debug protocol 2: error.code and error.message; transport I/O failures use coded stderr when stdout is unavailable.",
       "state_effect": "State unchanged on invalid requests; work-limit rollback uses the same VM transition; request-size failure terminates the process.",
       "code_type": "string",
@@ -1383,15 +1355,6 @@
     },
     {
       "layer": "browser",
-      "code": "invalid_boundary_mode",
-      "condition": "Boundary mode is neither exit nor wrap.",
-      "surface": "Browser adapter error.code (API v3). Runtime API errors also use the API table.",
-      "state_effect": "Pre-copy validation failures do not dispatch; oversized retained-state instances are released; response limits produce complete structured errors.",
-      "code_type": "string",
-      "error_number": "7017"
-    },
-    {
-      "layer": "browser",
       "code": "invalid_configuration_integer",
       "condition": "Seed or Custom limit is not a valid canonical integer string.",
       "surface": "Browser adapter error.code (API v3). Runtime API errors also use the API table.",
@@ -1623,15 +1586,6 @@
       "state_effect": "Invalid/over-limit requests do not execute; work limit rolls back; oversized retained instances are released; shutdown permanently closes the session.",
       "code_type": "string",
       "error_number": "7522"
-    },
-    {
-      "layer": "server",
-      "code": "invalid_boundary",
-      "condition": "Boundary mode is neither exit nor wrap.",
-      "surface": "Server ABI v4 / API v3 JSON error.code. The legacy aliases above remain stable and are not silently renamed.",
-      "state_effect": "Invalid/over-limit requests do not execute; work limit rolls back; oversized retained instances are released; shutdown permanently closes the session.",
-      "code_type": "string",
-      "error_number": "7523"
     },
     {
       "layer": "server",
@@ -1960,9 +1914,9 @@
     {
       "layer": "level",
       "code": "level_api.invalid_configuration",
-      "condition": "Unsupported mode/boundary or noncanonical/zero required integer; no evaluation starts.",
+      "condition": "Unsupported mode or noncanonical/zero required integer; no evaluation starts.",
       "surface": "Level API v1 coded error or terminal failure, native CLI evaluate, browser binding v1 and portable ABI v1.",
-      "state_effect": "Unsupported mode/boundary or noncanonical/zero required integer; no evaluation starts.",
+      "state_effect": "Unsupported mode or noncanonical/zero required integer; no evaluation starts.",
       "code_type": "string",
       "error_number": "9011"
     },

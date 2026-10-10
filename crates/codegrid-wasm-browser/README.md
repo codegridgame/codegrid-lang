@@ -48,7 +48,6 @@ const created = JSON.parse(runtime.create_instance(
   new Uint8Array([65, 0, 255]),
   JSON.stringify([{ address: "-1", value: 12 }]),
   JSON.stringify({
-    boundary_mode: "exit",
     seed: "18446744073709551615",
     custom_execution_limit: "1000",
   }),

@@ -2,7 +2,6 @@
   "extension.description": "Édition CodeGrid, exécution locale et débogage par Global Tick ; serveur de langage facultatif.",
   "codegrid.runtime.path.description": "Chemin de l’exécutable CodeGrid. Vide : moteur intégré, puis PATH.",
   "codegrid.execution.input.description": "Octets d’entrée pour l’exécution et le débogage.",
-  "codegrid.execution.boundary.description": "Comportement aux limites du plateau.",
   "codegrid.execution.seed.description": "Graine u64 en décimal canonique.",
   "codegrid.execution.customLimit.description": "Limite d’exécution de Custom.",
   "codegrid.execution.maxTicks.description": "Nombre maximal de Global Ticks validés par session.",

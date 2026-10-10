@@ -136,13 +136,6 @@ pub type Value = u8;
 pub const MAX_BOARD_DIMENSION: u64 = u32::MAX as u64;
 pub const MAX_BOARD_CELLS: u64 = u32::MAX as u64;
 
-/// Program-wide boundary behavior for normal boards.
-#[derive(Clone, Copy, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
-pub enum BoundaryMode {
-    Exit,
-    Wrap,
-}
-
 #[derive(Clone, Copy, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
 pub enum Direction {
     Up,

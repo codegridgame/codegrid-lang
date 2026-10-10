@@ -39,7 +39,6 @@ enum Request {
     Launch {
         source: String,
         input: Vec<u8>,
-        boundary: String,
         seed: String,
         custom_limit: String,
         max_work_units: String,
@@ -63,7 +62,6 @@ impl Session {
             Request::Launch {
                 source,
                 input,
-                boundary,
                 seed,
                 custom_limit,
                 max_work_units,
@@ -79,16 +77,6 @@ impl Session {
                 let custom_limit = decimal(&custom_limit, true)?;
                 let work_limit = decimal(&max_work_units, true)?;
                 let tick_limit = decimal(&max_ticks, true)?;
-                let boundary = match boundary.as_str() {
-                    "exit" => BoundaryMode::Exit,
-                    "wrap" => BoundaryMode::Wrap,
-                    _ => {
-                        return Err(DebugError::new(
-                            "debug.invalid_configuration",
-                            "boundary must be exit or wrap",
-                        ))
-                    }
-                };
                 let compilation = match codegrid_compiler::compile_with_symbols(&source) {
                     Ok(compilation) => compilation,
                     Err(diagnostics) => {
@@ -108,7 +96,6 @@ impl Session {
                         compilation.program,
                         input,
                         VmConfig::new(
-                            boundary,
                             seed,
                             NonZeroU64::new(custom_limit).ok_or("custom limit must be positive")?,
                         ),
@@ -239,7 +226,6 @@ mod tests {
         Request::Launch {
             source: source.to_owned(),
             input: vec![65],
-            boundary: "exit".into(),
             seed: "18446744073709551615".into(),
             custom_limit: "1000".into(),
             max_work_units: "100000".into(),

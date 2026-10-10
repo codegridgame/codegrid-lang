@@ -2,7 +2,6 @@
   "extension.description": "CodeGrid の編集、ローカル実行、Global Tick デバッグ。言語サーバーは任意。",
   "codegrid.runtime.path.description": "CodeGrid 実行ファイルのパス。空の場合は同梱ランタイム、次に PATH を使用。",
   "codegrid.execution.input.description": "実行とデバッグの入力バイト。",
-  "codegrid.execution.boundary.description": "ボード境界での動作。",
   "codegrid.execution.seed.description": "正規の十進数 u64 シード。",
   "codegrid.execution.customLimit.description": "Custom の実行上限。",
   "codegrid.execution.maxTicks.description": "セッションごとの確定 Global Tick 数の上限。",

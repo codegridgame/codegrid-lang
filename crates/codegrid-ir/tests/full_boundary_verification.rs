@@ -123,7 +123,7 @@ fn program_with_attachment_candidate(
 }
 
 #[test]
-fn accepts_multiple_main_entries_and_requires_at_least_one() {
+fn accepts_multiple_main_entries_and_implicit_origin() {
     let valid = program(board(
         vec![Cell::entry(Direction::Right), Cell::entry(Direction::Down)],
         2,
@@ -132,10 +132,7 @@ fn accepts_multiple_main_entries_and_requires_at_least_one() {
     assert!(VerifiedProgram::new(valid).is_ok());
 
     let invalid = program(board(vec![Cell::empty()], 1, 1));
-    let errors = VerifiedProgram::new(invalid).expect_err("Main must contain an Entry");
-    assert!(errors
-        .iter()
-        .any(|error| error.message.contains("at least one Entry")));
+    assert!(VerifiedProgram::new(invalid).is_ok());
 
     let custom_id = Slot::new(0).expect("zero is a valid Custom ID");
     let mut with_custom = program(board(vec![Cell::entry(Direction::Right)], 1, 1));
@@ -168,10 +165,10 @@ fn function_boards_require_exactly_one_entry() {
         ),
     );
 
-    let errors = VerifiedProgram::new(invalid).expect_err("Function must have exactly one Entry");
+    let errors = VerifiedProgram::new(invalid).expect_err("Function must have at most one Entry");
     assert!(errors.iter().any(|error| error
         .message
-        .contains("function board must contain exactly one Entry")));
+        .contains("function board must contain at most one Entry")));
 }
 
 #[test]

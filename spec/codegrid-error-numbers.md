@@ -39,8 +39,7 @@ Generated from [codegrid-error-codes.json](codegrid-error-codes.json). Numbers a
 | `1032` | source | `source.missing_grid` | A required Main, Custom Main, or Function grid is absent. |
 | `1033` | source | `source.height_mismatch` | The number of rows differs from the effective board height. |
 | `1034` | source | `source.width_mismatch` | A row width differs from the effective board width. |
-| `1035` | source | `source.main_entry_count` | An Outer or Custom Main board has no Entry. |
-| `1036` | source | `source.function_entry_count` | A Function board does not have exactly one Entry. |
+| `1036` | source | `source.function_entry_count` | A Function board has more than one explicit Entry. |
 | `1037` | source | `source.fold_width` | A Folded Block width differs from its owner board width. |
 | `1038` | source | `source.fold_entry` | An Entry appears in a Folded Block. |
 | `1039` | source | `source.fold_attachment` | A suffix Attachment appears in a Folded Block; conditional prefixes are allowed. |
@@ -53,8 +52,7 @@ Generated from [codegrid-error-codes.json](codegrid-error-codes.json). Numbers a
 | `2001` | ir | `ir.geometry_overflow` | Board dimensions overflow the host address space. |
 | `2002` | ir | `ir.geometry_limit` | Board geometry exceeds portable Full bounds. |
 | `2003` | ir | `ir.invalid_layout` | Dimensions are zero or do not match cell count. |
-| `2004` | ir | `ir.main_entry_count` | A Main board has no Entry. |
-| `2005` | ir | `ir.function_entry_count` | A Function does not have exactly one Entry. |
+| `2005` | ir | `ir.function_entry_count` | A Function board has more than one explicit Entry. |
 | `2006` | ir | `ir.fold_width` | Folded Block length differs from board width. |
 | `2007` | ir | `ir.fold_primary` | A Folded Block contains a forbidden instruction. |
 | `2008` | ir | `ir.entry_instruction` | An Entry shares its cell with a Primary or Attachment. |
@@ -76,7 +74,6 @@ Generated from [codegrid-error-codes.json](codegrid-error-codes.json). Numbers a
 | `3006` | vm | `ConcurrentOutputConflict` | Multiple Outer outputs conflict in one tick. |
 | `3007` | vm | `ConcurrentWriteConflict` | Multiple writes target the same scoped register, including equal values. |
 | `3008` | vm | `CustomExecutionLimitExceeded` | A Custom invocation exceeds its normative execution limit. |
-| `3009` | vm | `OutOfBounds` | Execution violates the VM contract for a required board position. |
 | `3010` | vm | `ReturnWithoutCall` | RETURN executes without a caller frame. |
 | `3100` | fault | `metric_counter_overflow` | A normative metric counter cannot represent the attempted increment. |
 | `3101` | fault | `global_tick_overflow` | The Global Tick counter cannot represent another tick. |
@@ -109,7 +106,7 @@ Generated from [codegrid-error-codes.json](codegrid-error-codes.json). Numbers a
 | `5009` | cli | `cli.vm_initialization_failed` | Verified program cannot initialize its VM. |
 | `5010` | cli | `cli.invalid_tick_limit` | The internal run boundary rejects a zero tick limit. |
 | `5100` | debug | `debug.invalid_request` | JSON-lines request is malformed, has unknown fields, has wrong field types, or names an unsupported command. |
-| `5101` | debug | `debug.invalid_configuration` | Seed/limit/boundary configuration is invalid or exceeds u64. |
+| `5101` | debug | `debug.invalid_configuration` | Seed/limit configuration is invalid or exceeds u64. |
 | `5102` | debug | `debug.already_loaded` | A session receives another launch after a successful launch. |
 | `5103` | debug | `debug.no_program` | Step or snapshot occurs before successful launch. |
 | `5104` | debug | `debug.vm_initialization_failed` | The compiled program cannot initialize its VM. |
@@ -156,7 +153,6 @@ Generated from [codegrid-error-codes.json](codegrid-error-codes.json). Numbers a
 | `7014` | browser | `invalid_tick_limit` | Requested tick budget is not a positive canonical u64 decimal string. |
 | `7015` | browser | `instance_state_limit_exceeded` | Canonical retained snapshot bytes exceed the configured instance quota. |
 | `7016` | browser | `invalid_memory_address` | An initial-memory address is not a canonical arbitrary-precision signed decimal string. |
-| `7017` | browser | `invalid_boundary_mode` | Boundary mode is neither exit nor wrap. |
 | `7018` | browser | `invalid_configuration_integer` | Seed or Custom limit is not a valid canonical integer string. |
 | `7019` | browser | `response_payload_limit_exceeded` | The full response cannot fit the configured response ceiling. |
 | `7020` | browser | `browser.invalid_host_limit` | BrowserRuntime constructor receives invalid numeric/string ceilings or host limits. |
@@ -183,7 +179,6 @@ Generated from [codegrid-error-codes.json](codegrid-error-codes.json). Numbers a
 | `7520` | server | `unsupported_operation` | The requested operation is not recognized. |
 | `7521` | server | `runtime_already_initialized` | Initialize is called twice. |
 | `7522` | server | `invalid_program_handle` | Program handle spelling is invalid. |
-| `7523` | server | `invalid_boundary` | Boundary mode is neither exit nor wrap. |
 | `7524` | server | `invalid_instance_handle` | Instance handle spelling is invalid. |
 | `7525` | server | `invalid_host_limits` | Initialization host_limits is not an object. |
 | `7526` | server | `response_payload_limit_exceeded` | The full response exceeds the configured response ceiling. |
@@ -220,7 +215,7 @@ Generated from [codegrid-error-codes.json](codegrid-error-codes.json). Numbers a
 | `9008` | level | `level_api.unsupported_profile_version` | Unsupported trusted profile version; session not created. |
 | `9009` | level | `level_api.unsupported_version` | Unsupported API version; no semantic dispatch. |
 | `9010` | level | `level_api.invalid_request` | Malformed, duplicate, unknown, incorrect-type request or unsupported operation; no semantic dispatch. |
-| `9011` | level | `level_api.invalid_configuration` | Unsupported mode/boundary or noncanonical/zero required integer; no evaluation starts. |
+| `9011` | level | `level_api.invalid_configuration` | Unsupported mode or noncanonical/zero required integer; no evaluation starts. |
 | `9012` | level | `level_api.seed_required` | Seed omitted without an explicit host seed source; no evaluation starts. |
 | `9013` | level | `level_api.invalid_handle` | Released, stale, wrong-kind, or other-session handle; no referenced operation executes. |
 | `9014` | level | `level_api.handle_exhausted` | Checked handle/namespace capacity exhausted; no new handle is created. |

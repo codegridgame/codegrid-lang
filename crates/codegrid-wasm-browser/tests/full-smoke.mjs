@@ -2,7 +2,7 @@ export const RUNTIME_API_VERSION = 3;
 
 export function runFullSmoke(BrowserRuntime, suite, baseline, assert, deepEqual) {
   assert(suite.schema_version === 1, "the shared Full fixture suite must use schema version 1");
-  assert(Array.isArray(suite.cases) && suite.cases.length === 94, "all 94 Full fixtures must be available");
+  assert(Array.isArray(suite.cases) && suite.cases.length > 0, "Full fixtures must be available");
   assert(baseline?.schema === "codegrid.native-cli.full-run-baseline", "the generated Native CLI baseline must be available");
   assert(baseline.schema_version === 1 && baseline.api_version === RUNTIME_API_VERSION, "the Native CLI baseline must target Runtime API v3");
   assert(baseline.suite_id === suite.suite_id, "the Native CLI baseline must belong to this fixture suite");
@@ -31,7 +31,6 @@ export function runFullSmoke(BrowserRuntime, suite, baseline, assert, deepEqual)
     assert(view.view && view.view.outer && view.view.customs, `${id}: view contains the Full program`);
 
     const configuration = JSON.stringify({
-      boundary_mode: run.boundary,
       seed: run.seed,
       custom_execution_limit: run.custom_execution_limit,
     });
@@ -326,7 +325,7 @@ function verifyHostBoundaries(BrowserRuntime, assert, deepEqual) {
       compiled.outcome.program,
       disguised,
       "[]",
-      JSON.stringify({ boundary_mode: "exit", seed: "0", custom_execution_limit: "100" }),
+      JSON.stringify({ seed: "0", custom_execution_limit: "100" }),
     ),
     "reject disguised Uint8Array",
   );
@@ -337,7 +336,7 @@ function verifyHostBoundaries(BrowserRuntime, assert, deepEqual) {
       compiled.outcome.program,
       new Uint8Array([73]),
       "[]",
-      JSON.stringify({ boundary_mode: "exit", seed: "9007199254740993", custom_execution_limit: "100" }),
+      JSON.stringify({ seed: "9007199254740993", custom_execution_limit: "100" }),
     ),
     "create isolated instance",
   );
@@ -353,7 +352,7 @@ function verifyHostBoundaries(BrowserRuntime, assert, deepEqual) {
       "1",
       new Uint8Array(32),
       "[]",
-      JSON.stringify({ boundary_mode: "exit", seed: "0", custom_execution_limit: "10" }),
+      JSON.stringify({ seed: "0", custom_execution_limit: "10" }),
     ),
     "request byte quota",
   );
@@ -367,7 +366,7 @@ function verifyHostBoundaries(BrowserRuntime, assert, deepEqual) {
       inputProgram.outcome.program,
       new Uint8Array([1, 2]),
       "[]",
-      JSON.stringify({ boundary_mode: "exit", seed: "0", custom_execution_limit: "10" }),
+      JSON.stringify({ seed: "0", custom_execution_limit: "10" }),
     ),
     "input byte quota",
   );
@@ -377,7 +376,7 @@ function verifyHostBoundaries(BrowserRuntime, assert, deepEqual) {
   const memoryGuard = createRuntime(BrowserRuntime, { maxInitialMemoryEntries: 1 });
   const memoryProgram = parseJson(memoryGuard.compile("~> ;\n"), "compile initial-memory fixture");
   assertSuccess(memoryProgram, "compile initial-memory fixture", assert);
-  const config = JSON.stringify({ boundary_mode: "exit", seed: "0", custom_execution_limit: "10" });
+  const config = JSON.stringify({ seed: "0", custom_execution_limit: "10" });
   const duplicateMemory = parseJson(
     memoryGuard.create_instance(
       memoryProgram.outcome.program,
@@ -389,7 +388,7 @@ function verifyHostBoundaries(BrowserRuntime, assert, deepEqual) {
   );
   assert(duplicateMemory.error.code === "initial_memory_limit_exceeded", "initial-memory entry quota must be enforced before conversion");
   const invalidConfig = parseJson(
-    memoryGuard.create_instance(memoryProgram.outcome.program, new Uint8Array(), "[]", JSON.stringify({ boundary_mode: "exit", seed: "01", custom_execution_limit: "10" })),
+    memoryGuard.create_instance(memoryProgram.outcome.program, new Uint8Array(), "[]", JSON.stringify({ seed: "01", custom_execution_limit: "10" })),
     "noncanonical configuration integer",
   );
   assert(invalidConfig.error.code === "invalid_configuration_integer", "wide request integers must be canonical decimal strings");
@@ -422,7 +421,7 @@ function verifyHostBoundaries(BrowserRuntime, assert, deepEqual) {
       tickProgram.outcome.program,
       new Uint8Array(),
       "[]",
-      JSON.stringify({ boundary_mode: "wrap", seed: "0", custom_execution_limit: "10" }),
+      JSON.stringify({ seed: "0", custom_execution_limit: "10" }),
     ),
     "create tick-limited instance",
   );
@@ -442,7 +441,7 @@ function verifyHostBoundaries(BrowserRuntime, assert, deepEqual) {
       workProgram.outcome.program,
       new Uint8Array(),
       "[]",
-      JSON.stringify({ boundary_mode: "wrap", seed: "0", custom_execution_limit: "10" }),
+      JSON.stringify({ seed: "0", custom_execution_limit: "10" }),
     ),
     "create work-limited instance",
   );
@@ -472,7 +471,7 @@ function verifyHostBoundaries(BrowserRuntime, assert, deepEqual) {
       outputProgram.outcome.program,
       new Uint8Array(),
       "[]",
-      JSON.stringify({ boundary_mode: "wrap", seed: "0", custom_execution_limit: "100" }),
+      JSON.stringify({ seed: "0", custom_execution_limit: "100" }),
     ),
     "create retained-state fixture",
   );

@@ -36,7 +36,7 @@ The v3 contract uses the following host-neutral values:
   characters or editor columns. Compiler diagnostics retain UTF-8 byte spans.
 - Input, output, register, memory, and instruction-code values are ordered
   bytes in `0..=255`. Input order is significant.
-- `boundary_mode` is `exit` or `wrap`. `seed` is an unsigned 64-bit value.
+- Normal boards always wrap horizontally and vertically. `seed` is an unsigned 64-bit value.
   `custom_execution_limit` is a positive unsigned 64-bit number of internal
   Custom ticks per invocation, with its semantics defined by the VM
   specification.
@@ -92,7 +92,7 @@ CreateInstanceRequest = {
   program: ProgramHandle,
   input: Vec<u8>,
   initial_memory: Vec<{ address: BigInt, value: u8 }>,
-  configuration: { boundary_mode: Exit | Wrap, seed: u64,
+  configuration: { seed: u64,
                    custom_execution_limit: positive u64 }
 }
 StepRequest        = { api_version: u32, instance: InstanceHandle }
@@ -133,7 +133,7 @@ feed the canonical IR verifier before any handle or instance is created. A
 client assertion that data was compiled or verified is never authoritative.
 
 `create_instance.configuration` contains exactly the execution settings
-required from the host: `boundary_mode`, `seed`, and positive
+required from the host: `seed` and positive
 `custom_execution_limit`. `input` is an ordered byte sequence. `initial_memory`
 is the sparse outer-memory entry collection described in Section 2. No setting
 is read from process state, environment variables, clocks, or host randomness.

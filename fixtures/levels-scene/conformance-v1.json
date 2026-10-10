@@ -7,7 +7,6 @@
       "level": "echo-duplicates.json",
       "program": "echo.cg",
       "mode": "Official",
-      "boundary": "Exit",
       "seed": "18446744073709551615",
       "custom_limit": "1000",
       "expected_status": "Passed"
@@ -17,7 +16,6 @@
       "level": "wrong-output.json",
       "program": "echo.cg",
       "mode": "Official",
-      "boundary": "Exit",
       "seed": "18446744073709551615",
       "custom_limit": "1000",
       "expected_status": "TestFailed"
@@ -27,7 +25,6 @@
       "level": "incomplete-output.json",
       "program": "halt.cg",
       "mode": "Official",
-      "boundary": "Exit",
       "seed": "18446744073709551615",
       "custom_limit": "1000",
       "expected_status": "TestFailed"
@@ -37,7 +34,6 @@
       "level": "empty-output.json",
       "program": "halt.cg",
       "mode": "Official",
-      "boundary": "Exit",
       "seed": "18446744073709551615",
       "custom_limit": "1000",
       "expected_status": "Passed"
@@ -47,7 +43,6 @@
       "level": "unexpected-output.json",
       "program": "echo.cg",
       "mode": "Official",
-      "boundary": "Exit",
       "seed": "18446744073709551615",
       "custom_limit": "1000",
       "expected_status": "TestFailed"
@@ -57,7 +52,6 @@
       "level": "hidden-wrong-official.json",
       "program": "echo.cg",
       "mode": "Official",
-      "boundary": "Exit",
       "seed": "18446744073709551615",
       "custom_limit": "1000",
       "expected_status": "TestFailed"
@@ -67,7 +61,6 @@
       "level": "hidden-wrong-debug.json",
       "program": "echo.cg",
       "mode": "Debug",
-      "boundary": "Exit",
       "seed": "18446744073709551615",
       "custom_limit": "1000",
       "expected_status": "Passed"
@@ -77,7 +70,6 @@
       "level": "static-constraint.json",
       "program": "echo.cg",
       "mode": "Official",
-      "boundary": "Exit",
       "seed": "18446744073709551615",
       "custom_limit": "1000",
       "expected_status": "ConstraintExceeded"
@@ -87,7 +79,6 @@
       "level": "dynamic-constraint.json",
       "program": "echo.cg",
       "mode": "Official",
-      "boundary": "Exit",
       "seed": "18446744073709551615",
       "custom_limit": "1000",
       "expected_status": "ConstraintExceeded"
@@ -97,7 +88,6 @@
       "level": "rating-zero.json",
       "program": "echo.cg",
       "mode": "Official",
-      "boundary": "Exit",
       "seed": "18446744073709551615",
       "custom_limit": "1000",
       "expected_status": "Passed"
@@ -107,7 +97,6 @@
       "level": "read-exhaustion.json",
       "program": "read-exhaustion.cg",
       "mode": "Official",
-      "boundary": "Exit",
       "seed": "18446744073709551615",
       "custom_limit": "1000",
       "expected_status": "Passed"
@@ -117,7 +106,6 @@
       "level": "functions.json",
       "program": "functions.cg",
       "mode": "Official",
-      "boundary": "Exit",
       "seed": "18446744073709551615",
       "custom_limit": "1000",
       "expected_status": "Passed"
@@ -127,7 +115,6 @@
       "level": "folded.json",
       "program": "folded.cg",
       "mode": "Official",
-      "boundary": "Exit",
       "seed": "18446744073709551615",
       "custom_limit": "1000",
       "expected_status": "Passed"
@@ -137,7 +124,6 @@
       "level": "custom-memory.json",
       "program": "custom-memory.cg",
       "mode": "Official",
-      "boundary": "Exit",
       "seed": "18446744073709551615",
       "custom_limit": "1000",
       "expected_status": "Passed"
@@ -147,7 +133,6 @@
       "level": "custom-limit.json",
       "program": "custom-limit.cg",
       "mode": "Official",
-      "boundary": "Exit",
       "seed": "18446744073709551615",
       "custom_limit": "1",
       "expected_status": "RuntimeError"
@@ -157,7 +142,6 @@
       "level": "thread-conflict.json",
       "program": "thread-conflict.cg",
       "mode": "Official",
-      "boundary": "Exit",
       "seed": "18446744073709551615",
       "custom_limit": "1000",
       "expected_status": "RuntimeError"
@@ -167,7 +151,6 @@
       "level": "repeat.json",
       "program": "repeat.cg",
       "mode": "Official",
-      "boundary": "Exit",
       "seed": "18446744073709551615",
       "custom_limit": "1000",
       "expected_status": "Passed"
@@ -177,7 +160,6 @@
       "level": "generated-custom.json",
       "program": "generated-custom.cg",
       "mode": "Official",
-      "boundary": "Exit",
       "seed": "18446744073709551615",
       "custom_limit": "1000",
       "expected_status": "ProgramRejected"
@@ -187,7 +169,6 @@
       "level": "generated-outer.json",
       "program": "generated-outer.cg",
       "mode": "Official",
-      "boundary": "Exit",
       "seed": "18446744073709551615",
       "custom_limit": "1000",
       "expected_status": "ProgramRejected"
@@ -197,7 +178,6 @@
       "level": "attachments.json",
       "program": "attachments.cg",
       "mode": "Official",
-      "boundary": "Exit",
       "seed": "18446744073709551615",
       "custom_limit": "1000",
       "expected_status": "Passed"
@@ -207,7 +187,6 @@
       "level": "instruction-stack.json",
       "program": "instruction-stack.cg",
       "mode": "Official",
-      "boundary": "Exit",
       "seed": "18446744073709551615",
       "custom_limit": "1000",
       "expected_status": "Passed"
@@ -217,7 +196,6 @@
       "level": "memory.json",
       "program": "memory.cg",
       "mode": "Official",
-      "boundary": "Exit",
       "seed": "18446744073709551615",
       "custom_limit": "1000",
       "expected_status": "Passed"
@@ -227,7 +205,6 @@
       "level": "randomness.json",
       "program": "randomness.cg",
       "mode": "Official",
-      "boundary": "Exit",
       "seed": "18446744073709551615",
       "custom_limit": "1000",
       "expected_status": "Passed"
@@ -237,7 +214,6 @@
       "level": "halt-output-error-priority.json",
       "program": "halt-output-error-priority.cg",
       "mode": "Official",
-      "boundary": "Exit",
       "seed": "18446744073709551615",
       "custom_limit": "1000",
       "expected_status": "RuntimeError"
@@ -247,7 +223,6 @@
       "level": "constraint-max_boards_used.json",
       "program": "functions.cg",
       "mode": "Official",
-      "boundary": "Exit",
       "seed": "18446744073709551615",
       "custom_limit": "1000",
       "expected_status": "ConstraintExceeded"
@@ -257,7 +232,6 @@
       "level": "constraint-max_call_stack_depth.json",
       "program": "functions.cg",
       "mode": "Official",
-      "boundary": "Exit",
       "seed": "18446744073709551615",
       "custom_limit": "1000",
       "expected_status": "ConstraintExceeded"
@@ -267,7 +241,6 @@
       "level": "constraint-max_data_stack_depth.json",
       "program": "memory.cg",
       "mode": "Official",
-      "boundary": "Exit",
       "seed": "18446744073709551615",
       "custom_limit": "1000",
       "expected_status": "ConstraintExceeded"
@@ -277,7 +250,6 @@
       "level": "constraint-max_functions_used.json",
       "program": "functions.cg",
       "mode": "Official",
-      "boundary": "Exit",
       "seed": "18446744073709551615",
       "custom_limit": "1000",
       "expected_status": "ConstraintExceeded"
@@ -287,7 +259,6 @@
       "level": "constraint-max_instruction_kinds.json",
       "program": "echo.cg",
       "mode": "Official",
-      "boundary": "Exit",
       "seed": "18446744073709551615",
       "custom_limit": "1000",
       "expected_status": "ConstraintExceeded"
@@ -297,7 +268,6 @@
       "level": "constraint-max_instruction_stack_depth.json",
       "program": "instruction-stack.cg",
       "mode": "Official",
-      "boundary": "Exit",
       "seed": "18446744073709551615",
       "custom_limit": "1000",
       "expected_status": "ConstraintExceeded"
@@ -307,7 +277,6 @@
       "level": "constraint-max_memory_addresses.json",
       "program": "memory.cg",
       "mode": "Official",
-      "boundary": "Exit",
       "seed": "18446744073709551615",
       "custom_limit": "1000",
       "expected_status": "ConstraintExceeded"
@@ -317,7 +286,6 @@
       "level": "constraint-max_operation_count.json",
       "program": "echo.cg",
       "mode": "Official",
-      "boundary": "Exit",
       "seed": "18446744073709551615",
       "custom_limit": "1000",
       "expected_status": "ConstraintExceeded"
@@ -327,7 +295,6 @@
       "level": "constraint-max_ticks.json",
       "program": "echo.cg",
       "mode": "Official",
-      "boundary": "Exit",
       "seed": "18446744073709551615",
       "custom_limit": "1000",
       "expected_status": "ConstraintExceeded"
@@ -337,7 +304,6 @@
       "level": "rating-max-alias.json",
       "program": "echo.cg",
       "mode": "Official",
-      "boundary": "Exit",
       "seed": "18446744073709551615",
       "custom_limit": "1000",
       "expected_status": "Passed"
@@ -347,7 +313,6 @@
       "level": "generated-memory.json",
       "program": "generated-outer.cg",
       "mode": "Official",
-      "boundary": "Exit",
       "seed": "18446744073709551615",
       "custom_limit": "1000",
       "expected_status": "ProgramRejected"
@@ -357,7 +322,6 @@
       "level": "hidden-generated.json",
       "program": "generated-outer.cg",
       "mode": "Official",
-      "boundary": "Exit",
       "seed": "18446744073709551615",
       "custom_limit": "1000",
       "expected_status": "ProgramRejected"
@@ -367,7 +331,6 @@
       "level": "cmp-prefix.json",
       "program": "cmp-prefix.cg",
       "mode": "Official",
-      "boundary": "Exit",
       "seed": "18446744073709551615",
       "custom_limit": "1000",
       "expected_status": "Passed"
@@ -377,7 +340,6 @@
       "level": "cmp-denied.json",
       "program": "cmp-prefix.cg",
       "mode": "Official",
-      "boundary": "Exit",
       "seed": "18446744073709551615",
       "custom_limit": "1000",
       "expected_status": "ProgramRejected"
@@ -387,7 +349,6 @@
       "level": "prefix-denied.json",
       "program": "cmp-prefix.cg",
       "mode": "Official",
-      "boundary": "Exit",
       "seed": "18446744073709551615",
       "custom_limit": "1000",
       "expected_status": "ProgramRejected"
@@ -397,7 +358,6 @@
       "level": "prefix-static-kinds.json",
       "program": "cmp-prefix.cg",
       "mode": "Official",
-      "boundary": "Exit",
       "seed": "18446744073709551615",
       "custom_limit": "1000",
       "expected_status": "ConstraintExceeded"
@@ -407,7 +367,6 @@
       "level": "prefix-operation-cost.json",
       "program": "cmp-prefix.cg",
       "mode": "Official",
-      "boundary": "Exit",
       "seed": "18446744073709551615",
       "custom_limit": "1000",
       "expected_status": "ConstraintExceeded"

@@ -674,7 +674,6 @@ impl SceneCaseSession {
                     self.program.clone(),
                     input,
                     VmConfig::new(
-                        self.config.boundary_mode,
                         mix64(self.config.shuffle_seed ^ 0x43474C564D303031),
                         self.config.custom_execution_limit,
                     ),

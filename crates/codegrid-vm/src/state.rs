@@ -79,6 +79,15 @@ impl Vm {
             ));
         }
 
+        if threads.is_empty() {
+            threads.push(ThreadState::initial(
+                0,
+                Coordinate { x: 0, y: 0 },
+                Direction::Right,
+                outer_thread_state(config.seed(), 0),
+            ));
+        }
+
         Ok(Self {
             verified_program: program.clone(),
             runtime_program: program.program().outer.clone(),

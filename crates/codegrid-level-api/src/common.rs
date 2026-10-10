@@ -27,7 +27,7 @@ pub(crate) enum Operation {
         level: String,
         program: String,
         mode: String,
-        boundary_mode: String,
+
         shuffle_seed: Option<String>,
         custom_execution_limit: String,
     },
@@ -103,7 +103,6 @@ pub(crate) fn parse_versioned_request(
             "level",
             "program",
             "mode",
-            "boundary_mode",
             "shuffle_seed",
             "custom_execution_limit",
         ],
@@ -232,7 +231,7 @@ pub(crate) fn common_result_json(r: CommonResult<'_>, provenance: &Value) -> Val
             json!({"code":reason.code(),"error_number":codegrid_model::error_number("level",reason.code()),"reason":format!("{reason:?}")}),
         ),
     };
-    json!({"status":status,"error_number":result_code.and_then(|c|codegrid_model::error_number("level",c)),"replay":provenance,"failure":rejection,"level_id":r.level_id,"level_version":r.level_version,"evaluator_contract":r.evaluator_contract,"evaluator_build":env!("CODEGRID_LEVEL_BUILD_ID"),"mode":format!("{:?}",r.mode),"configuration":{"boundary_mode":format!("{:?}",r.config.boundary_mode),"shuffle_seed":r.config.shuffle_seed.to_string(),"vm_seed":r.vm_seed.to_string(),"custom_execution_limit":r.config.custom_execution_limit.get().to_string(),"profile_id":r.config.safety.id,"profile_version":r.config.safety.version,"safety":{"max_output_bytes":r.config.safety.max_output_bytes.get().to_string(),"max_state_units":r.config.safety.max_state_units.get().to_string(),"max_feedback_bytes":r.config.safety.max_feedback_bytes.get().to_string(),"max_ticks_per_test":r.config.safety.per_test_ticks.get().to_string(),"max_work_per_call":r.config.safety.per_call_work.get().to_string(),"max_total_work":r.config.safety.cumulative_work.get().to_string()}},"constraints":r.constraints.iter().map(|c|json!({"name":c.name,"limit":c.limit.to_string(),"value":c.value.to_string(),"passed":c.passed})).collect::<Vec<_>>(),"scoring":r.scoring.iter().map(|s|json!({"name":s.name,"target":s.target.map(|t|t.to_string()),"value":s.value.to_string(),"direction":"minimize","rating":s.rating})).collect::<Vec<_>>(),"partial_metrics":metrics_json(r.partial_metrics),"final_metrics":r.final_metrics.map(metrics_json),"rating":r.rating})
+    json!({"status":status,"error_number":result_code.and_then(|c|codegrid_model::error_number("level",c)),"replay":provenance,"failure":rejection,"level_id":r.level_id,"level_version":r.level_version,"evaluator_contract":r.evaluator_contract,"evaluator_build":env!("CODEGRID_LEVEL_BUILD_ID"),"mode":format!("{:?}",r.mode),"configuration":{"shuffle_seed":r.config.shuffle_seed.to_string(),"vm_seed":r.vm_seed.to_string(),"custom_execution_limit":r.config.custom_execution_limit.get().to_string(),"profile_id":r.config.safety.id,"profile_version":r.config.safety.version,"safety":{"max_output_bytes":r.config.safety.max_output_bytes.get().to_string(),"max_state_units":r.config.safety.max_state_units.get().to_string(),"max_feedback_bytes":r.config.safety.max_feedback_bytes.get().to_string(),"max_ticks_per_test":r.config.safety.per_test_ticks.get().to_string(),"max_work_per_call":r.config.safety.per_call_work.get().to_string(),"max_total_work":r.config.safety.cumulative_work.get().to_string()}},"constraints":r.constraints.iter().map(|c|json!({"name":c.name,"limit":c.limit.to_string(),"value":c.value.to_string(),"passed":c.passed})).collect::<Vec<_>>(),"scoring":r.scoring.iter().map(|s|json!({"name":s.name,"target":s.target.map(|t|t.to_string()),"value":s.value.to_string(),"direction":"minimize","rating":s.rating})).collect::<Vec<_>>(),"partial_metrics":metrics_json(r.partial_metrics),"final_metrics":r.final_metrics.map(metrics_json),"rating":r.rating})
 }
 pub(crate) fn response_too_large() -> ApiError {
     ApiError::new(

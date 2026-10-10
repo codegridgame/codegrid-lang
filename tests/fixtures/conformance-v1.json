@@ -7,7 +7,6 @@
       "id": "read-and-output-byte",
       "source": "~> , . ;\n",
       "run": {
-        "boundary": "exit",
         "seed": "0",
         "custom_execution_limit": "100",
         "max_ticks": "10",
@@ -53,7 +52,6 @@
       "id": "u8-addition-wraps",
       "source": "~> , + . ;\n",
       "run": {
-        "boundary": "exit",
         "seed": "0",
         "custom_execution_limit": "100",
         "max_ticks": "10",
@@ -100,7 +98,6 @@
       "id": "u8-subtraction-wraps",
       "source": "~> - . ;\n",
       "run": {
-        "boundary": "exit",
         "seed": "0",
         "custom_execution_limit": "100",
         "max_ticks": "10",
@@ -144,7 +141,6 @@
       "id": "empty-input-read-sets-flag-and-guarded-turn",
       "source": "~> , ?!v\n_ _ ;\n",
       "run": {
-        "boundary": "exit",
         "seed": "0",
         "custom_execution_limit": "100",
         "max_ticks": "10",
@@ -187,7 +183,6 @@
       "id": "if-zero-turns-instead-of-continuing",
       "source": "@size 2x3\n@main\n~> ?0v\n_ .\n_ ;\n@end main\n",
       "run": {
-        "boundary": "exit",
         "seed": "0",
         "custom_execution_limit": "100",
         "max_ticks": "10",
@@ -232,7 +227,6 @@
       "id": "decode-and-encode-primary-instruction",
       "source": "~> , & % . ;\n",
       "run": {
-        "boundary": "exit",
         "seed": "0",
         "custom_execution_limit": "100",
         "max_ticks": "10",
@@ -280,7 +274,6 @@
       "id": "decode-and-encode-empty-instruction-stack-code",
       "source": "~> , & % . ;\n",
       "run": {
-        "boundary": "exit",
         "seed": "0",
         "custom_execution_limit": "100",
         "max_ticks": "10",
@@ -328,7 +321,6 @@
       "id": "clear-resets-register-before-output",
       "source": "~> , ! . ;\n",
       "run": {
-        "boundary": "exit",
         "seed": "0",
         "custom_execution_limit": "100",
         "max_ticks": "10",
@@ -375,7 +367,6 @@
       "id": "nand-complements-register-and-data-stack",
       "source": "~> , ( , $& . ;\n",
       "run": {
-        "boundary": "exit",
         "seed": "0",
         "custom_execution_limit": "100",
         "max_ticks": "10",
@@ -424,7 +415,6 @@
       "id": "shift-truncates-left-and-shifts-right-logically",
       "source": "~> , $< . , $> . ;\n",
       "run": {
-        "boundary": "exit",
         "seed": "0",
         "custom_execution_limit": "100",
         "max_ticks": "10",
@@ -473,7 +463,6 @@
       "id": "register-pointer-wraps-across-r0-and-r9",
       "source": "~> { + } + ;\n",
       "run": {
-        "boundary": "exit",
         "seed": "0",
         "custom_execution_limit": "100",
         "max_ticks": "10",
@@ -515,7 +504,6 @@
       "id": "wrap-boundary-yields-after-bounded-run",
       "source": "~> <\n",
       "run": {
-        "boundary": "wrap",
         "seed": "0",
         "custom_execution_limit": "100",
         "max_ticks": "4",
@@ -550,22 +538,21 @@
       }
     },
     {
-      "id": "failed-move-rolls-back-instruction-write",
+      "id": "edge-crossing-commits-instruction-write",
       "source": "~> +\n",
       "run": {
-        "boundary": "exit",
         "seed": "0",
         "custom_execution_limit": "100",
         "max_ticks": "10",
         "input": []
       },
       "expected": {
-        "process_exit_code": 5,
-        "status": "error",
-        "vm_status": "error",
+        "process_exit_code": 6,
+        "status": "tick_limit_reached",
+        "vm_status": "running",
         "output": [],
         "registers": [
-          0,
+          5,
           0,
           0,
           0,
@@ -576,8 +563,8 @@
           0,
           0
         ],
-        "committed_ticks": "1",
-        "operation_count": "1",
+        "committed_ticks": "10",
+        "operation_count": "5",
         "used_cell_count": "2",
         "used_memory_address_count": "0",
         "peak_data_stack_usage": "0",
@@ -586,19 +573,13 @@
         "instruction_variety": [
           "Add"
         ],
-        "error_codes": [
-          "OutOfBounds"
-        ],
-        "error_global_ticks": [
-          "2"
-        ]
+        "error_codes": []
       }
     },
     {
       "id": "repeat-runs-primary-across-ticks",
       "source": "~> +x2 ;\n",
       "run": {
-        "boundary": "exit",
         "seed": "0",
         "custom_execution_limit": "100",
         "max_ticks": "10",
@@ -639,7 +620,6 @@
       "id": "repeat-x5-executes-once-per-tick",
       "source": "~> +x5 . ;\n",
       "run": {
-        "boundary": "exit",
         "seed": "0",
         "custom_execution_limit": "100",
         "max_ticks": "10",
@@ -683,7 +663,6 @@
       "id": "repeat-read-consumes-one-input-per-execution",
       "source": "~> ,x3 . ;\n",
       "run": {
-        "boundary": "exit",
         "seed": "0",
         "custom_execution_limit": "100",
         "max_ticks": "10",
@@ -731,7 +710,6 @@
       "id": "fold-entry-and-resume-ticks",
       "source": "@main\n~> $0 . ;\n@end main\n@main.M0\n+ > _ ^\n@end M0\n",
       "run": {
-        "boundary": "exit",
         "seed": "0",
         "custom_execution_limit": "100",
         "max_ticks": "10",
@@ -775,7 +753,6 @@
       "id": "fold-reentry-resets-local-control-state",
       "source": "@main\n~> $0 $0 . ;\n@end main\n@main.M0\n+ > ^ _ _\n@end M0\n",
       "run": {
-        "boundary": "exit",
         "seed": "0",
         "custom_execution_limit": "100",
         "max_ticks": "20",
@@ -819,7 +796,6 @@
       "id": "concurrent-function-calls-use-isolated-call-frames",
       "source": "@main\n~> [0 ; [0 ~<\n@end main\n@main.F0\n~> > ]\n@end F0\n",
       "run": {
-        "boundary": "exit",
         "seed": "0",
         "custom_execution_limit": "100",
         "max_ticks": "20",
@@ -883,7 +859,6 @@
       "id": "fold-shares-caller-data-stack",
       "source": "@main\n~> $0 ) . ;\n@end main\n@main.M0\n+ ( ^ _ _\n@end M0\n",
       "run": {
-        "boundary": "exit",
         "seed": "0",
         "custom_execution_limit": "100",
         "max_ticks": "10",
@@ -926,10 +901,9 @@
       }
     },
     {
-      "id": "fold-m-right-wraps-under-exit-boundary",
+      "id": "fold-m-right-wraps",
       "source": "@main\n~> + $0 ;\n@end main\n@main.M0\n?0^ - > _\n@end M0\n",
       "run": {
-        "boundary": "exit",
         "seed": "0",
         "custom_execution_limit": "100",
         "max_ticks": "10",
@@ -969,10 +943,9 @@
       }
     },
     {
-      "id": "fold-m-left-wraps-under-exit-boundary",
+      "id": "fold-m-left-wraps",
       "source": "@main\n~> $0 ;\n@end main\n@main.M0\n< _ ?0^\n@end M0\n",
       "run": {
-        "boundary": "exit",
         "seed": "0",
         "custom_execution_limit": "100",
         "max_ticks": "10",
@@ -1010,19 +983,18 @@
       }
     },
     {
-      "id": "fold-resume-leaving-exit-boundary-reports-out-of-bounds",
+      "id": "fold-resume-wraps-at-normal-board-edge",
       "source": "@main\n~> $0\n@end main\n@main.M0\n^ _\n@end M0\n",
       "run": {
-        "boundary": "exit",
         "seed": "0",
         "custom_execution_limit": "100",
         "max_ticks": "10",
         "input": []
       },
       "expected": {
-        "process_exit_code": 5,
-        "status": "error",
-        "vm_status": "error",
+        "process_exit_code": 6,
+        "status": "tick_limit_reached",
+        "vm_status": "running",
         "output": [],
         "registers": [
           0,
@@ -1036,7 +1008,7 @@
           0,
           0
         ],
-        "committed_ticks": "2",
+        "committed_ticks": "10",
         "operation_count": "0",
         "used_cell_count": "3",
         "used_memory_address_count": "0",
@@ -1044,19 +1016,13 @@
         "peak_instruction_stack_usage": "0",
         "peak_call_stack_usage": "0",
         "instruction_variety": [],
-        "error_codes": [
-          "OutOfBounds"
-        ],
-        "error_global_ticks": [
-          "3"
-        ]
+        "error_codes": []
       }
     },
     {
       "id": "fold-entry-resets-local-position-and-direction",
       "source": "@main\n~> $0 $0 . ;\n@end main\n@main.M0 + > ^ _ _\n",
       "run": {
-        "boundary": "exit",
         "seed": "0",
         "custom_execution_limit": "100",
         "max_ticks": "20",
@@ -1100,7 +1066,6 @@
       "id": "custom-invocation-and-return",
       "source": "@main\n~> #0 ;\n@end\n@C0\n~> #]\n@end\n",
       "run": {
-        "boundary": "exit",
         "seed": "0",
         "custom_execution_limit": "100",
         "max_ticks": "10",
@@ -1141,7 +1106,6 @@
       "id": "custom-return-inside-outer-fold-preserves-fold-direction",
       "source": "@main\n~> $0 ;\n@end main\n@main.M0 #0 ; _\n@C0\n~> v\n_ #]\n@end C0\n",
       "run": {
-        "boundary": "exit",
         "seed": "0",
         "custom_execution_limit": "100",
         "max_ticks": "10",
@@ -1182,7 +1146,6 @@
       "id": "call-read-code-attachment-runs-after-return",
       "source": "@main\n~> [0* % . ;\n@end main\n@main.F0\n~> ]\n@end main.F0\n",
       "run": {
-        "boundary": "exit",
         "seed": "0",
         "custom_execution_limit": "100",
         "max_ticks": "10",
@@ -1229,7 +1192,6 @@
       "id": "call-write-code-attachment-runs-after-return",
       "source": "@main\n~> +* [0= ;\n@end main\n@main.F0\n~> ]\n@end main.F0\n",
       "run": {
-        "boundary": "exit",
         "seed": "0",
         "custom_execution_limit": "100",
         "max_ticks": "10",
@@ -1286,7 +1248,6 @@
       "id": "return-read-code-attachment-is-skipped-before-caller-resume",
       "source": "@main\n~> +* [0= ;\n@end main\n@main.F0\n~> ]* +\n@end F0\n",
       "run": {
-        "boundary": "exit",
         "seed": "0",
         "custom_execution_limit": "100",
         "max_ticks": "10",
@@ -1346,7 +1307,6 @@
       "id": "return-write-code-attachment-is-skipped",
       "source": "@main\n~> +* [0 ;\n@end main\n@main.F0\n~> ]= +\n@end F0\n",
       "run": {
-        "boundary": "exit",
         "seed": "0",
         "custom_execution_limit": "100",
         "max_ticks": "10",
@@ -1405,7 +1365,6 @@
       "id": "tail-call-reuses-the-current-call-frame",
       "source": "@main\n~> [0\n@end\n@main.F0\n~> [0 _ ]\n@end F0\n",
       "run": {
-        "boundary": "exit",
         "seed": "0",
         "custom_execution_limit": "100",
         "max_ticks": "10",
@@ -1445,7 +1404,6 @@
       "id": "memory-store-load-round-trip",
       "source": "~> , ( $) $( . ;\n",
       "run": {
-        "boundary": "exit",
         "seed": "0",
         "custom_execution_limit": "100",
         "max_ticks": "10",
@@ -1500,7 +1458,6 @@
       "id": "large-initial-memory-address-round-trips-as-decimal",
       "source": "~> ;\n",
       "run": {
-        "boundary": "exit",
         "seed": "0",
         "custom_execution_limit": "100",
         "max_ticks": "10",
@@ -1552,7 +1509,6 @@
       "id": "outer-self-modification-persists-in-snapshot",
       "source": "@main\n~> , & >= ;\n@end main\n",
       "run": {
-        "boundary": "exit",
         "seed": "0",
         "custom_execution_limit": "100",
         "max_ticks": "10",
@@ -1611,7 +1567,6 @@
       "id": "outer-prng-seed-zero-golden-vector",
       "source": "~> ??\n",
       "run": {
-        "boundary": "wrap",
         "seed": "0",
         "custom_execution_limit": "100",
         "max_ticks": "2",
@@ -1653,7 +1608,6 @@
       "id": "outer-prng-u64-seed-above-javascript-safe-integer",
       "source": "@size 2x2\n@main\n~> ??\n~> ??\n@end main\n",
       "run": {
-        "boundary": "wrap",
         "seed": "9007199254740993",
         "custom_execution_limit": "100",
         "max_ticks": "2",
@@ -1695,16 +1649,15 @@
       "id": "halt-does-not-skip-other-threads-current-tick",
       "source": "@main\n~> ; ~> _\n@end main\n",
       "run": {
-        "boundary": "exit",
         "seed": "0",
         "custom_execution_limit": "100",
         "max_ticks": "10",
         "input": []
       },
       "expected": {
-        "process_exit_code": 5,
-        "status": "error",
-        "vm_status": "error",
+        "process_exit_code": 0,
+        "status": "halted",
+        "vm_status": "halted",
         "output": [],
         "registers": [
           0,
@@ -1718,7 +1671,7 @@
           0,
           0
         ],
-        "committed_ticks": "1",
+        "committed_ticks": "2",
         "operation_count": "1",
         "used_cell_count": "4",
         "used_memory_address_count": "0",
@@ -1728,28 +1681,22 @@
         "instruction_variety": [
           "Halt"
         ],
-        "error_codes": [
-          "OutOfBounds"
-        ],
-        "error_global_ticks": [
-          "2"
-        ]
+        "error_codes": []
       }
     },
     {
       "id": "custom-halt-does-not-skip-other-threads-current-tick",
       "source": "@main\n~> #0 ~> _\n@end main\n@C0\n~> ;\n@end C0\n",
       "run": {
-        "boundary": "exit",
         "seed": "0",
         "custom_execution_limit": "100",
         "max_ticks": "10",
         "input": []
       },
       "expected": {
-        "process_exit_code": 5,
-        "status": "error",
-        "vm_status": "error",
+        "process_exit_code": 0,
+        "status": "halted",
+        "vm_status": "halted",
         "output": [],
         "registers": [
           0,
@@ -1763,7 +1710,7 @@
           0,
           0
         ],
-        "committed_ticks": "1",
+        "committed_ticks": "2",
         "operation_count": "1",
         "used_cell_count": "6",
         "used_memory_address_count": "0",
@@ -1773,19 +1720,13 @@
         "instruction_variety": [
           "Halt"
         ],
-        "error_codes": [
-          "OutOfBounds"
-        ],
-        "error_global_ticks": [
-          "2"
-        ]
+        "error_codes": []
       }
     },
     {
       "id": "custom-halt-prioritizes-over-same-tick-custom-return",
       "source": "@main\n~> #0 ;\n@end main\n@C0\n~> #]\n; ~<\n@end C0\n",
       "run": {
-        "boundary": "exit",
         "seed": "0",
         "custom_execution_limit": "10",
         "max_ticks": "10",
@@ -1826,7 +1767,6 @@
       "id": "custom-self-modification-resets-between-invocations",
       "source": "@main\n~> #0 ) . #0 ) . ;\n@end main\n@C0\n~> +* -= . #]\n@end C0\n",
       "run": {
-        "boundary": "exit",
         "seed": "0",
         "custom_execution_limit": "10",
         "max_ticks": "10",
@@ -1876,7 +1816,6 @@
       "id": "rejected-register-conflict-preserves-stack-peak",
       "source": "~> ( ) _\n~> ( ) _\n~> _ ( _\n",
       "run": {
-        "boundary": "exit",
         "seed": "0",
         "custom_execution_limit": "100",
         "max_ticks": "10",
@@ -1919,19 +1858,18 @@
       }
     },
     {
-      "id": "same-cell-out-of-bounds-errors-order-by-thread-id",
+      "id": "multiple-threads-wrap-without-boundary-errors",
       "source": "@main\n_ ~<\n~^ _\n@end main\n",
       "run": {
-        "boundary": "exit",
         "seed": "0",
         "custom_execution_limit": "100",
         "max_ticks": "10",
         "input": []
       },
       "expected": {
-        "process_exit_code": 5,
-        "status": "error",
-        "vm_status": "error",
+        "process_exit_code": 6,
+        "status": "tick_limit_reached",
+        "vm_status": "running",
         "output": [],
         "registers": [
           0,
@@ -1945,7 +1883,7 @@
           0,
           0
         ],
-        "committed_ticks": "1",
+        "committed_ticks": "10",
         "operation_count": "0",
         "used_cell_count": "3",
         "used_memory_address_count": "0",
@@ -1953,34 +1891,22 @@
         "peak_instruction_stack_usage": "0",
         "peak_call_stack_usage": "0",
         "instruction_variety": [],
-        "error_codes": [
-          "OutOfBounds",
-          "OutOfBounds"
-        ],
-        "error_global_ticks": [
-          "2",
-          "2"
-        ],
-        "error_thread_ids": [
-          "0",
-          "1"
-        ]
+        "error_codes": []
       }
     },
     {
-      "id": "failed-call-tick-rolls-back-frame-but-preserves-peak",
+      "id": "call-and-sibling-edge-crossing-commit-together",
       "source": "@main\n~> [0 ~> >\n@end main\n@main.F0\n~> _ _ _\n@end F0\n",
       "run": {
-        "boundary": "exit",
         "seed": "0",
         "custom_execution_limit": "100",
         "max_ticks": "10",
         "input": []
       },
       "expected": {
-        "process_exit_code": 5,
-        "status": "error",
-        "vm_status": "error",
+        "process_exit_code": 6,
+        "status": "tick_limit_reached",
+        "vm_status": "running",
         "output": [],
         "registers": [
           0,
@@ -1994,33 +1920,27 @@
           0,
           0
         ],
-        "committed_ticks": "1",
-        "operation_count": "1",
-        "used_cell_count": "4",
+        "committed_ticks": "10",
+        "operation_count": "2",
+        "used_cell_count": "8",
         "used_memory_address_count": "0",
         "peak_data_stack_usage": "0",
         "peak_instruction_stack_usage": "0",
-        "peak_call_stack_usage": "1",
+        "peak_call_stack_usage": "2",
         "instruction_variety": [
           "Call"
         ],
-        "error_codes": [
-          "OutOfBounds"
-        ],
-        "error_global_ticks": [
-          "2"
-        ],
+        "error_codes": [],
         "thread_call_stack_sizes": [
-          0,
-          0
+          1,
+          1
         ]
       }
     },
     {
-      "id": "same-tick-conflict-and-boundary-errors-use-canonical-order",
+      "id": "same-tick-register-conflict-at-wrapping-edge",
       "source": "@main\n~> + ~> +\n@end main\n",
       "run": {
-        "boundary": "exit",
         "seed": "0",
         "custom_execution_limit": "100",
         "max_ticks": "10",
@@ -2054,12 +1974,7 @@
           "Add"
         ],
         "error_codes": [
-          "ConcurrentWriteConflict",
-          "OutOfBounds"
-        ],
-        "error_global_ticks": [
-          "2",
-          "2"
+          "ConcurrentWriteConflict"
         ]
       }
     },
@@ -2067,7 +1982,6 @@
       "id": "multiple-main-entries-assign-thread-ids-in-grid-order",
       "source": "~> ; _ _\n_ _ ; ~<\n",
       "run": {
-        "boundary": "exit",
         "seed": "0",
         "custom_execution_limit": "100",
         "max_ticks": "10",
@@ -2125,7 +2039,6 @@
       "id": "simultaneous-nonempty-reads-roll-back-the-global-tick",
       "source": "@main\n~> ,\n~> ,\n@end main\n",
       "run": {
-        "boundary": "wrap",
         "seed": "0",
         "custom_execution_limit": "100",
         "max_ticks": "10",
@@ -2183,7 +2096,6 @@
       "id": "equal-memory-writes-conflict-and-roll-back-stack-pops",
       "source": "@main\n~> ( $)\n~> ( $)\n@end main\n",
       "run": {
-        "boundary": "wrap",
         "seed": "0",
         "custom_execution_limit": "100",
         "max_ticks": "10",
@@ -2240,7 +2152,6 @@
       "id": "simultaneous-outputs-conflict-without-partial-commit",
       "source": "@main\n~> .\n~> .\n@end main\n",
       "run": {
-        "boundary": "wrap",
         "seed": "0",
         "custom_execution_limit": "100",
         "max_ticks": "10",
@@ -2291,7 +2202,6 @@
       "id": "custom-return-on-the-final-permitted-internal-tick-succeeds",
       "source": "@main\n~> #0 ;\n@end main\n@C0\n~> _ #]\n@end C0\n",
       "run": {
-        "boundary": "exit",
         "seed": "0",
         "custom_execution_limit": "3",
         "max_ticks": "10",
@@ -2332,7 +2242,6 @@
       "id": "custom-halt-on-final-permitted-tick-does-not-move-caller",
       "source": "@main\n~> #0\n@end main\n@C0\n~> ;\n@end C0\n",
       "run": {
-        "boundary": "exit",
         "seed": "0",
         "custom_execution_limit": "2",
         "max_ticks": "10",
@@ -2382,7 +2291,6 @@
       "id": "simultaneous-custom-invocations-align-stack-peak-samples",
       "source": "@size 3x2\n@main\n~> #0 ;\n~> #1 ;\n@end main\n@C0\n@size 4x1\n~> ( . #]\n@end C0\n@C1\n@size 5x1\n~> + + ( #]\n@end C1\n",
       "run": {
-        "boundary": "exit",
         "seed": "0",
         "custom_execution_limit": "100",
         "max_ticks": "10",
@@ -2448,7 +2356,6 @@
       "id": "same-tick-register-reader-observes-old-value-while-add-commits",
       "source": "@size 3x2\n@main\n~> ?0v _\n~> + _\n@end main\n",
       "run": {
-        "boundary": "exit",
         "seed": "0",
         "custom_execution_limit": "100",
         "max_ticks": "2",
@@ -2511,7 +2418,6 @@
       "id": "simultaneous-code-writes-conflict-and-roll-back-stacks",
       "source": "@size 9x1\n@main\n~> , & _ (= _ & _ ~<\n@end main\n",
       "run": {
-        "boundary": "exit",
         "seed": "0",
         "custom_execution_limit": "100",
         "max_ticks": "10",
@@ -2616,7 +2522,6 @@
       "id": "custom-limit-exceeded-rolls-back-outer-tick",
       "source": "@main\n~> #0 ;\n@end main\n@C0\n@size 4x1\n~> + + #]\n@end C0\n",
       "run": {
-        "boundary": "exit",
         "seed": "0",
         "custom_execution_limit": "3",
         "max_ticks": "10",
@@ -2674,7 +2579,6 @@
       "id": "custom-concurrent-outputs-conflict-and-roll-back-caller-stack",
       "source": "@main\n~> #0 ;\n@end main\n@C0\n@size 3x2\n~> . _\n~> . _\n@end C0\n",
       "run": {
-        "boundary": "exit",
         "seed": "0",
         "custom_execution_limit": "100",
         "max_ticks": "10",
@@ -2741,7 +2645,6 @@
       "id": "custom-nonempty-concurrent-reads-conflict-and-roll-back",
       "source": "@main\n~> ( #0 ;\n@end main\n@C0\n@size 3x2\n~> , _\n~> , _\n@end C0\n",
       "run": {
-        "boundary": "exit",
         "seed": "0",
         "custom_execution_limit": "100",
         "max_ticks": "10",
@@ -2809,7 +2712,6 @@
       "id": "custom-caller-stack-read-write-conflict-rolls-back",
       "source": "@main\n~> ( #0 ;\n@end main\n@C0\n@size 3x2\n~> , _\n~> . _\n@end C0\n",
       "run": {
-        "boundary": "exit",
         "seed": "0",
         "custom_execution_limit": "100",
         "max_ticks": "10",
@@ -2878,7 +2780,6 @@
       "id": "custom-empty-concurrent-reads-coexist-with-output",
       "source": "@main\n~> #0 ;\n@end main\n@C0\n@size 3x3\n~> , #]\n~> , #]\n~> . #]\n@end C0\n",
       "run": {
-        "boundary": "exit",
         "seed": "0",
         "custom_execution_limit": "100",
         "max_ticks": "10",
@@ -2931,10 +2832,9 @@
       }
     },
     {
-      "id": "custom-internal-out-of-bounds-rolls-back-call",
+      "id": "custom-wrapping-loop-reaches-internal-limit",
       "source": "@main\n~> #0 ;\n@end main\n@C0\n@size 2x1\n~> +\n@end C0\n",
       "run": {
-        "boundary": "exit",
         "seed": "0",
         "custom_execution_limit": "2",
         "max_ticks": "10",
@@ -2968,16 +2868,7 @@
           "Add"
         ],
         "error_codes": [
-          "OutOfBounds"
-        ],
-        "error_global_ticks": [
-          "2"
-        ],
-        "error_thread_ids": [
-          "0"
-        ],
-        "error_custom_internal_ticks": [
-          "2"
+          "CustomExecutionLimitExceeded"
         ],
         "threads": [
           {
@@ -2995,7 +2886,6 @@
       "id": "custom-invocations-own-distinct-local-memory-spaces",
       "source": "@size 3x2\n@main\n~> #0 ;\n~> #0 ;\n@end main\n@C0\n@size 5x1\n~> ( $) $( #]\n@end C0\n",
       "run": {
-        "boundary": "exit",
         "seed": "0",
         "custom_execution_limit": "100",
         "max_ticks": "10",
@@ -3057,7 +2947,6 @@
       "id": "simultaneous-custom-stack-peaks-align-all-stack-types",
       "source": "@main\n@size 8x1\n~> ( #0 _ _ #1 ( ~<\n@end main\n@C0\n@size 3x1\n~> . #]\n@end C0\n@C1\n@size 37x1\n~> + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + & ( [0 #]\n@F0\n@size 2x1\n~> ]\n@end F0\n@end C1\n",
       "run": {
-        "boundary": "exit",
         "seed": "0",
         "custom_execution_limit": "100",
         "max_ticks": "3",
@@ -3121,7 +3010,6 @@
       "id": "outer-halt-loses-to-concurrent-input-conflict",
       "source": "@main\n@size 4x2\n~> ; _ _\n~> , ~> ,\n@end main\n",
       "run": {
-        "boundary": "wrap",
         "seed": "0",
         "custom_execution_limit": "100",
         "max_ticks": "10",
@@ -3178,7 +3066,6 @@
       "id": "indirect-function-recursion-unwinds-call-frames",
       "source": "@main\n@size 5x1\n~> + + [0 ;\n@F0\n@size 5x2\n~> ?0v - [1 ]\n_ ] _ _ _\n@end F0\n@F1\n@size 5x2\n~> ?0v - [0 ]\n_ ] _ _ _\n@end F1\n@end main\n",
       "run": {
-        "boundary": "exit",
         "seed": "0",
         "custom_execution_limit": "100",
         "max_ticks": "100",
@@ -3223,7 +3110,6 @@
       "id": "cmp-equal",
       "source": "~> , ( } , ?= . ;\n",
       "run": {
-        "boundary": "exit",
         "seed": "0",
         "custom_execution_limit": "100",
         "max_ticks": "100",
@@ -3274,7 +3160,6 @@
       "id": "cmp-greater-unsigned",
       "source": "~> , ( } , ?= . ;\n",
       "run": {
-        "boundary": "exit",
         "seed": "0",
         "custom_execution_limit": "100",
         "max_ticks": "100",
@@ -3325,7 +3210,6 @@
       "id": "cmp-less-unsigned",
       "source": "~> , ( } , ?= . ;\n",
       "run": {
-        "boundary": "exit",
         "seed": "0",
         "custom_execution_limit": "100",
         "max_ticks": "100",
@@ -3376,7 +3260,6 @@
       "id": "cmp-empty-preserves-register",
       "source": "~> , ?= . ;\n",
       "run": {
-        "boundary": "exit",
         "seed": "0",
         "custom_execution_limit": "100",
         "max_ticks": "100",
@@ -3424,7 +3307,6 @@
       "id": "cmp-repeat-recomputes",
       "source": "~> , ( , ?=x3 . ;\n",
       "run": {
-        "boundary": "exit",
         "seed": "0",
         "custom_execution_limit": "100",
         "max_ticks": "100",
@@ -3474,7 +3356,6 @@
       "id": "prefix-skips-complete-effects",
       "source": "~> ?1, ?1. ?1?? ?1; ?1+* ?0.3 ;\n",
       "run": {
-        "boundary": "exit",
         "seed": "0",
         "custom_execution_limit": "100",
         "max_ticks": "100",
@@ -3523,7 +3404,6 @@
       "id": "prefix-repeat-cancels-and-tests-old-pointer",
       "source": "~> + ?1+x3 ?2} ?0. ;\n",
       "run": {
-        "boundary": "exit",
         "seed": "0",
         "custom_execution_limit": "100",
         "max_ticks": "100",
@@ -3570,7 +3450,6 @@
       "id": "prefix-aftercall-does-not-recheck",
       "source": "@main\n~> ?0[0* % . ;\n@F0\n~> + ]\n@end F0\n@end main\n",
       "run": {
-        "boundary": "exit",
         "seed": "0",
         "custom_execution_limit": "100",
         "max_ticks": "100",
@@ -3620,7 +3499,6 @@
       "id": "prefix-folded-body",
       "source": "@main\n~> $0 ;\n@M0 ?1+ ?0.3 ^\n@end main\n",
       "run": {
-        "boundary": "exit",
         "seed": "0",
         "custom_execution_limit": "100",
         "max_ticks": "100",
@@ -3665,7 +3543,6 @@
       "id": "cmp-custom-local-stack",
       "source": "@main\n~> + ( #0 ) . ;\n@end main\n@C0\n~> + ?= . #]\n@end C0\n",
       "run": {
-        "boundary": "exit",
         "seed": "0",
         "custom_execution_limit": "100",
         "max_ticks": "100",
@@ -3714,7 +3591,6 @@
       "id": "obsolete-random-byte-does-not-decode",
       "source": "~> , & % . ;\n",
       "run": {
-        "boundary": "exit",
         "seed": "0",
         "custom_execution_limit": "100",
         "max_ticks": "100",
@@ -3763,7 +3639,6 @@
       "id": "renamed-random-byte-roundtrip",
       "source": "~> , & % . ;\n",
       "run": {
-        "boundary": "exit",
         "seed": "0",
         "custom_execution_limit": "100",
         "max_ticks": "100",
@@ -3812,7 +3687,6 @@
       "id": "immediate-output-repeat-three-ticks",
       "source": "~> .3x3 ;\n",
       "run": {
-        "boundary": "exit",
         "seed": "0",
         "custom_execution_limit": "100",
         "max_ticks": "10",
@@ -3857,7 +3731,6 @@
       "id": "neg-byte-and-code-round-trip",
       "source": "~> , $! . , & % . ;\n",
       "run": {
-        "boundary": "exit",
         "seed": "0",
         "custom_execution_limit": "100",
         "max_ticks": "20",
@@ -3909,7 +3782,6 @@
       "id": "neg-repeat-three-ticks",
       "source": "~> , $!x3 . ;\n",
       "run": {
-        "boundary": "exit",
         "seed": "0",
         "custom_execution_limit": "100",
         "max_ticks": "20",
@@ -3957,7 +3829,6 @@
       "id": "function-private-registers-and-stack-return",
       "source": "@main\n~> , [0 . ;\n@F0\n~> $! . ( } ]\n@end F0\n@end main\n",
       "run": {
-        "boundary": "exit",
         "seed": "0",
         "custom_execution_limit": "100",
         "max_ticks": "30",
@@ -4010,7 +3881,6 @@
       "id": "custom-function-private-neg",
       "source": "@main\n~> , ( #0 ! ) . ;\n@end main\n@C0\n~> [0 #]\n@F0\n~> , $! . ]\n@end F0\n@end C0\n",
       "run": {
-        "boundary": "exit",
         "seed": "0",
         "custom_execution_limit": "100",
         "max_ticks": "30",
@@ -4064,7 +3934,6 @@
       "id": "function-private-register-snapshot-yield",
       "source": "@main\n~> , [0 . ;\n@F0\n~> $! ]\n@end F0\n@end main\n",
       "run": {
-        "boundary": "exit",
         "seed": "0",
         "custom_execution_limit": "100",
         "max_ticks": "4",
@@ -4108,7 +3977,6 @@
       "id": "flag-read-last-byte-and-exhaustion",
       "source": "~> , ?!.9 , ?!.1 ?!.2 ;\n",
       "run": {
-        "boundary": "exit",
         "seed": "0",
         "custom_execution_limit": "100",
         "max_ticks": "100",
@@ -4156,7 +4024,6 @@
       "id": "flag-inc-carry",
       "source": "~> , + ?!.1 ;\n",
       "run": {
-        "boundary": "exit",
         "seed": "0",
         "custom_execution_limit": "100",
         "max_ticks": "100",
@@ -4204,7 +4071,6 @@
       "id": "flag-dec-borrow",
       "source": "~> - ?!.1 ;\n",
       "run": {
-        "boundary": "exit",
         "seed": "0",
         "custom_execution_limit": "100",
         "max_ticks": "100",
@@ -4249,7 +4115,6 @@
       "id": "flag-popadd-empty",
       "source": "~> ) ?!.1 ;\n",
       "run": {
-        "boundary": "exit",
         "seed": "0",
         "custom_execution_limit": "100",
         "max_ticks": "100",
@@ -4294,7 +4159,6 @@
       "id": "flag-popadd-carry",
       "source": "~> , ( ) ?!.1 ;\n",
       "run": {
-        "boundary": "exit",
         "seed": "0",
         "custom_execution_limit": "100",
         "max_ticks": "100",
@@ -4343,7 +4207,6 @@
       "id": "flag-shift-left",
       "source": "~> , $< ?!.1 ;\n",
       "run": {
-        "boundary": "exit",
         "seed": "0",
         "custom_execution_limit": "100",
         "max_ticks": "100",
@@ -4391,7 +4254,6 @@
       "id": "flag-shift-right",
       "source": "~> , $> ?!.1 ;\n",
       "run": {
-        "boundary": "exit",
         "seed": "0",
         "custom_execution_limit": "100",
         "max_ticks": "100",
@@ -4439,7 +4301,6 @@
       "id": "flag-pointer-wrap",
       "source": "~> { ?!} ?!.1 ;\n",
       "run": {
-        "boundary": "exit",
         "seed": "0",
         "custom_execution_limit": "100",
         "max_ticks": "100",
@@ -4484,7 +4345,6 @@
       "id": "flag-preserve-nand-neg-cmp",
       "source": "~> ) $& $! ?= ! ?!.1 ;\n",
       "run": {
-        "boundary": "exit",
         "seed": "0",
         "custom_execution_limit": "100",
         "max_ticks": "100",
@@ -4533,7 +4393,6 @@
       "id": "flag-repeat-cancels",
       "source": "~> ) ?!+x5 ?!.1 . ;\n",
       "run": {
-        "boundary": "exit",
         "seed": "0",
         "custom_execution_limit": "100",
         "max_ticks": "100",
@@ -4579,7 +4438,6 @@
       "id": "flag-function-restore",
       "source": "@main\n~> ) [0 ?!.1 ;\n@F0\n~> ?!.3 + ] _\n@end F0\n@end main\n",
       "run": {
-        "boundary": "exit",
         "seed": "0",
         "custom_execution_limit": "100",
         "max_ticks": "100",
@@ -4628,7 +4486,6 @@
       "id": "flag-custom-copy-discard",
       "source": "@main\n~> ) #0 ?!.2 ;\n@end main\n@C0\n~> ?!.4 , ?!.9 #]\n@end C0\n",
       "run": {
-        "boundary": "exit",
         "seed": "0",
         "custom_execution_limit": "100",
         "max_ticks": "100",
@@ -4675,7 +4532,6 @@
       "id": "flag-fold-shares",
       "source": "@main\n~> $0 ?!.1 ;\n@M0 ) ?!.3 ^ _\n@end main\n",
       "run": {
-        "boundary": "exit",
         "seed": "0",
         "custom_execution_limit": "100",
         "max_ticks": "100",
@@ -4715,6 +4571,411 @@
           "PopAdd",
           "Halt"
         ]
+      }
+    },
+    {
+      "id": "default-main-entry-empty-cell",
+      "source": "_ .3 ;\n",
+      "run": {
+        "seed": "0",
+        "custom_execution_limit": "100",
+        "max_ticks": "10",
+        "input": []
+      },
+      "expected": {
+        "process_exit_code": 0,
+        "status": "halted",
+        "vm_status": "halted",
+        "output": [
+          3
+        ],
+        "registers": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "committed_ticks": "3",
+        "operation_count": "2",
+        "used_cell_count": "3",
+        "used_memory_address_count": "0",
+        "peak_data_stack_usage": "0",
+        "peak_instruction_stack_usage": "0",
+        "peak_call_stack_usage": "0",
+        "instruction_variety": [
+          "Output",
+          "Halt"
+        ],
+        "error_codes": []
+      }
+    },
+    {
+      "id": "default-main-entry-executes-first-instruction",
+      "source": ".4 ;\n",
+      "run": {
+        "seed": "0",
+        "custom_execution_limit": "100",
+        "max_ticks": "10",
+        "input": []
+      },
+      "expected": {
+        "process_exit_code": 0,
+        "status": "halted",
+        "vm_status": "halted",
+        "output": [
+          4
+        ],
+        "registers": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "committed_ticks": "2",
+        "operation_count": "2",
+        "used_cell_count": "2",
+        "used_memory_address_count": "0",
+        "peak_data_stack_usage": "0",
+        "peak_instruction_stack_usage": "0",
+        "peak_call_stack_usage": "0",
+        "instruction_variety": [
+          "Output",
+          "Halt"
+        ],
+        "error_codes": []
+      }
+    },
+    {
+      "id": "default-function-entry-executes-first-instruction",
+      "source": "@main\n[0 ;\n@end main\n@main.F0\n.7 ]\n@end F0\n",
+      "run": {
+        "seed": "0",
+        "custom_execution_limit": "100",
+        "max_ticks": "10",
+        "input": []
+      },
+      "expected": {
+        "process_exit_code": 0,
+        "status": "halted",
+        "vm_status": "halted",
+        "output": [
+          7
+        ],
+        "registers": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "committed_ticks": "5",
+        "operation_count": "4",
+        "used_cell_count": "4",
+        "used_memory_address_count": "0",
+        "peak_data_stack_usage": "0",
+        "peak_instruction_stack_usage": "0",
+        "peak_call_stack_usage": "1",
+        "instruction_variety": [
+          "Output",
+          "Call",
+          "Return",
+          "Halt"
+        ],
+        "error_codes": []
+      }
+    },
+    {
+      "id": "default-custom-entry-executes-first-instruction",
+      "source": "@main\n#0 ;\n@end main\n@C0\n.8 #]\n@end C0\n",
+      "run": {
+        "seed": "0",
+        "custom_execution_limit": "100",
+        "max_ticks": "10",
+        "input": []
+      },
+      "expected": {
+        "process_exit_code": 0,
+        "status": "halted",
+        "vm_status": "halted",
+        "output": [],
+        "registers": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "committed_ticks": "2",
+        "operation_count": "3",
+        "used_cell_count": "4",
+        "used_memory_address_count": "0",
+        "peak_data_stack_usage": "1",
+        "peak_instruction_stack_usage": "0",
+        "peak_call_stack_usage": "0",
+        "instruction_variety": [
+          "Output",
+          "CustomReturn",
+          "Halt"
+        ],
+        "error_codes": []
+      }
+    },
+    {
+      "id": "default-custom-function-entry",
+      "source": "@main\n#0 ;\n@end main\n@C0\n[0 #]\n@end C0\n@C0.F0\n.6 ]\n@end F0\n",
+      "run": {
+        "seed": "0",
+        "custom_execution_limit": "100",
+        "max_ticks": "10",
+        "input": []
+      },
+      "expected": {
+        "process_exit_code": 0,
+        "status": "halted",
+        "vm_status": "halted",
+        "output": [],
+        "registers": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "committed_ticks": "2",
+        "operation_count": "5",
+        "used_cell_count": "6",
+        "used_memory_address_count": "0",
+        "peak_data_stack_usage": "1",
+        "peak_instruction_stack_usage": "0",
+        "peak_call_stack_usage": "1",
+        "instruction_variety": [
+          "Output",
+          "Call",
+          "Return",
+          "CustomReturn",
+          "Halt"
+        ],
+        "error_codes": []
+      }
+    },
+    {
+      "id": "normal-top-edge-wraps",
+      "source": "~^ _\n; _\n",
+      "run": {
+        "seed": "0",
+        "custom_execution_limit": "100",
+        "max_ticks": "10",
+        "input": []
+      },
+      "expected": {
+        "process_exit_code": 0,
+        "status": "halted",
+        "vm_status": "halted",
+        "output": [],
+        "registers": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "committed_ticks": "2",
+        "operation_count": "1",
+        "used_cell_count": "2",
+        "used_memory_address_count": "0",
+        "peak_data_stack_usage": "0",
+        "peak_instruction_stack_usage": "0",
+        "peak_call_stack_usage": "0",
+        "instruction_variety": [
+          "Halt"
+        ],
+        "error_codes": []
+      }
+    },
+    {
+      "id": "normal-bottom-edge-wraps",
+      "source": "; _\n~v _\n",
+      "run": {
+        "seed": "0",
+        "custom_execution_limit": "100",
+        "max_ticks": "10",
+        "input": []
+      },
+      "expected": {
+        "process_exit_code": 0,
+        "status": "halted",
+        "vm_status": "halted",
+        "output": [],
+        "registers": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "committed_ticks": "2",
+        "operation_count": "1",
+        "used_cell_count": "2",
+        "used_memory_address_count": "0",
+        "peak_data_stack_usage": "0",
+        "peak_instruction_stack_usage": "0",
+        "peak_call_stack_usage": "0",
+        "instruction_variety": [
+          "Halt"
+        ],
+        "error_codes": []
+      }
+    },
+    {
+      "id": "normal-left-edge-wraps",
+      "source": "~< ;\n",
+      "run": {
+        "seed": "0",
+        "custom_execution_limit": "100",
+        "max_ticks": "10",
+        "input": []
+      },
+      "expected": {
+        "process_exit_code": 0,
+        "status": "halted",
+        "vm_status": "halted",
+        "output": [],
+        "registers": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "committed_ticks": "2",
+        "operation_count": "1",
+        "used_cell_count": "2",
+        "used_memory_address_count": "0",
+        "peak_data_stack_usage": "0",
+        "peak_instruction_stack_usage": "0",
+        "peak_call_stack_usage": "0",
+        "instruction_variety": [
+          "Halt"
+        ],
+        "error_codes": []
+      }
+    },
+    {
+      "id": "normal-right-edge-wraps",
+      "source": "; ~>\n",
+      "run": {
+        "seed": "0",
+        "custom_execution_limit": "100",
+        "max_ticks": "10",
+        "input": []
+      },
+      "expected": {
+        "process_exit_code": 0,
+        "status": "halted",
+        "vm_status": "halted",
+        "output": [],
+        "registers": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "committed_ticks": "2",
+        "operation_count": "1",
+        "used_cell_count": "2",
+        "used_memory_address_count": "0",
+        "peak_data_stack_usage": "0",
+        "peak_instruction_stack_usage": "0",
+        "peak_call_stack_usage": "0",
+        "instruction_variety": [
+          "Halt"
+        ],
+        "error_codes": []
+      }
+    },
+    {
+      "id": "single-cell-default-entry-wraps",
+      "source": "_\n",
+      "run": {
+        "seed": "0",
+        "custom_execution_limit": "100",
+        "max_ticks": "10",
+        "input": []
+      },
+      "expected": {
+        "process_exit_code": 6,
+        "status": "tick_limit_reached",
+        "vm_status": "running",
+        "output": [],
+        "registers": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "committed_ticks": "10",
+        "operation_count": "0",
+        "used_cell_count": "1",
+        "used_memory_address_count": "0",
+        "peak_data_stack_usage": "0",
+        "peak_instruction_stack_usage": "0",
+        "peak_call_stack_usage": "0",
+        "instruction_variety": [],
+        "error_codes": []
       }
     }
   ]

@@ -1,10 +1,9 @@
 use codegrid_ir::{Board, Cell, Program, ScopedProgram, VerifiedProgram, IR_FORMAT_VERSION};
 use codegrid_level_core::*;
-use codegrid_model::{BoundaryMode, Direction, PrimaryInstruction as P};
+use codegrid_model::{Direction, PrimaryInstruction as P};
 use std::{collections::BTreeMap, num::NonZeroU64};
 fn config() -> EvaluationConfig {
     EvaluationConfig {
-        boundary_mode: BoundaryMode::Exit,
         shuffle_seed: 42,
         custom_execution_limit: NonZeroU64::new(100).unwrap(),
         safety: ExecutionSafetyProfile {
@@ -105,7 +104,6 @@ fn empty_output_requires_halt_and_safety_is_distinct() {
         EvaluationStatus::Passed
     );
     let mut c = config();
-    c.boundary_mode = BoundaryMode::Wrap;
     c.safety.per_test_ticks = NonZeroU64::new(3).unwrap();
     assert_eq!(
         evaluate(
@@ -157,7 +155,7 @@ fn insufficient_budget_rolls_back_and_larger_retry_advances() {
     let mut vm = codegrid_vm::Vm::new(
         p,
         [],
-        codegrid_vm::VmConfig::new(BoundaryMode::Exit, 0, NonZeroU64::new(100).unwrap()),
+        codegrid_vm::VmConfig::new(0, NonZeroU64::new(100).unwrap()),
     )
     .unwrap();
     let (result, used) = vm.step_with_work_accounting(NonZeroU64::MIN);
@@ -272,17 +270,15 @@ fn custom_generated_neg_requires_its_independent_permission() {
     assert!(r.final_metrics.is_none());
 }
 #[test]
-fn runtime_error_rolls_back_same_tick_output_and_keeps_stable_identity() {
+fn output_at_board_edge_wraps_and_passes_exact_io() {
     let l = level(
         serde_json::json!([{"visible":true,"input":[],"expected_output":[0]}]),
         serde_json::json!({}),
     );
     let r = evaluate(l, program(&[P::Output]), EvaluationMode::Official, config());
-    assert_eq!(r.status, EvaluationStatus::RuntimeError);
-    assert!(
-        matches!(&r.visible_tests[0].outcome,TestOutcome::RuntimeError(codes) if !codes.is_empty())
-    );
-    assert!(r.final_metrics.is_none());
+    assert_eq!(r.status, EvaluationStatus::Passed);
+    assert!(matches!(&r.visible_tests[0].outcome, TestOutcome::Passed));
+    assert!(r.final_metrics.is_some());
 }
 #[test]
 fn exact_work_ceiling_allows_completed_test_and_cancellation_has_no_rating() {

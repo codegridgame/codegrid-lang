@@ -1054,17 +1054,6 @@ impl Serialize for RuntimeErrorDetailsProjection<'_> {
             Kind::CustomExecutionLimitExceeded { limit } => serialize_object!(serializer, {
                 "limit" => DisplayValue(limit)
             }),
-            Kind::OutOfBounds {
-                thread_id,
-                board,
-                position,
-                direction,
-            } => serialize_object!(serializer, {
-                "thread_id" => DisplayValue(thread_id),
-                "board" => BoardName(*board),
-                "position" => CoordinateProjection(*position),
-                "direction" => DirectionName(*direction)
-            }),
             Kind::ReturnWithoutCall {
                 thread_id,
                 board,

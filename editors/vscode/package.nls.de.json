@@ -2,7 +2,6 @@
   "extension.description": "CodeGrid bearbeiten, lokal ausführen und nach Global Tick debuggen; optionaler Sprachserver.",
   "codegrid.runtime.path.description": "Pfad zur CodeGrid-Datei. Leer: mitgelieferte Laufzeit, danach PATH.",
   "codegrid.execution.input.description": "Eingabebytes für Ausführen und Debuggen.",
-  "codegrid.execution.boundary.description": "Verhalten an der Board-Grenze.",
   "codegrid.execution.seed.description": "Kanonischer dezimaler u64-Startwert.",
   "codegrid.execution.customLimit.description": "Ausführungslimit für Custom.",
   "codegrid.execution.maxTicks.description": "Maximale bestätigte Global Ticks pro Sitzung.",

@@ -7,7 +7,6 @@
       "level": "exactio.json",
       "program": "exactio.cg",
       "mode": "Debug",
-      "boundary": "Exit",
       "seed": "18446744073709551615",
       "custom_limit": "1000",
       "expected_status": "Passed"
@@ -17,7 +16,6 @@
       "level": "exactio-byte-boundaries.json",
       "program": "exactio-byte-boundaries.cg",
       "mode": "Debug",
-      "boundary": "Exit",
       "seed": "18446744073709551615",
       "custom_limit": "1000",
       "expected_status": "Passed"
@@ -27,7 +25,6 @@
       "level": "exactio-classification.json",
       "program": "exactio-classification.cg",
       "mode": "Debug",
-      "boundary": "Exit",
       "seed": "18446744073709551615",
       "custom_limit": "1000",
       "expected_status": "Passed"
@@ -37,7 +34,6 @@
       "level": "robot.json",
       "program": "robot.cg",
       "mode": "Debug",
-      "boundary": "Exit",
       "seed": "18446744073709551615",
       "custom_limit": "1000",
       "expected_status": "Passed"
@@ -47,7 +43,6 @@
       "level": "mechanical-arm.json",
       "program": "mechanical-arm.cg",
       "mode": "Debug",
-      "boundary": "Exit",
       "seed": "18446744073709551615",
       "custom_limit": "1000",
       "expected_status": "Passed"
@@ -57,7 +52,6 @@
       "level": "exactio.json",
       "program": "exactio.cg",
       "mode": "Official",
-      "boundary": "Exit",
       "seed": "18446744073709551615",
       "custom_limit": "1000",
       "expected_status": "Passed"
@@ -67,7 +61,6 @@
       "level": "exactio-byte-boundaries.json",
       "program": "exactio-byte-boundaries.cg",
       "mode": "Official",
-      "boundary": "Exit",
       "seed": "18446744073709551615",
       "custom_limit": "1000",
       "expected_status": "Passed"
@@ -77,7 +70,6 @@
       "level": "exactio-classification.json",
       "program": "exactio-classification.cg",
       "mode": "Official",
-      "boundary": "Exit",
       "seed": "18446744073709551615",
       "custom_limit": "1000",
       "expected_status": "Passed"
@@ -87,7 +79,6 @@
       "level": "robot.json",
       "program": "robot.cg",
       "mode": "Official",
-      "boundary": "Exit",
       "seed": "18446744073709551615",
       "custom_limit": "1000",
       "expected_status": "Passed"
@@ -97,7 +88,6 @@
       "level": "mechanical-arm.json",
       "program": "mechanical-arm.cg",
       "mode": "Official",
-      "boundary": "Exit",
       "seed": "18446744073709551615",
       "custom_limit": "1000",
       "expected_status": "Passed"
@@ -107,7 +97,6 @@
       "level": "robot.json",
       "program": "robot.cg",
       "mode": "Debug",
-      "boundary": "Exit",
       "seed": "18446744073709551615",
       "custom_limit": "1000",
       "expected_status": "Passed",
@@ -118,7 +107,6 @@
       "level": "mechanical-arm.json",
       "program": "mechanical-arm.cg",
       "mode": "Debug",
-      "boundary": "Exit",
       "seed": "18446744073709551615",
       "custom_limit": "1000",
       "expected_status": "Passed",
@@ -129,7 +117,6 @@
       "level": "robot-read-observation.json",
       "program": "robot-read-observation.cg",
       "mode": "Debug",
-      "boundary": "Exit",
       "seed": "18446744073709551615",
       "custom_limit": "1000",
       "work_budget": "1000000",
@@ -140,7 +127,6 @@
       "level": "robot-read-observation.json",
       "program": "robot-read-observation.cg",
       "mode": "Debug",
-      "boundary": "Exit",
       "seed": "18446744073709551615",
       "custom_limit": "1000",
       "work_budget": "1",
@@ -151,7 +137,6 @@
       "level": "robot-halt-constraint.json",
       "program": "robot-halt-constraint.cg",
       "mode": "Debug",
-      "boundary": "Wrap",
       "seed": "18446744073709551615",
       "custom_limit": "1000",
       "expected_status": "ConstraintExceeded"
@@ -161,7 +146,6 @@
       "level": "../levels-scene/echo-duplicates.json",
       "program": "../levels-scene/echo.cg",
       "mode": "Official",
-      "boundary": "Exit",
       "seed": "18446744073709551615",
       "custom_limit": "1000",
       "expected_status": "Passed"
@@ -171,7 +155,6 @@
       "level": "../levels-scene/wrong-output.json",
       "program": "../levels-scene/echo.cg",
       "mode": "Official",
-      "boundary": "Exit",
       "seed": "18446744073709551615",
       "custom_limit": "1000",
       "expected_status": "TestFailed"
@@ -181,7 +164,6 @@
       "level": "../levels-scene/incomplete-output.json",
       "program": "../levels-scene/halt.cg",
       "mode": "Official",
-      "boundary": "Exit",
       "seed": "18446744073709551615",
       "custom_limit": "1000",
       "expected_status": "TestFailed"
@@ -191,7 +173,6 @@
       "level": "../levels-scene/empty-output.json",
       "program": "../levels-scene/halt.cg",
       "mode": "Official",
-      "boundary": "Exit",
       "seed": "18446744073709551615",
       "custom_limit": "1000",
       "expected_status": "Passed"
@@ -201,7 +182,6 @@
       "level": "../levels-scene/unexpected-output.json",
       "program": "../levels-scene/echo.cg",
       "mode": "Official",
-      "boundary": "Exit",
       "seed": "18446744073709551615",
       "custom_limit": "1000",
       "expected_status": "TestFailed"
@@ -211,7 +191,6 @@
       "level": "../levels-scene/hidden-wrong-official.json",
       "program": "../levels-scene/echo.cg",
       "mode": "Official",
-      "boundary": "Exit",
       "seed": "18446744073709551615",
       "custom_limit": "1000",
       "expected_status": "TestFailed"
@@ -221,7 +200,6 @@
       "level": "../levels-scene/hidden-wrong-debug.json",
       "program": "../levels-scene/echo.cg",
       "mode": "Debug",
-      "boundary": "Exit",
       "seed": "18446744073709551615",
       "custom_limit": "1000",
       "expected_status": "Passed"
@@ -231,7 +209,6 @@
       "level": "../levels-scene/static-constraint.json",
       "program": "../levels-scene/echo.cg",
       "mode": "Official",
-      "boundary": "Exit",
       "seed": "18446744073709551615",
       "custom_limit": "1000",
       "expected_status": "ConstraintExceeded"
@@ -241,7 +218,6 @@
       "level": "../levels-scene/dynamic-constraint.json",
       "program": "../levels-scene/echo.cg",
       "mode": "Official",
-      "boundary": "Exit",
       "seed": "18446744073709551615",
       "custom_limit": "1000",
       "expected_status": "ConstraintExceeded"
@@ -251,7 +227,6 @@
       "level": "../levels-scene/rating-zero.json",
       "program": "../levels-scene/echo.cg",
       "mode": "Official",
-      "boundary": "Exit",
       "seed": "18446744073709551615",
       "custom_limit": "1000",
       "expected_status": "Passed"
@@ -261,7 +236,6 @@
       "level": "../levels-scene/read-exhaustion.json",
       "program": "../levels-scene/read-exhaustion.cg",
       "mode": "Official",
-      "boundary": "Exit",
       "seed": "18446744073709551615",
       "custom_limit": "1000",
       "expected_status": "Passed"
@@ -271,7 +245,6 @@
       "level": "../levels-scene/functions.json",
       "program": "../levels-scene/functions.cg",
       "mode": "Official",
-      "boundary": "Exit",
       "seed": "18446744073709551615",
       "custom_limit": "1000",
       "expected_status": "Passed"
@@ -281,7 +254,6 @@
       "level": "../levels-scene/folded.json",
       "program": "../levels-scene/folded.cg",
       "mode": "Official",
-      "boundary": "Exit",
       "seed": "18446744073709551615",
       "custom_limit": "1000",
       "expected_status": "Passed"
@@ -291,7 +263,6 @@
       "level": "../levels-scene/custom-memory.json",
       "program": "../levels-scene/custom-memory.cg",
       "mode": "Official",
-      "boundary": "Exit",
       "seed": "18446744073709551615",
       "custom_limit": "1000",
       "expected_status": "Passed"
@@ -301,7 +272,6 @@
       "level": "../levels-scene/custom-limit.json",
       "program": "../levels-scene/custom-limit.cg",
       "mode": "Official",
-      "boundary": "Exit",
       "seed": "18446744073709551615",
       "custom_limit": "1",
       "expected_status": "RuntimeError"
@@ -311,7 +281,6 @@
       "level": "../levels-scene/thread-conflict.json",
       "program": "../levels-scene/thread-conflict.cg",
       "mode": "Official",
-      "boundary": "Exit",
       "seed": "18446744073709551615",
       "custom_limit": "1000",
       "expected_status": "RuntimeError"
@@ -321,7 +290,6 @@
       "level": "../levels-scene/repeat.json",
       "program": "../levels-scene/repeat.cg",
       "mode": "Official",
-      "boundary": "Exit",
       "seed": "18446744073709551615",
       "custom_limit": "1000",
       "expected_status": "Passed"
@@ -331,7 +299,6 @@
       "level": "../levels-scene/generated-custom.json",
       "program": "../levels-scene/generated-custom.cg",
       "mode": "Official",
-      "boundary": "Exit",
       "seed": "18446744073709551615",
       "custom_limit": "1000",
       "expected_status": "ProgramRejected"
@@ -341,7 +308,6 @@
       "level": "../levels-scene/generated-outer.json",
       "program": "../levels-scene/generated-outer.cg",
       "mode": "Official",
-      "boundary": "Exit",
       "seed": "18446744073709551615",
       "custom_limit": "1000",
       "expected_status": "ProgramRejected"
@@ -351,7 +317,6 @@
       "level": "../levels-scene/attachments.json",
       "program": "../levels-scene/attachments.cg",
       "mode": "Official",
-      "boundary": "Exit",
       "seed": "18446744073709551615",
       "custom_limit": "1000",
       "expected_status": "Passed"
@@ -361,7 +326,6 @@
       "level": "../levels-scene/instruction-stack.json",
       "program": "../levels-scene/instruction-stack.cg",
       "mode": "Official",
-      "boundary": "Exit",
       "seed": "18446744073709551615",
       "custom_limit": "1000",
       "expected_status": "Passed"
@@ -371,7 +335,6 @@
       "level": "../levels-scene/memory.json",
       "program": "../levels-scene/memory.cg",
       "mode": "Official",
-      "boundary": "Exit",
       "seed": "18446744073709551615",
       "custom_limit": "1000",
       "expected_status": "Passed"
@@ -381,7 +344,6 @@
       "level": "../levels-scene/randomness.json",
       "program": "../levels-scene/randomness.cg",
       "mode": "Official",
-      "boundary": "Exit",
       "seed": "18446744073709551615",
       "custom_limit": "1000",
       "expected_status": "Passed"
@@ -391,7 +353,6 @@
       "level": "../levels-scene/halt-output-error-priority.json",
       "program": "../levels-scene/halt-output-error-priority.cg",
       "mode": "Official",
-      "boundary": "Exit",
       "seed": "18446744073709551615",
       "custom_limit": "1000",
       "expected_status": "RuntimeError"
@@ -401,7 +362,6 @@
       "level": "../levels-scene/constraint-max_boards_used.json",
       "program": "../levels-scene/functions.cg",
       "mode": "Official",
-      "boundary": "Exit",
       "seed": "18446744073709551615",
       "custom_limit": "1000",
       "expected_status": "ConstraintExceeded"
@@ -411,7 +371,6 @@
       "level": "../levels-scene/constraint-max_call_stack_depth.json",
       "program": "../levels-scene/functions.cg",
       "mode": "Official",
-      "boundary": "Exit",
       "seed": "18446744073709551615",
       "custom_limit": "1000",
       "expected_status": "ConstraintExceeded"
@@ -421,7 +380,6 @@
       "level": "../levels-scene/constraint-max_data_stack_depth.json",
       "program": "../levels-scene/memory.cg",
       "mode": "Official",
-      "boundary": "Exit",
       "seed": "18446744073709551615",
       "custom_limit": "1000",
       "expected_status": "ConstraintExceeded"
@@ -431,7 +389,6 @@
       "level": "../levels-scene/constraint-max_functions_used.json",
       "program": "../levels-scene/functions.cg",
       "mode": "Official",
-      "boundary": "Exit",
       "seed": "18446744073709551615",
       "custom_limit": "1000",
       "expected_status": "ConstraintExceeded"
@@ -441,7 +398,6 @@
       "level": "../levels-scene/constraint-max_instruction_kinds.json",
       "program": "../levels-scene/echo.cg",
       "mode": "Official",
-      "boundary": "Exit",
       "seed": "18446744073709551615",
       "custom_limit": "1000",
       "expected_status": "ConstraintExceeded"
@@ -451,7 +407,6 @@
       "level": "../levels-scene/constraint-max_instruction_stack_depth.json",
       "program": "../levels-scene/instruction-stack.cg",
       "mode": "Official",
-      "boundary": "Exit",
       "seed": "18446744073709551615",
       "custom_limit": "1000",
       "expected_status": "ConstraintExceeded"
@@ -461,7 +416,6 @@
       "level": "../levels-scene/constraint-max_memory_addresses.json",
       "program": "../levels-scene/memory.cg",
       "mode": "Official",
-      "boundary": "Exit",
       "seed": "18446744073709551615",
       "custom_limit": "1000",
       "expected_status": "ConstraintExceeded"
@@ -471,7 +425,6 @@
       "level": "../levels-scene/constraint-max_operation_count.json",
       "program": "../levels-scene/echo.cg",
       "mode": "Official",
-      "boundary": "Exit",
       "seed": "18446744073709551615",
       "custom_limit": "1000",
       "expected_status": "ConstraintExceeded"
@@ -481,7 +434,6 @@
       "level": "../levels-scene/constraint-max_ticks.json",
       "program": "../levels-scene/echo.cg",
       "mode": "Official",
-      "boundary": "Exit",
       "seed": "18446744073709551615",
       "custom_limit": "1000",
       "expected_status": "ConstraintExceeded"
@@ -491,7 +443,6 @@
       "level": "../levels-scene/rating-max-alias.json",
       "program": "../levels-scene/echo.cg",
       "mode": "Official",
-      "boundary": "Exit",
       "seed": "18446744073709551615",
       "custom_limit": "1000",
       "expected_status": "Passed"
@@ -501,7 +452,6 @@
       "level": "../levels-scene/generated-memory.json",
       "program": "../levels-scene/generated-outer.cg",
       "mode": "Official",
-      "boundary": "Exit",
       "seed": "18446744073709551615",
       "custom_limit": "1000",
       "expected_status": "ProgramRejected"
@@ -511,7 +461,6 @@
       "level": "../levels-scene/hidden-generated.json",
       "program": "../levels-scene/generated-outer.cg",
       "mode": "Official",
-      "boundary": "Exit",
       "seed": "18446744073709551615",
       "custom_limit": "1000",
       "expected_status": "ProgramRejected"
@@ -521,7 +470,6 @@
       "level": "../levels-scene/cmp-prefix.json",
       "program": "../levels-scene/cmp-prefix.cg",
       "mode": "Official",
-      "boundary": "Exit",
       "seed": "18446744073709551615",
       "custom_limit": "1000",
       "expected_status": "Passed"
@@ -531,7 +479,6 @@
       "level": "../levels-scene/cmp-denied.json",
       "program": "../levels-scene/cmp-prefix.cg",
       "mode": "Official",
-      "boundary": "Exit",
       "seed": "18446744073709551615",
       "custom_limit": "1000",
       "expected_status": "ProgramRejected"
@@ -541,7 +488,6 @@
       "level": "../levels-scene/prefix-denied.json",
       "program": "../levels-scene/cmp-prefix.cg",
       "mode": "Official",
-      "boundary": "Exit",
       "seed": "18446744073709551615",
       "custom_limit": "1000",
       "expected_status": "ProgramRejected"
@@ -551,7 +497,6 @@
       "level": "../levels-scene/prefix-static-kinds.json",
       "program": "../levels-scene/cmp-prefix.cg",
       "mode": "Official",
-      "boundary": "Exit",
       "seed": "18446744073709551615",
       "custom_limit": "1000",
       "expected_status": "ConstraintExceeded"
@@ -561,7 +506,6 @@
       "level": "../levels-scene/prefix-operation-cost.json",
       "program": "../levels-scene/cmp-prefix.cg",
       "mode": "Official",
-      "boundary": "Exit",
       "seed": "18446744073709551615",
       "custom_limit": "1000",
       "expected_status": "ConstraintExceeded"
@@ -571,10 +515,18 @@
       "level": "status-flag.json",
       "program": "status-flag.cg",
       "mode": "Debug",
-      "boundary": "Exit",
       "seed": "0",
       "custom_limit": "100",
       "expected_status": "Passed"
+    },
+    {
+      "id": "exactio.immediate-disabled",
+      "level": "immediate-disabled.json",
+      "program": "exactio.cg",
+      "mode": "Debug",
+      "seed": "18446744073709551615",
+      "custom_limit": "1000",
+      "expected_status": "ProgramRejected"
     }
   ]
 }

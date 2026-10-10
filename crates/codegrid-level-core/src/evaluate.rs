@@ -5,7 +5,6 @@ use crate::{
     validate::{validate_primary, validate_program},
 };
 use codegrid_ir::{ScopedProgram, VerifiedProgram};
-use codegrid_model::BoundaryMode;
 use codegrid_vm::{mix64, Vm, VmConfig, VmEvent, VmStatus};
 use std::num::NonZeroU64;
 
@@ -28,7 +27,6 @@ pub struct ExecutionSafetyProfile {
 }
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct EvaluationConfig {
-    pub boundary_mode: BoundaryMode,
     pub shuffle_seed: u64,
     pub custom_execution_limit: NonZeroU64,
     pub safety: ExecutionSafetyProfile,
@@ -280,7 +278,6 @@ impl EvaluationSession {
             let test = &self.level.tests()[index];
             if self.vm.is_none() {
                 let config = VmConfig::new(
-                    self.config.boundary_mode,
                     mix64(self.config.shuffle_seed ^ 0x43474C564D303031),
                     self.config.custom_execution_limit,
                 );
@@ -587,7 +584,6 @@ mod diagnostic_tests {
         })
         .unwrap();
         let config = EvaluationConfig {
-            boundary_mode: BoundaryMode::Exit,
             shuffle_seed: 0,
             custom_execution_limit: NonZeroU64::new(100).unwrap(),
             safety: ExecutionSafetyProfile {

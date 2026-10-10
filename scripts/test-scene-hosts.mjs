@@ -49,7 +49,7 @@ const manifest = JSON.parse(readFileSync(resolve(root, 'fixtures/scene-v2/confor
 const cases = manifest.cases.map(f => ({...f, level_json:readFileSync(resolve(root,'fixtures/scene-v2',f.level),'utf8'), source:readFileSync(resolve(root,'fixtures/scene-v2',f.program),'utf8')}));
 const results = runSceneConformance(request_json => transport({abi_version:2,api_version:2,operation:'request',request_json}), cases, (condition,message)=>assert.ok(condition,message));
 const native = cases.map(f => {
-  const execution = spawnSync(resolve(root,process.platform==='win32'?'target/debug/codegrid.exe':'target/debug/codegrid'), ['evaluate',resolve(root,'fixtures/scene-v2',f.level),resolve(root,'fixtures/scene-v2',f.program),'--api-version','2','--mode',f.mode.toLowerCase(),'--boundary',f.boundary.toLowerCase(),'--seed',f.seed,'--custom-limit',f.custom_limit,'--limits-file',resolve(root,'examples/scene-host-v2/profile-local-v2.json')], {encoding:'utf8',windowsHide:true});
+  const execution = spawnSync(resolve(root,process.platform==='win32'?'target/debug/codegrid.exe':'target/debug/codegrid'), ['evaluate',resolve(root,'fixtures/scene-v2',f.level),resolve(root,'fixtures/scene-v2',f.program),'--api-version','2','--mode',f.mode.toLowerCase(),'--seed',f.seed,'--custom-limit',f.custom_limit,'--limits-file',resolve(root,'examples/scene-host-v2/profile-local-v2.json')], {encoding:'utf8',windowsHide:true});
   assert.ok([0,8,9,10,11].includes(execution.status),execution.stderr);
   const response = JSON.parse(execution.stdout);
   assert.equal(response.status,'result');

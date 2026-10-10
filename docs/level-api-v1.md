@@ -14,7 +14,7 @@ A host creates an isolated API with an immutable trusted safety profile.
 `capabilities` reports supported versions, ExactIO, and no production scenes.
 `load_level` validates original JSON text. `compile_program` invokes the shared
 compiler once. Successful operations return opaque handles. `start_evaluation`
-takes level/program handles, Debug or Official, explicit Exit/Wrap, a positive
+takes level/program handles, Debug or Official, a positive
 Custom execution limit, and an optional shuffle seed. An omitted seed requires
 an explicit host seed source; absence of that source is an API error.
 

@@ -258,14 +258,17 @@ fn failure_tick_is_local_to_case_and_runtime_pairs_keep_registry_identity() {
     assert_eq!(*tick, Some(3));
     assert_eq!(result.partial_metrics["ticks"], 6);
     let failure = VisibleSceneFailure::RuntimeError {
-        codes: vec!["OutOfBounds".into()],
+        codes: vec!["ConcurrentOutputConflict".into()],
     };
     let value = codegrid_level_core::scene_feedback::visible_failure_value(&failure, false);
     assert_eq!(value["code"], "level.runtime_error");
     assert_eq!(value["error_number"], "9028");
-    assert_eq!(value["details"]["runtime_errors"][0]["code"], "OutOfBounds");
+    assert_eq!(
+        value["details"]["runtime_errors"][0]["code"],
+        "ConcurrentOutputConflict"
+    );
     assert_eq!(
         value["details"]["runtime_errors"][0]["error_number"],
-        codegrid_model::error_number("vm", "OutOfBounds").unwrap()
+        codegrid_model::error_number("vm", "ConcurrentOutputConflict").unwrap()
     );
 }

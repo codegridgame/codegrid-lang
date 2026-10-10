@@ -1,7 +1,7 @@
 use codegrid_ir::{
     Board, Cell, CustomDefinition, Program, ScopedProgram, VerifiedProgram, IR_FORMAT_VERSION,
 };
-use codegrid_model::{BoundaryMode, Direction, PrimaryInstruction, Slot};
+use codegrid_model::{Direction, PrimaryInstruction, Slot};
 use codegrid_vm::{RunOutcome, Vm, VmConfig, VmStatus};
 use std::{collections::BTreeMap, num::NonZeroU64};
 
@@ -132,7 +132,7 @@ fn machine(main: Board, custom: Option<Board>, input: &[u8]) -> Vm {
     Vm::new(
         program,
         input.iter().copied(),
-        VmConfig::new(BoundaryMode::Exit, 0, NonZeroU64::new(100).unwrap()),
+        VmConfig::new(0, NonZeroU64::new(100).unwrap()),
     )
     .unwrap()
 }

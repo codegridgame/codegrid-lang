@@ -2,7 +2,7 @@ use codegrid_ir::{Board, Cell, Program, ScopedProgram, VerifiedProgram, IR_FORMA
 use codegrid_model::{
     AttachmentInstruction, ConditionPrefix, Direction, PrimaryInstruction as P, Slot,
 };
-use codegrid_vm::{BoundaryMode, RunOutcome, Vm, VmConfig, VmStatus};
+use codegrid_vm::{RunOutcome, Vm, VmConfig, VmStatus};
 use std::{collections::BTreeMap, num::NonZeroU64};
 
 fn board(tokens: &[&str]) -> Board {
@@ -59,7 +59,7 @@ fn machine(main: Board, functions: Vec<Board>, customs: Vec<Board>, input: &[u8]
     Vm::new(
         program,
         input.iter().copied(),
-        VmConfig::new(BoundaryMode::Exit, 0, NonZeroU64::new(100).unwrap()),
+        VmConfig::new(0, NonZeroU64::new(100).unwrap()),
     )
     .unwrap()
 }
@@ -155,13 +155,14 @@ fn functions_copy_and_restore_flags_custom_copies_and_discards() {
 }
 
 #[test]
-fn rejected_tick_rolls_back_flag_and_register_and_new_instances_start_zero() {
+fn wrapped_tick_commits_flag_and_register_and_new_instances_start_zero() {
     let mut vm = machine(board(&["~>", "-"]), vec![], vec![], &[]);
     assert_eq!(vm.snapshot().threads[0].status_flag, 0);
     vm.step();
     vm.step();
-    assert_eq!(vm.snapshot().threads[0].status_flag, 0);
-    assert_eq!(vm.snapshot().registers[0], 0);
+    assert_eq!(vm.snapshot().threads[0].status_flag, 1);
+    assert_eq!(vm.snapshot().registers[0], 255);
+    assert_eq!(vm.snapshot().threads[0].position.x, 0);
 }
 
 #[test]

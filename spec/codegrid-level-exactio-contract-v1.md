@@ -11,7 +11,7 @@ they do not establish implementation or parity for this amendment.
 Status: decided for the first implementation phase on 2026-09-30.
 
 This contract supplements [Level Core v1](codegrid-level-core-spec-v1.md).
-The user selected dynamic `cost`, explicit Exit/Wrap configuration, WriteCode
+The user selected dynamic `cost`, fixed four-direction toroidal boards, WriteCode
 support, and enforcement of the whitelist on generated code, then authorized
 the recommended remaining choices. Source acceptance and VM transitions remain
 defined by their existing specifications. Environment scene protocols and the
@@ -43,9 +43,10 @@ are explicit, including the grouped capabilities below.
 Board dimensions are positive `u32` values within the existing portable board
 geometry bounds. They are upper bounds, not exact required dimensions.
 `max_functions` is `0..=10` per code grid; `max_custom` is `0..=10` in the outer
-program; `max_threads` is a positive `u32` maximum Entry-thread count per code
-grid. This counts the outer Main Entries and each Custom Main's Entries
-separately, not the aggregate of resident outer and internal threads.
+program. `max_threads` is a positive `u32` maximum effective Main-thread count
+per code grid. Count explicit Entries, or one default thread when none exist,
+separately for outer Main and each Custom Main; do not aggregate resident
+outer and internal threads.
 
 Apply Main and Function dimension bounds in both outer and Custom code grids.
 Folded Blocks use their owner's geometry according to the language spec;
@@ -118,14 +119,17 @@ until explicitly added to a later capability contract.
 | POINTER_LEFT, POINTER_RIGHT | MoveRegisterPointer of the named orientation |
 | OUTPUT, PUSH, POP_ADD, DECODE, ENCODE | Corresponding model variants |
 
+| OUTPUT_IMMEDIATE | OutputImmediate of any decimal digit `.0` through `.9` |
 | CALL, RETURN | Call of any valid Slot, Return |
 | NAND, MEMORY_LOAD, MEMORY_STORE | Nand, MemoryLoad, MemoryStore |
 | PAGE_INCREMENT, PAGE_DECREMENT | MovePage of the named orientation |
 | SHIFT_LEFT, SHIFT_RIGHT | Shift of the named orientation |
 | FOLDED_BLOCK, CUSTOM, CUSTOM_RETURN, HALT | Corresponding model variants; Slot families allow any valid Slot |
 
-OUTPUT includes both register output `.` and immediate outputs `.0` through
-`.9`. These forms share the OUTPUT permission and one static instruction kind.
+OUTPUT permits register output `.` and remains always allowed.
+OUTPUT_IMMEDIATE separately permits all immediate outputs `.0` through `.9`
+and requires explicit permission, absent by default. The static instruction
+kind and VM instruction-variety metric remain shared with ordinary output.
 
 `READ` permits only the directionless Primary. Removed directional READ names are invalid. Empty and Entry are structural cells and need no
 instruction permission. Folded Block and Custom invocation shells do require
@@ -208,11 +212,11 @@ may include VM attempted-work counters under the VM's rollback metric rules.
 
 ## 4. Determinism and host configuration
 
-The level API requires explicit `boundary_mode: Exit | Wrap`, positive Custom
-execution limit, and an immutable trusted safety profile. These are evaluation
+The level API requires a positive Custom
+execution limit and an immutable trusted safety profile. These are evaluation
 configuration, not level initial-state overrides. Include them in result and
 replay identity; server ranking partitions must use the same profile and
-boundary mode. A caller cannot relax trusted ceilings.
+fixed toroidal movement. A caller cannot relax trusted ceilings.
 
 The API accepts optional `shuffle_seed: u64`. When omitted, resolve it through
 an explicit host seed source before starting the kernel. Use the returned root

@@ -67,7 +67,7 @@ before implementation; this change does not edit either specification.
 ### ExactIO first-phase contract (2026-09-30)
 
 The user explicitly selected cost as VM Operation Count, explicit per-evaluation
-Exit/Wrap configuration, first-phase WriteCode support, and enforcement of the
+first-phase WriteCode support, and enforcement of the
 whitelist on generated code. The user then authorized the remaining recommended
 choices. The [ExactIO implementation contract](../spec/codegrid-level-exactio-contract-v1.md)
 records the schema, independent Attachment whitelist, capability mapping,
@@ -141,7 +141,7 @@ are unchanged.
 | Topic | Decision | Evidence and follow-up |
 | --- | --- | --- |
 | Language surface | Full includes Main, Function, Custom, and Folded Block definitions; all Primary instructions; ReadCode, WriteCode, and Repeat Attachments; and the associated state and execution semantics. | Canonical inventory in [`codegrid-model`](../crates/codegrid-model/src/lib.rs) and the Full source contract. |
-| Board structure | Support scoped Function/Folded Block paths, including definitions nested in Custom CodeGrids. Main and Custom Main contexts may have multiple Entries; each Function Board has exactly one Entry. | Source syntax and Entry-count rules are normative in the Full source specification. Board execution and resume behavior belong to the Full VM specification. |
+| Board structure | Support scoped Function/Folded Block paths, including definitions nested in Custom CodeGrids. Main and Custom Main contexts may have multiple Entries; each Function Board has at most one explicit Entry. A board without Entries defaults to (0, 0), facing Right. | Source syntax and Entry-count rules are normative in the Full source specification. Board execution and resume behavior belong to the Full VM specification. |
 | Folded Blocks | A Folded Block is one row high and matches its owner's width; entry starts at internal position (0,0) facing Right, independent of the caller direction. Execution wraps horizontally and uses the specified vertical exit/Resume behavior. | The historical `concurrent_outer_folded_threads_keep_control_and_register_state_isolated` case confirms independent internal direction and saved caller direction; the Full VM specification now states this explicitly. |
 | Concurrent tick | Threads evaluate from the same tick-start state. Their private state and shared effects are staged, conflicts are resolved deterministically, and the outer tick commits atomically or rolls back. Thread order is not a semantic write priority. | The Full VM specification defines the complete conflict, rollback, and ordering rules; direct integration coverage remains required. |
 | Calls and Repeat | Function CALL/RETURN and caller Resume behavior consume their specified ticks. Qualifying tail recursion reuses a frame. Repeat spreads Primary executions across ticks and moves after its final execution. | Execution timing, tail-call eligibility, and Repeat behavior are normative in the Full VM specification; direct conformance cases remain required. |
@@ -180,7 +180,7 @@ The local native CLI contract is specified in [`docs/cli.md`](cli.md). Its comma
 
 | Topic | Decision | Follow-up |
 | --- | --- | --- |
-| Commands and bounds | Keep `check <program.cg>` and `run <program.cg>`. `run` requires `--boundary`, `--seed`, `--custom-limit`, `--max-ticks`, and `--max-work-units`; tick, Custom, and work limits are positive `u64` values. Input is optional and comes from exactly one of `--input` or `--input-file`; initial Outer memory is optional via `--initial-memory-file`. | Implemented in `codegrid-cli`; focused argument and all shared Full fixture tests pass. |
+| Commands and bounds | Keep `check <program.cg>` and `run <program.cg>`. `run` requires `--seed`, `--custom-limit`, `--max-ticks`, and `--max-work-units`; tick, Custom, and work limits are positive `u64` values. Input is optional and comes from exactly one of `--input` or `--input-file`; initial Outer memory is optional via `--initial-memory-file`. | Implemented in `codegrid-cli`; focused argument and all shared Full fixture tests pass. |
 | Input representation | Inline input is a comma-separated byte list; file input is a JSON byte array. Initial memory is a JSON array of unique `{address, value}` entries; addresses are canonical signed decimal strings and values are bytes. Zero-valued initial entries are accepted and normalized away. | Implemented and covered for both input forms, malformed values, duplicate addresses, empty input, wide addresses, and memory normalization. |
 | Run result | Use `schema: "codegrid.cli.run-result"`, `schema_version: 1`, with distinct `source_error`, `halted`, `runtime_error`, `yielded`, and `vm_fault` outcomes, complete Full snapshots, committed events/output, and the effective configuration. | Implemented with full snapshots, events, metrics, errors, yields, and deterministic JSON checks; this schema remains independent from Runtime API v3 and adapter wire schemas. |
 | Wide integers and ordering | Encode every `u64`, arbitrary-precision signed integer, and UTF-8 source byte offset as a canonical decimal string. Keep bytes and bounded values as exact JSON numbers. Serialize identity collections in canonical VM order. | Implemented and covered by wide seed/address and shared Full conformance checks. |
@@ -196,7 +196,7 @@ API versioning does not version the byte ABI. Requests and responses carry both
 
 The v4 request layout uses flat operation fields. `initialize` takes immutable
 trusted `host_limits`, including `max_initial_memory_entries`. `create_instance`
-takes a program handle, byte-array input, `boundary_mode`, canonical decimal
+takes a program handle, byte-array input, canonical decimal
 string `seed`, positive decimal string `custom_execution_limit`, and optional
 `initial_memory` entries with canonical signed decimal string addresses and
 byte values. `program_view` exposes canonical compiler output by existing
@@ -711,3 +711,58 @@ claims that current host fields already expose private state.
 ## Function and NEG implementation compatibility (2026-10-08)
 
 The approved value-copy Function register/pointer scope and `$!` NEG code 69 are implemented. RETURN discards the callee bank and resumes its caller bank/pointer; same-thread Data Stack returns remain available. Main sibling writes are never overwritten by an old snapshot. Executable IR is bumped to 3 because the Function execution semantics changed; reject formats 1 and 2 and recompile source. Host Runtime API v3/browser v3/server ABI v4 add nullable private/saved banks and saved pointers without a new event kind. ThreadChanged carries private state; RegisterChanged retains shared Main-bank semantics. Actual host comparisons cover all 81 Full fixtures.
+
+## 2026-10-08: Explicit immediate-output level permission
+
+User decision: one OUTPUT_IMMEDIATE capability controls `.0` through `.9`,
+absent by default and grouped under Special in the downstream editor. It is
+independent from always-allowed register OUTPUT. Validate initial and generated
+code consistently. Syntax, VM execution, encoding and metrics are unchanged.
+
+
+## Toroidal boards and implicit entries (2026-10-11)
+
+The user approved removal of normal-board boundary selection. Every normal
+Main and Function board, including boards inside Customs, wraps horizontally
+and vertically. Crossing an edge preserves the other coordinate and direction.
+All ordinary boards use this fixed topology; hosts cannot configure a different one.
+Invalid geometry remains rejected by verification; invalid internal movement
+state is a VM fault. Folded Blocks retain horizontal wrapping and vertical
+Fold Resume transitions.
+
+A board without an explicit Entry starts at (0, 0), facing Right. Outer and
+Custom Main create one default thread only when no explicit Entries exist.
+Functions allow zero or one explicit Entry. Explicit Main Entries still create
+threads in row-major order, without an additional default thread. The default
+entry does not replace the cell, occupy a cell, or count as a placed instruction.
+The first dispatch executes the actual cell at (0, 0); an empty cell consumes
+one tick and moves Right. CALL retains its own transfer tick, and the target
+cell executes on the next tick. Custom execution retains synchronous internal
+ticks. Effective thread limits count the default thread.
+
+Current request, response, CLI, debug and editor contracts remove boundary
+selection directly under the unpublished-release policy. Existing work and player content must be preserved. All execution paths use
+the same fixed board topology, including game and terminal consumers.
+
+
+## Fixed toroidal topology across every consumer (2026-10-11)
+
+The user extended the approved scope to every application execution path and
+requested removal of alternative board topology configuration and obsolete
+authoring documentation. Ordinary boards always wrap horizontally and
+vertically; entering (0, 0) does not reset direction. Initial execution faces
+Right and executes the actual first cell. This extends the application contract
+without adding game rules to the Rust language core.
+
+The existing HALT capability is available in the separate Game profile as an
+explicit completion point. Application completion validates the existing level
+goal: music compares the melody, navigation checks its target when present,
+random finishes explicitly, and output/Standard use exact output validation.
+Repository-owned layouts and fixtures are updated for Right-facing startup.
+Stored player data and unrelated in-progress work are preserved.
+
+Current schemas, callers and editors do not expose topology selection. Source
+formatters and parsers do not accept topology directives. No aliases or
+compatibility-only migration layers are retained under the unpublished-release
+policy. Array bounds, scene-world obstacles and UI placement constraints remain
+independent data-validation rules.

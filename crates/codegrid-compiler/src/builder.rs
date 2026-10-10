@@ -1003,16 +1003,10 @@ fn finalize_board(
         hir_rows.push(cells);
     }
 
-    if is_main && entry_count == 0 {
-        diagnostics.push(Diagnostic::error(
-            "source.main_entry_count",
-            "The Main board must contain at least one Entry marker.",
-            raw.span,
-        ));
-    } else if !is_main && entry_count != 1 {
+    if !is_main && entry_count > 1 {
         diagnostics.push(Diagnostic::error(
             "source.function_entry_count",
-            format!("A function board must contain exactly one Entry marker; found {entry_count}."),
+            format!("A function board must contain at most one Entry marker; found {entry_count}."),
             raw.span,
         ));
     }

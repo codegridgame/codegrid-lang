@@ -134,7 +134,6 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         let level = fixtures.join(case["level"].as_str().ok_or("Level path required")?);
         let program = fixtures.join(case["program"].as_str().ok_or("Program path required")?);
         let mode = case["mode"].as_str().unwrap_or("Official");
-        let boundary = case["boundary"].as_str().unwrap_or("Exit");
         let seed = case["seed"].as_str().unwrap_or("18446744073709551615");
         let custom_limit = case["custom_limit"].as_str().unwrap_or("1000");
         let native = Command::new(root.join(if cfg!(windows) {
@@ -148,8 +147,6 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         .args([
             "--mode",
             &mode.to_ascii_lowercase(),
-            "--boundary",
-            &boundary.to_ascii_lowercase(),
             "--seed",
             seed,
             "--custom-limit",
@@ -174,7 +171,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             if program_response["status"] != "ok" {
                 program_response
             } else {
-                let started=host.api(json!({"operation":"start_evaluation","level":level_response["handle"],"program":program_response["handle"],"mode":mode,"boundary_mode":boundary,"shuffle_seed":seed,"custom_execution_limit":custom_limit}))?;
+                let started=host.api(json!({"operation":"start_evaluation","level":level_response["handle"],"program":program_response["handle"],"mode":mode,"shuffle_seed":seed,"custom_execution_limit":custom_limit}))?;
                 evaluation = started["handle"].clone();
                 if started["status"] != "ok" {
                     started

@@ -2,7 +2,6 @@
   "extension.description": "完整 CodeGrid 编辑、本地运行及 Global Tick 调试，支持可选语言服务器。",
   "codegrid.runtime.path.description": "CodeGrid 可执行文件路径。留空时先使用内置运行环境，再搜索 PATH。",
   "codegrid.execution.input.description": "运行及调试使用的输入字节。",
-  "codegrid.execution.boundary.description": "棋盘边界行为。",
   "codegrid.execution.seed.description": "标准十进制 u64 种子。",
   "codegrid.execution.customLimit.description": "Custom 执行上限。",
   "codegrid.execution.maxTicks.description": "每个会话可提交的 Global Tick 上限。",

@@ -2,7 +2,6 @@
   "extension.description": "CodeGrid 편집, 로컬 실행 및 Global Tick 디버깅. 언어 서버는 선택 사항입니다.",
   "codegrid.runtime.path.description": "CodeGrid 실행 파일 경로. 비어 있으면 내장 런타임, 다음으로 PATH를 사용합니다.",
   "codegrid.execution.input.description": "실행 및 디버깅 입력 바이트.",
-  "codegrid.execution.boundary.description": "보드 경계 동작.",
   "codegrid.execution.seed.description": "정규 십진수 u64 시드.",
   "codegrid.execution.customLimit.description": "Custom 실행 한도.",
   "codegrid.execution.maxTicks.description": "세션당 확정 Global Tick 수 한도.",

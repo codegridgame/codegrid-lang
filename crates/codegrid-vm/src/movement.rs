@@ -1,4 +1,4 @@
-use codegrid_model::{BoundaryMode, Direction};
+use codegrid_model::Direction;
 
 #[derive(Clone, Copy, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
 pub struct Coordinate {
@@ -12,60 +12,56 @@ pub enum FoldStep {
     VerticalExit(Direction),
 }
 
-/// Moves one cell on a normal board under the configured boundary mode.
-///
-/// Returns `None` for an invalid starting coordinate or an Exit-mode boundary
-/// crossing. Board dimensions must be positive.
+/// Moves one cell on a board that wraps across all four edges.
+/// Returns `None` only for invalid geometry or an invalid starting coordinate.
 pub fn move_normal(
     position: Coordinate,
     direction: Direction,
     width: usize,
     height: usize,
-    boundary_mode: BoundaryMode,
 ) -> Option<Coordinate> {
     if width == 0 || height == 0 || position.x >= width || position.y >= height {
         return None;
     }
-
-    match direction {
-        Direction::Up if position.y > 0 => Some(Coordinate {
-            y: position.y - 1,
+    Some(match direction {
+        Direction::Up => Coordinate {
+            y: if position.y == 0 {
+                height - 1
+            } else {
+                position.y - 1
+            },
             ..position
-        }),
-        Direction::Down if position.y + 1 < height => Some(Coordinate {
-            y: position.y + 1,
-            ..position
-        }),
-        Direction::Left if position.x > 0 => Some(Coordinate {
-            x: position.x - 1,
-            ..position
-        }),
-        Direction::Right if position.x + 1 < width => Some(Coordinate {
-            x: position.x + 1,
-            ..position
-        }),
-        Direction::Up | Direction::Down | Direction::Left | Direction::Right => match boundary_mode
-        {
-            BoundaryMode::Exit => None,
-            BoundaryMode::Wrap => Some(match direction {
-                Direction::Up => Coordinate {
-                    y: height - 1,
-                    ..position
-                },
-                Direction::Down => Coordinate { y: 0, ..position },
-                Direction::Left => Coordinate {
-                    x: width - 1,
-                    ..position
-                },
-                Direction::Right => Coordinate { x: 0, ..position },
-            }),
         },
-    }
+        Direction::Down => Coordinate {
+            y: if position.y == height - 1 {
+                0
+            } else {
+                position.y + 1
+            },
+            ..position
+        },
+        Direction::Left => Coordinate {
+            x: if position.x == 0 {
+                width - 1
+            } else {
+                position.x - 1
+            },
+            ..position
+        },
+        Direction::Right => Coordinate {
+            x: if position.x == width - 1 {
+                0
+            } else {
+                position.x + 1
+            },
+            ..position
+        },
+    })
 }
 
 /// Moves one cell in a one-row Folded Block.
 ///
-/// Horizontal movement wraps independently of Program BoundaryMode. A
+/// Horizontal movement wraps. A
 /// vertical direction produces the normative Fold Resume transition.
 pub fn move_folded(position: Coordinate, direction: Direction, width: usize) -> Option<FoldStep> {
     if width == 0 || position.y != 0 || position.x >= width {
@@ -93,33 +89,23 @@ pub fn move_folded(position: Coordinate, direction: Direction, width: usize) -> 
 #[cfg(test)]
 mod tests {
     use super::{move_folded, move_normal, Coordinate, FoldStep};
-    use codegrid_model::{BoundaryMode, Direction};
+    use codegrid_model::Direction;
 
     #[test]
-    fn normal_exit_and_wrap_boundaries_are_distinct() {
+    fn normal_edges_wrap() {
         let right_edge = Coordinate { x: 2, y: 1 };
         assert_eq!(
-            move_normal(right_edge, Direction::Right, 3, 2, BoundaryMode::Exit),
-            None
-        );
-        assert_eq!(
-            move_normal(right_edge, Direction::Right, 3, 2, BoundaryMode::Wrap),
+            move_normal(right_edge, Direction::Right, 3, 2),
             Some(Coordinate { x: 0, y: 1 })
         );
         assert_eq!(
-            move_normal(
-                Coordinate { x: 0, y: 0 },
-                Direction::Up,
-                3,
-                2,
-                BoundaryMode::Wrap
-            ),
+            move_normal(Coordinate { x: 0, y: 0 }, Direction::Up, 3, 2,),
             Some(Coordinate { x: 0, y: 1 })
         );
     }
 
     #[test]
-    fn normal_board_edges_exit_or_wrap_in_each_direction() {
+    fn normal_board_edges_wrap_in_each_direction() {
         let cases = [
             (
                 Coordinate { x: 1, y: 0 },
@@ -145,12 +131,7 @@ mod tests {
 
         for (position, direction, wrapped) in cases {
             assert_eq!(
-                move_normal(position, direction, 3, 4, BoundaryMode::Exit),
-                None,
-                "Exit should reject {direction:?} from {position:?}"
-            );
-            assert_eq!(
-                move_normal(position, direction, 3, 4, BoundaryMode::Wrap),
+                move_normal(position, direction, 3, 4),
                 Some(wrapped),
                 "Wrap should reach {wrapped:?} from {position:?} toward {direction:?}"
             );
@@ -176,13 +157,7 @@ mod tests {
     #[test]
     fn rejects_invalid_geometry_without_panicking() {
         assert_eq!(
-            move_normal(
-                Coordinate { x: 0, y: 0 },
-                Direction::Right,
-                0,
-                1,
-                BoundaryMode::Wrap
-            ),
+            move_normal(Coordinate { x: 0, y: 0 }, Direction::Right, 0, 1,),
             None
         );
         assert_eq!(

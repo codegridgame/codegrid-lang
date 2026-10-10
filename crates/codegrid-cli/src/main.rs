@@ -9,7 +9,7 @@ use codegrid_ir::{Board, BoardId, CodeGridId, ScopedProgram};
 use codegrid_level_api::{LevelApiV2, SafetyProfileV2};
 use codegrid_model::error_number;
 use codegrid_model::{
-    AttachmentInstruction, BoundaryMode, Direction, InstructionStackItem, PrimaryInstruction, Slot,
+    AttachmentInstruction, Direction, InstructionStackItem, PrimaryInstruction, Slot,
 };
 use codegrid_syntax::{Diagnostic, LineIndex, Severity};
 use codegrid_vm::{
@@ -38,13 +38,13 @@ const USAGE: &str = concat!(
     "Usage:\n",
     "  codegrid check <program.cg>\n",
     "  codegrid debug --stdio\n",
-    "  codegrid run <program.cg> --boundary <exit|wrap> --seed <u64>\n",
+    "  codegrid run <program.cg> --seed <u64>\n",
     "    --custom-limit <positive-u64> --max-ticks <positive-u64>\n",
     "    --max-work-units <positive-u64>\n",
     "    [--input <byte,byte,...> | --input-file <json-file>]\n",
     "    [--initial-memory-file <json-file>]\n",
     "  codegrid evaluate <level.json> <program.cg>\n",
-    "    --mode <debug|official> --boundary <exit|wrap> --seed <u64>\n",
+    "    --mode <debug|official> --seed <u64>\n",
     "    --custom-limit <positive-u64> --limits-file <trusted-profile.json>\n",
     "    [--format <json|human>] [--api-version <2>]\n",
 );
@@ -53,7 +53,6 @@ struct RunOptions {
     source_path: PathBuf,
     input: InputSource,
     initial_memory_file: Option<PathBuf>,
-    boundary: BoundaryMode,
     seed: u64,
     custom_limit: NonZeroU64,
     max_ticks: NonZeroU64,
@@ -64,7 +63,6 @@ struct EvaluateOptions {
     level_path: PathBuf,
     source_path: PathBuf,
     mode: EvaluationModeArg,
-    boundary: BoundaryMode,
     seed: u64,
     custom_limit: NonZeroU64,
     limits_path: PathBuf,
@@ -190,7 +188,6 @@ fn parse_run_arguments(arguments: &mut impl Iterator<Item = OsString>) -> Result
     let mut input = None;
     let mut input_file = None;
     let mut initial_memory_file = None;
-    let mut boundary = None;
     let mut seed = None;
     let mut custom_limit = None;
     let mut max_ticks = None;
@@ -221,16 +218,6 @@ fn parse_run_arguments(arguments: &mut impl Iterator<Item = OsString>) -> Result
                     return Err("--initial-memory-file may be specified only once".to_owned());
                 }
                 initial_memory_file = Some(PathBuf::from(next_option_value(arguments, option)?));
-            }
-            "--boundary" => {
-                if boundary.is_some() {
-                    return Err("--boundary may be specified only once".to_owned());
-                }
-                boundary = Some(match option_value_text(arguments, option)?.as_str() {
-                    "exit" => BoundaryMode::Exit,
-                    "wrap" => BoundaryMode::Wrap,
-                    _ => return Err("--boundary must be exit or wrap".to_owned()),
-                });
             }
             "--seed" => {
                 if seed.is_some() {
@@ -272,7 +259,6 @@ fn parse_run_arguments(arguments: &mut impl Iterator<Item = OsString>) -> Result
         source_path: PathBuf::from(source_path),
         input,
         initial_memory_file,
-        boundary: boundary.ok_or_else(|| "run requires --boundary".to_owned())?,
         seed: seed.ok_or_else(|| "run requires --seed".to_owned())?,
         custom_limit: custom_limit.ok_or_else(|| "run requires --custom-limit".to_owned())?,
         max_ticks: max_ticks.ok_or_else(|| "run requires --max-ticks".to_owned())?,
@@ -290,7 +276,6 @@ fn parse_evaluate_arguments(
         return Err("evaluate requires a source file path after the level path".to_owned());
     };
     let mut mode = None;
-    let mut boundary = None;
     let mut seed = None;
     let mut custom_limit = None;
     let mut limits_path = None;
@@ -310,16 +295,6 @@ fn parse_evaluate_arguments(
                     "debug" => EvaluationModeArg::Debug,
                     "official" => EvaluationModeArg::Official,
                     _ => return Err("--mode must be debug or official".to_owned()),
-                });
-            }
-            "--boundary" => {
-                if boundary.is_some() {
-                    return Err("--boundary may be specified only once".to_owned());
-                }
-                boundary = Some(match option_value_text(arguments, option)?.as_str() {
-                    "exit" => BoundaryMode::Exit,
-                    "wrap" => BoundaryMode::Wrap,
-                    _ => return Err("--boundary must be exit or wrap".to_owned()),
                 });
             }
             "--seed" => {
@@ -368,7 +343,6 @@ fn parse_evaluate_arguments(
         level_path: PathBuf::from(level_path),
         source_path: PathBuf::from(source_path),
         mode: mode.ok_or_else(|| "evaluate requires --mode".to_owned())?,
-        boundary: boundary.ok_or_else(|| "evaluate requires --boundary".to_owned())?,
         seed: seed.ok_or_else(|| "evaluate requires --seed".to_owned())?,
         custom_limit: custom_limit.ok_or_else(|| "evaluate requires --custom-limit".to_owned())?,
         limits_path: limits_path.ok_or_else(|| "evaluate requires --limits-file".to_owned())?,
@@ -602,7 +576,7 @@ fn run_file(options: RunOptions) -> i32 {
             return EXIT_STATIC_ERROR;
         }
     };
-    let config = VmConfig::new(options.boundary, options.seed, options.custom_limit);
+    let config = VmConfig::new(options.seed, options.custom_limit);
     let mut vm = match Vm::with_initial_memory(program, input, initial_memory, config) {
         Ok(vm) => vm,
         Err(error) => {
@@ -758,7 +732,7 @@ fn evaluate_files(options: EvaluateOptions) -> i32 {
                 "level": level_handle,
                 "program": program_handle,
                 "mode": match options.mode { EvaluationModeArg::Debug => "Debug", EvaluationModeArg::Official => "Official" },
-                "boundary_mode": boundary_api_name(options.boundary),
+
                 "shuffle_seed": options.seed.to_string(),
                 "custom_execution_limit": options.custom_limit.get().to_string(),
             }),
@@ -921,13 +895,6 @@ fn response_status(response: &JsonValue) -> Option<&str> {
     response.get("status").and_then(JsonValue::as_str)
 }
 
-fn boundary_api_name(boundary: BoundaryMode) -> &'static str {
-    match boundary {
-        BoundaryMode::Exit => "Exit",
-        BoundaryMode::Wrap => "Wrap",
-    }
-}
-
 fn response_handle(response: &JsonValue) -> Result<String, String> {
     response
         .get("handle")
@@ -1011,7 +978,7 @@ fn configuration_json(
     initial_memory: &BTreeMap<MemoryAddress, u8>,
 ) -> JsonValue {
     json!({
-        "boundary_mode": boundary_name(options.boundary),
+
         "seed": options.seed.to_string(),
         "custom_execution_limit": options.custom_limit.get().to_string(),
         "max_ticks": options.max_ticks.get().to_string(),
@@ -1412,17 +1379,6 @@ fn runtime_error_details(kind: &RuntimeErrorKind) -> JsonValue {
         RuntimeErrorKind::CustomExecutionLimitExceeded { limit } => json!({
             "limit": limit.to_string(),
         }),
-        RuntimeErrorKind::OutOfBounds {
-            thread_id,
-            board,
-            position,
-            direction,
-        } => json!({
-            "thread_id": thread_id.to_string(),
-            "board": board_id_json(*board),
-            "position": coordinate_json(*position),
-            "direction": direction_name(*direction),
-        }),
         RuntimeErrorKind::ReturnWithoutCall {
             thread_id,
             board,
@@ -1496,13 +1452,6 @@ fn board_id_json(id: BoardId) -> JsonValue {
 
 fn coordinate_json(position: codegrid_vm::Coordinate) -> JsonValue {
     json!({"x": position.x, "y": position.y})
-}
-
-fn boundary_name(boundary: BoundaryMode) -> &'static str {
-    match boundary {
-        BoundaryMode::Exit => "exit",
-        BoundaryMode::Wrap => "wrap",
-    }
 }
 
 fn direction_name(direction: Direction) -> &'static str {
@@ -1615,8 +1564,6 @@ mod tests {
         let args = [
             "run",
             "program.cg",
-            "--boundary",
-            "wrap",
             "--seed",
             "18446744073709551615",
             "--custom-limit",

@@ -102,7 +102,7 @@ UTF-8 source
     -> CLI or a later host adapter
 ```
 
-The source specification owns Full source acceptance. The model crate is the canonical Full instruction and attachment inventory. The compiler is the only source acceptance and IR construction path. The VM accepts only verified IR and receives explicit boundary mode, input, seed, limits, and initial state as data. It returns results without performing host I/O.
+The source specification owns Full source acceptance. The model crate is the canonical Full instruction and attachment inventory. The compiler is the only source acceptance and IR construction path. The VM accepts only verified IR and receives explicit input, seed, limits, and initial state as data. It returns results without performing host I/O.
 
 The semantic crates do not read paths, environment variables, networks, clocks, host randomness, or process state. They do not depend on CLI, LSP transport, editors, browsers, JavaScript bindings, operating-system I/O, game rules, `wasm-bindgen`, WASI, or a particular WASM runtime. Source spans remain UTF-8 byte offsets in core code; adapters convert them explicitly to editor position units.
 
@@ -122,7 +122,7 @@ Do not infer source language support from an IR, Runtime API, or ABI version. Ne
 
 ## CLI boundary
 
-`codegrid-cli` owns file access, argument parsing, input conversion, process exit codes, terminal diagnostics, and JSON serialization. It calls the shared compiler for `check` and `run`, then passes the resulting verified program and explicit run data to the shared VM. Full execution configuration includes boundary mode, input, seed, Custom execution limit, initial memory, and bounded outer ticks. Exact option spellings and result schema belong in the Full [CLI contract](cli.md).
+`codegrid-cli` owns file access, argument parsing, input conversion, process exit codes, terminal diagnostics, and JSON serialization. It calls the shared compiler for `check` and `run`, then passes the resulting verified program and explicit run data to the shared VM. Full execution configuration includes input, seed, Custom execution limit, initial memory, and bounded outer ticks. Exact option spellings and result schema belong in the Full [CLI contract](cli.md).
 
 Native CLI acceptance is separate from WASM portability and parity. A successful native CLI gate proves only the documented native behavior.
 

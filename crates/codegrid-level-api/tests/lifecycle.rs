@@ -55,7 +55,7 @@ fn result_lifecycle_exact_seed_and_scoring() {
     let (l, p) = loaded(&mut api);
     let e = request(
         &mut api,
-        json!({"operation":"start_evaluation","level":l,"program":p,"mode":"Official","boundary_mode":"Exit","shuffle_seed":"18446744073709551615","custom_execution_limit":"100"}),
+        json!({"operation":"start_evaluation","level":l,"program":p,"mode":"Official","shuffle_seed":"18446744073709551615","custom_execution_limit":"100"}),
     );
     assert_eq!(e["status"], "ok", "{e}");
     let h = e["handle"].clone();
@@ -110,7 +110,7 @@ fn isolation_versions_unknown_duplicates_and_shutdown() {
     assert_eq!(
         request(
             &mut b,
-            json!({"operation":"start_evaluation","level":l,"program":p,"mode":"Official","boundary_mode":"Exit","shuffle_seed":"0","custom_execution_limit":"1"})
+            json!({"operation":"start_evaluation","level":l,"program":p,"mode":"Official","shuffle_seed":"0","custom_execution_limit":"1"})
         )["error"]["code"],
         "level_api.invalid_handle"
     );
@@ -141,7 +141,7 @@ fn replay_hashes_and_execution_ceiling_identity_are_present() {
     let (l, p) = loaded(&mut a);
     let e = request(
         &mut a,
-        json!({"operation":"start_evaluation","level":l,"program":p,"mode":"Debug","boundary_mode":"Exit","shuffle_seed":"0","custom_execution_limit":"1"}),
+        json!({"operation":"start_evaluation","level":l,"program":p,"mode":"Debug","shuffle_seed":"0","custom_execution_limit":"1"}),
     );
     let r = request(
         &mut a,
@@ -180,7 +180,7 @@ fn rejection_seed_source_response_and_resource_limits() {
         "level_rejected"
     );
     let (l, p) = loaded(&mut a);
-    let r = json!({"operation":"start_evaluation","level":l,"program":p,"mode":"Debug","boundary_mode":"Exit","custom_execution_limit":"1"});
+    let r = json!({"operation":"start_evaluation","level":l,"program":p,"mode":"Debug","custom_execution_limit":"1"});
     assert_eq!(
         request(&mut a, r.clone())["error"]["code"],
         "level_api.seed_required"
@@ -193,7 +193,7 @@ fn rejection_seed_source_response_and_resource_limits() {
     let (l, p) = loaded(&mut b);
     let e = request(
         &mut b,
-        json!({"operation":"start_evaluation","level":l,"program":p,"mode":"Official","boundary_mode":"Exit","shuffle_seed":"0","custom_execution_limit":"1"}),
+        json!({"operation":"start_evaluation","level":l,"program":p,"mode":"Official","shuffle_seed":"0","custom_execution_limit":"1"}),
     );
     assert_eq!(e["error"]["code"], "level_api.resource_limit");
 }
@@ -258,7 +258,7 @@ fn release_inputs_preserves_evaluation_and_release_pending_invalidates_it() {
     let (l, p) = loaded(&mut a);
     let start = request(
         &mut a,
-        json!({"operation":"start_evaluation","level":l,"program":p,"mode":"Official","boundary_mode":"Exit","shuffle_seed":"0","custom_execution_limit":"100"}),
+        json!({"operation":"start_evaluation","level":l,"program":p,"mode":"Official","shuffle_seed":"0","custom_execution_limit":"100"}),
     );
     assert_eq!(start["status"], "ok", "{start}");
     let e = start["handle"].clone();
@@ -289,7 +289,7 @@ fn release_inputs_preserves_evaluation_and_release_pending_invalidates_it() {
         "ok"
     );
     let (l, p) = loaded(&mut a);
-    let e=request(&mut a,json!({"operation":"start_evaluation","level":l,"program":p,"mode":"Official","boundary_mode":"Exit","shuffle_seed":"0","custom_execution_limit":"100"}))["handle"].clone();
+    let e=request(&mut a,json!({"operation":"start_evaluation","level":l,"program":p,"mode":"Official","shuffle_seed":"0","custom_execution_limit":"100"}))["handle"].clone();
     assert_eq!(
         request(
             &mut a,
@@ -310,7 +310,7 @@ fn hidden_results_and_pending_projection_disclose_no_private_payload_or_metrics(
     let mut a = api();
     let l=request(&mut a,json!({"operation":"load_level","level_json":include_str!("../../../fixtures/levels-scene/hidden-wrong-official.json")}))["handle"].clone();
     let p=request(&mut a,json!({"operation":"compile_program","source":include_str!("../../../fixtures/levels-scene/echo.cg")}))["handle"].clone();
-    let e=request(&mut a,json!({"operation":"start_evaluation","level":l,"program":p,"mode":"Official","boundary_mode":"Exit","shuffle_seed":"0","custom_execution_limit":"100"}))["handle"].clone();
+    let e=request(&mut a,json!({"operation":"start_evaluation","level":l,"program":p,"mode":"Official","shuffle_seed":"0","custom_execution_limit":"100"}))["handle"].clone();
     let terminal = loop {
         let r = request(
             &mut a,
@@ -350,7 +350,7 @@ fn reservations_are_released_and_small_responses_stay_complete() {
     profile.max_state_bytes = 20000;
     let mut a = LevelApiV2::new(profile).unwrap();
     let (l, p) = loaded(&mut a);
-    let start = json!({"operation":"start_evaluation","level":l,"program":p,"mode":"Official","boundary_mode":"Exit","shuffle_seed":"0","custom_execution_limit":"100"});
+    let start = json!({"operation":"start_evaluation","level":l,"program":p,"mode":"Official","shuffle_seed":"0","custom_execution_limit":"100"});
     let first = request(&mut a, start.clone());
     assert_eq!(first["status"], "ok", "{first}");
     let second = request(&mut a, start.clone());

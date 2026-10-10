@@ -1,10 +1,8 @@
 use std::collections::BTreeMap;
 
-use codegrid_ir::{
-    Board, BoardId, Cell, Program, ScopedProgram, VerifiedProgram, IR_FORMAT_VERSION,
-};
-use codegrid_model::{BoundaryMode, Direction, PrimaryInstruction, ShiftDirection};
-use codegrid_vm::{InstructionKind, RunOutcome, RuntimeErrorKind, Vm, VmConfig, VmStatus};
+use codegrid_ir::{Board, Cell, Program, ScopedProgram, VerifiedProgram, IR_FORMAT_VERSION};
+use codegrid_model::{Direction, PrimaryInstruction, ShiftDirection};
+use codegrid_vm::{InstructionKind, RunOutcome, Vm, VmConfig, VmStatus};
 
 fn verified(cells: Vec<Cell>, width: usize, height: usize) -> VerifiedProgram {
     VerifiedProgram::new(Program {
@@ -23,11 +21,11 @@ fn verified(cells: Vec<Cell>, width: usize, height: usize) -> VerifiedProgram {
     .expect("Full test program must pass IR verification")
 }
 
-fn vm(cells: Vec<Cell>, width: usize, height: usize, input: &[u8], boundary: BoundaryMode) -> Vm {
+fn vm(cells: Vec<Cell>, width: usize, height: usize, input: &[u8]) -> Vm {
     Vm::new(
         verified(cells, width, height),
         input.iter().copied(),
-        VmConfig::new(boundary, 0, std::num::NonZeroU64::MIN),
+        VmConfig::new(0, std::num::NonZeroU64::MIN),
     )
     .expect("a verified Full program must initialize")
 }
@@ -43,7 +41,6 @@ fn starts_with_ten_zero_registers_and_halt_commits_without_moving() {
         3,
         1,
         &[],
-        BoundaryMode::Exit,
     );
     assert_eq!(vm.snapshot().registers, [0; 10]);
 
@@ -72,7 +69,6 @@ fn arithmetic_wraps_and_operation_variety_matches_the_full_inventory() {
         4,
         1,
         &[],
-        BoundaryMode::Exit,
     );
     assert_eq!(vm.run(8), RunOutcome::Halted);
 
@@ -109,7 +105,6 @@ fn zero_test_changes_direction_only_when_the_register_is_zero() {
         2,
         2,
         &[],
-        BoundaryMode::Exit,
     );
     assert_eq!(zero_case.run(8), RunOutcome::Halted);
     assert_eq!(zero_case.snapshot().threads[0].direction, Direction::Down);
@@ -130,7 +125,6 @@ fn zero_test_changes_direction_only_when_the_register_is_zero() {
         4,
         1,
         &[],
-        BoundaryMode::Exit,
     );
     assert_eq!(nonzero_case.run(8), RunOutcome::Halted);
     assert_eq!(nonzero_case.snapshot().registers[0], 1);
@@ -151,7 +145,6 @@ fn successful_read_consumes_one_byte_and_keeps_the_existing_direction() {
         3,
         1,
         &[173],
-        BoundaryMode::Exit,
     );
     assert_eq!(vm.run(8), RunOutcome::Halted);
 
@@ -174,7 +167,6 @@ fn output_appends_the_register_value_and_reports_the_step_delta() {
         4,
         1,
         &[],
-        BoundaryMode::Exit,
     );
     assert_eq!(vm.step().status, VmStatus::Running);
     assert_eq!(vm.step().status, VmStatus::Running);
@@ -195,7 +187,6 @@ fn exhausted_read_sets_flag_without_turning_or_an_error() {
         4,
         1,
         &[],
-        BoundaryMode::Exit,
     );
     assert_eq!(vm.run(8), RunOutcome::Halted);
 
@@ -224,7 +215,6 @@ fn exhausted_read_preserves_a_previously_read_value_and_keeps_direction() {
         6,
         1,
         &[173],
-        BoundaryMode::Wrap,
     );
 
     assert_eq!(vm.run(8), RunOutcome::Halted);
@@ -254,7 +244,6 @@ fn shifts_are_eight_bit_left_and_logical_right() {
         5,
         1,
         &[0x81],
-        BoundaryMode::Exit,
     );
     assert_eq!(vm.run(8), RunOutcome::Halted);
     assert_eq!(vm.snapshot().registers[0], 1);
@@ -273,7 +262,6 @@ fn right_shift_zero_fills_the_high_bit_and_discards_the_low_bit() {
             4,
             1,
             &[input],
-            BoundaryMode::Exit,
         );
 
         assert_eq!(machine.run(8), RunOutcome::Halted);
@@ -282,7 +270,7 @@ fn right_shift_zero_fills_the_high_bit_and_discards_the_low_bit() {
 }
 
 #[test]
-fn failed_exit_tick_rolls_back_state_but_keeps_attempt_metrics() {
+fn wrapped_tick_commits_state_and_metrics() {
     let mut vm = vm(
         vec![
             Cell::entry(Direction::Right),
@@ -291,35 +279,24 @@ fn failed_exit_tick_rolls_back_state_but_keeps_attempt_metrics() {
         2,
         1,
         &[],
-        BoundaryMode::Exit,
     );
     assert_eq!(vm.step().status, VmStatus::Running);
     let failed = vm.step();
 
-    assert_eq!(failed.status, VmStatus::Error);
+    assert_eq!(failed.status, VmStatus::Running);
     assert_eq!(failed.attempted_tick, 2);
-    assert_eq!(failed.committed_ticks, 1);
-    assert_eq!(failed.errors[0].code(), "OutOfBounds");
-    assert_eq!(
-        failed.errors[0].kind(),
-        &RuntimeErrorKind::OutOfBounds {
-            thread_id: 0,
-            board: BoardId::Main,
-            position: codegrid_vm::Coordinate { x: 1, y: 0 },
-            direction: Direction::Right,
-        }
-    );
-    assert!(failed.events.is_empty());
+    assert_eq!(failed.committed_ticks, 2);
+    assert!(failed.errors.is_empty());
     let snapshot = vm.snapshot();
-    assert_eq!(snapshot.registers[0], 0);
-    assert_eq!(snapshot.threads[0].position.x, 1);
-    assert_eq!(snapshot.committed_ticks, 1);
+    assert_eq!(snapshot.registers[0], 1);
+    assert_eq!(snapshot.threads[0].position.x, 0);
+    assert_eq!(snapshot.committed_ticks, 2);
     assert_eq!(snapshot.metrics.operation_count(), 1);
     assert_eq!(snapshot.metrics.used_cell_count(), 2);
 }
 
 #[test]
-fn failed_exit_tick_rolls_back_direction_change_and_reports_attempt_context() {
+fn vertical_wrap_commits_direction_change() {
     let mut vm = vm(
         vec![
             Cell::entry(Direction::Right),
@@ -328,35 +305,26 @@ fn failed_exit_tick_rolls_back_direction_change_and_reports_attempt_context() {
         2,
         1,
         &[],
-        BoundaryMode::Exit,
     );
     assert_eq!(vm.step().status, VmStatus::Running);
 
     let failed = vm.step();
 
-    assert_eq!(failed.status, VmStatus::Error);
+    assert_eq!(failed.status, VmStatus::Running);
     assert_eq!(failed.attempted_tick, 2);
-    assert_eq!(failed.committed_ticks, 1);
-    assert_eq!(
-        failed.errors[0].kind(),
-        &RuntimeErrorKind::OutOfBounds {
-            thread_id: 0,
-            board: BoardId::Main,
-            position: codegrid_vm::Coordinate { x: 1, y: 0 },
-            direction: Direction::Down,
-        }
-    );
+    assert_eq!(failed.committed_ticks, 2);
+    assert!(failed.errors.is_empty());
     let snapshot = vm.snapshot();
     assert_eq!(
         snapshot.threads[0].position,
         codegrid_vm::Coordinate { x: 1, y: 0 }
     );
-    assert_eq!(snapshot.threads[0].direction, Direction::Right);
-    assert_eq!(snapshot.committed_ticks, 1);
+    assert_eq!(snapshot.threads[0].direction, Direction::Down);
+    assert_eq!(snapshot.committed_ticks, 2);
 }
 
 #[test]
-fn failed_exit_read_rolls_back_register_and_input_consumption() {
+fn wrapped_read_commits_register_and_input_consumption() {
     let mut vm = vm(
         vec![
             Cell::entry(Direction::Right),
@@ -365,30 +333,21 @@ fn failed_exit_read_rolls_back_register_and_input_consumption() {
         2,
         1,
         &[173],
-        BoundaryMode::Exit,
     );
     assert_eq!(vm.step().status, VmStatus::Running);
 
     let failed = vm.step();
 
-    assert_eq!(failed.status, VmStatus::Error);
+    assert_eq!(failed.status, VmStatus::Running);
     assert_eq!(failed.attempted_tick, 2);
-    assert_eq!(failed.committed_ticks, 1);
-    assert_eq!(
-        failed.errors[0].kind(),
-        &RuntimeErrorKind::OutOfBounds {
-            thread_id: 0,
-            board: BoardId::Main,
-            position: codegrid_vm::Coordinate { x: 1, y: 0 },
-            direction: Direction::Right,
-        }
-    );
+    assert_eq!(failed.committed_ticks, 2);
+    assert!(failed.errors.is_empty());
     let snapshot = vm.snapshot();
-    assert_eq!(snapshot.registers[0], 0);
-    assert_eq!(snapshot.input, [173]);
+    assert_eq!(snapshot.registers[0], 173);
+    assert_eq!(snapshot.input, []);
     assert_eq!(
         snapshot.threads[0].position,
-        codegrid_vm::Coordinate { x: 1, y: 0 }
+        codegrid_vm::Coordinate { x: 0, y: 0 }
     );
     assert_eq!(snapshot.threads[0].direction, Direction::Right);
     assert_eq!(snapshot.metrics.operation_count(), 1);
@@ -396,7 +355,7 @@ fn failed_exit_read_rolls_back_register_and_input_consumption() {
 }
 
 #[test]
-fn failed_exit_output_rolls_back_only_the_failed_tick_output() {
+fn wrapped_output_commits_current_tick_output() {
     let mut vm = vm(
         vec![
             Cell::entry(Direction::Right),
@@ -407,32 +366,23 @@ fn failed_exit_output_rolls_back_only_the_failed_tick_output() {
         4,
         1,
         &[],
-        BoundaryMode::Exit,
     );
     assert_eq!(vm.run(3), RunOutcome::TickLimitReached);
     assert_eq!(vm.snapshot().output, [0]);
 
     let failed = vm.step();
 
-    assert_eq!(failed.status, VmStatus::Error);
+    assert_eq!(failed.status, VmStatus::Running);
     assert_eq!(failed.attempted_tick, 4);
-    assert_eq!(failed.committed_ticks, 3);
-    assert!(failed.newly_emitted_output.is_empty());
-    assert_eq!(
-        failed.errors[0].kind(),
-        &RuntimeErrorKind::OutOfBounds {
-            thread_id: 0,
-            board: BoardId::Main,
-            position: codegrid_vm::Coordinate { x: 3, y: 0 },
-            direction: Direction::Right,
-        }
-    );
+    assert_eq!(failed.committed_ticks, 4);
+    assert_eq!(failed.newly_emitted_output, [1]);
+    assert!(failed.errors.is_empty());
     let snapshot = vm.snapshot();
-    assert_eq!(snapshot.output, [0]);
+    assert_eq!(snapshot.output, [0, 1]);
     assert_eq!(snapshot.registers[0], 1);
     assert_eq!(
         snapshot.threads[0].position,
-        codegrid_vm::Coordinate { x: 3, y: 0 }
+        codegrid_vm::Coordinate { x: 0, y: 0 }
     );
     assert_eq!(snapshot.metrics.operation_count(), 3);
 }
@@ -447,7 +397,6 @@ fn step_is_a_no_op_after_halt_or_error() {
         2,
         1,
         &[],
-        BoundaryMode::Exit,
     );
     assert_eq!(halted.run(4), RunOutcome::Halted);
     let halted_before = halted.snapshot();
@@ -458,12 +407,16 @@ fn step_is_a_no_op_after_halt_or_error() {
     assert_eq!(halted.snapshot(), halted_before);
 
     let mut errored = vm(
-        vec![Cell::entry(Direction::Right)],
-        1,
+        vec![
+            Cell::entry(Direction::Right),
+            Cell::instruction(PrimaryInstruction::Add, None),
+            Cell::entry(Direction::Left),
+        ],
+        3,
         1,
         &[],
-        BoundaryMode::Exit,
     );
+    assert_eq!(errored.step().status, VmStatus::Running);
     assert_eq!(errored.step().status, VmStatus::Error);
     let error_before = errored.snapshot();
     let error_step = errored.step();
@@ -476,13 +429,7 @@ fn step_is_a_no_op_after_halt_or_error() {
 
 #[test]
 fn zero_tick_limit_is_invalid_and_a_later_run_continues_after_tick_limit() {
-    let mut vm = vm(
-        vec![Cell::entry(Direction::Right)],
-        1,
-        1,
-        &[],
-        BoundaryMode::Wrap,
-    );
+    let mut vm = vm(vec![Cell::entry(Direction::Right)], 1, 1, &[]);
     assert_eq!(vm.run(0), RunOutcome::InvalidTickLimit);
     assert_eq!(vm.snapshot().committed_ticks, 0);
 

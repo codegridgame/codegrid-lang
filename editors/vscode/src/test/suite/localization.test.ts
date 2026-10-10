@@ -109,7 +109,7 @@ suite('Localization', () => {
     if (!executable) this.skip();
     const { NativeRuntime } = await import('../../debug/nativeRuntime');
     const runtime = new NativeRuntime(executable!, () => undefined);
-    const configuration = { command: 'launch', input: [], boundary: 'wrap', seed: '0', custom_limit: '10000', max_ticks: '100', max_work_units: '1' };
+    const configuration = { command: 'launch', input: [], seed: '0', custom_limit: '10000', max_ticks: '100', max_work_units: '1' };
     try {
       const rejected = await runtime.request({ ...configuration, source: '~x\n' });
       assert.strictEqual(rejected.diagnostics![0].code, 'source.invalid_entry');

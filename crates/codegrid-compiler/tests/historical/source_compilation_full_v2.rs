@@ -1,6 +1,6 @@
 use codegrid_compiler::{compile, compile_with_symbols, completion_context, SymbolKey};
 use codegrid_ir::CodeGridId;
-use codegrid_model::{AttachmentInstruction, BoundaryMode, Direction, PrimaryInstruction};
+use codegrid_model::{AttachmentInstruction, Direction, PrimaryInstruction};
 use codegrid_syntax::{BoardPath, CodeGridPath};
 
 #[test]
@@ -619,22 +619,10 @@ fn compiles_call_read_and_write_code_attachments_from_source() {
 fn validates_function_and_custom_main_entry_count_boundaries() {
     let invalid_cases = [
         (
-            "function without an Entry",
-            "@main\n~> [0\n@end\n@main.F0\n_ _\n@end F0\n",
-            "exactly one Entry marker; found 0",
-            "@main.F0",
-        ),
-        (
             "function with multiple Entries",
             "@main\n~> [0\n@end\n@main.F0\n~> ~v\n@end F0\n",
-            "exactly one Entry marker; found 2",
+            "at most one Entry marker; found 2",
             "@main.F0",
-        ),
-        (
-            "Custom Main without an Entry",
-            "@main\n~> #0\n@end\n@C0\n_\n@end C0\n",
-            "at least one Entry marker",
-            "@C0",
         ),
     ];
 
@@ -861,8 +849,8 @@ fn marks_a_source_level_self_call_with_a_navigation_only_return_path() {
 @main.F0\n~> [0 _ ]\n@end main.F0\n";
     let program = compile(source).expect("valid tail-recursive source should compile");
 
-    assert!(program.is_tail_call(CodeGridId::Outer, slot(0), 1, BoundaryMode::Exit,));
-    assert!(program.is_tail_call(CodeGridId::Outer, slot(0), 1, BoundaryMode::Wrap,));
+    assert!(program.is_tail_call(CodeGridId::Outer, slot(0), 1,));
+    assert!(program.is_tail_call(CodeGridId::Outer, slot(0), 1,));
 }
 
 #[test]
@@ -872,8 +860,8 @@ fn marks_self_calls_when_each_branch_turns_through_navigation_to_return() {
 @main.F0\n~> #v v\nv [0 <\n] < _\n@end main.F0\n";
     let program = compile(source).expect("branched navigation-only returns should compile");
 
-    assert!(program.is_tail_call(CodeGridId::Outer, slot(0), 4, BoundaryMode::Exit));
-    assert!(program.is_tail_call(CodeGridId::Outer, slot(0), 4, BoundaryMode::Wrap));
+    assert!(program.is_tail_call(CodeGridId::Outer, slot(0), 4,));
+    assert!(program.is_tail_call(CodeGridId::Outer, slot(0), 4,));
 }
 
 #[test]
@@ -883,8 +871,8 @@ fn marks_tail_recursive_calls_in_custom_function_codegrids() {
     let program = compile(source).expect("valid Custom tail-recursive source should compile");
     let custom = CodeGridId::Custom(slot(0));
 
-    assert!(program.is_tail_call(custom, slot(0), 1, BoundaryMode::Exit));
-    assert!(program.is_tail_call(custom, slot(0), 1, BoundaryMode::Wrap));
+    assert!(program.is_tail_call(custom, slot(0), 1,));
+    assert!(program.is_tail_call(custom, slot(0), 1,));
 }
 
 #[test]
@@ -894,8 +882,8 @@ fn tail_call_navigation_proof_observes_exit_and_wrap_boundaries() {
 @main.F0\n] ~> _ [0\n@end main.F0\n";
     let program = compile(source).expect("boundary-sensitive navigation should compile");
 
-    assert!(!program.is_tail_call(CodeGridId::Outer, slot(0), 3, BoundaryMode::Exit));
-    assert!(program.is_tail_call(CodeGridId::Outer, slot(0), 3, BoundaryMode::Wrap));
+    assert!(program.is_tail_call(CodeGridId::Outer, slot(0), 3,));
+    assert!(program.is_tail_call(CodeGridId::Outer, slot(0), 3,));
 }
 
 #[test]
@@ -926,7 +914,7 @@ fn does_not_mark_a_source_level_self_call_with_a_side_effecting_return_path() {
 @main.F0\n~> [0 . ]\n@end main.F0\n";
     let program = compile(source).expect("valid recursive source should compile");
 
-    assert!(!program.is_tail_call(CodeGridId::Outer, slot(0), 1, BoundaryMode::Exit,));
+    assert!(!program.is_tail_call(CodeGridId::Outer, slot(0), 1,));
 }
 
 #[test]
@@ -1182,14 +1170,14 @@ fn duplicate_definition_diagnostic_points_at_the_second_definition() {
 
 #[test]
 fn entry_count_diagnostic_points_at_the_board_definition() {
-    let source = "@main\n~> [0\n@end main\n@main.F0\n_ _\n@end main.F0\n";
+    let source = "@main\n~> [0\n@end main\n@main.F0\n~> ~v\n@end main.F0\n";
     let diagnostics = compile(source).expect_err("a function must have one Entry marker");
     let entry_count = diagnostics
         .iter()
         .find(|diagnostic| {
             diagnostic
                 .message
-                .contains("exactly one Entry marker; found 0")
+                .contains("at most one Entry marker; found 2")
         })
         .expect("expected a function Entry-count diagnostic");
 
@@ -1306,12 +1294,6 @@ fn rejects_the_required_source_validation_failures() {
             "2x2",
         ),
         (
-            "Main without an Entry",
-            "_\n",
-            "at least one Entry marker",
-            "_",
-        ),
-        (
             "duplicate function definition",
             "@main\n~> _\n@end\n@main.F0\n~> ]\n@end\n@main.F0\n~> ]\n@end\n",
             "defined more than once",
@@ -1342,9 +1324,9 @@ fn rejects_the_required_source_validation_failures() {
             "]",
         ),
         (
-            "F board without exactly one Entry",
-            "@main\n~> _\n@end\n@main.F0\n_\n@end\n",
-            "exactly one Entry marker",
+            "F board with multiple Entries",
+            "@main\n~> _\n@end\n@main.F0\n~> ~v\n@end\n",
+            "at most one Entry marker",
             "@main.F0",
         ),
         (

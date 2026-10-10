@@ -78,8 +78,8 @@ Supported operations are `check`, `compile`, `program_view`, `create_instance`,
   structured diagnostics or a decimal-string program handle with its canonical
   `ProgramView`. `program_view` takes a `program` handle and returns that view
   without recompiling.
-- `create_instance` takes `program`, an `input` byte array, `boundary_mode`
-  (`"exit"` or `"wrap"`), decimal-string `seed`, positive decimal-string
+- `create_instance` takes `program`, an `input` byte array,
+  decimal-string `seed`, positive decimal-string
   `custom_execution_limit`, and optional `initial_memory`. Each initial-memory
   item is `{ "address": "<canonical signed decimal>", "value": <0..255> }`.
   Missing initial memory means an empty array. Duplicate addresses are rejected;

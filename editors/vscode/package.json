@@ -43,15 +43,6 @@
           "default": [],
           "description": "%codegrid.execution.input.description%"
         },
-        "codegrid.execution.boundary": {
-          "type": "string",
-          "enum": [
-            "exit",
-            "wrap"
-          ],
-          "default": "exit",
-          "description": "%codegrid.execution.boundary.description%"
-        },
         "codegrid.execution.seed": {
           "type": "string",
           "default": "0",
@@ -218,14 +209,6 @@
                   "maximum": 255
                 },
                 "default": []
-              },
-              "boundary": {
-                "type": "string",
-                "enum": [
-                  "exit",
-                  "wrap"
-                ],
-                "default": "exit"
               },
               "seed": {
                 "type": "string",

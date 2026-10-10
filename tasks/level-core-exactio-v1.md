@@ -39,7 +39,7 @@ Rust API, not only successful builds. Steam/backend/Web comparisons are deferred
 Preserve these decisions:
 
 - cost is VM Operation Count; ExactIO scoring/constraints aggregate visible tests only.
-- Explicit Exit/Wrap, seeds, Custom limits, evaluator identity, and trusted safety profile are part of replay/result identity.
+- Seeds, Custom limits, evaluator identity, and trusted safety profile are part of replay/result identity.
 - Support WriteCode; check initial and generated instructions against level rules. Generated-code rejection occurs after VM commit and before output acceptance, without inventing rollback or VM errors.
 - Attachments have an independent explicit whitelist. Inspect all code, including unused definitions and Custom contexts.
 - Debug runs all visible tests after ordinary test/constraint failures. Official runs visible and hidden tests and stops at the first established failure. Program rejection and terminal resource/fault outcomes stop evaluation.
@@ -163,7 +163,7 @@ implementation:
 
 ```text
 codegrid evaluate <level.json> <program.cg>
-    --mode <debug|official> --boundary <exit|wrap> --seed <u64>
+    --mode <debug|official> --seed <u64>
     --custom-limit <positive-u64> --limits-file <trusted-profile.json>
     [--format <json|human>]
 ```

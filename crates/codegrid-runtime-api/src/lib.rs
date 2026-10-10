@@ -17,7 +17,7 @@ pub use codegrid_model::{
     ERROR_LOCALES,
 };
 pub use codegrid_vm::{
-    BoundaryMode, CallFrameSnapshot, Coordinate, ExecutionScope, InstructionKind, MemoryAddress,
+    CallFrameSnapshot, Coordinate, ExecutionScope, InstructionKind, MemoryAddress,
     MemoryLocationId, MemorySpaceId, MetricCounterOverflow, Page, RunOutcome, RuntimeError,
     RuntimeErrorKind, RuntimeMetricSummary, RuntimeMetrics, StaticCellId, ThreadPhaseSnapshot,
     VmEvent, VmFault, VmStatus,
@@ -234,7 +234,6 @@ impl ProgramViewResponseView<'_> {
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct RuntimeConfiguration {
-    pub boundary_mode: BoundaryMode,
     pub seed: u64,
     pub custom_execution_limit: u64,
 }
@@ -848,11 +847,7 @@ impl RuntimeApi {
                 });
             }
         }
-        let configuration = VmConfig::new(
-            request.configuration.boundary_mode,
-            request.configuration.seed,
-            custom_execution_limit,
-        );
+        let configuration = VmConfig::new(request.configuration.seed, custom_execution_limit);
         let vm = Vm::with_initial_memory(program, request.input, initial_memory, configuration)
             .map_err(ApiError::VmInitialization)?;
         let handle = self.allocate_instance_handle()?;

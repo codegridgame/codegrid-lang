@@ -21,7 +21,7 @@ Instruction tokens and attachments are case-sensitive. Directive keywords and st
 
 ## 2. Program and board structure
 
-A complete program defines exactly one Main CodeGrid and may define zero or more Custom CodeGrids. Every CodeGrid has a Main Board. A Main Board must contain at least one Entry marker; it may contain multiple Entry markers, each of which starts an initial thread. A Function Board must contain exactly one Entry marker. A Folded Block has no Entry marker and consists of exactly one row.
+A complete program defines exactly one Main CodeGrid and may define zero or more Custom CodeGrids. Every CodeGrid has a Main Board. A Main Board may contain multiple Entry markers, each of which starts an initial thread. A Function Board may contain at most one Entry marker. A Main or Function Board without an Entry marker uses the default entry at (0, 0), facing Right. The default entry does not alter or occupy the cell; execution begins with its actual contents. Explicit Entries suppress the default entry. A Folded Block has no Entry marker and consists of exactly one row.
 
 The source may declare Main explicitly or use the implicit Main form:
 

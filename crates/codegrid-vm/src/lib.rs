@@ -15,7 +15,6 @@ mod state;
 mod thread;
 
 pub use codegrid_ir::{TailCallSite, VerifiedProgram};
-pub use codegrid_model::BoundaryMode;
 pub use config::VmConfig;
 pub use engine::{RunOutcome, RunResult, StepResult, VmEvent, WorkLimitExceeded};
 pub use error::{ExecutionScope, RuntimeError, RuntimeErrorKind};

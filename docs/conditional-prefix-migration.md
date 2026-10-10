@@ -88,7 +88,7 @@ The user confirms retaining the current exclusions of FoldedBlock, Custom, Custo
 - Prefixes are independent tests, not an `if`/`else` chain. In `?0+ ?1.`, a successful first cell changes 0 to 1, so the next cell can also execute. A comparison result is ordinary mutable register data.
 - In Custom code, CMP and PUSH/POPADD/NAND use the internal thread's own Data Stack. READ/OUTPUT use the outer caller's stack.
 - Prefix evaluation precedes Primary behavior and suffix effects. In `?1}=`, the test uses the old pointer. In `?0?=`, the test uses B before CMP overwrites it.
-- A skipped instruction still moves and can raise OutOfBounds under Exit mode. Skipping a return does not terminate the thread; skipping a Halt does not request termination. Existing tick/work and Custom limits still bound execution.
+- A skipped instruction still moves and wraps across normal-board edges. Skipping a return does not terminate the thread; skipping a Halt does not request termination. Existing tick/work and Custom limits still bound execution.
 - Control-flow analysis must retain the false fall-through path of guarded direction changes, Halt, and returns. Existing tail-call proofs must not assume those instructions always execute.
 - Random bytes must migrate from 63 to 126 in source using DECODE/ENCODE or self-modification, not just rename `?` tokens. Bytes 63, 95, 97, 129, and 153 no longer decode; under the existing invalid-DECODE rule they are counted no-ops, not runtime errors.
 - Prefixes are fixed cell metadata under D9. Snapshots and debug views must show them even after Primary replacement or clearing. Hosts must not infer conditions from instruction numbers.
@@ -192,7 +192,7 @@ Exit criterion: required acceptance cases pass and every verification limitation
 | Static validation | Entry/Empty exclusions; undefined targets even under always-false-looking conditions; existing CALL/RETURN placement; Custom nesting prohibitions; Folded Block restrictions; invalid external IR. |
 | Register selection | R0 and moved pointer; equality against 0/1/2; values 3 and 255; pointer-changing Primary tests the old pointer. |
 | CMP | Equal/greater/less; unsigned extremes 0/255; selected pointer other than R0; stack length and complete contents preserved; empty-stack rule; prefix tests pre-CMP B; repeated comparisons use updated B; concurrent register-write conflicts and rollback; Custom thread-local stack and context registers; Instruction Code round trip and suffix behavior. |
-| Skips | No register/stack/input/output/memory/code/PRNG/call effects; no conditional Halt; direction preserved; normal Exit/Wrap; Fold horizontal wrap and vertical exit. |
+| Skips | No register/stack/input/output/memory/code/PRNG/call effects; no conditional Halt; direction preserved; normal four-direction wrapping; Fold horizontal wrap and vertical exit. |
 | Repeat | Initial false; true throughout; true then false; no incorrect waiting at the cell; rollback does not advance repetitions; sibling code mutation reviewed under existing mutable-Primary rules. |
 | Calls | False CALL creates no frame; successful guarded CALL returns despite changed pointer/register; deferred suffix exactly once; false RETURN retains frame; false CustomReturn retains internal thread; guarded Custom shell and internal work. |
 | Mutable code | Replacement retains prefix/suffix; ReadCode reads only Primary; EMPTY clearing; true/false cleared-cell visits; removed codes do not decode as new instructions. |

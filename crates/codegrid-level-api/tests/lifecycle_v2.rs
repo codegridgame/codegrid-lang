@@ -35,7 +35,7 @@ fn loaded(api: &mut LevelApiV2) -> (Value, Value) {
 fn start(api: &mut LevelApiV2, level: Value, program: Value, mode: &str) -> Value {
     request(
         api,
-        json!({"operation":"start_evaluation","level":level,"program":program,"mode":mode,"boundary_mode":"Exit","shuffle_seed":"18446744073709551615","custom_execution_limit":"100"}),
+        json!({"operation":"start_evaluation","level":level,"program":program,"mode":mode,"shuffle_seed":"18446744073709551615","custom_execution_limit":"100"}),
     )
 }
 #[test]

@@ -2,7 +2,6 @@
   "extension.description": "Редактирование CodeGrid, локальный запуск и отладка по Global Tick; необязательный языковой сервер.",
   "codegrid.runtime.path.description": "Путь к CodeGrid. Если пусто: встроенная среда, затем PATH.",
   "codegrid.execution.input.description": "Входные байты для запуска и отладки.",
-  "codegrid.execution.boundary.description": "Поведение на границе поля.",
   "codegrid.execution.seed.description": "Начальное значение u64 в канонической десятичной записи.",
   "codegrid.execution.customLimit.description": "Лимит выполнения Custom.",
   "codegrid.execution.maxTicks.description": "Максимум завершённых Global Tick за сеанс.",

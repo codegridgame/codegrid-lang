@@ -185,7 +185,7 @@ Keep three limit classes separate:
   cancellation, and VM faults are not wrong-output failures or official passes.
 
 Level execution uses standard VM initial state, with no initial-memory or
-register override exposed by the level API. Language-level boundary mode, VM
+register override exposed by the level API. Language-level VM
 seed derivation, and hard limits are explicit resolved configuration. Slicing
 must not change these values or reset random streams. Wall-clock deadlines
 belong to hosts and cannot become scored execution metrics.
@@ -254,7 +254,7 @@ verification work is tracked in the current scene conformance plan.
 
 The [ExactIO implementation contract](../spec/codegrid-level-exactio-contract-v1.md)
 resolves the first-phase schema, capability mapping, metric registry (including
-cost as Operation Count), shuffle/VM seeds, explicit Exit/Wrap configuration,
+cost as Operation Count), shuffle/VM seeds,
 and terminal-tick priorities. The following remaining work does not block
 implementing Rust ExactIO against that contract:
 

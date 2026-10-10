@@ -9,7 +9,6 @@ pub fn n(v: u64) -> NonZeroU64 {
 }
 pub fn config() -> EvaluationConfig {
     EvaluationConfig {
-        boundary_mode: codegrid_model::BoundaryMode::Exit,
         shuffle_seed: 42,
         custom_execution_limit: n(100),
         safety: ExecutionSafetyProfile {

@@ -94,7 +94,7 @@ Do not reseed the VM on every action. Preserve the ordinary per-thread PRNG
 streams for the whole case.
 
 Replay records must identify scene schema/spec version, validated definition,
-program, initial case seed, boundary mode, Custom limit, and trusted profile.
+program, initial case seed, Custom limit, and trusted profile.
 Use the case-seed derivation in the selected [Scene Level JSON format v1 contract](../spec/codegrid-scene-level-json-v2.md). Do not reuse
 the older decision-seed algorithm to reset or reseed a running case. Comparing
 only final output is insufficient: compare world, queue framing, status, metrics,

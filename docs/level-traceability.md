@@ -77,7 +77,7 @@ node scripts/check_error_codes.js
 The CLI fixture example is also runnable directly:
 
 ```powershell
-cargo run -p codegrid-cli -- evaluate fixtures/levels-scene/echo.json fixtures/levels-scene/echo.cg --mode official --boundary exit --seed 18446744073709551615 --custom-limit 1000 --limits-file examples/scene-host-v2/profile-local-v2.json
+cargo run -p codegrid-cli -- evaluate fixtures/levels-scene/echo.json fixtures/levels-scene/echo.cg --mode official --seed 18446744073709551615 --custom-limit 1000 --limits-file examples/scene-host-v2/profile-local-v2.json
 ```
 
 For actual local adapter execution, run

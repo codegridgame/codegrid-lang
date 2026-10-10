@@ -8,7 +8,7 @@ Execute verified Full CodeGrid IR with deterministic multi-thread semantics and 
 
 - This crate may depend only on `codegrid-ir` and `codegrid-model` among workspace crates.
 - `codegrid-cli` and `codegrid-runtime-api` may create isolated VM instances and call step/run/snapshot APIs.
-- The Full VM receives verified IR and explicit boundary, input, seed, initial-memory, Custom-limit, and tick-limit data. `run` must use the same outer-tick transition semantics as repeated `step` calls.
+- The Full VM receives verified IR and explicit input, seed, initial-memory, Custom-limit, and tick-limit data. `run` must use the same outer-tick transition semantics as repeated `step` calls.
 - The IR verifier is the single trust boundary for Full structures, board shapes, Entry counts, instructions, and Attachments. Do not duplicate that validation in the VM constructor.
 - Expose owned snapshots for callers that need detached state and borrowed snapshot views for read-only inspection; do not clone the full VM state merely to inspect it.
 - A host work-unit limit counts thread dispatches and interrupts only at a dispatch boundary; over-limit ticks must roll back without changing normative VM metrics.

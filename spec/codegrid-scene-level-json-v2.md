@@ -58,7 +58,7 @@ Duplicate tests are independent. Existing Debug/Official selection, shuffling,
 hidden-data exclusion, and static validation rules apply.
 
 Neither scene_config nor tests may override program_rules, constraints,
-scoring, host seeds, boundary mode, VM registers/memory/stacks, Custom limits,
+scoring, host seeds, VM registers/memory/stacks, Custom limits,
 work budgets, or trusted profiles. No presentation fields, localized text,
 image paths, callbacks, or script expressions are accepted. Keep those in a
 separate host-owned file keyed by level_id and level_version.
@@ -69,7 +69,9 @@ Reuse all required program_rules fields and their domains from the
 [ExactIO contract](codegrid-level-exactio-contract-v1.md#1-level-loading-and-numeric-domains):
 allowed_instructions, allowed_attachments, main_board, function_board,
 max_functions, max_custom, max_threads, memory_enabled. The capability vocabulary
-includes CMP and independent CONDITION_0/1/2. Scene actor count is not VM
+includes CMP, independent CONDITION_0/1/2, and the optional OUTPUT_IMMEDIATE
+permission for `.0` through `.9` (absent by default). Ordinary OUTPUT remains
+always allowed. Scene actor count is not VM
 max_threads: a single VM thread can issue both actors' actions.
 
 Reuse the existing 11 VM/static metric identifiers, constraint mappings,
@@ -228,7 +230,7 @@ VM seed derivation `mix64(root_seed XOR 0x43474C564D303031)` for every case's
 fresh VM. Dynamic scenes add no host-random world events. Keep that seed and
 the VM PRNG state for the entire case, without per-action reseeding. Include
 format_version, scene identity/config, original case index, validated logical
-level identity/hash, source, boundary mode, Custom limit, and trusted profile
+level identity/hash, source, Custom limit, and trusted profile
 in replay identity. New host wire fields require a recorded version decision.
 
 ## 9. Examples and acceptance status

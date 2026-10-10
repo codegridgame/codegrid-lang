@@ -12,7 +12,6 @@ use codegrid_level_core::{
     scene_session::{scene_definition_units, SceneLimits},
     *,
 };
-use codegrid_model::BoundaryMode;
 use serde_json::{json, Value};
 use std::{collections::BTreeMap, num::NonZeroU64};
 
@@ -176,9 +175,8 @@ impl LevelApiV2 {
                     }
                 }
             }
-            Operation::StartEvaluation { level, program, mode, boundary_mode, shuffle_seed, custom_execution_limit } => {
+            Operation::StartEvaluation { level, program, mode, shuffle_seed, custom_execution_limit } => {
                 let mode = match mode.as_str() { "Debug"=>EvaluationMode::Debug,"Official"=>EvaluationMode::Official,_=>return Err(invalid_config()) };
-                let boundary_mode = match boundary_mode.as_str() { "Exit"=>BoundaryMode::Exit,"Wrap"=>BoundaryMode::Wrap,_=>return Err(invalid_config()) };
                 let custom_execution_limit = positive(&custom_execution_limit)?;
                 let level = self.levels.get(&level).ok_or_else(invalid_handle)?;
                 let program = self.programs.get(&program).ok_or_else(invalid_handle)?;
@@ -199,7 +197,7 @@ impl LevelApiV2 {
                 let provenance = json!({"level_sha256":level.provenance,"source_sha256":program.provenance,"profile_sha256":sha256(self.profile.wire_value().to_string().as_bytes())});
                 let level = level.value.clone(); let program = program.value.clone();
                 let shuffle_seed = match shuffle_seed { Some(s)=>parse_decimal(&s).ok_or_else(invalid_config)?, None=>self.seed_source.as_mut().ok_or_else(||ApiError::new("level_api.seed_required","Omitted seed requires an explicit host seed source"))?() };
-                let config = EvaluationConfig { boundary_mode, shuffle_seed, custom_execution_limit,
+                let config = EvaluationConfig { shuffle_seed, custom_execution_limit,
                     safety: ExecutionSafetyProfile { id:self.profile.profile_id.clone(), version:2,
                         max_output_bytes:nz(self.profile.max_output_bytes)?, max_state_units:nz(self.profile.max_state_units)?,
                         max_feedback_bytes:nz(feedback_budget)?, per_test_ticks:nz(self.profile.max_ticks_per_test)?,

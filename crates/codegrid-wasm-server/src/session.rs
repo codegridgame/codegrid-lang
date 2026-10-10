@@ -9,10 +9,10 @@ use super::{
     MAX_SOURCE_BYTES, MAX_TOTAL_TICKS_PER_INSTANCE, MAX_WORK_UNITS_PER_CALL,
 };
 use codegrid_runtime_api::{
-    ApiError, BoundaryMode, CheckRequest, CompileOutcome, CompileRequest, CreateInstanceRequest,
-    HostLimits, InstanceHandle, MemoryEntry, ProgramHandle, ProgramViewRequest,
-    ReleaseInstanceRequest, ReleaseProgramRequest, RunRequest, RuntimeApi, RuntimeConfiguration,
-    SnapshotRequest, StepRequest,
+    ApiError, CheckRequest, CompileOutcome, CompileRequest, CreateInstanceRequest, HostLimits,
+    InstanceHandle, MemoryEntry, ProgramHandle, ProgramViewRequest, ReleaseInstanceRequest,
+    ReleaseProgramRequest, RunRequest, RuntimeApi, RuntimeConfiguration, SnapshotRequest,
+    StepRequest,
 };
 use serde::de::{IgnoredAny, MapAccess, SeqAccess, Visitor};
 use serde::Deserialize;
@@ -696,7 +696,6 @@ impl<'de> Visitor<'de> for RequestVisitor {
                 | "operation"
                 | "source"
                 | "program"
-                | "boundary_mode"
                 | "instance"
                 | "max_ticks"
                 | "seed"
@@ -1235,18 +1234,6 @@ impl ServerAdapter {
             Ok(memory) => memory,
             Err(error) => return self.respond(error_response(error.0, error.1, Value::Null)),
         };
-        let boundary_mode = match required_string(request.get("boundary_mode"), "boundary_mode") {
-            Ok("exit") => BoundaryMode::Exit,
-            Ok("wrap") => BoundaryMode::Wrap,
-            Ok(_) => {
-                return self.respond(error_response(
-                    "invalid_boundary",
-                    "boundary_mode must be exit or wrap",
-                    Value::Null,
-                ));
-            }
-            Err(error) => return self.respond(error_response(error.0, error.1, Value::Null)),
-        };
         let seed = match decimal_u64(request.get("seed"), "seed") {
             Ok(seed) => seed,
             Err(error) => return self.respond(error_response(error.0, error.1, Value::Null)),
@@ -1275,7 +1262,6 @@ impl ServerAdapter {
                 input,
                 initial_memory,
                 configuration: RuntimeConfiguration {
-                    boundary_mode,
                     seed,
                     custom_execution_limit,
                 },

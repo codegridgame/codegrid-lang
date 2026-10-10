@@ -1,6 +1,6 @@
 use codegrid_ir::{Board, Cell, Program, ScopedProgram, VerifiedProgram, IR_FORMAT_VERSION};
 use codegrid_model::{AttachmentInstruction, ConditionPrefix, Direction, PrimaryInstruction, Slot};
-use codegrid_vm::{BoundaryMode, RunOutcome, Vm, VmConfig, VmEvent, VmStatus};
+use codegrid_vm::{RunOutcome, Vm, VmConfig, VmEvent, VmStatus};
 use std::{collections::BTreeMap, num::NonZeroU64};
 
 fn cell(token: &str) -> Cell {
@@ -35,7 +35,7 @@ fn machine(main: Board, functions: Vec<Board>, input: &[u8]) -> Vm {
     Vm::new(
         program,
         input.iter().copied(),
-        VmConfig::new(BoundaryMode::Exit, 0, NonZeroU64::new(100).unwrap()),
+        VmConfig::new(0, NonZeroU64::new(100).unwrap()),
     )
     .unwrap()
 }

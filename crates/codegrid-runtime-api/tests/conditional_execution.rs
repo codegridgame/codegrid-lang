@@ -1,5 +1,5 @@
 use codegrid_compiler::compile;
-use codegrid_model::{BoundaryMode, ConditionPrefix};
+use codegrid_model::ConditionPrefix;
 use codegrid_vm::{InstructionKind, RunOutcome, Vm, VmConfig, VmStatus};
 use std::num::NonZeroU64;
 
@@ -7,7 +7,7 @@ fn machine(source: &str, input: &[u8]) -> Vm {
     Vm::new(
         compile(source).expect("valid conditional source"),
         input.iter().copied(),
-        VmConfig::new(BoundaryMode::Exit, 0, NonZeroU64::new(100).unwrap()),
+        VmConfig::new(0, NonZeroU64::new(100).unwrap()),
     )
     .unwrap()
 }
@@ -137,15 +137,15 @@ fn fold_prefixes_execute_and_custom_cmp_uses_its_internal_stack() {
 }
 
 #[test]
-fn concurrent_conditions_read_tick_start_and_skips_still_obey_bounds() {
+fn concurrent_conditions_read_tick_start_and_skips_wrap() {
     let mut vm = machine("~> + ;\n~> ?0. ;", &[]);
     assert_eq!(vm.run(20), RunOutcome::Halted);
     assert_eq!(vm.snapshot().output, vec![0]);
     assert_eq!(vm.snapshot().registers[0], 1);
     let mut boundary = machine("~> ?1;", &[]);
     boundary.run(10);
-    assert_eq!(boundary.status(), VmStatus::Error);
-    assert_eq!(boundary.committed_ticks(), 1);
+    assert_eq!(boundary.status(), VmStatus::Running);
+    assert_eq!(boundary.committed_ticks(), 10);
 }
 
 #[test]

@@ -143,7 +143,7 @@ export class CodeGridDebugAdapter implements vscode.DebugAdapter {
     const input = args.input ?? [];
     if (!Array.isArray(input) || !input.every((value: unknown) => typeof value === 'number' && Number.isInteger(value) && value >= 0 && value <= 255)) throw new CodedError('editor.invalid_input', 'input must be an array of byte integers (0..255).');
     this.runtime = new NativeRuntime(args.runtimePath || runtimePath(this.context), (text) => this.output(text, 'stderr'));
-    const loaded = await this.runtime.request({ command: 'launch', source: this.sourceText, input, boundary: args.boundary || 'exit', seed: args.seed ?? '0', custom_limit: args.customLimit ?? '10000', max_ticks: args.maxTicks ?? '100000', max_work_units: args.maxWorkUnits ?? '1000000' });
+    const loaded = await this.runtime.request({ command: 'launch', source: this.sourceText, input, seed: args.seed ?? '0', custom_limit: args.customLimit ?? '10000', max_ticks: args.maxTicks ?? '100000', max_work_units: args.maxWorkUnits ?? '1000000' });
     if (loaded.diagnostics) {
       const bytes = Buffer.from(this.sourceText, 'utf8');
       for (const diagnostic of loaded.diagnostics) {
@@ -292,7 +292,7 @@ export function registerExecution(context: vscode.ExtensionContext): vscode.Disp
     if (!document || document.languageId !== 'codegrid') { void vscode.window.showErrorMessage(`${errorLabel('editor.no_codegrid_file')} ${vscode.l10n.t('[editor.no_codegrid_file] Open a CodeGrid (.cg) file first.')}`); return false; }
     if (document.isUntitled && !await document.save()) return false;
     const defaults = vscode.workspace.getConfiguration('codegrid.execution');
-    return vscode.debug.startDebugging(vscode.workspace.getWorkspaceFolder(document.uri), { type: 'codegrid', request: 'launch', name: noDebug ? vscode.l10n.t('Run CodeGrid') : vscode.l10n.t('Debug CodeGrid'), program: document.uri.fsPath, noDebug, stopOnEntry: !noDebug, input: defaults.get('input', []), boundary: defaults.get('boundary', 'exit'), seed: defaults.get('seed', '0'), customLimit: defaults.get('customLimit', '10000'), maxTicks: defaults.get('maxTicks', '100000'), maxWorkUnits: defaults.get('maxWorkUnits', '1000000'), internalConsoleOptions: 'openOnSessionStart' }, { noDebug });
+    return vscode.debug.startDebugging(vscode.workspace.getWorkspaceFolder(document.uri), { type: 'codegrid', request: 'launch', name: noDebug ? vscode.l10n.t('Run CodeGrid') : vscode.l10n.t('Debug CodeGrid'), program: document.uri.fsPath, noDebug, stopOnEntry: !noDebug, input: defaults.get('input', []), seed: defaults.get('seed', '0'), customLimit: defaults.get('customLimit', '10000'), maxTicks: defaults.get('maxTicks', '100000'), maxWorkUnits: defaults.get('maxWorkUnits', '1000000'), internalConsoleOptions: 'openOnSessionStart' }, { noDebug });
   };
   return [
     vscode.commands.registerCommand('codegrid.run', (uri?: vscode.Uri) => start(true, uri).catch((error) => { const failure = codedError(error); void vscode.window.showErrorMessage(`${errorLabel(failure.code)} ${failure.message}`); return false; })),

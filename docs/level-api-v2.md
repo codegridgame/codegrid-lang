@@ -21,7 +21,7 @@ visible cases and coarse hidden failure categories.
 The CLI selects this API explicitly:
 
 ```powershell
-codegrid evaluate fixtures/scene-v2/mechanical-arm.json fixtures/scene-v2/mechanical-arm.cg --api-version 2 --mode debug --boundary exit --seed 18446744073709551615 --custom-limit 1000 --limits-file examples/scene-host-v2/profile-local-v2.json
+codegrid evaluate fixtures/scene-v2/mechanical-arm.json fixtures/scene-v2/mechanical-arm.cg --api-version 2 --mode debug --seed 18446744073709551615 --custom-limit 1000 --limits-file examples/scene-host-v2/profile-local-v2.json
 ```
 
 Omitting `--api-version` selects 1. The CLI only owns file access, flags, output,

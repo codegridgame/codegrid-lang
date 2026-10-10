@@ -20,7 +20,7 @@ export function runSceneConformance(request, cases, assert) {
     const program = call('compile_program', {source: fixture.source});
     assert(program.status === 'ok', fixture.id + ': compile');
     const started = call('start_evaluation', {level: level.handle, program: program.handle,
-      mode: fixture.mode, boundary_mode: fixture.boundary, shuffle_seed: fixture.seed,
+      mode: fixture.mode, shuffle_seed: fixture.seed,
       custom_execution_limit: fixture.custom_limit});
     assert(started.status === 'ok', fixture.id + ': start');
     let response;

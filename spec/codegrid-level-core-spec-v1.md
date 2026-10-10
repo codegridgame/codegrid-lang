@@ -701,7 +701,6 @@ Any VM runtime error immediately fails the current test.
 Examples include:
 
 ```text
-OutOfBounds
 CustomExecutionLimitExceeded
 ConcurrentOutputConflict
 ```
@@ -767,7 +766,6 @@ WrongOutput
 
 ```text
 HiddenTestFailed
-OutOfBounds
 ```
 
 ---
@@ -1716,7 +1714,6 @@ WrongOutput
 IncompleteOutput
 IncompleteAction
 InvalidAction
-OutOfBounds
 CustomExecutionLimitExceeded
 ConcurrentOutputConflict
 ResourceLimitExceeded
@@ -2103,3 +2100,9 @@ level-core/
 ```
 
 This module structure is informative rather than normative. The behavioral rules in the main specification are normative.
+
+## Immediate output permission (2026-10-08)
+
+OUTPUT_IMMEDIATE independently permits `.0` through `.9`, absent by default.
+Ordinary OUTPUT remains always allowed. Validate initial and generated code
+consistently; syntax, encodings, VM behavior and metrics remain unchanged.

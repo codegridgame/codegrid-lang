@@ -587,7 +587,7 @@ fn execute_primary(
                 return Flow::Stay;
             };
             let is_tail = current_function == Some(function)
-                && program.is_tail_call(mode.code_grid, function, index, config.boundary_mode());
+                && program.is_tail_call(mode.code_grid, function, index);
             let Some(target) = runtime.functions.get(&function) else {
                 draft.fault = Some(VmFault::InternalInvariantViolation);
                 return Flow::Stay;
@@ -951,7 +951,7 @@ fn execute_custom(
 }
 
 fn initial_custom_threads(program: &ScopedProgram, invocation_seed: u64) -> Vec<ThreadState> {
-    program
+    let mut threads: Vec<_> = program
         .main
         .cells
         .iter()
@@ -959,8 +959,7 @@ fn initial_custom_threads(program: &ScopedProgram, invocation_seed: u64) -> Vec<
         .filter_map(|(index, cell)| {
             let direction = cell.entry?;
             let id = u64::try_from(index).ok()?;
-            // The verifier guarantees an Entry and dimensions that fit the
-            // portable index space. IDs are re-densified below for row order.
+            // Explicit Entries and verified dimensions fit the portable index space. IDs are re-densified below for row order.
             Some((index, direction, id))
         })
         .enumerate()
@@ -976,7 +975,16 @@ fn initial_custom_threads(program: &ScopedProgram, invocation_seed: u64) -> Vec<
                 internal_thread_state(invocation_seed, id),
             )
         })
-        .collect()
+        .collect();
+    if threads.is_empty() {
+        threads.push(ThreadState::initial(
+            0,
+            Coordinate { x: 0, y: 0 },
+            Direction::Right,
+            internal_thread_state(invocation_seed, 0),
+        ));
+    }
+    threads
 }
 
 fn record_primary(
@@ -990,17 +998,22 @@ fn record_primary(
 }
 
 fn first_entry(board: &Board) -> Option<(Coordinate, Direction)> {
-    board.cells.iter().enumerate().find_map(|(index, cell)| {
-        cell.entry.map(|direction| {
-            (
-                Coordinate {
-                    x: index % board.width,
-                    y: index / board.width,
-                },
-                direction,
-            )
+    board
+        .cells
+        .iter()
+        .enumerate()
+        .find_map(|(index, cell)| {
+            cell.entry.map(|direction| {
+                (
+                    Coordinate {
+                        x: index % board.width,
+                        y: index / board.width,
+                    },
+                    direction,
+                )
+            })
         })
-    })
+        .or(Some((Coordinate { x: 0, y: 0 }, Direction::Right)))
 }
 
 fn cell_id(
@@ -1092,35 +1105,20 @@ fn move_current(
 
 fn move_normal_cell(
     thread: &mut ThreadState,
-    tick: u64,
+    _tick: u64,
     runtime: &ScopedProgram,
-    config: VmConfig,
+    _config: VmConfig,
     draft: &mut TickDraft,
-    mode: ExecutionMode,
+    _mode: ExecutionMode,
 ) {
     let Some(board) = runtime_board(runtime, thread.board) else {
         draft.fault = Some(VmFault::InternalInvariantViolation);
         return;
     };
-    if let Some(next) = move_normal(
-        thread.position,
-        thread.direction,
-        board.width,
-        board.height,
-        config.boundary_mode(),
-    ) {
+    if let Some(next) = move_normal(thread.position, thread.direction, board.width, board.height) {
         thread.position = next;
     } else {
-        draft.errors.push(RuntimeError::new(
-            tick,
-            mode.scope,
-            RuntimeErrorKind::OutOfBounds {
-                thread_id: thread.id,
-                board: thread.board,
-                position: thread.position,
-                direction: thread.direction,
-            },
-        ));
+        draft.fault = Some(VmFault::InternalInvariantViolation);
     }
 }
 

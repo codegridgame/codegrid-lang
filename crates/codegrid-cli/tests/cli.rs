@@ -62,8 +62,6 @@ fn configured_args<'a>(source: &'a str) -> Vec<&'a str> {
     vec![
         "run",
         source,
-        "--boundary",
-        "exit",
         "--seed",
         "0",
         "--custom-limit",
@@ -111,8 +109,6 @@ fn evaluate_args<'a>(level: &'a str, source: &'a str, profile: &'a str) -> Vec<&
         source,
         "--mode",
         "debug",
-        "--boundary",
-        "exit",
         "--seed",
         "18446744073709551615",
         "--custom-limit",
@@ -155,7 +151,7 @@ fn direct_api_evaluate(level_text: &str, source: &str, mode: &str) -> Value {
             "level": level,
             "program": program,
             "mode": mode,
-            "boundary_mode": "Exit",
+
             "shuffle_seed": "18446744073709551615",
             "custom_execution_limit": "1000"
         }),
@@ -208,7 +204,7 @@ fn level_manifest_cli_matches_direct_rust_api_complete_results() {
         let evaluation = level_api_call(
             &mut api,
             "start_evaluation",
-            json!({"level":level["handle"],"program":program["handle"],"mode":case["mode"],"boundary_mode":case["boundary"],"shuffle_seed":case["seed"],"custom_execution_limit":case["custom_limit"]}),
+            json!({"level":level["handle"],"program":program["handle"],"mode":case["mode"],"shuffle_seed":case["seed"],"custom_execution_limit":case["custom_limit"]}),
         );
         assert_eq!(evaluation["status"], "ok", "{case}: {evaluation}");
         let direct = loop {
@@ -228,8 +224,6 @@ fn level_manifest_cli_matches_direct_rust_api_complete_results() {
             .args([
                 "--mode",
                 &case["mode"].as_str().unwrap().to_ascii_lowercase(),
-                "--boundary",
-                &case["boundary"].as_str().unwrap().to_ascii_lowercase(),
                 "--seed",
                 case["seed"].as_str().unwrap(),
                 "--custom-limit",
@@ -345,10 +339,9 @@ fn cli_matches_all_shared_full_runtime_fixtures() {
             .collect::<Vec<_>>()
             .join(",");
         let mut arguments = configured_args(source.text_path());
-        arguments[3] = run["boundary"].as_str().unwrap();
-        arguments[5] = run["seed"].as_str().unwrap();
-        arguments[7] = run["custom_execution_limit"].as_str().unwrap();
-        arguments[9] = run["max_ticks"].as_str().unwrap();
+        arguments[3] = run["seed"].as_str().unwrap();
+        arguments[5] = run["custom_execution_limit"].as_str().unwrap();
+        arguments[7] = run["max_ticks"].as_str().unwrap();
         arguments.extend(["--input", &input]);
         let initial_memory_file = run["initial_memory"].as_array().map(|memory| {
             let bytes = serde_json::to_vec(memory).expect("fixture memory encodes as JSON");
@@ -554,7 +547,7 @@ fn cli_matches_all_shared_full_runtime_fixtures() {
 fn run_uses_versioned_json_and_preserves_wide_integer_configuration() {
     let source = TempFile::new("cg", b"~> ;\n");
     let mut args = configured_args(source.text_path());
-    args[5] = "18446744073709551615";
+    args[3] = "18446744073709551615";
     let output = run_cli(&args);
     assert_eq!(output.status.code(), Some(0));
     let result = parse_result(&output);
@@ -605,7 +598,7 @@ fn run_normalizes_initial_memory_and_rejects_duplicate_or_malformed_entries() {
 fn run_distinguishes_runtime_errors_tick_slices_and_work_yields() {
     let looping = TempFile::new("cg", b"~> >\n");
     let mut tick_args = configured_args(looping.text_path());
-    tick_args[9] = "1";
+    tick_args[7] = "1";
     let tick = run_cli(&tick_args);
     assert_eq!(tick.status.code(), Some(6));
     let tick_result = parse_result(&tick);
@@ -613,23 +606,22 @@ fn run_distinguishes_runtime_errors_tick_slices_and_work_yields() {
     assert_eq!(tick_result["yield_reason"], "tick_slice_exhausted");
 
     let mut work_args = configured_args(looping.text_path());
-    work_args[11] = "1";
+    work_args[9] = "1";
     let work = run_cli(&work_args);
     assert_eq!(work.status.code(), Some(7));
     let work_result = parse_result(&work);
     assert_eq!(work_result["status"], "yielded");
     assert_eq!(work_result["yield_reason"], "work_unit_budget_exhausted");
 
-    let bounded = TempFile::new("cg", b"~> >\n");
+    let bounded = TempFile::new("cg", b"~> .\n~> .\n");
     let mut error_args = configured_args(bounded.text_path());
-    error_args[3] = "exit";
-    error_args[9] = "10";
+    error_args[7] = "10";
     let error = run_cli(&error_args);
     assert_eq!(error.status.code(), Some(5));
     assert_eq!(parse_result(&error)["status"], "runtime_error");
     assert_eq!(
         parse_result(&error)["snapshot"]["errors"][0]["code"],
-        "OutOfBounds"
+        "ConcurrentOutputConflict"
     );
 }
 
@@ -637,7 +629,7 @@ fn run_distinguishes_runtime_errors_tick_slices_and_work_yields() {
 fn run_rejects_noncanonical_and_invalid_host_inputs_without_json() {
     let source = TempFile::new("cg", b"~> ;\n");
     let mut args = configured_args(source.text_path());
-    args[5] = "01";
+    args[3] = "01";
     let leading_zero_seed = run_cli(&args);
     assert_eq!(leading_zero_seed.status.code(), Some(2));
     assert!(leading_zero_seed.stdout.is_empty());
@@ -742,8 +734,6 @@ fn evaluate_cli_result_matches_the_direct_shared_level_api() {
         source.text_path(),
         "--mode",
         "debug",
-        "--boundary",
-        "exit",
         "--seed",
         "0",
         "--custom-limit",
@@ -1139,13 +1129,11 @@ fn evaluate_returns_resource_status_and_rejects_oversized_inputs() {
         json!(["HALT", "OUTPUT", "MOVE_RIGHT"]);
     let level = TempFile::new("json", looping_level_value.to_string().as_bytes());
     let looping_source = TempFile::new("cg", b"~> >\n");
-    let mut args = evaluate_args(
+    let args = evaluate_args(
         level.text_path(),
         looping_source.text_path(),
         low_work_profile.text_path(),
     );
-    let boundary_index = args.iter().position(|arg| *arg == "exit").unwrap();
-    args[boundary_index] = "wrap";
     let resource = run_cli(&args);
     assert_eq!(resource.status.code(), Some(11));
     assert_eq!(
@@ -1216,8 +1204,6 @@ fn current_scene_api_is_the_default_and_executes_manifest() {
             "2",
             "--mode",
             &case["mode"].as_str().unwrap().to_ascii_lowercase(),
-            "--boundary",
-            &case["boundary"].as_str().unwrap().to_ascii_lowercase(),
             "--seed",
             case["seed"].as_str().unwrap(),
             "--custom-limit",
@@ -1255,8 +1241,6 @@ fn current_scene_api_is_the_default_and_executes_manifest() {
         root.join("fixtures/scene-v2/exactio.cg").to_str().unwrap(),
         "--mode",
         "debug",
-        "--boundary",
-        "exit",
         "--seed",
         "0",
         "--custom-limit",

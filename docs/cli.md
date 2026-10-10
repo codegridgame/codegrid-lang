@@ -14,18 +14,18 @@ This contract describes the local Full target. It does not select deployment aut
 ```text
 codegrid check <program.cg>
 codegrid debug --stdio
-codegrid run <program.cg> --boundary <exit|wrap> --seed <u64>
+codegrid run <program.cg> --seed <u64>
     --custom-limit <positive-u64> --max-ticks <positive-u64>
     --max-work-units <positive-u64>
     [--input <byte-list> | --input-file <json-file>]
     [--initial-memory-file <json-file>]
 codegrid evaluate <level.json> <program.cg>
-    --mode <debug|official> --boundary <exit|wrap> --seed <u64>
+    --mode <debug|official> --seed <u64>
     --custom-limit <positive-u64> --limits-file <trusted-profile.json>
     [--format <json|human>]
 ```
 
-The `run` options `--boundary`, `--seed`, `--custom-limit`, `--max-ticks`, and `--max-work-units` are required exactly once. Numeric option values use canonical unsigned ASCII decimal notation: `0` or a nonzero digit followed by zero or more digits, with no sign, separators, whitespace, or leading zero. `--seed` accepts the inclusive range `0..=u64::MAX`. The other numeric options must be in `1..=u64::MAX`. `--boundary` accepts exactly `exit` or `wrap`, case-sensitively. Unknown options, repeated options, missing values, and incompatible input sources are rejected.
+The `run` options `--seed`, `--custom-limit`, `--max-ticks`, and `--max-work-units` are required exactly once. Numeric option values use canonical unsigned ASCII decimal notation: `0` or a nonzero digit followed by zero or more digits, with no sign, separators, whitespace, or leading zero. `--seed` accepts the inclusive range `0..=u64::MAX`. The other numeric options must be in `1..=u64::MAX`. Unknown options, repeated options, missing values, and incompatible input sources are rejected.
 
 `--input` accepts a comma-separated list of canonical unsigned decimal byte values in `0..=255`; ASCII whitespace around a value is ignored. Empty list elements, including consecutive or trailing commas, are invalid. An explicitly empty value (`--input ""`) supplies an empty sequence. If neither input option is present, the input sequence is empty. `--input` and `--input-file` are mutually exclusive.
 
@@ -52,8 +52,7 @@ The CLI does not prescribe host-specific maximum source, file, input, initial-me
 and response per line. Stdout contains only protocol responses. The process
 compiles source and advances the shared VM; it contains no separate interpreter.
 
-A `launch` request contains `source` (string), `input` (byte array), `boundary`
-(`exit` or `wrap`), and canonical decimal strings `seed`, `custom_limit`,
+A `launch` request contains `source` (string), `input` (byte array), and canonical decimal strings `seed`, `custom_limit`,
 `max_work_units`, and `max_ticks`. A session accepts one successful launch.
 It returns compiler source locations with one-based UTF-16 line/column ranges
 and the normal Full VM snapshot. Compilation failures return `diagnostics`.
@@ -90,7 +89,7 @@ The top-level object has `schema: "codegrid.cli.run-result"` and `schema_version
 | `schema`, `schema_version` | Fixed schema identifier and version. |
 | `status` | `source_error`, `halted`, `runtime_error`, `yielded`, or `vm_fault`. |
 | `yield_reason` | `null`, `tick_slice_exhausted`, or `work_unit_budget_exhausted`; non-null only when `status` is `yielded`. |
-| `configuration` | Effective boundary mode, seed, Custom limit, tick and work limits, input bytes, and normalized initial Outer memory. |
+| `configuration` | Effective seed, Custom limit, tick and work limits, input bytes, and normalized initial Outer memory. |
 | `diagnostics` | Compiler diagnostics; empty for successful compilation. Spans use half-open UTF-8 byte offsets. |
 | `events` | Ordered VM events from committed ticks in this `run` call. Empty on compile failure. Rolled-back work emits no events. |
 | `newly_emitted_output` | Output bytes committed during this `run` call. Empty on compile failure or an interrupted tick with no earlier output. |
@@ -105,7 +104,6 @@ The serialized shape is fixed as follows. Names and tagged enum values use lower
   "status": "halted",
   "yield_reason": null,
   "configuration": {
-    "boundary_mode": "exit",
     "seed": "18446744073709551615",
     "custom_execution_limit": "1000",
     "max_ticks": "10000",
@@ -148,7 +146,7 @@ The serialized shape is fixed as follows. Names and tagged enum values use lower
 
 The object above illustrates field types and names; its abbreviated arrays are not a valid execution fixture. The normative contents of each field are:
 
-- `configuration` contains `boundary_mode` (`exit` or `wrap`), decimal-string `seed`, `custom_execution_limit`, `max_ticks`, and `max_work_units`, plus the ordered input byte array and effective initial Outer memory sorted by numeric address. The memory list omits zero-valued entries.
+- `configuration` contains decimal-string `seed`, `custom_execution_limit`, `max_ticks`, and `max_work_units`, plus the ordered input byte array and effective initial Outer memory sorted by numeric address. The memory list omits zero-valued entries.
 - `diagnostics` contains `{code, severity, message, span}` objects. Severity is `error` or `warning`; span is `{start, end}` with decimal-string half-open UTF-8 byte offsets. Code is assigned by the compiler/verifier at the validation origin and follows the error registry. For `source_error`, `events` and `newly_emitted_output` are empty and `snapshot` is `null`.
 - `snapshot` contains the VM status (`running`, `halted`, or `error`), decimal-string `committed_ticks`, ten register bytes, normalized sparse Outer memory, remaining input, cumulative output, the mutable Outer `runtime_program`, every Outer thread, cumulative raw metrics, structured runtime errors, and an optional fault.
 - `runtime_program` is a `CodeGridView`: `main` and `functions`. Each board contains exact numeric `width` and `height`, row-major `cells` (each with nullable canonical source-token strings `prefix`, `entry`, `primary`, and `attachment`), and `folded_blocks` keyed by numeric Folded Block ID with row token arrays that include any conditional prefix before the Primary. The mutable Outer program view contains no Custom definitions.
@@ -183,7 +181,7 @@ Byte values, register indexes, slots, coordinates, dimensions, bounded Repeat co
 `codegrid evaluate <level.json> <program.cg>` runs the shared Rust level
 evaluator through [Level Host API 2](../spec/codegrid-scene-host-contract-v2.md). It does not compile,
 validate, execute, score, or rate levels independently. The command requires
-`--mode <debug|official>`, `--boundary <exit|wrap>`, `--seed <u64>`,
+`--mode <debug|official>`, `--seed <u64>`,
 `--custom-limit <positive-u64>`, and `--limits-file <trusted-profile.json>`.
 Each option may appear exactly once. `--format <json|human>` is optional and
 defaults to `json`. Evaluation always uses API/profile 2; optional
@@ -202,8 +200,7 @@ are rejected. These groups apply to generated code too and do not change metric 
 For example, the echo level needs only `"allowed_instructions": ["READ"]`.
 
 `--seed` is a canonical unsigned decimal value in `0..=u64::MAX` and is passed
-as the API's explicit `shuffle_seed`, preserving reproducibility. The boundary
-and positive Custom limit are passed as resolved evaluation configuration.
+as the API's explicit `shuffle_seed`, preserving reproducibility. The positive Custom limit is passed as resolved evaluation configuration.
 The CLI supplies the profile's `max_work_per_call` as each `advance_evaluation`
 budget and continues until the shared API returns a terminal result or typed
 resource outcome. Safety ceilings come only from the trusted profile; level
@@ -255,7 +252,7 @@ The `evaluate` exit-code mapping is specific to this command. Existing `check`,
 For a complete repository fixture run, use:
 
 ```text
-cargo run -p codegrid-cli -- evaluate fixtures/levels-scene/echo.json fixtures/levels-scene/echo.cg --mode official --boundary exit --seed 18446744073709551615 --custom-limit 1000 --limits-file examples/scene-host-v2/profile-local-v2.json
+cargo run -p codegrid-cli -- evaluate fixtures/levels-scene/echo.json fixtures/levels-scene/echo.cg --mode official --seed 18446744073709551615 --custom-limit 1000 --limits-file examples/scene-host-v2/profile-local-v2.json
 ```
 
 Acceptance for `evaluate` compares the parsed CLI JSON result with a direct

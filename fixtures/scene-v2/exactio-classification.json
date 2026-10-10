@@ -7,6 +7,7 @@
   "scene_config": {},
   "program_rules": {
     "allowed_instructions": [
+      "OUTPUT_IMMEDIATE",
       "READ",
       "CLEAR",
       "ADD",

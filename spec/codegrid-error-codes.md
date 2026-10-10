@@ -102,8 +102,7 @@ State effect: Compilation rejection: no executable IR or VM instance.
 | `source.missing_grid` | A required Main, Custom Main, or Function grid is absent. |
 | `source.height_mismatch` | The number of rows differs from the effective board height. |
 | `source.width_mismatch` | A row width differs from the effective board width. |
-| `source.main_entry_count` | An Outer or Custom Main board has no Entry. |
-| `source.function_entry_count` | A Function board does not have exactly one Entry. |
+| `source.function_entry_count` | A Function board has more than one explicit Entry. |
 | `source.fold_width` | A Folded Block width differs from its owner board width. |
 | `source.fold_entry` | An Entry appears in a Folded Block. |
 | `source.fold_attachment` | A suffix Attachment appears in a Folded Block; conditional prefixes are allowed. |
@@ -125,8 +124,7 @@ State effect: IR verification fails; unchecked IR cannot execute.
 | `ir.geometry_overflow` | Board dimensions overflow the host address space. |
 | `ir.geometry_limit` | Board geometry exceeds portable Full bounds. |
 | `ir.invalid_layout` | Dimensions are zero or do not match cell count. |
-| `ir.main_entry_count` | A Main board has no Entry. |
-| `ir.function_entry_count` | A Function does not have exactly one Entry. |
+| `ir.function_entry_count` | A Function has more than one explicit Entry. |
 | `ir.fold_width` | Folded Block length differs from board width. |
 | `ir.fold_primary` | A Folded Block contains a forbidden instruction. |
 | `ir.entry_instruction` | An Entry shares its cell with a Primary or Attachment. |
@@ -157,7 +155,6 @@ State effect: Entire failing outer tick rolls back; committed events/output are 
 | `ConcurrentOutputConflict` | Multiple Outer outputs conflict in one tick. |
 | `ConcurrentWriteConflict` | Multiple writes target the same scoped register, including equal values. |
 | `CustomExecutionLimitExceeded` | A Custom invocation exceeds its normative execution limit. |
-| `OutOfBounds` | Execution violates the VM contract for a required board position. |
 | `ReturnWithoutCall` | RETURN executes without a caller frame. |
 
 Details fields:
@@ -173,7 +170,6 @@ Details fields:
 | `ConcurrentOutputConflict` | `thread_ids` |
 | `ConcurrentWriteConflict` | `register, thread_ids` |
 | `CustomExecutionLimitExceeded` | `limit` |
-| `OutOfBounds` | `thread_id, board, position, direction` |
 | `ReturnWithoutCall` | `thread_id, board, position` |
 
 ### fault
@@ -256,7 +252,7 @@ State effect: State unchanged on invalid requests; work-limit rollback uses the 
 | Code | Trigger / meaning |
 | --- | --- |
 | `debug.invalid_request` | JSON-lines request is malformed, has unknown fields, has wrong field types, or names an unsupported command. |
-| `debug.invalid_configuration` | Seed/limit/boundary configuration is invalid or exceeds u64. |
+| `debug.invalid_configuration` | Seed/limit configuration is invalid or exceeds u64. |
 | `debug.already_loaded` | A session receives another launch after a successful launch. |
 | `debug.no_program` | Step or snapshot occurs before successful launch. |
 | `debug.vm_initialization_failed` | The compiled program cannot initialize its VM. |
@@ -321,7 +317,6 @@ State effect: Pre-copy validation failures do not dispatch; oversized retained-s
 | `invalid_tick_limit` | Requested tick budget is not a positive canonical u64 decimal string. |
 | `instance_state_limit_exceeded` | Canonical retained snapshot bytes exceed the configured instance quota. |
 | `invalid_memory_address` | An initial-memory address is not a canonical arbitrary-precision signed decimal string. |
-| `invalid_boundary_mode` | Boundary mode is neither exit nor wrap. |
 | `invalid_configuration_integer` | Seed or Custom limit is not a valid canonical integer string. |
 | `response_payload_limit_exceeded` | The full response cannot fit the configured response ceiling. |
 | `browser.invalid_host_limit` | BrowserRuntime constructor receives invalid numeric/string ceilings or host limits. |
@@ -357,7 +352,6 @@ State effect: Invalid/over-limit requests do not execute; work limit rolls back;
 | `unsupported_operation` | The requested operation is not recognized. |
 | `runtime_already_initialized` | Initialize is called twice. |
 | `invalid_program_handle` | Program handle spelling is invalid. |
-| `invalid_boundary` | Boundary mode is neither exit nor wrap. |
 | `invalid_instance_handle` | Instance handle spelling is invalid. |
 | `invalid_host_limits` | Initialization host_limits is not an object. |
 | `response_payload_limit_exceeded` | The full response exceeds the configured response ceiling. |

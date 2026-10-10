@@ -26,6 +26,8 @@ does not depend on editor locale.
 
 ### Run and Debug
 
+Boards wrap across both axes. A board without an explicit Entry starts at `(0,0)` moving right.
+
 Open a `.cg` file and use the Run or Debug button in the editor title bar,
 the editor context menu, or `CodeGrid: Run Current File` / `CodeGrid: Debug
 Current File` in the Command Palette. F5 starts debugging; Ctrl+F5 runs
@@ -75,7 +77,6 @@ configuration for a particular program:
     "program": "${file}",
     "stopOnEntry": true,
     "input": [65],
-    "boundary": "exit",
     "seed": "0",
     "customLimit": "10000",
     "maxTicks": "100000",

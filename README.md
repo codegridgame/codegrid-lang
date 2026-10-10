@@ -7,6 +7,12 @@ verification reports are not release baselines. See [repository rules](AGENTS.md
 
 The current language includes fixed conditional prefixes `?0`–`?2` and `?!` (F=1), CMP `?=`, and random direction `??`; READ is directionless `,` (code 44), with F=0 on success and F=1 on exhaustion; Function registers are private copies and `$!` provides NEG (code 69); executable IR is format 3. See the [migration manual](docs/conditional-prefix-migration.md) for semantics, retired forms, compatibility, and verification.
 
+All normal boards wrap horizontally and vertically. Main, Function and Custom
+boards without an explicit Entry start at `(0, 0)`, facing Right. Explicit
+Entries keep their configured positions and directions; they suppress the
+default entry. For example, `, . ;` reads and outputs one byte, then halts,
+without requiring `~>`. See [the recorded decision](docs/decisions.md#toroidal-boards-and-implicit-entries-2026-10-11).
+
 CodeGrid is a grid-based programming language built around a shared Rust compiler and deterministic VM. The development target is the complete language, including multiple execution threads, functions, Custom instructions, Folded Blocks, stacks, memory, attachments, and deterministic randomness.
 
 ## Full language development status

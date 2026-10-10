@@ -62,8 +62,7 @@ fn halt_and_constraint_terminal_order() {
     assert_eq!(result.status, EvaluationStatus::ConstraintExceeded);
     assert_eq!(result.outcome, Some(SceneOutcome::Passed));
     let v = author("robot");
-    let mut wrap_config = config();
-    wrap_config.boundary_mode = codegrid_model::BoundaryMode::Wrap;
+    let wrap_config = config();
     let result = run(
         session(
             &v,
@@ -88,8 +87,7 @@ fn halt_and_constraint_terminal_order() {
 fn simultaneous_output_halt_checks_constraints_before_incomplete_goal() {
     let mut v = two_point_robot();
     v["constraints"]["max_ticks"] = json!(1);
-    let mut c = config();
-    c.boundary_mode = codegrid_model::BoundaryMode::Wrap;
+    let c = config();
     let p = grid(
         vec![
             Cell::entry(Direction::Right),

@@ -588,36 +588,20 @@
         "ru": "Ширина строки не соответствует ширине поля."
       }
     },
-    "1035": {
-      "layer": "source",
-      "code": "source.main_entry_count",
-      "messages": {
-        "en": "A Main board requires at least one Entry.",
-        "de": "Ein Main-Board benötigt mindestens einen Entry.",
-        "fr": "Un plateau Main exige au moins une Entry.",
-        "es": "Un tablero Main requiere al menos una Entry.",
-        "zh-tw": "Main 棋盤至少需要一個 Entry。",
-        "ja": "Main ボードには Entry が少なくとも 1 つ必要です。",
-        "zh-cn": "Main 棋盘至少需要一个 Entry。",
-        "ko": "Main 보드에는 Entry가 하나 이상 필요합니다.",
-        "pt-br": "Um tabuleiro Main exige pelo menos uma Entry.",
-        "ru": "Поле Main требует хотя бы одну Entry."
-      }
-    },
     "1036": {
       "layer": "source",
       "code": "source.function_entry_count",
       "messages": {
-        "en": "A Function board requires exactly one Entry.",
-        "de": "Ein Function-Board benötigt genau einen Entry.",
-        "fr": "Un plateau Function exige exactement une Entry.",
-        "es": "Un tablero Function requiere exactamente una Entry.",
-        "zh-tw": "Function 棋盤必須恰好有一個 Entry。",
-        "ja": "Function ボードには Entry がちょうど 1 つ必要です。",
-        "zh-cn": "Function 棋盘必须恰好有一个 Entry。",
-        "ko": "Function 보드에는 Entry가 정확히 하나 필요합니다.",
-        "pt-br": "Um tabuleiro Function exige exatamente uma Entry.",
-        "ru": "Поле Function требует ровно одну Entry."
+        "en": "A Function board may contain at most one explicit Entry.",
+        "de": "Ein Funktionsbrett darf höchstens einen expliziten Entry enthalten.",
+        "fr": "Un plateau de fonction peut contenir au plus une entrée explicite.",
+        "es": "Un tablero de función puede contener como máximo una entrada explícita.",
+        "zh-tw": "函式棋盤最多只能有一個顯式入口。",
+        "ja": "関数ボードに配置できる明示的な入口は最大1個です。",
+        "zh-cn": "函数棋盘最多只能有一个显式入口。",
+        "ko": "함수 보드에는 명시적 진입점을 최대 하나만 배치할 수 있습니다.",
+        "pt-br": "Um tabuleiro de função pode conter no máximo uma entrada explícita.",
+        "ru": "Поле функции может содержать не более одного явного входа."
       }
     },
     "1037": {
@@ -812,36 +796,20 @@
         "ru": "Размеры поля равны нулю или не соответствуют числу ячеек."
       }
     },
-    "2004": {
-      "layer": "ir",
-      "code": "ir.main_entry_count",
-      "messages": {
-        "en": "A Main board requires at least one Entry.",
-        "de": "Ein Main-Board benötigt mindestens einen Entry.",
-        "fr": "Un plateau Main exige au moins une Entry.",
-        "es": "Un tablero Main requiere al menos una Entry.",
-        "zh-tw": "Main 棋盤至少需要一個 Entry。",
-        "ja": "Main ボードには Entry が少なくとも 1 つ必要です。",
-        "zh-cn": "Main 棋盘至少需要一个 Entry。",
-        "ko": "Main 보드에는 Entry가 하나 이상 필요합니다.",
-        "pt-br": "Um tabuleiro Main exige pelo menos uma Entry.",
-        "ru": "Поле Main требует хотя бы одну Entry."
-      }
-    },
     "2005": {
       "layer": "ir",
       "code": "ir.function_entry_count",
       "messages": {
-        "en": "A Function board requires exactly one Entry.",
-        "de": "Ein Function-Board benötigt genau einen Entry.",
-        "fr": "Un plateau Function exige exactement une Entry.",
-        "es": "Un tablero Function requiere exactamente una Entry.",
-        "zh-tw": "Function 棋盤必須恰好有一個 Entry。",
-        "ja": "Function ボードには Entry がちょうど 1 つ必要です。",
-        "zh-cn": "Function 棋盘必须恰好有一个 Entry。",
-        "ko": "Function 보드에는 Entry가 정확히 하나 필요합니다.",
-        "pt-br": "Um tabuleiro Function exige exatamente uma Entry.",
-        "ru": "Поле Function требует ровно одну Entry."
+        "en": "A Function board may contain at most one explicit Entry.",
+        "de": "Ein Funktionsbrett darf höchstens einen expliziten Entry enthalten.",
+        "fr": "Un plateau de fonction peut contenir au plus une entrée explicite.",
+        "es": "Un tablero de función puede contener como máximo una entrada explícita.",
+        "zh-tw": "函式棋盤最多只能有一個顯式入口。",
+        "ja": "関数ボードに配置できる明示的な入口は最大1個です。",
+        "zh-cn": "函数棋盘最多只能有一个显式入口。",
+        "ko": "함수 보드에는 명시적 진입점을 최대 하나만 배치할 수 있습니다.",
+        "pt-br": "Um tabuleiro de função pode conter no máximo uma entrada explícita.",
+        "ru": "Поле функции может содержать не более одного явного входа."
       }
     },
     "2006": {
@@ -1178,22 +1146,6 @@
         "ko": "Custom 실행이 설정된 한도를 초과했습니다.",
         "pt-br": "A execução Custom excedeu o limite configurado.",
         "ru": "Выполнение Custom превысило заданный лимит."
-      }
-    },
-    "3009": {
-      "layer": "vm",
-      "code": "OutOfBounds",
-      "messages": {
-        "en": "Execution reached an invalid board position.",
-        "de": "Die Ausführung hat eine ungültige Board-Position erreicht.",
-        "fr": "L’exécution a atteint une position de plateau invalide.",
-        "es": "La ejecución alcanzó una posición del tablero no válida.",
-        "zh-tw": "執行到達無效的棋盤位置。",
-        "ja": "実行が無効なボード位置に到達しました。",
-        "zh-cn": "执行到达无效的棋盘位置。",
-        "ko": "실행이 잘못된 보드 위치에 도달했습니다.",
-        "pt-br": "A execução chegou a uma posição inválida do tabuleiro.",
-        "ru": "Выполнение достигло недопустимой позиции поля."
       }
     },
     "3010": {
@@ -1936,16 +1888,16 @@
       "layer": "debug",
       "code": "debug.invalid_configuration",
       "messages": {
-        "en": "The seed, limit, or boundary configuration is invalid.",
-        "de": "Seed-, Limit- oder Grenzkonfiguration ist ungültig.",
-        "fr": "La configuration de graine, limite ou frontière est invalide.",
-        "es": "La configuración de semilla, límite o frontera no es válida.",
-        "zh-tw": "種子、上限或邊界設定無效。",
-        "ja": "シード、上限、境界の設定が無効です。",
-        "zh-cn": "种子、上限或边界配置无效。",
-        "ko": "시드, 한도 또는 경계 설정이 잘못되었습니다.",
-        "pt-br": "A configuração de semente, limite ou fronteira é inválida.",
-        "ru": "Недопустимые настройки начального значения, лимита или границы."
+        "en": "The seed or limit configuration is invalid.",
+        "de": "Die Seed- oder Limitkonfiguration ist ungültig.",
+        "fr": "La configuration de graine ou de limite est invalide.",
+        "es": "La configuración de semilla o límite no es válida.",
+        "zh-tw": "種子或上限設定無效。",
+        "ja": "シードまたは上限の設定が無効です。",
+        "zh-cn": "种子或上限配置无效。",
+        "ko": "시드 또는 한도 설정이 잘못되었습니다.",
+        "pt-br": "A configuração de semente ou limite é inválida.",
+        "ru": "Недопустимые настройки начального значения или лимита."
       }
     },
     "5102": {
@@ -2684,22 +2636,6 @@
         "ru": "Адрес памяти не является допустимой канонической десятичной строкой целого числа со знаком."
       }
     },
-    "7017": {
-      "layer": "browser",
-      "code": "invalid_boundary_mode",
-      "messages": {
-        "en": "The boundary mode must be exit or wrap.",
-        "de": "Der Randmodus muss exit oder wrap sein.",
-        "fr": "Le mode de bord doit être exit ou wrap.",
-        "es": "El modo de borde debe ser exit o wrap.",
-        "zh-tw": "邊界模式必須是 exit 或 wrap。",
-        "ja": "境界モードは exit または wrap である必要があります。",
-        "zh-cn": "边界模式必须是 exit 或 wrap。",
-        "ko": "경계 모드는 exit 또는 wrap이어야 합니다.",
-        "pt-br": "O modo de borda deve ser exit ou wrap.",
-        "ru": "Режим границы должен быть exit или wrap."
-      }
-    },
     "7018": {
       "layer": "browser",
       "code": "invalid_configuration_integer",
@@ -3114,22 +3050,6 @@
         "ko": "프로그램 핸들이 올바르지 않습니다.",
         "pt-br": "O identificador do programa é inválido.",
         "ru": "Недопустимый дескриптор программы."
-      }
-    },
-    "7523": {
-      "layer": "server",
-      "code": "invalid_boundary",
-      "messages": {
-        "en": "The boundary mode must be exit or wrap.",
-        "de": "Der Randmodus muss exit oder wrap sein.",
-        "fr": "Le mode de bord doit être exit ou wrap.",
-        "es": "El modo de borde debe ser exit o wrap.",
-        "zh-tw": "邊界模式必須是 exit 或 wrap。",
-        "ja": "境界モードは exit または wrap である必要があります。",
-        "zh-cn": "边界模式必须是 exit 或 wrap。",
-        "ko": "경계 모드는 exit 또는 wrap이어야 합니다.",
-        "pt-br": "O modo de borda deve ser exit ou wrap.",
-        "ru": "Режим границы должен быть exit или wrap."
       }
     },
     "7524": {

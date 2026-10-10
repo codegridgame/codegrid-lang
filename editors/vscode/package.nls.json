@@ -2,7 +2,6 @@
   "extension.description": "Full CodeGrid editing, local execution and Global Tick debugging, with an optional native language server.",
   "codegrid.runtime.path.description": "Path to the native CodeGrid executable. Empty uses the bundled runtime, then PATH.",
   "codegrid.execution.input.description": "Input bytes for Run and Debug commands.",
-  "codegrid.execution.boundary.description": "Board boundary behavior.",
   "codegrid.execution.seed.description": "Canonical decimal u64 seed.",
   "codegrid.execution.customLimit.description": "Custom execution limit.",
   "codegrid.execution.maxTicks.description": "Maximum committed Global Ticks per session.",

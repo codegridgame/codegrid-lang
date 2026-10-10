@@ -1,7 +1,7 @@
 use num_bigint::BigInt;
 
 use codegrid_ir::BoardId;
-use codegrid_model::{Direction, Slot};
+use codegrid_model::Slot;
 
 use crate::{Coordinate, StaticCellId};
 
@@ -57,12 +57,6 @@ pub enum RuntimeErrorKind {
     CustomExecutionLimitExceeded {
         limit: u64,
     },
-    OutOfBounds {
-        thread_id: u64,
-        board: BoardId,
-        position: Coordinate,
-        direction: Direction,
-    },
     ReturnWithoutCall {
         thread_id: u64,
         board: BoardId,
@@ -111,7 +105,6 @@ impl RuntimeError {
                 normalize_ids(thread_ids);
             }
             RuntimeErrorKind::CustomExecutionLimitExceeded { .. }
-            | RuntimeErrorKind::OutOfBounds { .. }
             | RuntimeErrorKind::ReturnWithoutCall { .. } => {}
         }
 
@@ -153,7 +146,6 @@ impl RuntimeError {
             RuntimeErrorKind::ConcurrentOutputConflict { .. } => "ConcurrentOutputConflict",
             RuntimeErrorKind::ConcurrentWriteConflict { .. } => "ConcurrentWriteConflict",
             RuntimeErrorKind::CustomExecutionLimitExceeded { .. } => "CustomExecutionLimitExceeded",
-            RuntimeErrorKind::OutOfBounds { .. } => "OutOfBounds",
             RuntimeErrorKind::ReturnWithoutCall { .. } => "ReturnWithoutCall",
         }
     }
@@ -191,12 +183,6 @@ impl RuntimeError {
             RuntimeErrorKind::CustomExecutionLimitExceeded { .. } => {
                 (ResourceKey::None, Vec::new())
             }
-            RuntimeErrorKind::OutOfBounds {
-                thread_id,
-                board,
-                position,
-                ..
-            } => (ResourceKey::BoardCell(*board, *position), vec![*thread_id]),
             RuntimeErrorKind::ReturnWithoutCall {
                 thread_id,
                 board,
@@ -234,7 +220,7 @@ mod tests {
     use super::{ExecutionScope, RuntimeError, RuntimeErrorKind};
     use crate::Coordinate;
     use codegrid_ir::BoardId;
-    use codegrid_model::{Direction, Slot};
+    use codegrid_model::Slot;
     use num_bigint::BigInt;
 
     #[test]
@@ -356,25 +342,23 @@ mod tests {
     }
 
     #[test]
-    fn same_board_cell_errors_sort_by_thread_id_before_direction() {
+    fn same_board_cell_errors_sort_by_thread_id_() {
         let thread_zero = RuntimeError::new(
             1,
             ExecutionScope::Outer,
-            RuntimeErrorKind::OutOfBounds {
+            RuntimeErrorKind::ReturnWithoutCall {
                 thread_id: 0,
                 board: BoardId::Main,
                 position: Coordinate { x: 0, y: 0 },
-                direction: Direction::Left,
             },
         );
         let thread_one = RuntimeError::new(
             1,
             ExecutionScope::Outer,
-            RuntimeErrorKind::OutOfBounds {
+            RuntimeErrorKind::ReturnWithoutCall {
                 thread_id: 1,
                 board: BoardId::Main,
                 position: Coordinate { x: 0, y: 0 },
-                direction: Direction::Up,
             },
         );
         let mut errors = vec![thread_one, thread_zero];
@@ -384,27 +368,26 @@ mod tests {
         let thread_ids = errors
             .iter()
             .map(|error| match error.kind() {
-                RuntimeErrorKind::OutOfBounds { thread_id, .. } => *thread_id,
-                _ => unreachable!("the test only inserts OutOfBounds errors"),
+                RuntimeErrorKind::ReturnWithoutCall { thread_id, .. } => *thread_id,
+                _ => unreachable!("the test only inserts ReturnWithoutCall errors"),
             })
             .collect::<Vec<_>>();
         assert_eq!(thread_ids, vec![0, 1]);
     }
 
     #[test]
-    fn local_error_context_retains_precise_board_position_and_direction() {
+    fn local_error_context_retains_precise_board_position() {
         let error = RuntimeError::new(
             2,
             ExecutionScope::Outer,
-            RuntimeErrorKind::OutOfBounds {
+            RuntimeErrorKind::ReturnWithoutCall {
                 thread_id: 4,
                 board: BoardId::Main,
                 position: Coordinate { x: 3, y: 1 },
-                direction: Direction::Right,
             },
         );
 
-        assert_eq!(error.code(), "OutOfBounds");
+        assert_eq!(error.code(), "ReturnWithoutCall");
         assert_eq!(error.global_tick(), 2);
     }
 }

@@ -4,7 +4,7 @@ mod tests {
         Board, Cell, CustomDefinition, FoldedBlock, Program, ScopedProgram, Slot, TailCallSite,
         VerifiedProgram, IR_FORMAT_VERSION,
     };
-    use codegrid_model::{AttachmentInstruction, BoundaryMode, Direction, PrimaryInstruction};
+    use codegrid_model::{AttachmentInstruction, Direction, PrimaryInstruction};
     use std::collections::BTreeMap;
 
     fn program(cells: Vec<Cell>, width: usize) -> Program {
@@ -253,7 +253,7 @@ mod tests {
                 name: "function board has multiple Entries",
                 program: invalid_function_entry_count,
                 expected_path: "@main.F0",
-                expected_message: "A function board must contain exactly one Entry.",
+                expected_message: "A function board must contain at most one Entry.",
             },
             InvalidCase {
                 name: "Fold width differs from owner board",
@@ -333,8 +333,8 @@ mod tests {
             .expect("tail-call fixture is a valid IR program");
         let function_id = Slot::new(0).expect("zero is valid");
 
-        assert!(program.is_tail_call(super::CodeGridId::Outer, function_id, 1, BoundaryMode::Exit,));
-        assert!(program.is_tail_call(super::CodeGridId::Outer, function_id, 1, BoundaryMode::Wrap,));
+        assert!(program.is_tail_call(super::CodeGridId::Outer, function_id, 1::Exit,));
+        assert!(program.is_tail_call(super::CodeGridId::Outer, function_id, 1::Wrap,));
         assert_eq!(
             program
                 .tail_call_sites()
@@ -345,15 +345,7 @@ mod tests {
                 TailCallSite {
                     code_grid: super::CodeGridId::Outer,
                     function: function_id,
-                    cell_index: 1,
-                    boundary_mode: BoundaryMode::Exit,
-                },
-                TailCallSite {
-                    code_grid: super::CodeGridId::Outer,
-                    function: function_id,
-                    cell_index: 1,
-                    boundary_mode: BoundaryMode::Wrap,
-                }
+                    cell_index: 1, }
             ]
         );
     }
@@ -372,8 +364,7 @@ mod tests {
             super::CodeGridId::Outer,
             function_id,
             1,
-            BoundaryMode::Exit,
-        ));
+            ));
     }
 
     #[test]
@@ -400,8 +391,7 @@ mod tests {
             super::CodeGridId::Outer,
             function_id,
             1,
-            BoundaryMode::Exit,
-        ));
+            ));
     }
 
     #[test]
@@ -424,12 +414,11 @@ mod tests {
             super::CodeGridId::Outer,
             function_id,
             1,
-            BoundaryMode::Exit,
-        ));
+            ));
     }
 
     #[test]
-    fn tail_call_proof_is_specific_to_the_configured_boundary_mode() {
+    fn tail_call_proof_follows_toroidal_navigation() {
         let function_id = Slot::new(0).expect("zero is valid");
         let function = Board {
             width: 4,
@@ -443,14 +432,13 @@ mod tests {
             folded_blocks: BTreeMap::new(),
         };
         let program = VerifiedProgram::new(program_with_function(function))
-            .expect("boundary-specific tail-call fixture is valid IR");
+            .expect("toroidal tail-call fixture is valid IR");
 
         assert!(!program.is_tail_call(
             super::CodeGridId::Outer,
             function_id,
             3,
-            BoundaryMode::Exit,
-        ));
-        assert!(program.is_tail_call(super::CodeGridId::Outer, function_id, 3, BoundaryMode::Wrap,));
+            ));
+        assert!(program.is_tail_call(super::CodeGridId::Outer, function_id, 3::Wrap,));
     }
 }

@@ -6,8 +6,8 @@
 use std::collections::{BTreeMap, BTreeSet, VecDeque};
 
 use codegrid_model::{
-    AttachmentInstruction, BoundaryMode, ConditionPrefix, Direction, PrimaryInstruction, Slot,
-    MAX_BOARD_CELLS, MAX_BOARD_DIMENSION,
+    AttachmentInstruction, ConditionPrefix, Direction, PrimaryInstruction, Slot, MAX_BOARD_CELLS,
+    MAX_BOARD_DIMENSION,
 };
 
 pub const IR_FORMAT_VERSION: u32 = 3;
@@ -116,7 +116,6 @@ pub struct TailCallSite {
     pub code_grid: CodeGridId,
     pub function: Slot,
     pub cell_index: usize,
-    pub boundary_mode: BoundaryMode,
 }
 
 /// A Program that has passed all structural IR invariants and static reference
@@ -145,18 +144,11 @@ impl VerifiedProgram {
         &self.tail_call_sites
     }
 
-    pub fn is_tail_call(
-        &self,
-        code_grid: CodeGridId,
-        function: Slot,
-        cell_index: usize,
-        boundary_mode: BoundaryMode,
-    ) -> bool {
+    pub fn is_tail_call(&self, code_grid: CodeGridId, function: Slot, cell_index: usize) -> bool {
         self.tail_call_sites.contains(&TailCallSite {
             code_grid,
             function,
             cell_index,
-            boundary_mode,
         })
     }
 }
@@ -186,53 +178,41 @@ fn collect_tail_calls(
             let Some(incoming) = reachable.get(&index) else {
                 continue;
             };
-            for boundary_mode in [BoundaryMode::Exit, BoundaryMode::Wrap] {
-                let mut has_incoming_path = false;
-                let mut all_paths_return = true;
-                for &(direction, mode) in incoming {
-                    if mode != boundary_mode {
-                        continue;
-                    }
-                    has_incoming_path = true;
-                    all_paths_return &= has_navigation_return_path(board, index, direction, mode);
-                }
-                if has_incoming_path && all_paths_return {
-                    sites.insert(TailCallSite {
-                        code_grid,
-                        function: *function,
-                        cell_index: index,
-                        boundary_mode,
-                    });
-                }
+            if incoming
+                .iter()
+                .all(|&direction| has_navigation_return_path(board, index, direction))
+            {
+                sites.insert(TailCallSite {
+                    code_grid,
+                    function: *function,
+                    cell_index: index,
+                });
             }
         }
     }
 }
 
 /// Computes a conservative set of directions that can reach each cell,
-/// considering both legal boundary modes and runtime-dependent direction
+/// considering toroidal movement and runtime-dependent direction
 /// instructions.
-fn reachable_directions(board: &Board) -> BTreeMap<usize, BTreeSet<(Direction, BoundaryMode)>> {
-    let Some((entry_index, entry_direction)) = board
+fn reachable_directions(board: &Board) -> BTreeMap<usize, BTreeSet<Direction>> {
+    let (entry_index, entry_direction) = board
         .cells
         .iter()
         .enumerate()
         .find_map(|(index, cell)| cell.entry.map(|direction| (index, direction)))
-    else {
-        return BTreeMap::new();
-    };
+        .unwrap_or((0, Direction::Right));
 
     let mut queue = VecDeque::new();
-    queue.push_back((entry_index, entry_direction, BoundaryMode::Exit));
-    queue.push_back((entry_index, entry_direction, BoundaryMode::Wrap));
+    queue.push_back((entry_index, entry_direction));
     let mut visited = BTreeSet::new();
-    let mut by_cell: BTreeMap<usize, BTreeSet<(Direction, BoundaryMode)>> = BTreeMap::new();
+    let mut by_cell: BTreeMap<usize, BTreeSet<Direction>> = BTreeMap::new();
 
-    while let Some((index, direction, wraps)) = queue.pop_front() {
-        if !visited.insert((index, direction, wraps)) {
+    while let Some((index, direction)) = queue.pop_front() {
+        if !visited.insert((index, direction)) {
             continue;
         }
-        by_cell.entry(index).or_default().insert((direction, wraps));
+        by_cell.entry(index).or_default().insert(direction);
 
         let Some(cell) = board.cells.get(index) else {
             continue;
@@ -262,24 +242,19 @@ fn reachable_directions(board: &Board) -> BTreeMap<usize, BTreeSet<(Direction, B
             next_directions.push(direction);
         }
         for next_direction in next_directions {
-            if let Some(next_index) = next_cell_index(board, index, next_direction, wraps) {
-                queue.push_back((next_index, next_direction, wraps));
+            if let Some(next_index) = next_cell_index(board, index, next_direction) {
+                queue.push_back((next_index, next_direction));
             }
         }
     }
     by_cell
 }
 
-fn has_navigation_return_path(
-    board: &Board,
-    call_index: usize,
-    direction: Direction,
-    boundary_mode: BoundaryMode,
-) -> bool {
+fn has_navigation_return_path(board: &Board, call_index: usize, direction: Direction) -> bool {
     if board.cells.iter().any(|cell| cell.prefix.is_some()) {
         return false;
     }
-    let Some(mut index) = next_cell_index(board, call_index, direction, boundary_mode) else {
+    let Some(mut index) = next_cell_index(board, call_index, direction) else {
         return false;
     };
     let mut current_direction = direction;
@@ -303,19 +278,14 @@ fn has_navigation_return_path(
             Some(PrimaryInstruction::Direction(next)) => current_direction = next,
             _ => return false,
         }
-        let Some(next) = next_cell_index(board, index, current_direction, boundary_mode) else {
+        let Some(next) = next_cell_index(board, index, current_direction) else {
             return false;
         };
         index = next;
     }
 }
 
-fn next_cell_index(
-    board: &Board,
-    index: usize,
-    direction: Direction,
-    boundary_mode: BoundaryMode,
-) -> Option<usize> {
+fn next_cell_index(board: &Board, index: usize, direction: Direction) -> Option<usize> {
     if board.width == 0 || board.height == 0 || index >= board.cells.len() {
         return None;
     }
@@ -326,11 +296,10 @@ fn next_cell_index(
         Direction::Down if y + 1 < board.height => (x, y + 1),
         Direction::Left if x > 0 => (x - 1, y),
         Direction::Right if x + 1 < board.width => (x + 1, y),
-        Direction::Up if boundary_mode == BoundaryMode::Wrap => (x, board.height - 1),
-        Direction::Down if boundary_mode == BoundaryMode::Wrap => (x, 0),
-        Direction::Left if boundary_mode == BoundaryMode::Wrap => (board.width - 1, y),
-        Direction::Right if boundary_mode == BoundaryMode::Wrap => (0, y),
-        _ => return None,
+        Direction::Up => (x, board.height - 1),
+        Direction::Down => (x, 0),
+        Direction::Left => (board.width - 1, y),
+        Direction::Right => (0, y),
     };
     next_y.checked_mul(board.width)?.checked_add(next_x)
 }
@@ -465,18 +434,11 @@ fn validate_board(
         .filter(|cell| cell.entry.is_some())
         .count();
     match context {
-        BoardContext::OuterMain | BoardContext::CustomMain if entry_count == 0 => {
-            errors.push(error(
-                path,
-                "ir.main_entry_count",
-                "A Main board must contain at least one Entry.",
-            ));
-        }
-        BoardContext::OuterFunction | BoardContext::CustomFunction if entry_count != 1 => {
+        BoardContext::OuterFunction | BoardContext::CustomFunction if entry_count > 1 => {
             errors.push(error(
                 path,
                 "ir.function_entry_count",
-                "A function board must contain exactly one Entry.",
+                "A function board must contain at most one Entry.",
             ));
         }
         _ => {}

@@ -46,7 +46,7 @@ const created = parseJson(
     compiled.outcome.program,
     crossRealmInput,
     "[]",
-    JSON.stringify({ boundary_mode: "exit", seed: "0", custom_execution_limit: "10" }),
+    JSON.stringify({ seed: "0", custom_execution_limit: "10" }),
   ),
   "create cross-realm instance",
 );

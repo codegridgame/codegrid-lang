@@ -19,6 +19,6 @@ The shared Full runtime suite contains 81 cases. A complete Native CLI result ba
 
 ## Full acceptance suite
 
-The versioned, host-neutral fixture index covers Full runtime behavior. Each valid case records source, seed, boundary mode, input, initial memory, Custom execution limit, tick and work limits, expected status, complete observable state, errors, events, and raw metrics. Invalid cases record diagnostic spans and must never produce executable IR. Extend the suite when a normative requirement lacks a direct case.
+The versioned, host-neutral fixture index covers Full runtime behavior. Each valid case records source, seed, input, initial memory, Custom execution limit, tick and work limits, expected status, complete observable state, errors, events, and raw metrics. Invalid cases record diagnostic spans and must never produce executable IR. Extend the suite when a normative requirement lacks a direct case.
 
 Run the same reviewed cases through Rust/compiler layers, CLI, Runtime API, browser-WASM, and server-WASM. Compare all contract-visible results, including thread state, stacks, Page, memory observations, mutable code, input/output, errors, events, and metrics. No host may add semantic expectations of its own.
