@@ -48,6 +48,7 @@ fn compile_source(runtime: &mut RuntimeApi, source: &str) -> ProgramHandle {
 
 fn configuration(seed: u64, custom_execution_limit: u64) -> RuntimeConfiguration {
     RuntimeConfiguration {
+        gas_hard_limit: 100_000_000,
         seed,
         custom_execution_limit,
     }

@@ -23,12 +23,13 @@ const runtime = new BrowserRuntime(
   "10000",   // maximum run ticks per call
   "100000",  // maximum ticks per instance
   "1000000", // deterministic work units per call
+  "100000000", // maximum Gas per instance
 );
 ~~~
 
 The first six limits are nonnegative 32-bit integers. Response and instance
 snapshot limits are 32-bit integers of at least 256 bytes. Run, lifetime-tick,
-and work-unit limits are positive canonical unsigned decimal strings; keep
+work-unit and Gas limits are positive canonical unsigned decimal strings; keep
 them as strings rather than converting them to JavaScript Number.
 
 The binding exposes api_version, check, compile, program_view,
@@ -50,6 +51,7 @@ const created = JSON.parse(runtime.create_instance(
   JSON.stringify({
     seed: "18446744073709551615",
     custom_execution_limit: "1000",
+    gas_hard_limit: "100000000",
   }),
 ));
 ~~~
@@ -59,6 +61,11 @@ response includes the bounded result, ordered events and a complete Full
 snapshot. step(instance) applies one outer Global Tick. snapshot reads state
 without advancing execution. Release both instance and program handles when
 they are no longer needed; each handle belongs to one BrowserRuntime.
+
+Gas schedule 1 exposes decimal-string `gas_used`, `execution_gas`, `memory_gas`
+and `stack_gas`, and numeric `gas_schedule_version: 1`. Instance configuration
+requires a positive `gas_hard_limit` no larger than the trusted constructor
+ceiling. Executing Custom returns `CustomDisabled`; its source remains accepted.
 
 The adapter checks JavaScript string UTF-8 byte lengths and Uint8Array byte
 lengths before copying them into WebAssembly memory. Initial memory is limited

@@ -27,6 +27,12 @@ pub struct RuntimeError {
 /// The machine-readable category and resource context of a runtime error.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum RuntimeErrorKind {
+    GasLimitExceeded {
+        limit: u64,
+        attempted_gas: u64,
+    },
+    GasCounterOverflow,
+    CustomDisabled,
     ConcurrentCallerStackReadConflict {
         internal_thread_ids: Vec<u64>,
     },
@@ -104,7 +110,10 @@ impl RuntimeError {
             | RuntimeErrorKind::ConcurrentWriteConflict { thread_ids, .. } => {
                 normalize_ids(thread_ids);
             }
-            RuntimeErrorKind::CustomExecutionLimitExceeded { .. }
+            RuntimeErrorKind::GasLimitExceeded { .. }
+            | RuntimeErrorKind::GasCounterOverflow
+            | RuntimeErrorKind::CustomDisabled
+            | RuntimeErrorKind::CustomExecutionLimitExceeded { .. }
             | RuntimeErrorKind::ReturnWithoutCall { .. } => {}
         }
 
@@ -129,6 +138,9 @@ impl RuntimeError {
 
     pub fn code(&self) -> &'static str {
         match &self.kind {
+            RuntimeErrorKind::GasLimitExceeded { .. } => "GasLimitExceeded",
+            RuntimeErrorKind::GasCounterOverflow => "GasCounterOverflow",
+            RuntimeErrorKind::CustomDisabled => "CustomDisabled",
             RuntimeErrorKind::ConcurrentCallerStackReadConflict { .. } => {
                 "ConcurrentCallerStackReadConflict"
             }
@@ -180,7 +192,10 @@ impl RuntimeError {
                 register,
                 thread_ids,
             } => (ResourceKey::Register(*register), thread_ids.clone()),
-            RuntimeErrorKind::CustomExecutionLimitExceeded { .. } => {
+            RuntimeErrorKind::GasLimitExceeded { .. }
+            | RuntimeErrorKind::GasCounterOverflow
+            | RuntimeErrorKind::CustomDisabled
+            | RuntimeErrorKind::CustomExecutionLimitExceeded { .. } => {
                 (ResourceKey::None, Vec::new())
             }
             RuntimeErrorKind::ReturnWithoutCall {

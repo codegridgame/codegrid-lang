@@ -4,6 +4,12 @@
 
 **Previous amendment (2026-10-08):** [Status Flag and directionless READ](../docs/status-flag-and-read.md) records the approved decision implemented by the current source and VM contract.
 
+**Current Gas/Custom amendment (2026-10-11):** The recorded
+[Gas, Size and Custom decision](../docs/decisions.md#gas-static-size-and-temporary-custom-restriction-2026-10-11)
+defines exhaustive Gas Schedule 1 and temporarily disables actual Custom
+execution. Historical Custom semantics below describe retained implementation,
+not an available production capability.
+
 **Status:** Normative Full execution contract. Direct acceptance cases listed in Section 17 remain implementation conformance gates.  
 **Source contract:** [CodeGrid Source Language Specification](codegrid-source-spec.md)  
 **Executable input:** verifier-produced Full IR only
@@ -116,9 +122,15 @@ A statically proven self-tail CALL may reuse the current call frame. Only verifi
 
 ### 5.5 Custom invocation
 
-Executing a Custom Primary starts a fresh isolated invocation of the referenced Custom CodeGrid. It executes synchronously inside the current outer thread dispatch. Its internal threads progress on aligned internal ticks until the invocation returns, halts, errors, or reaches the Custom execution limit.
+Production dispatch of a Custom Primary returns `CustomDisabled` before
+starting an invocation. Source and verified IR retain Custom definitions;
+unused definitions and skipped conditional Custom cells do not trigger this
+error. No production configuration enables execution. The rest of this section
+defines retained implementation behavior, exercised only through internal tests.
 
-Custom calls are available only from the outer execution context, including allowed outer Folded Blocks. A Custom CodeGrid cannot invoke another Custom. A Custom definition may contain Functions and Folded Blocks; its Function calls remain within that Custom CodeGrid.
+In the retained implementation, executing a Custom Primary starts a fresh isolated invocation of the referenced Custom CodeGrid. It executes synchronously inside the current outer thread dispatch. Its internal threads progress on aligned internal ticks until the invocation returns, halts, errors, or reaches the Custom execution limit.
+
+Static Custom call placement permits only the outer execution context, including allowed outer Folded Blocks. This does not enable production execution. A Custom CodeGrid cannot invoke another Custom. A Custom definition may contain Functions and Folded Blocks; its Function calls remain within that Custom CodeGrid.
 
 Custom Main may have multiple internal Entry threads. Its Main registers and memory are shared within the invocation; Functions use private banks under Section 5.4. Direction, pointer, Page, stacks, call frames, phase, and PRNG stream are thread-local. Custom READ and OUTPUT use the invoking outer thread's data stack. Local memory and mutable code belong only to that invocation.
 
@@ -211,7 +223,7 @@ Every ordinary Primary except Halt is followed by its defined movement or contro
 | MovePage(increment/decrement) | Add or subtract one from the signed arbitrary-precision Page. |
 | Shift(left/right) | Shift selected byte left with high-bit truncation / right logically with zero entering the high bit. |
 | FoldedBlock(slot) | Enter the referenced Folded Block using Section 5.3. |
-| Custom(slot) | Start the isolated Custom invocation using Section 5.5. |
+| Custom(slot) | Return `CustomDisabled` before invocation; retained semantics are in Section 5.5. |
 | CustomReturn | Return from Custom Main using Section 5.5. |
 | Halt | Request successful whole-VM termination after the current Global Tick dispatches and conflict checks. |
 
@@ -221,7 +233,8 @@ NEG is an encodable ordinary Primary with Instruction Code 69 and distinct
 metric kind `Neg`. It accepts the existing conditional prefixes and suffix
 matrix, including per-tick Repeat and prefix rechecks. Every execution counts
 one operation; work remains one unit per scheduled dispatch. It introduces no
-special cost or overflow error. Its level-layer capability is `NEG`.
+instruction-specific overflow error. Its Gas base fee is 3 under Schedule 1;
+shared Gas limits and checked accounting apply. Its level-layer capability is `NEG`.
 
 ## 8. Attachments
 
@@ -434,6 +447,39 @@ Raw metrics describe deterministic VM work and state use; they do not affect pro
 - **Peak Data Stack Usage, Peak Instruction Stack Usage, Peak Call Stack Usage:** high-water values over corresponding stacks of concurrently resident outer and Custom threads at normative logical instants. A Custom caller stack is the outer caller's data stack and is counted once. Failed attempted work can raise a peak even though the transition rolls back.
 
 Operation Count, Instruction Variety, Used Cells, and Used Memory Addresses record attempted work and survive runtime-error rollback. Stack high-water values are sampled at outer-tick boundaries and aligned Custom internal-tick boundaries. Each sample sums the stacks of all resident Outer and Custom threads at that instant; the caller's Outer Data Stack is included once. Before commit, staged pushes and call-frame growth contribute to the attempted high-water value, but staged pops do not reduce it. After a successful commit, sample the committed post-state as well. Preserve attempted peaks through runtime-error rollback. A host work-limit interruption changes no normative metric. Metric overflow is a VM fault, not wraparound.
+
+### 14.1 Gas Schedule 1
+
+Gas is deterministic virtual resource accounting, separate from Operation Count
+and host work units. The complete base-price table in the recorded decision is
+normative. Each executed prefix, Primary and code Attachment is priced once;
+actual repeats are priced again. Failed prefixes skip Primary/Attachment fees.
+Empty and Entry dispatches and Halt are free. Fixed direction dispatches cost
+1 even though Operation Count excludes them. Folded shell dispatch costs 2,
+its body operations have ordinary prices, and implicit block exit is free.
+
+Expose `gas_used`, `execution_gas`, `memory_gas`, and `stack_gas` as checked u64
+counters and `gas_schedule_version` as numeric 1. For non-overflow results:
+
+`gas_used = execution_gas + 10 * used_memory_address_count + peak_data_stack_usage + 4 * peak_instruction_stack_usage + 16 * peak_call_stack_usage`.
+
+Memory and stack use exactly the identities and sampling in Section 14. Gas
+is finalized and the hard limit checked on the staged outer Tick before
+publication, after resident dispatches and staged peak sampling. Equality is
+accepted. Limit violation rolls back the Tick, retains attempted metrics and
+reports `GasLimitExceeded` with exact `limit` and `attempted_gas`. Checked
+arithmetic failure reports `GasCounterOverflow`; no wrapped/saturated valid
+score is published. Independent work ceilings bound attempted-Tick preparation.
+On Gas overflow, the diagnostic Gas counters retain their last exact
+representable preceding-Tick values, while attempted raw resource metrics
+remain recorded. Consequently those terminal raw resource peaks need not
+reconstruct the retained Gas diagnostic. No successful formal score is emitted.
+
+Work interruption restores Gas with all normative metrics, so retry never bills
+twice. A new VM has a fresh ledger and a positive configured hard limit,
+default 100,000,000. An actually executed Custom reports `CustomDisabled` before
+entering its body, with no invocation fee. Skipped conditionals and unused
+Custom definitions do not execute it; no production switch enables execution.
 
 ## 15. Deterministic work accounting
 

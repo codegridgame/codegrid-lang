@@ -39,3 +39,14 @@ ceilings; original level/source bytes are hashed unchanged.
 Native API tests and actual host comparisons are recorded in the
 [conformance plan](scene-conformance-plan.md). The remaining protocol/resource
 coverage gates apply independently from successful request dispatch.
+
+## Current Gas safety and result contract
+
+The trusted profile requires `max_gas_per_test` as a positive canonical u64
+decimal string. Source and level data cannot override this ceiling. It is
+validated together with other immutable ceilings and applied to every fresh
+VM, including hidden tests. Results include numeric `gas_schedule_version: 1`
+and `configuration.safety.max_gas_per_test` as a decimal string. Metric values
+remain exact decimal strings. Current score fields are `gas_used` and `size`,
+with `max_gas` and `max_size` constraints. Result-only Gas breakdown fields
+are `execution_gas`, `memory_gas`, and `stack_gas`.

@@ -43,6 +43,7 @@ const RESPONSE_LIMIT_ERROR: &str = r#"{"api_version":3,"error":{"code":"response
 #[derive(Deserialize)]
 #[serde(deny_unknown_fields)]
 struct ConfigurationWire {
+    gas_hard_limit: String,
     seed: String,
     custom_execution_limit: String,
 }
@@ -334,6 +335,7 @@ impl BrowserRuntime {
         max_run_ticks_per_call: JsValue,
         max_total_ticks_per_instance: JsValue,
         max_work_units_per_call: JsValue,
+        max_gas_per_instance: JsValue,
     ) -> Result<BrowserRuntime, JsValue> {
         let max_source_bytes = parse_u32_number(max_source_bytes)
             .ok_or_else(|| host_limit_error("max_source_bytes must be a u32 integer"))?;
@@ -363,6 +365,12 @@ impl BrowserRuntime {
             })?;
         let max_work_units_per_call = bounded_string(&max_work_units_per_call, 20)
             .map_err(|_| host_limit_error("max_work_units_per_call must be a decimal string"))?;
+        let max_gas_per_instance = bounded_string(&max_gas_per_instance, 20)
+            .ok()
+            .and_then(|value| parse_tick_limit(&value))
+            .ok_or_else(|| {
+                host_limit_error("max_gas_per_instance must be a positive u64 decimal string")
+            })?;
         Self::with_limits(
             max_source_bytes,
             max_compiled_programs,
@@ -376,6 +384,15 @@ impl BrowserRuntime {
             &max_total_ticks_per_instance,
             &max_work_units_per_call,
         )
+        .map(|mut runtime| {
+            runtime.runtime = RuntimeApi::new(
+                runtime
+                    .runtime
+                    .limits()
+                    .with_max_gas_per_instance(max_gas_per_instance),
+            );
+            runtime
+        })
         .map_err(|message| host_limit_error(&message))
     }
 
@@ -778,23 +795,23 @@ impl BrowserRuntime {
                 value: entry.value,
             });
         }
-        let configuration: ConfigurationWire = match serde_json::from_str(&configuration_json) {
-            Ok(configuration) => configuration,
-            Err(_) => {
-                return input_error_json(
+        let configuration: ConfigurationWire =
+            match serde_json::from_str(&configuration_json) {
+                Ok(configuration) => configuration,
+                Err(_) => return input_error_json(
                     "invalid_configuration",
-                    "configuration must contain seed and custom_execution_limit",
+                    "configuration must contain seed, custom_execution_limit and gas_hard_limit",
                     self.max_response_bytes as usize,
-                )
-            }
-        };
-        let (Some(seed), Some(custom_execution_limit)) = (
+                ),
+            };
+        let (Some(seed), Some(custom_execution_limit), Some(gas_hard_limit)) = (
             parse_canonical_u64(&configuration.seed),
             parse_canonical_u64(&configuration.custom_execution_limit),
+            parse_canonical_u64(&configuration.gas_hard_limit),
         ) else {
             return input_error_json(
                 "invalid_configuration_integer",
-                "seed and custom_execution_limit must be canonical u64 decimal strings",
+                "seed, custom_execution_limit and gas_hard_limit must be canonical u64 decimal strings",
                 self.max_response_bytes as usize,
             );
         };
@@ -804,6 +821,7 @@ impl BrowserRuntime {
             input,
             initial_memory,
             configuration: RuntimeConfiguration {
+                gas_hard_limit,
                 seed,
                 custom_execution_limit,
             },
@@ -2008,6 +2026,11 @@ impl Serialize for RuntimeMetricsProjection<'_> {
         serialize_object!(serializer, {
             "global_tick" => DisplayValue(metrics.global_tick()),
             "operation_count" => DisplayValue(metrics.operation_count()),
+            "gas_used" => DisplayValue(metrics.gas_used()),
+            "execution_gas" => DisplayValue(metrics.execution_gas()),
+            "memory_gas" => DisplayValue(metrics.memory_gas()),
+            "stack_gas" => DisplayValue(metrics.stack_gas()),
+            "gas_schedule_version" => metrics.gas_schedule_version(),
             "used_cell_count" => DisplayValue(metrics.used_cell_count()),
             "used_cells" => SnapshotUsedCellSequence(metrics),
             "used_memory_address_count" => DisplayValue(metrics.used_memory_address_count()),
@@ -2031,6 +2054,11 @@ impl Serialize for RuntimeMetricSummaryProjection<'_> {
         serialize_object!(serializer, {
             "global_tick" => DisplayValue(metrics.global_tick()),
             "operation_count" => DisplayValue(metrics.operation_count()),
+            "gas_used" => DisplayValue(metrics.gas_used()),
+            "execution_gas" => DisplayValue(metrics.execution_gas()),
+            "memory_gas" => DisplayValue(metrics.memory_gas()),
+            "stack_gas" => DisplayValue(metrics.stack_gas()),
+            "gas_schedule_version" => metrics.gas_schedule_version(),
             "used_cell_count" => DisplayValue(metrics.used_cell_count()),
             "used_memory_address_count" => DisplayValue(metrics.used_memory_address_count()),
             "peak_data_stack_usage" => DisplayValue(metrics.peak_data_stack_usage()),
@@ -2153,6 +2181,16 @@ impl Serialize for RuntimeErrorDetailsProjection<'_> {
                 "register" => register,
                 "thread_ids" => ThreadIdSequence(thread_ids),
             }),
+            RuntimeErrorKind::GasLimitExceeded {
+                limit,
+                attempted_gas,
+            } => serialize_object!(serializer, {
+                "limit" => DisplayValue(limit),
+                "attempted_gas" => DisplayValue(attempted_gas)
+            }),
+            RuntimeErrorKind::GasCounterOverflow | RuntimeErrorKind::CustomDisabled => {
+                serializer.serialize_map(Some(0))?.end()
+            }
             RuntimeErrorKind::CustomExecutionLimitExceeded { limit } => {
                 serialize_object!(serializer, { "limit" => DisplayValue(limit) })
             }
@@ -2436,6 +2474,7 @@ mod tests {
 
             "seed": run["seed"],
             "custom_execution_limit": run["custom_execution_limit"],
+            "gas_hard_limit": run["gas_hard_limit"],
         })
         .to_string()
     }
@@ -2732,7 +2771,7 @@ mod tests {
             program.clone(),
             vec![73],
             "[]".to_owned(),
-            json!({  "seed": "9007199254740993", "custom_execution_limit": "100" }).to_string(),
+            json!({ "gas_hard_limit": "100000000", "seed": "9007199254740993", "custom_execution_limit": "100" }).to_string(),
         ));
         let instance = created["instance"].as_str().unwrap().to_owned();
 
@@ -2782,7 +2821,7 @@ mod tests {
             program.clone(),
             vec![9],
             "[]".to_owned(),
-            json!({  "seed": "0", "custom_execution_limit": "100" }).to_string(),
+            json!({ "gas_hard_limit": "100000000", "seed": "0", "custom_execution_limit": "100" }).to_string(),
         ));
         let instance = created["instance"].as_str().unwrap().to_owned();
 
@@ -2828,7 +2867,7 @@ mod tests {
             reference_program,
             Vec::new(),
             "[]".to_owned(),
-            json!({  "seed": "0", "custom_execution_limit": "100" }).to_string(),
+            json!({ "gas_hard_limit": "100000000", "seed": "0", "custom_execution_limit": "100" }).to_string(),
         ))["instance"]
             .as_str()
             .unwrap()
@@ -2856,7 +2895,7 @@ mod tests {
             program.clone(),
             Vec::new(),
             "[]".to_owned(),
-            json!({  "seed": "0", "custom_execution_limit": "100" }).to_string(),
+            json!({ "gas_hard_limit": "100000000", "seed": "0", "custom_execution_limit": "100" }).to_string(),
         ))["instance"]
             .as_str()
             .unwrap()
@@ -2890,7 +2929,7 @@ mod tests {
             program.clone(),
             vec![],
             "[]".to_owned(),
-            json!({  "seed": "0", "custom_execution_limit": "10" }).to_string(),
+            json!({ "gas_hard_limit": "100000000", "seed": "0", "custom_execution_limit": "10" }).to_string(),
         ));
         let instance = created["instance"].as_str().unwrap();
         let response = parse(&adapter.run_handle(instance, "10"));

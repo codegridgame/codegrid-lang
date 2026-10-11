@@ -33,6 +33,7 @@ export function runFullSmoke(BrowserRuntime, suite, baseline, assert, deepEqual)
     const configuration = JSON.stringify({
       seed: run.seed,
       custom_execution_limit: run.custom_execution_limit,
+      gas_hard_limit: run.gas_hard_limit,
     });
     const initialMemory = JSON.stringify(run.initial_memory ?? []);
     const created = parseJson(
@@ -218,6 +219,7 @@ function createRuntime(Runtime, options = {}) {
     options.maxRunTicksPerCall ?? "10000",
     options.maxTotalTicksPerInstance ?? "10000",
     options.maxWorkUnitsPerCall ?? "1000000",
+    options.maxGasPerInstance ?? "100000000",
   );
 }
 
@@ -247,6 +249,7 @@ function assertFullSnapshot(snapshot, expected, id, assert, deepEqual) {
   }
   for (const key of [
     "operation_count",
+    "gas_used", "execution_gas", "memory_gas", "stack_gas", "gas_schedule_version",
     "used_cell_count",
     "used_memory_address_count",
     "peak_data_stack_usage",
@@ -325,7 +328,7 @@ function verifyHostBoundaries(BrowserRuntime, assert, deepEqual) {
       compiled.outcome.program,
       disguised,
       "[]",
-      JSON.stringify({ seed: "0", custom_execution_limit: "100" }),
+      JSON.stringify({ seed: "0", gas_hard_limit: "100000000", custom_execution_limit: "100" }),
     ),
     "reject disguised Uint8Array",
   );
@@ -336,7 +339,7 @@ function verifyHostBoundaries(BrowserRuntime, assert, deepEqual) {
       compiled.outcome.program,
       new Uint8Array([73]),
       "[]",
-      JSON.stringify({ seed: "9007199254740993", custom_execution_limit: "100" }),
+      JSON.stringify({ seed: "9007199254740993", gas_hard_limit: "100000000", custom_execution_limit: "100" }),
     ),
     "create isolated instance",
   );
@@ -352,7 +355,7 @@ function verifyHostBoundaries(BrowserRuntime, assert, deepEqual) {
       "1",
       new Uint8Array(32),
       "[]",
-      JSON.stringify({ seed: "0", custom_execution_limit: "10" }),
+      JSON.stringify({ seed: "0", gas_hard_limit: "100000000", custom_execution_limit: "10" }),
     ),
     "request byte quota",
   );
@@ -366,7 +369,7 @@ function verifyHostBoundaries(BrowserRuntime, assert, deepEqual) {
       inputProgram.outcome.program,
       new Uint8Array([1, 2]),
       "[]",
-      JSON.stringify({ seed: "0", custom_execution_limit: "10" }),
+      JSON.stringify({ seed: "0", gas_hard_limit: "100000000", custom_execution_limit: "10" }),
     ),
     "input byte quota",
   );
@@ -376,7 +379,7 @@ function verifyHostBoundaries(BrowserRuntime, assert, deepEqual) {
   const memoryGuard = createRuntime(BrowserRuntime, { maxInitialMemoryEntries: 1 });
   const memoryProgram = parseJson(memoryGuard.compile("~> ;\n"), "compile initial-memory fixture");
   assertSuccess(memoryProgram, "compile initial-memory fixture", assert);
-  const config = JSON.stringify({ seed: "0", custom_execution_limit: "10" });
+  const config = JSON.stringify({ seed: "0", gas_hard_limit: "100000000", custom_execution_limit: "10" });
   const duplicateMemory = parseJson(
     memoryGuard.create_instance(
       memoryProgram.outcome.program,
@@ -388,7 +391,7 @@ function verifyHostBoundaries(BrowserRuntime, assert, deepEqual) {
   );
   assert(duplicateMemory.error.code === "initial_memory_limit_exceeded", "initial-memory entry quota must be enforced before conversion");
   const invalidConfig = parseJson(
-    memoryGuard.create_instance(memoryProgram.outcome.program, new Uint8Array(), "[]", JSON.stringify({ seed: "01", custom_execution_limit: "10" })),
+    memoryGuard.create_instance(memoryProgram.outcome.program, new Uint8Array(), "[]", JSON.stringify({ seed: "01", gas_hard_limit: "100000000", custom_execution_limit: "10" })),
     "noncanonical configuration integer",
   );
   assert(invalidConfig.error.code === "invalid_configuration_integer", "wide request integers must be canonical decimal strings");
@@ -421,7 +424,7 @@ function verifyHostBoundaries(BrowserRuntime, assert, deepEqual) {
       tickProgram.outcome.program,
       new Uint8Array(),
       "[]",
-      JSON.stringify({ seed: "0", custom_execution_limit: "10" }),
+      JSON.stringify({ seed: "0", gas_hard_limit: "100000000", custom_execution_limit: "10" }),
     ),
     "create tick-limited instance",
   );
@@ -441,7 +444,7 @@ function verifyHostBoundaries(BrowserRuntime, assert, deepEqual) {
       workProgram.outcome.program,
       new Uint8Array(),
       "[]",
-      JSON.stringify({ seed: "0", custom_execution_limit: "10" }),
+      JSON.stringify({ seed: "0", gas_hard_limit: "100000000", custom_execution_limit: "10" }),
     ),
     "create work-limited instance",
   );
@@ -471,7 +474,7 @@ function verifyHostBoundaries(BrowserRuntime, assert, deepEqual) {
       outputProgram.outcome.program,
       new Uint8Array(),
       "[]",
-      JSON.stringify({ seed: "0", custom_execution_limit: "100" }),
+      JSON.stringify({ seed: "0", gas_hard_limit: "100000000", custom_execution_limit: "100" }),
     ),
     "create retained-state fixture",
   );

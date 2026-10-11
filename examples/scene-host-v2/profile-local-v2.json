@@ -14,6 +14,7 @@
   "max_handles": "128",
   "max_response_bytes": "4194304",
   "max_ticks_per_test": "100000",
+  "max_gas_per_test": "100000000",
   "max_work_per_call": "1000000",
   "max_total_work": "100000000",
   "scene_limits": {

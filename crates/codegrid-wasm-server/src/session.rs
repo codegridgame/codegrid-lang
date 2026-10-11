@@ -699,7 +699,8 @@ impl<'de> Visitor<'de> for RequestVisitor {
                 | "instance"
                 | "max_ticks"
                 | "seed"
-                | "custom_execution_limit" => {
+                | "custom_execution_limit"
+                | "gas_hard_limit" => {
                     let value = object.next_value::<ScalarValue>()?;
                     fields.insert(key, value.0);
                 }
@@ -784,6 +785,7 @@ fn is_host_limit_field(field: &str) -> bool {
             | "max_run_ticks_per_call"
             | "max_total_ticks_per_instance"
             | "max_work_units_per_call"
+            | "max_gas_per_instance"
             | "max_response_bytes"
             | "max_instance_state_bytes"
     )
@@ -1252,6 +1254,10 @@ impl ServerAdapter {
             }
             Err(error) => return self.respond(error_response(error.0, error.1, Value::Null)),
         };
+        let gas_hard_limit = match decimal_u64(request.get("gas_hard_limit"), "gas_hard_limit") {
+            Ok(limit) => limit,
+            Err(error) => return self.respond(error_response(error.0, error.1, Value::Null)),
+        };
         let response = match self
             .runtime
             .as_mut()
@@ -1262,6 +1268,7 @@ impl ServerAdapter {
                 input,
                 initial_memory,
                 configuration: RuntimeConfiguration {
+                    gas_hard_limit,
                     seed,
                     custom_execution_limit,
                 },
@@ -1577,6 +1584,12 @@ fn parse_server_limits(
         MAX_TOTAL_TICKS_PER_INSTANCE,
         true,
     )?;
+    let max_gas = bounded_decimal_u64(
+        object.get("max_gas_per_instance"),
+        "max_gas_per_instance",
+        u64::MAX,
+        true,
+    )?;
     let max_work_units = bounded_decimal_u64(
         object.get("max_work_units_per_call"),
         "max_work_units_per_call",
@@ -1612,7 +1625,8 @@ fn parse_server_limits(
             NonZeroU64::new(max_run_ticks).expect("validated positive limit"),
             NonZeroU64::new(max_total_ticks).expect("validated positive limit"),
             NonZeroU64::new(max_work_units).expect("validated positive limit"),
-        ),
+        )
+        .with_max_gas_per_instance(NonZeroU64::new(max_gas).expect("validated positive limit")),
         max_response_bytes,
         max_instance_state_bytes,
     })
@@ -1752,7 +1766,7 @@ mod tests {
     fn host_limit_parser_skips_unrecognized_nested_data() {
         let nested = "0,".repeat(20_000);
         let request = format!(
-            r#"{{"abi_version":4,"api_version":3,"operation":"initialize","host_limits":{{"max_source_bytes":4096,"max_compiled_programs":8,"max_instances":8,"max_input_bytes":1024,"max_initial_memory_entries":65536,"max_run_ticks_per_call":"100","max_total_ticks_per_instance":"1000","max_work_units_per_call":"1000","max_response_bytes":1048576,"max_instance_state_bytes":524288,"ignored":{{"deep":[[{nested}0]]}}}}}}"#
+            r#"{{"abi_version":4,"api_version":3,"operation":"initialize","host_limits":{{"max_source_bytes":4096,"max_compiled_programs":8,"max_instances":8,"max_input_bytes":1024,"max_initial_memory_entries":65536,"max_run_ticks_per_call":"100","max_total_ticks_per_instance":"1000","max_gas_per_instance":"100000000","max_work_units_per_call":"1000","max_response_bytes":1048576,"max_instance_state_bytes":524288,"ignored":{{"deep":[[{nested}0]]}}}}}}"#
         );
         let ParsedRequest::Object(RequestObject { fields, .. }) = serde_json::from_str(&request)
             .expect("host limits with nested extension are valid JSON")
@@ -1764,7 +1778,7 @@ mod tests {
             .expect("host limits object must be retained");
         assert_eq!(
             host_limits.len(),
-            10,
+            11,
             "only accepted limit fields are retained"
         );
     }

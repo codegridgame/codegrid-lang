@@ -342,7 +342,12 @@ fn cli_matches_all_shared_full_runtime_fixtures() {
         arguments[3] = run["seed"].as_str().unwrap();
         arguments[5] = run["custom_execution_limit"].as_str().unwrap();
         arguments[7] = run["max_ticks"].as_str().unwrap();
-        arguments.extend(["--input", &input]);
+        arguments.extend([
+            "--input",
+            &input,
+            "--gas-hard-limit",
+            run["gas_hard_limit"].as_str().unwrap(),
+        ]);
         let initial_memory_file = run["initial_memory"].as_array().map(|memory| {
             let bytes = serde_json::to_vec(memory).expect("fixture memory encodes as JSON");
             TempFile::new("json", &bytes)
@@ -359,6 +364,18 @@ fn cli_matches_all_shared_full_runtime_fixtures() {
             String::from_utf8_lossy(&output.stderr)
         );
         let result = parse_result(&output);
+        for metric in [
+            "gas_used",
+            "execution_gas",
+            "memory_gas",
+            "stack_gas",
+            "gas_schedule_version",
+        ] {
+            assert_eq!(
+                result["snapshot"]["metrics"][metric], expected[metric],
+                "{id}: {metric}"
+            );
+        }
         assert_eq!(result["schema"], "codegrid.cli.run-result", "{id}");
         assert_eq!(result["schema_version"], 1, "{id}");
         let expected_status = match expected["process_exit_code"].as_i64().unwrap() {
@@ -714,7 +731,7 @@ fn evaluate_cli_result_matches_the_direct_shared_level_api() {
     assert_eq!(cli_response["result"]["scoring"], json!([]));
 
     let mut rated_value: Value = serde_json::from_str(&level_text).unwrap();
-    rated_value["scoring"]["metrics"] = json!({"cost": {"target": 1}});
+    rated_value["scoring"]["metrics"] = json!({"gas_used": {"target": 1}});
     let rated_level = TempFile::new("json", rated_value.to_string().as_bytes());
     let rated_args = evaluate_args(
         rated_level.text_path(),
@@ -725,7 +742,7 @@ fn evaluate_cli_result_matches_the_direct_shared_level_api() {
     assert_eq!(rated.status.code(), Some(0));
     let rated_result = parse_result(&rated);
     assert_eq!(rated_result["result"]["rating"], 3);
-    assert_eq!(rated_result["result"]["scoring"][0]["name"], "cost");
+    assert_eq!(rated_result["result"]["scoring"][0]["name"], "gas_used");
     assert_eq!(rated_result["result"]["scoring"][0]["target"], "1");
 
     let human_args = [
@@ -805,14 +822,22 @@ fn evaluate_grouped_permissions_and_default_instructions() {
             source.text_path(),
             profile.text_path(),
         ));
+        let uses_custom = source_text.contains("#0");
         assert_eq!(
             output.status.code(),
-            Some(0),
+            Some(if uses_custom { 9 } else { 0 }),
             "{} {}",
             String::from_utf8_lossy(&output.stdout),
             String::from_utf8_lossy(&output.stderr)
         );
-        assert_eq!(parse_result(&output)["result"]["status"], "Passed");
+        assert_eq!(
+            parse_result(&output)["result"]["status"],
+            if uses_custom {
+                "RuntimeError"
+            } else {
+                "Passed"
+            }
+        );
     }
     let mut value: Value = serde_json::from_str(&exact_io_level(&[0])).unwrap();
     value["program_rules"]["allowed_instructions"] = json!([]);

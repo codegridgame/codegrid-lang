@@ -29,7 +29,7 @@
       "ticks": {
         "target": 6
       },
-      "cost": {
+      "gas_used": {
         "target": null
       }
     }

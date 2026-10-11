@@ -12,7 +12,8 @@
         "max_ticks": "10",
         "input": [
           91
-        ]
+        ],
+        "gas_hard_limit": "100000000"
       },
       "expected": {
         "process_exit_code": 0,
@@ -45,7 +46,12 @@
           "Output",
           "Halt"
         ],
-        "error_codes": []
+        "error_codes": [],
+        "gas_used": "10",
+        "execution_gas": "10",
+        "memory_gas": "0",
+        "stack_gas": "0",
+        "gas_schedule_version": 1
       }
     },
     {
@@ -57,7 +63,8 @@
         "max_ticks": "10",
         "input": [
           255
-        ]
+        ],
+        "gas_hard_limit": "100000000"
       },
       "expected": {
         "process_exit_code": 0,
@@ -91,7 +98,12 @@
           "Output",
           "Halt"
         ],
-        "error_codes": []
+        "error_codes": [],
+        "gas_used": "13",
+        "execution_gas": "13",
+        "memory_gas": "0",
+        "stack_gas": "0",
+        "gas_schedule_version": 1
       }
     },
     {
@@ -101,7 +113,8 @@
         "seed": "0",
         "custom_execution_limit": "100",
         "max_ticks": "10",
-        "input": []
+        "input": [],
+        "gas_hard_limit": "100000000"
       },
       "expected": {
         "process_exit_code": 0,
@@ -134,7 +147,12 @@
           "Output",
           "Halt"
         ],
-        "error_codes": []
+        "error_codes": [],
+        "gas_used": "8",
+        "execution_gas": "8",
+        "memory_gas": "0",
+        "stack_gas": "0",
+        "gas_schedule_version": 1
       }
     },
     {
@@ -144,7 +162,8 @@
         "seed": "0",
         "custom_execution_limit": "100",
         "max_ticks": "10",
-        "input": []
+        "input": [],
+        "gas_hard_limit": "100000000"
       },
       "expected": {
         "process_exit_code": 0,
@@ -176,7 +195,12 @@
           "Halt"
         ],
         "error_codes": [],
-        "thread_direction": "down"
+        "thread_direction": "down",
+        "gas_used": "8",
+        "execution_gas": "8",
+        "memory_gas": "0",
+        "stack_gas": "0",
+        "gas_schedule_version": 1
       }
     },
     {
@@ -186,7 +210,8 @@
         "seed": "0",
         "custom_execution_limit": "100",
         "max_ticks": "10",
-        "input": []
+        "input": [],
+        "gas_hard_limit": "100000000"
       },
       "expected": {
         "process_exit_code": 0,
@@ -220,7 +245,12 @@
           "Halt"
         ],
         "error_codes": [],
-        "thread_direction": "down"
+        "thread_direction": "down",
+        "gas_used": "8",
+        "execution_gas": "8",
+        "memory_gas": "0",
+        "stack_gas": "0",
+        "gas_schedule_version": 1
       }
     },
     {
@@ -232,7 +262,8 @@
         "max_ticks": "10",
         "input": [
           43
-        ]
+        ],
+        "gas_hard_limit": "100000000"
       },
       "expected": {
         "process_exit_code": 0,
@@ -267,7 +298,12 @@
           "Encode",
           "Halt"
         ],
-        "error_codes": []
+        "error_codes": [],
+        "gas_used": "20",
+        "execution_gas": "16",
+        "memory_gas": "0",
+        "stack_gas": "4",
+        "gas_schedule_version": 1
       }
     },
     {
@@ -279,7 +315,8 @@
         "max_ticks": "10",
         "input": [
           32
-        ]
+        ],
+        "gas_hard_limit": "100000000"
       },
       "expected": {
         "process_exit_code": 0,
@@ -314,7 +351,12 @@
           "Encode",
           "Halt"
         ],
-        "error_codes": []
+        "error_codes": [],
+        "gas_used": "20",
+        "execution_gas": "16",
+        "memory_gas": "0",
+        "stack_gas": "4",
+        "gas_schedule_version": 1
       }
     },
     {
@@ -326,7 +368,8 @@
         "max_ticks": "10",
         "input": [
           37
-        ]
+        ],
+        "gas_hard_limit": "100000000"
       },
       "expected": {
         "process_exit_code": 0,
@@ -360,7 +403,12 @@
           "Output",
           "Halt"
         ],
-        "error_codes": []
+        "error_codes": [],
+        "gas_used": "13",
+        "execution_gas": "13",
+        "memory_gas": "0",
+        "stack_gas": "0",
+        "gas_schedule_version": 1
       }
     },
     {
@@ -373,7 +421,8 @@
         "input": [
           170,
           15
-        ]
+        ],
+        "gas_hard_limit": "100000000"
       },
       "expected": {
         "process_exit_code": 0,
@@ -408,7 +457,12 @@
           "Nand",
           "Halt"
         ],
-        "error_codes": []
+        "error_codes": [],
+        "gas_used": "22",
+        "execution_gas": "21",
+        "memory_gas": "0",
+        "stack_gas": "1",
+        "gas_schedule_version": 1
       }
     },
     {
@@ -421,7 +475,8 @@
         "input": [
           129,
           129
-        ]
+        ],
+        "gas_hard_limit": "100000000"
       },
       "expected": {
         "process_exit_code": 0,
@@ -456,7 +511,12 @@
           "Shift",
           "Halt"
         ],
-        "error_codes": []
+        "error_codes": [],
+        "gas_used": "24",
+        "execution_gas": "24",
+        "memory_gas": "0",
+        "stack_gas": "0",
+        "gas_schedule_version": 1
       }
     },
     {
@@ -466,7 +526,8 @@
         "seed": "0",
         "custom_execution_limit": "100",
         "max_ticks": "10",
-        "input": []
+        "input": [],
+        "gas_hard_limit": "100000000"
       },
       "expected": {
         "process_exit_code": 0,
@@ -497,7 +558,12 @@
           "MoveRegisterPointer",
           "Halt"
         ],
-        "error_codes": []
+        "error_codes": [],
+        "gas_used": "10",
+        "execution_gas": "10",
+        "memory_gas": "0",
+        "stack_gas": "0",
+        "gas_schedule_version": 1
       }
     },
     {
@@ -507,7 +573,8 @@
         "seed": "0",
         "custom_execution_limit": "100",
         "max_ticks": "4",
-        "input": []
+        "input": [],
+        "gas_hard_limit": "100000000"
       },
       "expected": {
         "process_exit_code": 6,
@@ -534,7 +601,12 @@
         "peak_instruction_stack_usage": "0",
         "peak_call_stack_usage": "0",
         "instruction_variety": [],
-        "error_codes": []
+        "error_codes": [],
+        "gas_used": "2",
+        "execution_gas": "2",
+        "memory_gas": "0",
+        "stack_gas": "0",
+        "gas_schedule_version": 1
       }
     },
     {
@@ -544,7 +616,8 @@
         "seed": "0",
         "custom_execution_limit": "100",
         "max_ticks": "10",
-        "input": []
+        "input": [],
+        "gas_hard_limit": "100000000"
       },
       "expected": {
         "process_exit_code": 6,
@@ -573,7 +646,12 @@
         "instruction_variety": [
           "Add"
         ],
-        "error_codes": []
+        "error_codes": [],
+        "gas_used": "15",
+        "execution_gas": "15",
+        "memory_gas": "0",
+        "stack_gas": "0",
+        "gas_schedule_version": 1
       }
     },
     {
@@ -583,7 +661,8 @@
         "seed": "0",
         "custom_execution_limit": "100",
         "max_ticks": "10",
-        "input": []
+        "input": [],
+        "gas_hard_limit": "100000000"
       },
       "expected": {
         "process_exit_code": 0,
@@ -613,7 +692,12 @@
           "Add",
           "Halt"
         ],
-        "error_codes": []
+        "error_codes": [],
+        "gas_used": "6",
+        "execution_gas": "6",
+        "memory_gas": "0",
+        "stack_gas": "0",
+        "gas_schedule_version": 1
       }
     },
     {
@@ -623,7 +707,8 @@
         "seed": "0",
         "custom_execution_limit": "100",
         "max_ticks": "10",
-        "input": []
+        "input": [],
+        "gas_hard_limit": "100000000"
       },
       "expected": {
         "process_exit_code": 0,
@@ -656,7 +741,12 @@
           "Output",
           "Halt"
         ],
-        "error_codes": []
+        "error_codes": [],
+        "gas_used": "20",
+        "execution_gas": "20",
+        "memory_gas": "0",
+        "stack_gas": "0",
+        "gas_schedule_version": 1
       }
     },
     {
@@ -670,7 +760,8 @@
           4,
           5,
           6
-        ]
+        ],
+        "gas_hard_limit": "100000000"
       },
       "expected": {
         "process_exit_code": 0,
@@ -703,7 +794,12 @@
           "Output",
           "Halt"
         ],
-        "error_codes": []
+        "error_codes": [],
+        "gas_used": "20",
+        "execution_gas": "20",
+        "memory_gas": "0",
+        "stack_gas": "0",
+        "gas_schedule_version": 1
       }
     },
     {
@@ -713,7 +809,8 @@
         "seed": "0",
         "custom_execution_limit": "100",
         "max_ticks": "10",
-        "input": []
+        "input": [],
+        "gas_hard_limit": "100000000"
       },
       "expected": {
         "process_exit_code": 0,
@@ -746,7 +843,12 @@
           "Output",
           "Halt"
         ],
-        "error_codes": []
+        "error_codes": [],
+        "gas_used": "12",
+        "execution_gas": "12",
+        "memory_gas": "0",
+        "stack_gas": "0",
+        "gas_schedule_version": 1
       }
     },
     {
@@ -756,7 +858,8 @@
         "seed": "0",
         "custom_execution_limit": "100",
         "max_ticks": "20",
-        "input": []
+        "input": [],
+        "gas_hard_limit": "100000000"
       },
       "expected": {
         "process_exit_code": 0,
@@ -789,7 +892,12 @@
           "Output",
           "Halt"
         ],
-        "error_codes": []
+        "error_codes": [],
+        "gas_used": "19",
+        "execution_gas": "19",
+        "memory_gas": "0",
+        "stack_gas": "0",
+        "gas_schedule_version": 1
       }
     },
     {
@@ -799,7 +907,8 @@
         "seed": "0",
         "custom_execution_limit": "100",
         "max_ticks": "20",
-        "input": []
+        "input": [],
+        "gas_hard_limit": "100000000"
       },
       "expected": {
         "process_exit_code": 0,
@@ -852,7 +961,12 @@
             },
             "direction": "left"
           }
-        ]
+        ],
+        "gas_used": "54",
+        "execution_gas": "22",
+        "memory_gas": "0",
+        "stack_gas": "32",
+        "gas_schedule_version": 1
       }
     },
     {
@@ -862,7 +976,8 @@
         "seed": "0",
         "custom_execution_limit": "100",
         "max_ticks": "10",
-        "input": []
+        "input": [],
+        "gas_hard_limit": "100000000"
       },
       "expected": {
         "process_exit_code": 0,
@@ -897,7 +1012,12 @@
           "PopAdd",
           "Halt"
         ],
-        "error_codes": []
+        "error_codes": [],
+        "gas_used": "18",
+        "execution_gas": "17",
+        "memory_gas": "0",
+        "stack_gas": "1",
+        "gas_schedule_version": 1
       }
     },
     {
@@ -907,7 +1027,8 @@
         "seed": "0",
         "custom_execution_limit": "100",
         "max_ticks": "10",
-        "input": []
+        "input": [],
+        "gas_hard_limit": "100000000"
       },
       "expected": {
         "process_exit_code": 0,
@@ -939,7 +1060,12 @@
           "Sub",
           "Halt"
         ],
-        "error_codes": []
+        "error_codes": [],
+        "gas_used": "14",
+        "execution_gas": "14",
+        "memory_gas": "0",
+        "stack_gas": "0",
+        "gas_schedule_version": 1
       }
     },
     {
@@ -949,7 +1075,8 @@
         "seed": "0",
         "custom_execution_limit": "100",
         "max_ticks": "10",
-        "input": []
+        "input": [],
+        "gas_hard_limit": "100000000"
       },
       "expected": {
         "process_exit_code": 0,
@@ -979,7 +1106,12 @@
           "Condition",
           "Halt"
         ],
-        "error_codes": []
+        "error_codes": [],
+        "gas_used": "6",
+        "execution_gas": "6",
+        "memory_gas": "0",
+        "stack_gas": "0",
+        "gas_schedule_version": 1
       }
     },
     {
@@ -989,7 +1121,8 @@
         "seed": "0",
         "custom_execution_limit": "100",
         "max_ticks": "10",
-        "input": []
+        "input": [],
+        "gas_hard_limit": "100000000"
       },
       "expected": {
         "process_exit_code": 6,
@@ -1016,7 +1149,12 @@
         "peak_instruction_stack_usage": "0",
         "peak_call_stack_usage": "0",
         "instruction_variety": [],
-        "error_codes": []
+        "error_codes": [],
+        "gas_used": "9",
+        "execution_gas": "9",
+        "memory_gas": "0",
+        "stack_gas": "0",
+        "gas_schedule_version": 1
       }
     },
     {
@@ -1026,7 +1164,8 @@
         "seed": "0",
         "custom_execution_limit": "100",
         "max_ticks": "20",
-        "input": []
+        "input": [],
+        "gas_hard_limit": "100000000"
       },
       "expected": {
         "process_exit_code": 0,
@@ -1059,7 +1198,12 @@
           "Output",
           "Halt"
         ],
-        "error_codes": []
+        "error_codes": [],
+        "gas_used": "19",
+        "execution_gas": "19",
+        "memory_gas": "0",
+        "stack_gas": "0",
+        "gas_schedule_version": 1
       }
     },
     {
@@ -1069,12 +1213,13 @@
         "seed": "0",
         "custom_execution_limit": "100",
         "max_ticks": "10",
-        "input": []
+        "input": [],
+        "gas_hard_limit": "100000000"
       },
       "expected": {
-        "process_exit_code": 0,
-        "status": "halted",
-        "vm_status": "halted",
+        "process_exit_code": 5,
+        "status": "error",
+        "vm_status": "error",
         "output": [],
         "registers": [
           0,
@@ -1088,18 +1233,22 @@
           0,
           0
         ],
-        "committed_ticks": "3",
-        "operation_count": "2",
-        "used_cell_count": "5",
+        "committed_ticks": "1",
+        "operation_count": "0",
+        "used_cell_count": "2",
         "used_memory_address_count": "0",
         "peak_data_stack_usage": "0",
         "peak_instruction_stack_usage": "0",
         "peak_call_stack_usage": "0",
-        "instruction_variety": [
-          "CustomReturn",
-          "Halt"
+        "instruction_variety": [],
+        "error_codes": [
+          "CustomDisabled"
         ],
-        "error_codes": []
+        "gas_used": "0",
+        "execution_gas": "0",
+        "memory_gas": "0",
+        "stack_gas": "0",
+        "gas_schedule_version": 1
       }
     },
     {
@@ -1109,12 +1258,13 @@
         "seed": "0",
         "custom_execution_limit": "100",
         "max_ticks": "10",
-        "input": []
+        "input": [],
+        "gas_hard_limit": "100000000"
       },
       "expected": {
-        "process_exit_code": 0,
-        "status": "halted",
-        "vm_status": "halted",
+        "process_exit_code": 5,
+        "status": "error",
+        "vm_status": "error",
         "output": [],
         "registers": [
           0,
@@ -1128,18 +1278,22 @@
           0,
           0
         ],
-        "committed_ticks": "3",
-        "operation_count": "2",
-        "used_cell_count": "7",
+        "committed_ticks": "1",
+        "operation_count": "0",
+        "used_cell_count": "3",
         "used_memory_address_count": "0",
         "peak_data_stack_usage": "0",
         "peak_instruction_stack_usage": "0",
         "peak_call_stack_usage": "0",
-        "instruction_variety": [
-          "CustomReturn",
-          "Halt"
+        "instruction_variety": [],
+        "error_codes": [
+          "CustomDisabled"
         ],
-        "error_codes": []
+        "gas_used": "2",
+        "execution_gas": "2",
+        "memory_gas": "0",
+        "stack_gas": "0",
+        "gas_schedule_version": 1
       }
     },
     {
@@ -1149,7 +1303,8 @@
         "seed": "0",
         "custom_execution_limit": "100",
         "max_ticks": "10",
-        "input": []
+        "input": [],
+        "gas_hard_limit": "100000000"
       },
       "expected": {
         "process_exit_code": 0,
@@ -1185,7 +1340,12 @@
           "ReadCode",
           "Halt"
         ],
-        "error_codes": []
+        "error_codes": [],
+        "gas_used": "43",
+        "execution_gas": "23",
+        "memory_gas": "0",
+        "stack_gas": "20",
+        "gas_schedule_version": 1
       }
     },
     {
@@ -1195,7 +1355,8 @@
         "seed": "0",
         "custom_execution_limit": "100",
         "max_ticks": "10",
-        "input": []
+        "input": [],
+        "gas_hard_limit": "100000000"
       },
       "expected": {
         "process_exit_code": 0,
@@ -1241,7 +1402,12 @@
           "*",
           "=",
           null
-        ]
+        ],
+        "gas_used": "46",
+        "execution_gas": "26",
+        "memory_gas": "0",
+        "stack_gas": "20",
+        "gas_schedule_version": 1
       }
     },
     {
@@ -1251,7 +1417,8 @@
         "seed": "0",
         "custom_execution_limit": "100",
         "max_ticks": "10",
-        "input": []
+        "input": [],
+        "gas_hard_limit": "100000000"
       },
       "expected": {
         "process_exit_code": 0,
@@ -1300,7 +1467,12 @@
         ],
         "thread_instruction_stack_sizes": [
           0
-        ]
+        ],
+        "gas_used": "46",
+        "execution_gas": "26",
+        "memory_gas": "0",
+        "stack_gas": "20",
+        "gas_schedule_version": 1
       }
     },
     {
@@ -1310,7 +1482,8 @@
         "seed": "0",
         "custom_execution_limit": "100",
         "max_ticks": "10",
-        "input": []
+        "input": [],
+        "gas_hard_limit": "100000000"
       },
       "expected": {
         "process_exit_code": 0,
@@ -1358,7 +1531,12 @@
         ],
         "thread_instruction_stack_sizes": [
           1
-        ]
+        ],
+        "gas_used": "38",
+        "execution_gas": "18",
+        "memory_gas": "0",
+        "stack_gas": "20",
+        "gas_schedule_version": 1
       }
     },
     {
@@ -1368,7 +1546,8 @@
         "seed": "0",
         "custom_execution_limit": "100",
         "max_ticks": "10",
-        "input": []
+        "input": [],
+        "gas_hard_limit": "100000000"
       },
       "expected": {
         "process_exit_code": 6,
@@ -1397,7 +1576,12 @@
         "instruction_variety": [
           "Call"
         ],
-        "error_codes": []
+        "error_codes": [],
+        "gas_used": "56",
+        "execution_gas": "40",
+        "memory_gas": "0",
+        "stack_gas": "16",
+        "gas_schedule_version": 1
       }
     },
     {
@@ -1409,7 +1593,8 @@
         "max_ticks": "10",
         "input": [
           91
-        ]
+        ],
+        "gas_hard_limit": "100000000"
       },
       "expected": {
         "process_exit_code": 0,
@@ -1451,7 +1636,12 @@
             "address": "91",
             "value": 91
           }
-        ]
+        ],
+        "gas_used": "37",
+        "execution_gas": "26",
+        "memory_gas": "10",
+        "stack_gas": "1",
+        "gas_schedule_version": 1
       }
     },
     {
@@ -1467,7 +1657,8 @@
             "address": "340282366920938463463374607431768211507",
             "value": 203
           }
-        ]
+        ],
+        "gas_hard_limit": "100000000"
       },
       "expected": {
         "process_exit_code": 0,
@@ -1502,7 +1693,12 @@
             "address": "340282366920938463463374607431768211507",
             "value": 203
           }
-        ]
+        ],
+        "gas_used": "0",
+        "execution_gas": "0",
+        "memory_gas": "0",
+        "stack_gas": "0",
+        "gas_schedule_version": 1
       }
     },
     {
@@ -1514,7 +1710,8 @@
         "max_ticks": "10",
         "input": [
           43
-        ]
+        ],
+        "gas_hard_limit": "100000000"
       },
       "expected": {
         "process_exit_code": 0,
@@ -1560,7 +1757,12 @@
           null,
           "=",
           null
-        ]
+        ],
+        "gas_used": "21",
+        "execution_gas": "17",
+        "memory_gas": "0",
+        "stack_gas": "4",
+        "gas_schedule_version": 1
       }
     },
     {
@@ -1570,7 +1772,8 @@
         "seed": "0",
         "custom_execution_limit": "100",
         "max_ticks": "2",
-        "input": []
+        "input": [],
+        "gas_hard_limit": "100000000"
       },
       "expected": {
         "process_exit_code": 6,
@@ -1601,7 +1804,12 @@
         ],
         "error_codes": [],
         "thread_direction": "down",
-        "thread_random_state": "5989369519616587245"
+        "thread_random_state": "5989369519616587245",
+        "gas_used": "1",
+        "execution_gas": "1",
+        "memory_gas": "0",
+        "stack_gas": "0",
+        "gas_schedule_version": 1
       }
     },
     {
@@ -1611,7 +1819,8 @@
         "seed": "9007199254740993",
         "custom_execution_limit": "100",
         "max_ticks": "2",
-        "input": []
+        "input": [],
+        "gas_hard_limit": "100000000"
       },
       "expected": {
         "process_exit_code": 6,
@@ -1642,7 +1851,12 @@
         ],
         "error_codes": [],
         "thread_direction": "down",
-        "thread_random_state": "3674316803529091317"
+        "thread_random_state": "3674316803529091317",
+        "gas_used": "2",
+        "execution_gas": "2",
+        "memory_gas": "0",
+        "stack_gas": "0",
+        "gas_schedule_version": 1
       }
     },
     {
@@ -1652,7 +1866,8 @@
         "seed": "0",
         "custom_execution_limit": "100",
         "max_ticks": "10",
-        "input": []
+        "input": [],
+        "gas_hard_limit": "100000000"
       },
       "expected": {
         "process_exit_code": 0,
@@ -1681,7 +1896,12 @@
         "instruction_variety": [
           "Halt"
         ],
-        "error_codes": []
+        "error_codes": [],
+        "gas_used": "0",
+        "execution_gas": "0",
+        "memory_gas": "0",
+        "stack_gas": "0",
+        "gas_schedule_version": 1
       }
     },
     {
@@ -1691,12 +1911,13 @@
         "seed": "0",
         "custom_execution_limit": "100",
         "max_ticks": "10",
-        "input": []
+        "input": [],
+        "gas_hard_limit": "100000000"
       },
       "expected": {
-        "process_exit_code": 0,
-        "status": "halted",
-        "vm_status": "halted",
+        "process_exit_code": 5,
+        "status": "error",
+        "vm_status": "error",
         "output": [],
         "registers": [
           0,
@@ -1710,17 +1931,22 @@
           0,
           0
         ],
-        "committed_ticks": "2",
-        "operation_count": "1",
-        "used_cell_count": "6",
+        "committed_ticks": "1",
+        "operation_count": "0",
+        "used_cell_count": "4",
         "used_memory_address_count": "0",
         "peak_data_stack_usage": "0",
         "peak_instruction_stack_usage": "0",
         "peak_call_stack_usage": "0",
-        "instruction_variety": [
-          "Halt"
+        "instruction_variety": [],
+        "error_codes": [
+          "CustomDisabled"
         ],
-        "error_codes": []
+        "gas_used": "0",
+        "execution_gas": "0",
+        "memory_gas": "0",
+        "stack_gas": "0",
+        "gas_schedule_version": 1
       }
     },
     {
@@ -1730,12 +1956,13 @@
         "seed": "0",
         "custom_execution_limit": "10",
         "max_ticks": "10",
-        "input": []
+        "input": [],
+        "gas_hard_limit": "100000000"
       },
       "expected": {
-        "process_exit_code": 0,
-        "status": "halted",
-        "vm_status": "halted",
+        "process_exit_code": 5,
+        "status": "error",
+        "vm_status": "error",
         "output": [],
         "registers": [
           0,
@@ -1749,18 +1976,22 @@
           0,
           0
         ],
-        "committed_ticks": "2",
-        "operation_count": "2",
-        "used_cell_count": "6",
+        "committed_ticks": "1",
+        "operation_count": "0",
+        "used_cell_count": "2",
         "used_memory_address_count": "0",
         "peak_data_stack_usage": "0",
         "peak_instruction_stack_usage": "0",
         "peak_call_stack_usage": "0",
-        "instruction_variety": [
-          "CustomReturn",
-          "Halt"
+        "instruction_variety": [],
+        "error_codes": [
+          "CustomDisabled"
         ],
-        "error_codes": []
+        "gas_used": "0",
+        "execution_gas": "0",
+        "memory_gas": "0",
+        "stack_gas": "0",
+        "gas_schedule_version": 1
       }
     },
     {
@@ -1770,16 +2001,14 @@
         "seed": "0",
         "custom_execution_limit": "10",
         "max_ticks": "10",
-        "input": []
+        "input": [],
+        "gas_hard_limit": "100000000"
       },
       "expected": {
-        "process_exit_code": 0,
-        "status": "halted",
-        "vm_status": "halted",
-        "output": [
-          0,
-          0
-        ],
+        "process_exit_code": 5,
+        "status": "error",
+        "vm_status": "error",
+        "output": [],
         "registers": [
           0,
           0,
@@ -1792,24 +2021,22 @@
           0,
           0
         ],
-        "committed_ticks": "8",
-        "operation_count": "17",
-        "used_cell_count": "13",
+        "committed_ticks": "1",
+        "operation_count": "0",
+        "used_cell_count": "2",
         "used_memory_address_count": "0",
-        "peak_data_stack_usage": "1",
-        "peak_instruction_stack_usage": "1",
+        "peak_data_stack_usage": "0",
+        "peak_instruction_stack_usage": "0",
         "peak_call_stack_usage": "0",
-        "instruction_variety": [
-          "Add",
-          "Sub",
-          "Output",
-          "PopAdd",
-          "ReadCode",
-          "WriteCode",
-          "CustomReturn",
-          "Halt"
+        "instruction_variety": [],
+        "error_codes": [
+          "CustomDisabled"
         ],
-        "error_codes": []
+        "gas_used": "0",
+        "execution_gas": "0",
+        "memory_gas": "0",
+        "stack_gas": "0",
+        "gas_schedule_version": 1
       }
     },
     {
@@ -1819,7 +2046,8 @@
         "seed": "0",
         "custom_execution_limit": "100",
         "max_ticks": "10",
-        "input": []
+        "input": [],
+        "gas_hard_limit": "100000000"
       },
       "expected": {
         "process_exit_code": 5,
@@ -1854,7 +2082,12 @@
         ],
         "error_global_ticks": [
           "3"
-        ]
+        ],
+        "gas_used": "18",
+        "execution_gas": "15",
+        "memory_gas": "0",
+        "stack_gas": "3",
+        "gas_schedule_version": 1
       }
     },
     {
@@ -1864,7 +2097,8 @@
         "seed": "0",
         "custom_execution_limit": "100",
         "max_ticks": "10",
-        "input": []
+        "input": [],
+        "gas_hard_limit": "100000000"
       },
       "expected": {
         "process_exit_code": 6,
@@ -1891,7 +2125,12 @@
         "peak_instruction_stack_usage": "0",
         "peak_call_stack_usage": "0",
         "instruction_variety": [],
-        "error_codes": []
+        "error_codes": [],
+        "gas_used": "0",
+        "execution_gas": "0",
+        "memory_gas": "0",
+        "stack_gas": "0",
+        "gas_schedule_version": 1
       }
     },
     {
@@ -1901,7 +2140,8 @@
         "seed": "0",
         "custom_execution_limit": "100",
         "max_ticks": "10",
-        "input": []
+        "input": [],
+        "gas_hard_limit": "100000000"
       },
       "expected": {
         "process_exit_code": 6,
@@ -1934,7 +2174,12 @@
         "thread_call_stack_sizes": [
           1,
           1
-        ]
+        ],
+        "gas_used": "49",
+        "execution_gas": "17",
+        "memory_gas": "0",
+        "stack_gas": "32",
+        "gas_schedule_version": 1
       }
     },
     {
@@ -1944,7 +2189,8 @@
         "seed": "0",
         "custom_execution_limit": "100",
         "max_ticks": "10",
-        "input": []
+        "input": [],
+        "gas_hard_limit": "100000000"
       },
       "expected": {
         "process_exit_code": 5,
@@ -1975,7 +2221,12 @@
         ],
         "error_codes": [
           "ConcurrentWriteConflict"
-        ]
+        ],
+        "gas_used": "6",
+        "execution_gas": "6",
+        "memory_gas": "0",
+        "stack_gas": "0",
+        "gas_schedule_version": 1
       }
     },
     {
@@ -1985,7 +2236,8 @@
         "seed": "0",
         "custom_execution_limit": "100",
         "max_ticks": "10",
-        "input": []
+        "input": [],
+        "gas_hard_limit": "100000000"
       },
       "expected": {
         "process_exit_code": 0,
@@ -2032,7 +2284,12 @@
             },
             "direction": "left"
           }
-        ]
+        ],
+        "gas_used": "0",
+        "execution_gas": "0",
+        "memory_gas": "0",
+        "stack_gas": "0",
+        "gas_schedule_version": 1
       }
     },
     {
@@ -2045,7 +2302,8 @@
         "input": [
           42,
           84
-        ]
+        ],
+        "gas_hard_limit": "100000000"
       },
       "expected": {
         "process_exit_code": 5,
@@ -2089,7 +2347,12 @@
         "remaining_input": [
           42,
           84
-        ]
+        ],
+        "gas_used": "10",
+        "execution_gas": "10",
+        "memory_gas": "0",
+        "stack_gas": "0",
+        "gas_schedule_version": 1
       }
     },
     {
@@ -2099,7 +2362,8 @@
         "seed": "0",
         "custom_execution_limit": "100",
         "max_ticks": "10",
-        "input": []
+        "input": [],
+        "gas_hard_limit": "100000000"
       },
       "expected": {
         "process_exit_code": 5,
@@ -2145,7 +2409,12 @@
           1,
           1
         ],
-        "memory": []
+        "memory": [],
+        "gas_used": "34",
+        "execution_gas": "22",
+        "memory_gas": "10",
+        "stack_gas": "2",
+        "gas_schedule_version": 1
       }
     },
     {
@@ -2155,7 +2424,8 @@
         "seed": "0",
         "custom_execution_limit": "100",
         "max_ticks": "10",
-        "input": []
+        "input": [],
+        "gas_hard_limit": "100000000"
       },
       "expected": {
         "process_exit_code": 5,
@@ -2195,7 +2465,12 @@
             "0",
             "1"
           ]
-        ]
+        ],
+        "gas_used": "10",
+        "execution_gas": "10",
+        "memory_gas": "0",
+        "stack_gas": "0",
+        "gas_schedule_version": 1
       }
     },
     {
@@ -2205,12 +2480,13 @@
         "seed": "0",
         "custom_execution_limit": "3",
         "max_ticks": "10",
-        "input": []
+        "input": [],
+        "gas_hard_limit": "100000000"
       },
       "expected": {
-        "process_exit_code": 0,
-        "status": "halted",
-        "vm_status": "halted",
+        "process_exit_code": 5,
+        "status": "error",
+        "vm_status": "error",
         "output": [],
         "registers": [
           0,
@@ -2224,18 +2500,22 @@
           0,
           0
         ],
-        "committed_ticks": "3",
-        "operation_count": "2",
-        "used_cell_count": "6",
+        "committed_ticks": "1",
+        "operation_count": "0",
+        "used_cell_count": "2",
         "used_memory_address_count": "0",
         "peak_data_stack_usage": "0",
         "peak_instruction_stack_usage": "0",
         "peak_call_stack_usage": "0",
-        "instruction_variety": [
-          "CustomReturn",
-          "Halt"
+        "instruction_variety": [],
+        "error_codes": [
+          "CustomDisabled"
         ],
-        "error_codes": []
+        "gas_used": "0",
+        "execution_gas": "0",
+        "memory_gas": "0",
+        "stack_gas": "0",
+        "gas_schedule_version": 1
       }
     },
     {
@@ -2245,12 +2525,13 @@
         "seed": "0",
         "custom_execution_limit": "2",
         "max_ticks": "10",
-        "input": []
+        "input": [],
+        "gas_hard_limit": "100000000"
       },
       "expected": {
-        "process_exit_code": 0,
-        "status": "halted",
-        "vm_status": "halted",
+        "process_exit_code": 5,
+        "status": "error",
+        "vm_status": "error",
         "output": [],
         "registers": [
           0,
@@ -2264,17 +2545,17 @@
           0,
           0
         ],
-        "committed_ticks": "2",
-        "operation_count": "1",
-        "used_cell_count": "4",
+        "committed_ticks": "1",
+        "operation_count": "0",
+        "used_cell_count": "2",
         "used_memory_address_count": "0",
         "peak_data_stack_usage": "0",
         "peak_instruction_stack_usage": "0",
         "peak_call_stack_usage": "0",
-        "instruction_variety": [
-          "Halt"
+        "instruction_variety": [],
+        "error_codes": [
+          "CustomDisabled"
         ],
-        "error_codes": [],
         "threads": [
           {
             "id": "0",
@@ -2284,7 +2565,12 @@
             },
             "direction": "right"
           }
-        ]
+        ],
+        "gas_used": "0",
+        "execution_gas": "0",
+        "memory_gas": "0",
+        "stack_gas": "0",
+        "gas_schedule_version": 1
       }
     },
     {
@@ -2294,12 +2580,13 @@
         "seed": "0",
         "custom_execution_limit": "100",
         "max_ticks": "10",
-        "input": []
+        "input": [],
+        "gas_hard_limit": "100000000"
       },
       "expected": {
-        "process_exit_code": 0,
-        "status": "halted",
-        "vm_status": "halted",
+        "process_exit_code": 5,
+        "status": "error",
+        "vm_status": "error",
         "output": [],
         "registers": [
           0,
@@ -2313,30 +2600,26 @@
           0,
           0
         ],
-        "committed_ticks": "3",
-        "operation_count": "9",
-        "used_cell_count": "15",
+        "committed_ticks": "1",
+        "operation_count": "0",
+        "used_cell_count": "4",
         "used_memory_address_count": "0",
-        "peak_data_stack_usage": "3",
+        "peak_data_stack_usage": "0",
         "peak_instruction_stack_usage": "0",
         "peak_call_stack_usage": "0",
-        "instruction_variety": [
-          "Add",
-          "Output",
-          "Push",
-          "CustomReturn",
-          "Halt"
+        "instruction_variety": [],
+        "error_codes": [
+          "CustomDisabled"
         ],
-        "error_codes": [],
         "thread_data_stack_sizes": [
-          1,
+          0,
           0
         ],
         "threads": [
           {
             "id": "0",
             "position": {
-              "x": 2,
+              "x": 1,
               "y": 0
             },
             "direction": "right"
@@ -2344,12 +2627,17 @@
           {
             "id": "1",
             "position": {
-              "x": 2,
+              "x": 1,
               "y": 1
             },
             "direction": "right"
           }
-        ]
+        ],
+        "gas_used": "0",
+        "execution_gas": "0",
+        "memory_gas": "0",
+        "stack_gas": "0",
+        "gas_schedule_version": 1
       }
     },
     {
@@ -2359,7 +2647,8 @@
         "seed": "0",
         "custom_execution_limit": "100",
         "max_ticks": "2",
-        "input": []
+        "input": [],
+        "gas_hard_limit": "100000000"
       },
       "expected": {
         "process_exit_code": 6,
@@ -2411,7 +2700,12 @@
             },
             "direction": "right"
           }
-        ]
+        ],
+        "gas_used": "6",
+        "execution_gas": "6",
+        "memory_gas": "0",
+        "stack_gas": "0",
+        "gas_schedule_version": 1
       }
     },
     {
@@ -2423,7 +2717,8 @@
         "max_ticks": "10",
         "input": [
           43
-        ]
+        ],
+        "gas_hard_limit": "100000000"
       },
       "expected": {
         "process_exit_code": 5,
@@ -2515,7 +2810,12 @@
           null,
           null,
           null
-        ]
+        ],
+        "gas_used": "43",
+        "execution_gas": "33",
+        "memory_gas": "0",
+        "stack_gas": "10",
+        "gas_schedule_version": 1
       }
     },
     {
@@ -2525,7 +2825,8 @@
         "seed": "0",
         "custom_execution_limit": "3",
         "max_ticks": "10",
-        "input": []
+        "input": [],
+        "gas_hard_limit": "100000000"
       },
       "expected": {
         "process_exit_code": 5,
@@ -2545,23 +2846,18 @@
           0
         ],
         "committed_ticks": "1",
-        "operation_count": "2",
-        "used_cell_count": "5",
+        "operation_count": "0",
+        "used_cell_count": "2",
         "used_memory_address_count": "0",
         "peak_data_stack_usage": "0",
         "peak_instruction_stack_usage": "0",
         "peak_call_stack_usage": "0",
-        "instruction_variety": [
-          "Add"
-        ],
+        "instruction_variety": [],
         "error_codes": [
-          "CustomExecutionLimitExceeded"
+          "CustomDisabled"
         ],
         "error_global_ticks": [
           "2"
-        ],
-        "error_custom_internal_ticks": [
-          "3"
         ],
         "threads": [
           {
@@ -2572,7 +2868,12 @@
             },
             "direction": "right"
           }
-        ]
+        ],
+        "gas_used": "0",
+        "execution_gas": "0",
+        "memory_gas": "0",
+        "stack_gas": "0",
+        "gas_schedule_version": 1
       }
     },
     {
@@ -2582,7 +2883,8 @@
         "seed": "0",
         "custom_execution_limit": "100",
         "max_ticks": "10",
-        "input": []
+        "input": [],
+        "gas_hard_limit": "100000000"
       },
       "expected": {
         "process_exit_code": 5,
@@ -2602,29 +2904,18 @@
           0
         ],
         "committed_ticks": "1",
-        "operation_count": "2",
-        "used_cell_count": "6",
+        "operation_count": "0",
+        "used_cell_count": "2",
         "used_memory_address_count": "0",
-        "peak_data_stack_usage": "2",
+        "peak_data_stack_usage": "0",
         "peak_instruction_stack_usage": "0",
         "peak_call_stack_usage": "0",
-        "instruction_variety": [
-          "Output"
-        ],
+        "instruction_variety": [],
         "error_codes": [
-          "ConcurrentCallerStackWriteConflict"
+          "CustomDisabled"
         ],
         "error_global_ticks": [
           "2"
-        ],
-        "error_custom_internal_ticks": [
-          "2"
-        ],
-        "error_thread_id_groups": [
-          [
-            "0",
-            "1"
-          ]
         ],
         "thread_data_stack_sizes": [
           0
@@ -2638,7 +2929,12 @@
             },
             "direction": "right"
           }
-        ]
+        ],
+        "gas_used": "0",
+        "execution_gas": "0",
+        "memory_gas": "0",
+        "stack_gas": "0",
+        "gas_schedule_version": 1
       }
     },
     {
@@ -2648,7 +2944,8 @@
         "seed": "0",
         "custom_execution_limit": "100",
         "max_ticks": "10",
-        "input": []
+        "input": [],
+        "gas_hard_limit": "100000000"
       },
       "expected": {
         "process_exit_code": 5,
@@ -2668,30 +2965,20 @@
           0
         ],
         "committed_ticks": "2",
-        "operation_count": "3",
-        "used_cell_count": "7",
+        "operation_count": "1",
+        "used_cell_count": "3",
         "used_memory_address_count": "0",
         "peak_data_stack_usage": "1",
         "peak_instruction_stack_usage": "0",
         "peak_call_stack_usage": "0",
         "instruction_variety": [
-          "Read",
           "Push"
         ],
         "error_codes": [
-          "ConcurrentCallerStackReadConflict"
+          "CustomDisabled"
         ],
         "error_global_ticks": [
           "3"
-        ],
-        "error_custom_internal_ticks": [
-          "2"
-        ],
-        "error_thread_id_groups": [
-          [
-            "0",
-            "1"
-          ]
         ],
         "thread_data_stack_sizes": [
           1
@@ -2705,7 +2992,12 @@
             },
             "direction": "right"
           }
-        ]
+        ],
+        "gas_used": "4",
+        "execution_gas": "3",
+        "memory_gas": "0",
+        "stack_gas": "1",
+        "gas_schedule_version": 1
       }
     },
     {
@@ -2715,7 +3007,8 @@
         "seed": "0",
         "custom_execution_limit": "100",
         "max_ticks": "10",
-        "input": []
+        "input": [],
+        "gas_hard_limit": "100000000"
       },
       "expected": {
         "process_exit_code": 5,
@@ -2735,31 +3028,20 @@
           0
         ],
         "committed_ticks": "2",
-        "operation_count": "3",
-        "used_cell_count": "7",
+        "operation_count": "1",
+        "used_cell_count": "3",
         "used_memory_address_count": "0",
-        "peak_data_stack_usage": "2",
+        "peak_data_stack_usage": "1",
         "peak_instruction_stack_usage": "0",
         "peak_call_stack_usage": "0",
         "instruction_variety": [
-          "Read",
-          "Output",
           "Push"
         ],
         "error_codes": [
-          "ConcurrentCallerStackReadWriteConflict"
+          "CustomDisabled"
         ],
         "error_global_ticks": [
           "3"
-        ],
-        "error_custom_internal_ticks": [
-          "2"
-        ],
-        "error_thread_id_groups": [
-          [
-            "0",
-            "1"
-          ]
         ],
         "thread_data_stack_sizes": [
           1
@@ -2773,7 +3055,12 @@
             },
             "direction": "right"
           }
-        ]
+        ],
+        "gas_used": "4",
+        "execution_gas": "3",
+        "memory_gas": "0",
+        "stack_gas": "1",
+        "gas_schedule_version": 1
       }
     },
     {
@@ -2783,62 +3070,8 @@
         "seed": "0",
         "custom_execution_limit": "100",
         "max_ticks": "10",
-        "input": []
-      },
-      "expected": {
-        "process_exit_code": 0,
-        "status": "halted",
-        "vm_status": "halted",
-        "output": [],
-        "registers": [
-          0,
-          0,
-          0,
-          0,
-          0,
-          0,
-          0,
-          0,
-          0,
-          0
-        ],
-        "committed_ticks": "3",
-        "operation_count": "7",
-        "used_cell_count": "12",
-        "used_memory_address_count": "0",
-        "peak_data_stack_usage": "1",
-        "peak_instruction_stack_usage": "0",
-        "peak_call_stack_usage": "0",
-        "instruction_variety": [
-          "Read",
-          "Output",
-          "CustomReturn",
-          "Halt"
-        ],
-        "error_codes": [],
-        "thread_data_stack_sizes": [
-          1
-        ],
-        "threads": [
-          {
-            "id": "0",
-            "position": {
-              "x": 2,
-              "y": 0
-            },
-            "direction": "right"
-          }
-        ]
-      }
-    },
-    {
-      "id": "custom-wrapping-loop-reaches-internal-limit",
-      "source": "@main\n~> #0 ;\n@end main\n@C0\n@size 2x1\n~> +\n@end C0\n",
-      "run": {
-        "seed": "0",
-        "custom_execution_limit": "2",
-        "max_ticks": "10",
-        "input": []
+        "input": [],
+        "gas_hard_limit": "100000000"
       },
       "expected": {
         "process_exit_code": 5,
@@ -2858,17 +3091,18 @@
           0
         ],
         "committed_ticks": "1",
-        "operation_count": "1",
-        "used_cell_count": "4",
+        "operation_count": "0",
+        "used_cell_count": "2",
         "used_memory_address_count": "0",
         "peak_data_stack_usage": "0",
         "peak_instruction_stack_usage": "0",
         "peak_call_stack_usage": "0",
-        "instruction_variety": [
-          "Add"
-        ],
+        "instruction_variety": [],
         "error_codes": [
-          "CustomExecutionLimitExceeded"
+          "CustomDisabled"
+        ],
+        "thread_data_stack_sizes": [
+          0
         ],
         "threads": [
           {
@@ -2879,7 +3113,67 @@
             },
             "direction": "right"
           }
-        ]
+        ],
+        "gas_used": "0",
+        "execution_gas": "0",
+        "memory_gas": "0",
+        "stack_gas": "0",
+        "gas_schedule_version": 1
+      }
+    },
+    {
+      "id": "custom-wrapping-loop-reaches-internal-limit",
+      "source": "@main\n~> #0 ;\n@end main\n@C0\n@size 2x1\n~> +\n@end C0\n",
+      "run": {
+        "seed": "0",
+        "custom_execution_limit": "2",
+        "max_ticks": "10",
+        "input": [],
+        "gas_hard_limit": "100000000"
+      },
+      "expected": {
+        "process_exit_code": 5,
+        "status": "error",
+        "vm_status": "error",
+        "output": [],
+        "registers": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "committed_ticks": "1",
+        "operation_count": "0",
+        "used_cell_count": "2",
+        "used_memory_address_count": "0",
+        "peak_data_stack_usage": "0",
+        "peak_instruction_stack_usage": "0",
+        "peak_call_stack_usage": "0",
+        "instruction_variety": [],
+        "error_codes": [
+          "CustomDisabled"
+        ],
+        "threads": [
+          {
+            "id": "0",
+            "position": {
+              "x": 1,
+              "y": 0
+            },
+            "direction": "right"
+          }
+        ],
+        "gas_used": "0",
+        "execution_gas": "0",
+        "memory_gas": "0",
+        "stack_gas": "0",
+        "gas_schedule_version": 1
       }
     },
     {
@@ -2889,12 +3183,13 @@
         "seed": "0",
         "custom_execution_limit": "100",
         "max_ticks": "10",
-        "input": []
+        "input": [],
+        "gas_hard_limit": "100000000"
       },
       "expected": {
-        "process_exit_code": 0,
-        "status": "halted",
-        "vm_status": "halted",
+        "process_exit_code": 5,
+        "status": "error",
+        "vm_status": "error",
         "output": [],
         "registers": [
           0,
@@ -2908,26 +3203,22 @@
           0,
           0
         ],
-        "committed_ticks": "3",
-        "operation_count": "10",
-        "used_cell_count": "11",
-        "used_memory_address_count": "2",
-        "peak_data_stack_usage": "2",
+        "committed_ticks": "1",
+        "operation_count": "0",
+        "used_cell_count": "4",
+        "used_memory_address_count": "0",
+        "peak_data_stack_usage": "0",
         "peak_instruction_stack_usage": "0",
         "peak_call_stack_usage": "0",
-        "instruction_variety": [
-          "Push",
-          "MemoryLoad",
-          "MemoryStore",
-          "CustomReturn",
-          "Halt"
+        "instruction_variety": [],
+        "error_codes": [
+          "CustomDisabled"
         ],
-        "error_codes": [],
         "threads": [
           {
             "id": "0",
             "position": {
-              "x": 2,
+              "x": 1,
               "y": 0
             },
             "direction": "right"
@@ -2935,12 +3226,17 @@
           {
             "id": "1",
             "position": {
-              "x": 2,
+              "x": 1,
               "y": 1
             },
             "direction": "right"
           }
-        ]
+        ],
+        "gas_used": "0",
+        "execution_gas": "0",
+        "memory_gas": "0",
+        "stack_gas": "0",
+        "gas_schedule_version": 1
       }
     },
     {
@@ -2950,12 +3246,13 @@
         "seed": "0",
         "custom_execution_limit": "100",
         "max_ticks": "3",
-        "input": []
+        "input": [],
+        "gas_hard_limit": "100000000"
       },
       "expected": {
-        "process_exit_code": 6,
-        "status": "tick_limit_reached",
-        "vm_status": "running",
+        "process_exit_code": 5,
+        "status": "error",
+        "vm_status": "error",
         "output": [],
         "registers": [
           0,
@@ -2969,28 +3266,24 @@
           0,
           0
         ],
-        "committed_ticks": "3",
-        "operation_count": "41",
-        "used_cell_count": "48",
+        "committed_ticks": "2",
+        "operation_count": "2",
+        "used_cell_count": "6",
         "used_memory_address_count": "0",
-        "peak_data_stack_usage": "4",
-        "peak_instruction_stack_usage": "1",
-        "peak_call_stack_usage": "1",
+        "peak_data_stack_usage": "2",
+        "peak_instruction_stack_usage": "0",
+        "peak_call_stack_usage": "0",
         "instruction_variety": [
-          "Add",
-          "Output",
-          "Push",
-          "Decode",
-          "Call",
-          "Return",
-          "CustomReturn"
+          "Push"
         ],
-        "error_codes": [],
+        "error_codes": [
+          "CustomDisabled"
+        ],
         "threads": [
           {
             "id": "0",
             "position": {
-              "x": 3,
+              "x": 2,
               "y": 0
             },
             "direction": "right"
@@ -2998,12 +3291,17 @@
           {
             "id": "1",
             "position": {
-              "x": 4,
+              "x": 5,
               "y": 0
             },
             "direction": "left"
           }
-        ]
+        ],
+        "gas_used": "8",
+        "execution_gas": "6",
+        "memory_gas": "0",
+        "stack_gas": "2",
+        "gas_schedule_version": 1
       }
     },
     {
@@ -3015,7 +3313,8 @@
         "max_ticks": "10",
         "input": [
           65
-        ]
+        ],
+        "gas_hard_limit": "100000000"
       },
       "expected": {
         "process_exit_code": 5,
@@ -3059,7 +3358,12 @@
         ],
         "remaining_input": [
           65
-        ]
+        ],
+        "gas_used": "10",
+        "execution_gas": "10",
+        "memory_gas": "0",
+        "stack_gas": "0",
+        "gas_schedule_version": 1
       }
     },
     {
@@ -3069,7 +3373,8 @@
         "seed": "0",
         "custom_execution_limit": "100",
         "max_ticks": "100",
-        "input": []
+        "input": [],
+        "gas_hard_limit": "100000000"
       },
       "expected": {
         "process_exit_code": 0,
@@ -3103,7 +3408,12 @@
           "Return",
           "Halt"
         ],
-        "error_codes": []
+        "error_codes": [],
+        "gas_used": "97",
+        "execution_gas": "49",
+        "memory_gas": "0",
+        "stack_gas": "48",
+        "gas_schedule_version": 1
       }
     },
     {
@@ -3116,7 +3426,8 @@
         "input": [
           7,
           7
-        ]
+        ],
+        "gas_hard_limit": "100000000"
       },
       "expected": {
         "process_exit_code": 0,
@@ -3153,7 +3464,12 @@
           "Halt"
         ],
         "remaining_input": [],
-        "error_codes": []
+        "error_codes": [],
+        "gas_used": "23",
+        "execution_gas": "22",
+        "memory_gas": "0",
+        "stack_gas": "1",
+        "gas_schedule_version": 1
       }
     },
     {
@@ -3166,7 +3482,8 @@
         "input": [
           255,
           0
-        ]
+        ],
+        "gas_hard_limit": "100000000"
       },
       "expected": {
         "process_exit_code": 0,
@@ -3203,7 +3520,12 @@
           "Halt"
         ],
         "remaining_input": [],
-        "error_codes": []
+        "error_codes": [],
+        "gas_used": "23",
+        "execution_gas": "22",
+        "memory_gas": "0",
+        "stack_gas": "1",
+        "gas_schedule_version": 1
       }
     },
     {
@@ -3216,7 +3538,8 @@
         "input": [
           0,
           255
-        ]
+        ],
+        "gas_hard_limit": "100000000"
       },
       "expected": {
         "process_exit_code": 0,
@@ -3253,7 +3576,12 @@
           "Halt"
         ],
         "remaining_input": [],
-        "error_codes": []
+        "error_codes": [],
+        "gas_used": "23",
+        "execution_gas": "22",
+        "memory_gas": "0",
+        "stack_gas": "1",
+        "gas_schedule_version": 1
       }
     },
     {
@@ -3265,7 +3593,8 @@
         "max_ticks": "100",
         "input": [
           9
-        ]
+        ],
+        "gas_hard_limit": "100000000"
       },
       "expected": {
         "process_exit_code": 0,
@@ -3300,7 +3629,12 @@
           "Halt"
         ],
         "remaining_input": [],
-        "error_codes": []
+        "error_codes": [],
+        "gas_used": "12",
+        "execution_gas": "12",
+        "memory_gas": "0",
+        "stack_gas": "0",
+        "gas_schedule_version": 1
       }
     },
     {
@@ -3313,7 +3647,8 @@
         "input": [
           2,
           5
-        ]
+        ],
+        "gas_hard_limit": "100000000"
       },
       "expected": {
         "process_exit_code": 0,
@@ -3349,7 +3684,12 @@
           "Halt"
         ],
         "remaining_input": [],
-        "error_codes": []
+        "error_codes": [],
+        "gas_used": "25",
+        "execution_gas": "24",
+        "memory_gas": "0",
+        "stack_gas": "1",
+        "gas_schedule_version": 1
       }
     },
     {
@@ -3361,7 +3701,8 @@
         "max_ticks": "100",
         "input": [
           9
-        ]
+        ],
+        "gas_hard_limit": "100000000"
       },
       "expected": {
         "process_exit_code": 0,
@@ -3397,7 +3738,12 @@
         "remaining_input": [
           9
         ],
-        "error_codes": []
+        "error_codes": [],
+        "gas_used": "17",
+        "execution_gas": "17",
+        "memory_gas": "0",
+        "stack_gas": "0",
+        "gas_schedule_version": 1
       }
     },
     {
@@ -3407,7 +3753,8 @@
         "seed": "0",
         "custom_execution_limit": "100",
         "max_ticks": "100",
-        "input": []
+        "input": [],
+        "gas_hard_limit": "100000000"
       },
       "expected": {
         "process_exit_code": 0,
@@ -3443,7 +3790,12 @@
           "Halt"
         ],
         "remaining_input": [],
-        "error_codes": []
+        "error_codes": [],
+        "gas_used": "21",
+        "execution_gas": "21",
+        "memory_gas": "0",
+        "stack_gas": "0",
+        "gas_schedule_version": 1
       }
     },
     {
@@ -3453,7 +3805,8 @@
         "seed": "0",
         "custom_execution_limit": "100",
         "max_ticks": "100",
-        "input": []
+        "input": [],
+        "gas_hard_limit": "100000000"
       },
       "expected": {
         "process_exit_code": 0,
@@ -3492,7 +3845,12 @@
           "Halt"
         ],
         "remaining_input": [],
-        "error_codes": []
+        "error_codes": [],
+        "gas_used": "48",
+        "execution_gas": "28",
+        "memory_gas": "0",
+        "stack_gas": "20",
+        "gas_schedule_version": 1
       }
     },
     {
@@ -3502,7 +3860,8 @@
         "seed": "0",
         "custom_execution_limit": "100",
         "max_ticks": "100",
-        "input": []
+        "input": [],
+        "gas_hard_limit": "100000000"
       },
       "expected": {
         "process_exit_code": 0,
@@ -3536,7 +3895,12 @@
           "Halt"
         ],
         "remaining_input": [],
-        "error_codes": []
+        "error_codes": [],
+        "gas_used": "12",
+        "execution_gas": "12",
+        "memory_gas": "0",
+        "stack_gas": "0",
+        "gas_schedule_version": 1
       }
     },
     {
@@ -3546,17 +3910,16 @@
         "seed": "0",
         "custom_execution_limit": "100",
         "max_ticks": "100",
-        "input": []
+        "input": [],
+        "gas_hard_limit": "100000000"
       },
       "expected": {
-        "process_exit_code": 0,
-        "status": "halted",
-        "vm_status": "halted",
-        "output": [
-          2
-        ],
+        "process_exit_code": 5,
+        "status": "error",
+        "vm_status": "error",
+        "output": [],
         "registers": [
-          2,
+          1,
           0,
           0,
           0,
@@ -3567,24 +3930,26 @@
           0,
           0
         ],
-        "committed_ticks": "7",
-        "operation_count": "9",
-        "used_cell_count": "12",
+        "committed_ticks": "3",
+        "operation_count": "2",
+        "used_cell_count": "4",
         "used_memory_address_count": "0",
-        "peak_data_stack_usage": "2",
+        "peak_data_stack_usage": "1",
         "peak_instruction_stack_usage": "0",
         "peak_call_stack_usage": "0",
         "instruction_variety": [
-          "Compare",
           "Add",
-          "Output",
-          "Push",
-          "PopAdd",
-          "CustomReturn",
-          "Halt"
+          "Push"
         ],
         "remaining_input": [],
-        "error_codes": []
+        "error_codes": [
+          "CustomDisabled"
+        ],
+        "gas_used": "7",
+        "execution_gas": "6",
+        "memory_gas": "0",
+        "stack_gas": "1",
+        "gas_schedule_version": 1
       }
     },
     {
@@ -3596,7 +3961,8 @@
         "max_ticks": "100",
         "input": [
           63
-        ]
+        ],
+        "gas_hard_limit": "100000000"
       },
       "expected": {
         "process_exit_code": 0,
@@ -3632,7 +3998,12 @@
           "Halt"
         ],
         "remaining_input": [],
-        "error_codes": []
+        "error_codes": [],
+        "gas_used": "16",
+        "execution_gas": "16",
+        "memory_gas": "0",
+        "stack_gas": "0",
+        "gas_schedule_version": 1
       }
     },
     {
@@ -3644,7 +4015,8 @@
         "max_ticks": "100",
         "input": [
           126
-        ]
+        ],
+        "gas_hard_limit": "100000000"
       },
       "expected": {
         "process_exit_code": 0,
@@ -3680,7 +4052,12 @@
           "Halt"
         ],
         "remaining_input": [],
-        "error_codes": []
+        "error_codes": [],
+        "gas_used": "20",
+        "execution_gas": "16",
+        "memory_gas": "0",
+        "stack_gas": "4",
+        "gas_schedule_version": 1
       }
     },
     {
@@ -3690,7 +4067,8 @@
         "seed": "0",
         "custom_execution_limit": "100",
         "max_ticks": "10",
-        "input": []
+        "input": [],
+        "gas_hard_limit": "100000000"
       },
       "expected": {
         "process_exit_code": 0,
@@ -3724,7 +4102,12 @@
           "Output",
           "Halt"
         ],
-        "error_codes": []
+        "error_codes": [],
+        "gas_used": "15",
+        "execution_gas": "15",
+        "memory_gas": "0",
+        "stack_gas": "0",
+        "gas_schedule_version": 1
       }
     },
     {
@@ -3737,7 +4120,8 @@
         "input": [
           5,
           69
-        ]
+        ],
+        "gas_hard_limit": "100000000"
       },
       "expected": {
         "process_exit_code": 0,
@@ -3775,7 +4159,12 @@
           "Halt"
         ],
         "remaining_input": [],
-        "error_codes": []
+        "error_codes": [],
+        "gas_used": "33",
+        "execution_gas": "29",
+        "memory_gas": "0",
+        "stack_gas": "4",
+        "gas_schedule_version": 1
       }
     },
     {
@@ -3787,7 +4176,8 @@
         "max_ticks": "20",
         "input": [
           37
-        ]
+        ],
+        "gas_hard_limit": "100000000"
       },
       "expected": {
         "process_exit_code": 0,
@@ -3822,7 +4212,12 @@
           "Halt"
         ],
         "remaining_input": [],
-        "error_codes": []
+        "error_codes": [],
+        "gas_used": "19",
+        "execution_gas": "19",
+        "memory_gas": "0",
+        "stack_gas": "0",
+        "gas_schedule_version": 1
       }
     },
     {
@@ -3834,7 +4229,8 @@
         "max_ticks": "30",
         "input": [
           5
-        ]
+        ],
+        "gas_hard_limit": "100000000"
       },
       "expected": {
         "process_exit_code": 0,
@@ -3874,7 +4270,12 @@
           "Halt"
         ],
         "remaining_input": [],
-        "error_codes": []
+        "error_codes": [],
+        "gas_used": "50",
+        "execution_gas": "33",
+        "memory_gas": "0",
+        "stack_gas": "17",
+        "gas_schedule_version": 1
       }
     },
     {
@@ -3886,17 +4287,16 @@
         "max_ticks": "30",
         "input": [
           5
-        ]
+        ],
+        "gas_hard_limit": "100000000"
       },
       "expected": {
-        "process_exit_code": 0,
-        "status": "halted",
-        "vm_status": "halted",
-        "output": [
-          251
-        ],
+        "process_exit_code": 5,
+        "status": "error",
+        "vm_status": "error",
+        "output": [],
         "registers": [
-          251,
+          5,
           0,
           0,
           0,
@@ -3907,27 +4307,26 @@
           0,
           0
         ],
-        "committed_ticks": "8",
-        "operation_count": "12",
-        "used_cell_count": "16",
+        "committed_ticks": "3",
+        "operation_count": "2",
+        "used_cell_count": "4",
         "used_memory_address_count": "0",
         "peak_data_stack_usage": "1",
         "peak_instruction_stack_usage": "0",
-        "peak_call_stack_usage": "1",
+        "peak_call_stack_usage": "0",
         "instruction_variety": [
           "Read",
-          "Clear",
-          "Output",
-          "Push",
-          "PopAdd",
-          "Call",
-          "Return",
-          "Neg",
-          "CustomReturn",
-          "Halt"
+          "Push"
         ],
         "remaining_input": [],
-        "error_codes": []
+        "error_codes": [
+          "CustomDisabled"
+        ],
+        "gas_used": "9",
+        "execution_gas": "8",
+        "memory_gas": "0",
+        "stack_gas": "1",
+        "gas_schedule_version": 1
       }
     },
     {
@@ -3939,7 +4338,8 @@
         "max_ticks": "4",
         "input": [
           5
-        ]
+        ],
+        "gas_hard_limit": "100000000"
       },
       "expected": {
         "process_exit_code": 6,
@@ -3970,7 +4370,12 @@
           "Call"
         ],
         "remaining_input": [],
-        "error_codes": []
+        "error_codes": [],
+        "gas_used": "29",
+        "execution_gas": "13",
+        "memory_gas": "0",
+        "stack_gas": "16",
+        "gas_schedule_version": 1
       }
     },
     {
@@ -3982,7 +4387,8 @@
         "max_ticks": "100",
         "input": [
           173
-        ]
+        ],
+        "gas_hard_limit": "100000000"
       },
       "expected": {
         "process_exit_code": 0,
@@ -4017,7 +4423,12 @@
           "Read",
           "Output",
           "Halt"
-        ]
+        ],
+        "gas_used": "26",
+        "execution_gas": "26",
+        "memory_gas": "0",
+        "stack_gas": "0",
+        "gas_schedule_version": 1
       }
     },
     {
@@ -4029,7 +4440,8 @@
         "max_ticks": "100",
         "input": [
           255
-        ]
+        ],
+        "gas_hard_limit": "100000000"
       },
       "expected": {
         "process_exit_code": 0,
@@ -4064,7 +4476,12 @@
           "Add",
           "Output",
           "Halt"
-        ]
+        ],
+        "gas_used": "15",
+        "execution_gas": "15",
+        "memory_gas": "0",
+        "stack_gas": "0",
+        "gas_schedule_version": 1
       }
     },
     {
@@ -4074,7 +4491,8 @@
         "seed": "0",
         "custom_execution_limit": "100",
         "max_ticks": "100",
-        "input": []
+        "input": [],
+        "gas_hard_limit": "100000000"
       },
       "expected": {
         "process_exit_code": 0,
@@ -4108,7 +4526,12 @@
           "Sub",
           "Output",
           "Halt"
-        ]
+        ],
+        "gas_used": "10",
+        "execution_gas": "10",
+        "memory_gas": "0",
+        "stack_gas": "0",
+        "gas_schedule_version": 1
       }
     },
     {
@@ -4118,7 +4541,8 @@
         "seed": "0",
         "custom_execution_limit": "100",
         "max_ticks": "100",
-        "input": []
+        "input": [],
+        "gas_hard_limit": "100000000"
       },
       "expected": {
         "process_exit_code": 0,
@@ -4152,7 +4576,12 @@
           "Output",
           "PopAdd",
           "Halt"
-        ]
+        ],
+        "gas_used": "10",
+        "execution_gas": "10",
+        "memory_gas": "0",
+        "stack_gas": "0",
+        "gas_schedule_version": 1
       }
     },
     {
@@ -4164,7 +4593,8 @@
         "max_ticks": "100",
         "input": [
           128
-        ]
+        ],
+        "gas_hard_limit": "100000000"
       },
       "expected": {
         "process_exit_code": 0,
@@ -4200,7 +4630,12 @@
           "Push",
           "PopAdd",
           "Halt"
-        ]
+        ],
+        "gas_used": "19",
+        "execution_gas": "18",
+        "memory_gas": "0",
+        "stack_gas": "1",
+        "gas_schedule_version": 1
       }
     },
     {
@@ -4212,7 +4647,8 @@
         "max_ticks": "100",
         "input": [
           128
-        ]
+        ],
+        "gas_hard_limit": "100000000"
       },
       "expected": {
         "process_exit_code": 0,
@@ -4247,7 +4683,12 @@
           "Output",
           "Shift",
           "Halt"
-        ]
+        ],
+        "gas_used": "14",
+        "execution_gas": "14",
+        "memory_gas": "0",
+        "stack_gas": "0",
+        "gas_schedule_version": 1
       }
     },
     {
@@ -4259,7 +4700,8 @@
         "max_ticks": "100",
         "input": [
           1
-        ]
+        ],
+        "gas_hard_limit": "100000000"
       },
       "expected": {
         "process_exit_code": 0,
@@ -4294,7 +4736,12 @@
           "Output",
           "Shift",
           "Halt"
-        ]
+        ],
+        "gas_used": "14",
+        "execution_gas": "14",
+        "memory_gas": "0",
+        "stack_gas": "0",
+        "gas_schedule_version": 1
       }
     },
     {
@@ -4304,7 +4751,8 @@
         "seed": "0",
         "custom_execution_limit": "100",
         "max_ticks": "100",
-        "input": []
+        "input": [],
+        "gas_hard_limit": "100000000"
       },
       "expected": {
         "process_exit_code": 0,
@@ -4338,7 +4786,12 @@
           "MoveRegisterPointer",
           "Output",
           "Halt"
-        ]
+        ],
+        "gas_used": "13",
+        "execution_gas": "13",
+        "memory_gas": "0",
+        "stack_gas": "0",
+        "gas_schedule_version": 1
       }
     },
     {
@@ -4348,7 +4801,8 @@
         "seed": "0",
         "custom_execution_limit": "100",
         "max_ticks": "100",
-        "input": []
+        "input": [],
+        "gas_hard_limit": "100000000"
       },
       "expected": {
         "process_exit_code": 0,
@@ -4386,7 +4840,12 @@
           "Neg",
           "Nand",
           "Halt"
-        ]
+        ],
+        "gas_used": "21",
+        "execution_gas": "21",
+        "memory_gas": "0",
+        "stack_gas": "0",
+        "gas_schedule_version": 1
       }
     },
     {
@@ -4396,7 +4855,8 @@
         "seed": "0",
         "custom_execution_limit": "100",
         "max_ticks": "100",
-        "input": []
+        "input": [],
+        "gas_hard_limit": "100000000"
       },
       "expected": {
         "process_exit_code": 0,
@@ -4431,7 +4891,12 @@
           "Output",
           "PopAdd",
           "Halt"
-        ]
+        ],
+        "gas_used": "17",
+        "execution_gas": "17",
+        "memory_gas": "0",
+        "stack_gas": "0",
+        "gas_schedule_version": 1
       }
     },
     {
@@ -4441,7 +4906,8 @@
         "seed": "0",
         "custom_execution_limit": "100",
         "max_ticks": "100",
-        "input": []
+        "input": [],
+        "gas_hard_limit": "100000000"
       },
       "expected": {
         "process_exit_code": 0,
@@ -4479,7 +4945,12 @@
           "Call",
           "Return",
           "Halt"
-        ]
+        ],
+        "gas_used": "46",
+        "execution_gas": "30",
+        "memory_gas": "0",
+        "stack_gas": "16",
+        "gas_schedule_version": 1
       }
     },
     {
@@ -4489,15 +4960,14 @@
         "seed": "0",
         "custom_execution_limit": "100",
         "max_ticks": "100",
-        "input": []
+        "input": [],
+        "gas_hard_limit": "100000000"
       },
       "expected": {
-        "process_exit_code": 0,
-        "status": "halted",
-        "vm_status": "halted",
-        "output": [
-          2
-        ],
+        "process_exit_code": 5,
+        "status": "error",
+        "vm_status": "error",
+        "output": [],
         "registers": [
           0,
           0,
@@ -4510,22 +4980,24 @@
           0,
           0
         ],
-        "committed_ticks": "5",
-        "error_codes": [],
-        "operation_count": "9",
-        "used_cell_count": "10",
+        "committed_ticks": "2",
+        "error_codes": [
+          "CustomDisabled"
+        ],
+        "operation_count": "1",
+        "used_cell_count": "3",
         "used_memory_address_count": "0",
-        "peak_data_stack_usage": "1",
+        "peak_data_stack_usage": "0",
         "peak_instruction_stack_usage": "0",
         "peak_call_stack_usage": "0",
         "instruction_variety": [
-          "Condition",
-          "Read",
-          "Output",
-          "PopAdd",
-          "CustomReturn",
-          "Halt"
-        ]
+          "PopAdd"
+        ],
+        "gas_used": "3",
+        "execution_gas": "3",
+        "memory_gas": "0",
+        "stack_gas": "0",
+        "gas_schedule_version": 1
       }
     },
     {
@@ -4535,7 +5007,8 @@
         "seed": "0",
         "custom_execution_limit": "100",
         "max_ticks": "100",
-        "input": []
+        "input": [],
+        "gas_hard_limit": "100000000"
       },
       "expected": {
         "process_exit_code": 0,
@@ -4570,7 +5043,12 @@
           "Output",
           "PopAdd",
           "Halt"
-        ]
+        ],
+        "gas_used": "20",
+        "execution_gas": "20",
+        "memory_gas": "0",
+        "stack_gas": "0",
+        "gas_schedule_version": 1
       }
     },
     {
@@ -4580,7 +5058,8 @@
         "seed": "0",
         "custom_execution_limit": "100",
         "max_ticks": "10",
-        "input": []
+        "input": [],
+        "gas_hard_limit": "100000000"
       },
       "expected": {
         "process_exit_code": 0,
@@ -4612,7 +5091,12 @@
           "Output",
           "Halt"
         ],
-        "error_codes": []
+        "error_codes": [],
+        "gas_used": "5",
+        "execution_gas": "5",
+        "memory_gas": "0",
+        "stack_gas": "0",
+        "gas_schedule_version": 1
       }
     },
     {
@@ -4622,7 +5106,8 @@
         "seed": "0",
         "custom_execution_limit": "100",
         "max_ticks": "10",
-        "input": []
+        "input": [],
+        "gas_hard_limit": "100000000"
       },
       "expected": {
         "process_exit_code": 0,
@@ -4654,7 +5139,12 @@
           "Output",
           "Halt"
         ],
-        "error_codes": []
+        "error_codes": [],
+        "gas_used": "5",
+        "execution_gas": "5",
+        "memory_gas": "0",
+        "stack_gas": "0",
+        "gas_schedule_version": 1
       }
     },
     {
@@ -4664,7 +5154,8 @@
         "seed": "0",
         "custom_execution_limit": "100",
         "max_ticks": "10",
-        "input": []
+        "input": [],
+        "gas_hard_limit": "100000000"
       },
       "expected": {
         "process_exit_code": 0,
@@ -4698,7 +5189,12 @@
           "Return",
           "Halt"
         ],
-        "error_codes": []
+        "error_codes": [],
+        "gas_used": "31",
+        "execution_gas": "15",
+        "memory_gas": "0",
+        "stack_gas": "16",
+        "gas_schedule_version": 1
       }
     },
     {
@@ -4708,12 +5204,13 @@
         "seed": "0",
         "custom_execution_limit": "100",
         "max_ticks": "10",
-        "input": []
+        "input": [],
+        "gas_hard_limit": "100000000"
       },
       "expected": {
-        "process_exit_code": 0,
-        "status": "halted",
-        "vm_status": "halted",
+        "process_exit_code": 5,
+        "status": "error",
+        "vm_status": "error",
         "output": [],
         "registers": [
           0,
@@ -4727,19 +5224,22 @@
           0,
           0
         ],
-        "committed_ticks": "2",
-        "operation_count": "3",
-        "used_cell_count": "4",
+        "committed_ticks": "0",
+        "operation_count": "0",
+        "used_cell_count": "1",
         "used_memory_address_count": "0",
-        "peak_data_stack_usage": "1",
+        "peak_data_stack_usage": "0",
         "peak_instruction_stack_usage": "0",
         "peak_call_stack_usage": "0",
-        "instruction_variety": [
-          "Output",
-          "CustomReturn",
-          "Halt"
+        "instruction_variety": [],
+        "error_codes": [
+          "CustomDisabled"
         ],
-        "error_codes": []
+        "gas_used": "0",
+        "execution_gas": "0",
+        "memory_gas": "0",
+        "stack_gas": "0",
+        "gas_schedule_version": 1
       }
     },
     {
@@ -4749,12 +5249,13 @@
         "seed": "0",
         "custom_execution_limit": "100",
         "max_ticks": "10",
-        "input": []
+        "input": [],
+        "gas_hard_limit": "100000000"
       },
       "expected": {
-        "process_exit_code": 0,
-        "status": "halted",
-        "vm_status": "halted",
+        "process_exit_code": 5,
+        "status": "error",
+        "vm_status": "error",
         "output": [],
         "registers": [
           0,
@@ -4768,21 +5269,22 @@
           0,
           0
         ],
-        "committed_ticks": "2",
-        "operation_count": "5",
-        "used_cell_count": "6",
+        "committed_ticks": "0",
+        "operation_count": "0",
+        "used_cell_count": "1",
         "used_memory_address_count": "0",
-        "peak_data_stack_usage": "1",
+        "peak_data_stack_usage": "0",
         "peak_instruction_stack_usage": "0",
-        "peak_call_stack_usage": "1",
-        "instruction_variety": [
-          "Output",
-          "Call",
-          "Return",
-          "CustomReturn",
-          "Halt"
+        "peak_call_stack_usage": "0",
+        "instruction_variety": [],
+        "error_codes": [
+          "CustomDisabled"
         ],
-        "error_codes": []
+        "gas_used": "0",
+        "execution_gas": "0",
+        "memory_gas": "0",
+        "stack_gas": "0",
+        "gas_schedule_version": 1
       }
     },
     {
@@ -4792,7 +5294,8 @@
         "seed": "0",
         "custom_execution_limit": "100",
         "max_ticks": "10",
-        "input": []
+        "input": [],
+        "gas_hard_limit": "100000000"
       },
       "expected": {
         "process_exit_code": 0,
@@ -4821,7 +5324,12 @@
         "instruction_variety": [
           "Halt"
         ],
-        "error_codes": []
+        "error_codes": [],
+        "gas_used": "0",
+        "execution_gas": "0",
+        "memory_gas": "0",
+        "stack_gas": "0",
+        "gas_schedule_version": 1
       }
     },
     {
@@ -4831,7 +5339,8 @@
         "seed": "0",
         "custom_execution_limit": "100",
         "max_ticks": "10",
-        "input": []
+        "input": [],
+        "gas_hard_limit": "100000000"
       },
       "expected": {
         "process_exit_code": 0,
@@ -4860,7 +5369,12 @@
         "instruction_variety": [
           "Halt"
         ],
-        "error_codes": []
+        "error_codes": [],
+        "gas_used": "0",
+        "execution_gas": "0",
+        "memory_gas": "0",
+        "stack_gas": "0",
+        "gas_schedule_version": 1
       }
     },
     {
@@ -4870,7 +5384,8 @@
         "seed": "0",
         "custom_execution_limit": "100",
         "max_ticks": "10",
-        "input": []
+        "input": [],
+        "gas_hard_limit": "100000000"
       },
       "expected": {
         "process_exit_code": 0,
@@ -4899,7 +5414,12 @@
         "instruction_variety": [
           "Halt"
         ],
-        "error_codes": []
+        "error_codes": [],
+        "gas_used": "0",
+        "execution_gas": "0",
+        "memory_gas": "0",
+        "stack_gas": "0",
+        "gas_schedule_version": 1
       }
     },
     {
@@ -4909,7 +5429,8 @@
         "seed": "0",
         "custom_execution_limit": "100",
         "max_ticks": "10",
-        "input": []
+        "input": [],
+        "gas_hard_limit": "100000000"
       },
       "expected": {
         "process_exit_code": 0,
@@ -4938,7 +5459,12 @@
         "instruction_variety": [
           "Halt"
         ],
-        "error_codes": []
+        "error_codes": [],
+        "gas_used": "0",
+        "execution_gas": "0",
+        "memory_gas": "0",
+        "stack_gas": "0",
+        "gas_schedule_version": 1
       }
     },
     {
@@ -4948,7 +5474,8 @@
         "seed": "0",
         "custom_execution_limit": "100",
         "max_ticks": "10",
-        "input": []
+        "input": [],
+        "gas_hard_limit": "100000000"
       },
       "expected": {
         "process_exit_code": 6,
@@ -4975,7 +5502,156 @@
         "peak_instruction_stack_usage": "0",
         "peak_call_stack_usage": "0",
         "instruction_variety": [],
-        "error_codes": []
+        "error_codes": [],
+        "gas_used": "0",
+        "execution_gas": "0",
+        "memory_gas": "0",
+        "stack_gas": "0",
+        "gas_schedule_version": 1
+      }
+    },
+    {
+      "id": "gas-exact-limit-commits",
+      "source": "+ . ;\n",
+      "run": {
+        "seed": "0",
+        "custom_execution_limit": "100",
+        "max_ticks": "10",
+        "input": [],
+        "gas_hard_limit": "8"
+      },
+      "expected": {
+        "process_exit_code": 0,
+        "status": "halted",
+        "vm_status": "halted",
+        "output": [
+          1
+        ],
+        "registers": [
+          1,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "committed_ticks": "3",
+        "error_codes": [],
+        "operation_count": "3",
+        "used_cell_count": "3",
+        "used_memory_address_count": "0",
+        "peak_data_stack_usage": "0",
+        "peak_instruction_stack_usage": "0",
+        "peak_call_stack_usage": "0",
+        "instruction_variety": [
+          "Add",
+          "Output",
+          "Halt"
+        ],
+        "gas_used": "8",
+        "execution_gas": "8",
+        "memory_gas": "0",
+        "stack_gas": "0",
+        "gas_schedule_version": 1
+      }
+    },
+    {
+      "id": "gas-excess-rolls-back-output",
+      "source": "+ . ;\n",
+      "run": {
+        "seed": "0",
+        "custom_execution_limit": "100",
+        "max_ticks": "10",
+        "input": [],
+        "gas_hard_limit": "7"
+      },
+      "expected": {
+        "process_exit_code": 5,
+        "status": "error",
+        "vm_status": "error",
+        "output": [],
+        "registers": [
+          1,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "committed_ticks": "1",
+        "error_codes": [
+          "GasLimitExceeded"
+        ],
+        "operation_count": "2",
+        "used_cell_count": "2",
+        "used_memory_address_count": "0",
+        "peak_data_stack_usage": "0",
+        "peak_instruction_stack_usage": "0",
+        "peak_call_stack_usage": "0",
+        "instruction_variety": [
+          "Add",
+          "Output"
+        ],
+        "gas_used": "8",
+        "execution_gas": "8",
+        "memory_gas": "0",
+        "stack_gas": "0",
+        "gas_schedule_version": 1
+      }
+    },
+    {
+      "id": "gas-shared-address-warm-and-empty-store",
+      "source": "$( $( $) $) $) ;\n",
+      "run": {
+        "seed": "0",
+        "custom_execution_limit": "100",
+        "max_ticks": "10",
+        "input": [],
+        "gas_hard_limit": "100000000"
+      },
+      "expected": {
+        "process_exit_code": 0,
+        "status": "halted",
+        "vm_status": "halted",
+        "output": [],
+        "registers": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "committed_ticks": "6",
+        "error_codes": [],
+        "operation_count": "6",
+        "used_cell_count": "6",
+        "used_memory_address_count": "1",
+        "peak_data_stack_usage": "2",
+        "peak_instruction_stack_usage": "0",
+        "peak_call_stack_usage": "0",
+        "instruction_variety": [
+          "MemoryLoad",
+          "MemoryStore",
+          "Halt"
+        ],
+        "gas_used": "46",
+        "execution_gas": "34",
+        "memory_gas": "10",
+        "stack_gas": "2",
+        "gas_schedule_version": 1
       }
     }
   ]

@@ -44,6 +44,7 @@ fn run(value: Value, mode: EvaluationMode) -> SceneEvaluationResult {
             max_state_units: n(profile.max_state_units),
             max_feedback_bytes: n(profile.max_response_bytes),
             per_test_ticks: n(profile.max_ticks_per_test),
+            per_test_gas: n(profile.max_gas_per_test),
             per_call_work: n(profile.max_work_per_call),
             cumulative_work: n(profile.max_total_work),
         },
@@ -80,6 +81,11 @@ fn compiled_scene_results_use_exact_tagged_shapes() {
         assert!(body.get("visible_tests").is_none());
         assert_eq!(body["level_format_version"], 1);
         assert_eq!(body["scene_protocol_version"], 1);
+        assert_eq!(body["gas_schedule_version"], 1);
+        assert_eq!(
+            body["configuration"]["safety"]["max_gas_per_test"],
+            "100000000"
+        );
         assert_eq!(body["configuration"]["profile_version"], 2);
         let case = &body["visible_cases"][0];
         assert_eq!(case.as_object().unwrap().len(), 6);

@@ -265,7 +265,7 @@
       "mode": "Official",
       "seed": "18446744073709551615",
       "custom_limit": "1000",
-      "expected_status": "Passed"
+      "expected_status": "RuntimeError"
     },
     {
       "id": "exactio-regression.custom-limit",
@@ -301,7 +301,7 @@
       "mode": "Official",
       "seed": "18446744073709551615",
       "custom_limit": "1000",
-      "expected_status": "ProgramRejected"
+      "expected_status": "RuntimeError"
     },
     {
       "id": "exactio-regression.generated-outer",

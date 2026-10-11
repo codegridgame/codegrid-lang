@@ -46,7 +46,7 @@ const created = parseJson(
     compiled.outcome.program,
     crossRealmInput,
     "[]",
-    JSON.stringify({ seed: "0", custom_execution_limit: "10" }),
+    JSON.stringify({ seed: "0", gas_hard_limit: "100000000", custom_execution_limit: "10" }),
   ),
   "create cross-realm instance",
 );
@@ -59,7 +59,7 @@ assert.equal(parseJson(runtime.release_program(compiled.outcome.program), "relea
 console.log(`PASS: Node WebAssembly Runtime API v${RUNTIME_API_VERSION}, ${fixtureCount} Full conformance fixtures, exact wide integers, lifecycle and quotas; configured linear-memory maximum ${maximumBytes} bytes.`);
 
 function createRuntime(Runtime) {
-  return new Runtime(1_048_576, 128, 128, 1_048_576, 65_536, 1_048_576, 1_048_576, 1_048_576, "10000", "10000", "1000000");
+  return new Runtime(1_048_576, 128, 128, 1_048_576, 65_536, 1_048_576, 1_048_576, 1_048_576, "10000", "10000", "1000000", "100000000");
 }
 
 function parseJson(value, operation) {

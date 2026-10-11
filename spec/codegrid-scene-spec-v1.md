@@ -402,7 +402,7 @@ a second scene interpreter. Keep hidden case data and hidden true inspection
 out of public results, snapshots, traces, and presentation beyond permitted
 observations under the existing privacy contract.
 
-All current scenes use existing VM/level metrics. Operation cost, work units, Global
+All current scenes use existing VM/level metrics. Gas, Operation Count, work units, Global
 Ticks, and scene rounds are distinct; a blocked action can advance a round
 without changing position. Adding a metric requires a later recorded contract.
 

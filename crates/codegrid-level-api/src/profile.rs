@@ -35,6 +35,7 @@ pub(crate) struct CommonLimits {
     pub max_handles: u64,
     pub max_response_bytes: u64,
     pub max_ticks_per_test: u64,
+    pub max_gas_per_test: u64,
     pub max_work_per_call: u64,
     pub max_total_work: u64,
 }
@@ -79,6 +80,7 @@ impl CommonLimits {
             self.max_handles,
             self.max_response_bytes,
             self.max_ticks_per_test,
+            self.max_gas_per_test,
             self.max_work_per_call,
             self.max_total_work,
         ];

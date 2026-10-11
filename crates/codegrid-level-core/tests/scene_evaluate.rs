@@ -36,7 +36,7 @@ fn visible_metrics_and_comparison_ignore_hidden_cases_and_match_slices() {
     assert_eq!(large, small);
     assert_eq!(large.status, EvaluationStatus::Passed);
     assert_eq!(large.final_metrics.as_ref().unwrap()["ticks"], 6);
-    assert_eq!(large.partial_metrics["cost"], 4);
+    assert_eq!(large.partial_metrics["gas_used"], 20);
     assert_eq!(large.rating, Some(3));
     assert_eq!(large.visible_cases.len(), 2);
     assert!(large.hidden_failure.is_none());
@@ -271,4 +271,37 @@ fn failure_tick_is_local_to_case_and_runtime_pairs_keep_registry_identity() {
         value["details"]["runtime_errors"][0]["error_number"],
         codegrid_model::error_number("vm", "ConcurrentOutputConflict").unwrap()
     );
+}
+
+#[test]
+fn scene_hidden_case_uses_per_test_gas_ceiling_without_metric_leaks() {
+    let mut v = author("exact");
+    v["evaluation"]["tests"] = json!([{ "visible":true,"input":[9],"expected_output":[9] }, { "visible":false,"input":[9],"expected_output":[9] }]);
+    let mut c = config();
+    c.safety.per_test_gas = n(1);
+    c.shuffle_seed = (0..100)
+        .find(|seed| shuffled_indices(vec![0, 1], *seed)[0] == 1)
+        .unwrap();
+    let result = run_eval(
+        start_scene_evaluation(
+            load(&v),
+            program(&[",", ".", ";"]),
+            EvaluationMode::Official,
+            c,
+            limits(),
+        ),
+        1,
+    );
+    assert_eq!(result.status, EvaluationStatus::RuntimeError);
+    assert_eq!(
+        result.hidden_failure,
+        Some(HiddenSceneFailure::RuntimeError)
+    );
+    assert!(result.visible_cases.is_empty());
+    assert!(result.final_metrics.is_none());
+    assert!(result.rating.is_none());
+    assert!(result
+        .partial_metrics
+        .get("gas_used")
+        .is_none_or(|n| *n == 0));
 }

@@ -676,7 +676,8 @@ impl SceneCaseSession {
                     VmConfig::new(
                         mix64(self.config.shuffle_seed ^ 0x43474C564D303031),
                         self.config.custom_execution_limit,
-                    ),
+                    )
+                    .with_gas_hard_limit(self.config.safety.per_test_gas),
                 );
                 let Ok(vm) = vm else {
                     drop(batch);

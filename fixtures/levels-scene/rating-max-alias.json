@@ -64,7 +64,7 @@
       "operation_count": {
         "target": 18446744073709551615
       },
-      "cost": {
+      "gas_used": {
         "target": 18446744073709551615
       }
     }

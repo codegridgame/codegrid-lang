@@ -703,14 +703,25 @@ fn execute_primary(
             );
             return Flow::Stay;
         }
-        PrimaryInstruction::Custom(custom_id) => match execute_custom(
-            thread, custom_id, tick, program, config, metrics, draft, budget,
-        ) {
-            CustomOutcome::Returned => {}
-            CustomOutcome::Halted | CustomOutcome::Failed | CustomOutcome::WorkLimit => {
+        PrimaryInstruction::Custom(custom_id) => {
+            if !config.custom_execution_enabled() {
+                draft.errors.push(RuntimeError::new(
+                    tick,
+                    mode.scope,
+                    RuntimeErrorKind::CustomDisabled,
+                ));
                 return Flow::Stay;
             }
-        },
+            metrics.charge_execution(8);
+            match execute_custom(
+                thread, custom_id, tick, program, config, metrics, draft, budget,
+            ) {
+                CustomOutcome::Returned => {}
+                CustomOutcome::Halted | CustomOutcome::Failed | CustomOutcome::WorkLimit => {
+                    return Flow::Stay;
+                }
+            }
+        }
         PrimaryInstruction::CustomReturn => {
             if mode.scope == ExecutionScope::Outer {
                 draft.fault = Some(VmFault::InternalInvariantViolation);
@@ -992,6 +1003,11 @@ fn record_primary(
     metrics: &mut crate::RuntimeMetrics,
     draft: &mut TickDraft,
 ) {
+    match primary {
+        PrimaryInstruction::Direction(_) => metrics.charge_execution(1),
+        PrimaryInstruction::FoldedBlock(_) => metrics.charge_execution(2),
+        _ => {}
+    }
     if let Some(kind) = InstructionKind::from_primary(primary) {
         record_operation(metrics, kind, draft);
     }

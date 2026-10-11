@@ -74,26 +74,26 @@ impl ValidatedLevel {
 }
 pub const METRICS: [&str; 11] = [
     "ticks",
-    "cost",
+    "gas_used",
     "operation_count",
     "memory_addresses_used",
     "max_data_stack_depth",
     "max_instruction_stack_depth",
     "max_call_stack_depth",
-    "non_empty_cells",
+    "size",
     "instruction_kinds",
     "functions_used",
     "boards_used",
 ];
 pub const CONSTRAINTS: [&str; 11] = [
     "max_ticks",
-    "max_cost",
+    "max_gas",
     "max_operation_count",
     "max_memory_addresses",
     "max_data_stack_depth",
     "max_instruction_stack_depth",
     "max_call_stack_depth",
-    "max_non_empty_cells",
+    "max_size",
     "max_instruction_kinds",
     "max_functions_used",
     "max_boards_used",
@@ -567,10 +567,10 @@ mod tests {
         );
     }
     #[test]
-    fn weak_targets_and_aliases_permitted() {
+    fn weak_targets_and_independent_metrics_permitted() {
         let mut v = level();
         v["scoring"]["metrics"] =
-            serde_json::json!({"cost":{"target":0},"operation_count":{"target":null}});
+            serde_json::json!({"gas_used":{"target":0},"operation_count":{"target":null}});
         assert_eq!(load(&v).unwrap().scoring().len(), 2);
     }
     #[test]

@@ -20,7 +20,7 @@ pub use codegrid_vm::{
     CallFrameSnapshot, Coordinate, ExecutionScope, InstructionKind, MemoryAddress,
     MemoryLocationId, MemorySpaceId, MetricCounterOverflow, Page, RunOutcome, RuntimeError,
     RuntimeErrorKind, RuntimeMetricSummary, RuntimeMetrics, StaticCellId, ThreadPhaseSnapshot,
-    VmEvent, VmFault, VmStatus,
+    VmEvent, VmFault, VmStatus, DEFAULT_GAS_HARD_LIMIT, GAS_SCHEDULE_VERSION,
 };
 use codegrid_vm::{
     RunResult as VmRunResult, StepResult as VmStepResult, ThreadSnapshotView, Vm, VmConfig,
@@ -48,6 +48,7 @@ pub struct HostLimits {
     max_run_ticks_per_call: NonZeroU64,
     max_total_ticks_per_instance: NonZeroU64,
     max_work_units_per_call: NonZeroU64,
+    max_gas_per_instance: NonZeroU64,
 }
 
 impl HostLimits {
@@ -70,6 +71,7 @@ impl HostLimits {
             max_run_ticks_per_call,
             max_total_ticks_per_instance,
             max_work_units_per_call,
+            max_gas_per_instance: NonZeroU64::new(DEFAULT_GAS_HARD_LIMIT).unwrap(),
         }
     }
 
@@ -103,6 +105,15 @@ impl HostLimits {
 
     pub const fn max_work_units_per_call(self) -> u64 {
         self.max_work_units_per_call.get()
+    }
+
+    pub const fn max_gas_per_instance(self) -> u64 {
+        self.max_gas_per_instance.get()
+    }
+
+    pub const fn with_max_gas_per_instance(mut self, maximum: NonZeroU64) -> Self {
+        self.max_gas_per_instance = maximum;
+        self
     }
 
     pub const fn with_max_work_units_per_call(mut self, maximum: NonZeroU64) -> Self {
@@ -234,6 +245,7 @@ impl ProgramViewResponseView<'_> {
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct RuntimeConfiguration {
+    pub gas_hard_limit: u64,
     pub seed: u64,
     pub custom_execution_limit: u64,
 }
@@ -822,6 +834,11 @@ impl RuntimeApi {
             .ok_or(ApiError::InvalidConfiguration {
                 field: "custom_execution_limit",
             })?;
+        let gas_hard_limit = NonZeroU64::new(request.configuration.gas_hard_limit)
+            .filter(|limit| limit.get() <= self.limits.max_gas_per_instance())
+            .ok_or(ApiError::InvalidConfiguration {
+                field: "gas_hard_limit",
+            })?;
         if self.instances.len() >= self.limits.max_instances() {
             return Err(ApiError::InstanceLimitReached {
                 maximum: self.limits.max_instances(),
@@ -847,7 +864,8 @@ impl RuntimeApi {
                 });
             }
         }
-        let configuration = VmConfig::new(request.configuration.seed, custom_execution_limit);
+        let configuration = VmConfig::new(request.configuration.seed, custom_execution_limit)
+            .with_gas_hard_limit(gas_hard_limit);
         let vm = Vm::with_initial_memory(program, request.input, initial_memory, configuration)
             .map_err(ApiError::VmInitialization)?;
         let handle = self.allocate_instance_handle()?;

@@ -16,7 +16,7 @@ pub fn static_metrics(program: &VerifiedProgram) -> Metrics {
         measure_scope(scoped, &mut cells, &mut boards, &mut functions, &mut kinds);
     }
     BTreeMap::from([
-        ("non_empty_cells".into(), cells),
+        ("size".into(), cells),
         ("instruction_kinds".into(), kinds.len() as u64),
         ("functions_used".into(), functions),
         ("boards_used".into(), boards),
@@ -60,7 +60,10 @@ fn measure_scope(
 pub fn dynamic_metrics(raw: &RuntimeMetricSummary) -> Metrics {
     BTreeMap::from([
         ("ticks".into(), raw.global_tick()),
-        ("cost".into(), raw.operation_count()),
+        ("gas_used".into(), raw.gas_used()),
+        ("execution_gas".into(), raw.execution_gas()),
+        ("memory_gas".into(), raw.memory_gas()),
+        ("stack_gas".into(), raw.stack_gas()),
         ("operation_count".into(), raw.operation_count()),
         (
             "memory_addresses_used".into(),
@@ -78,7 +81,10 @@ pub fn aggregate(base: &Metrics, current: &Metrics) -> Option<Metrics> {
     let mut result = base.clone();
     for (name, value) in current {
         let old = result.get(name).copied().unwrap_or(0);
-        let next = if matches!(name.as_str(), "ticks" | "cost" | "operation_count") {
+        let next = if matches!(
+            name.as_str(),
+            "ticks" | "gas_used" | "execution_gas" | "memory_gas" | "stack_gas" | "operation_count"
+        ) {
             old.checked_add(*value)?
         } else {
             old.max(*value)
@@ -96,13 +102,13 @@ pub fn constraints_exceeded(metrics: &Metrics, constraints: &BTreeMap<String, u6
 pub fn constraint_metric(key: &str) -> &'static str {
     match key {
         "max_ticks" => "ticks",
-        "max_cost" => "cost",
+        "max_gas" => "gas_used",
         "max_operation_count" => "operation_count",
         "max_memory_addresses" => "memory_addresses_used",
         "max_data_stack_depth" => "max_data_stack_depth",
         "max_instruction_stack_depth" => "max_instruction_stack_depth",
         "max_call_stack_depth" => "max_call_stack_depth",
-        "max_non_empty_cells" => "non_empty_cells",
+        "max_size" => "size",
         "max_instruction_kinds" => "instruction_kinds",
         "max_functions_used" => "functions_used",
         "max_boards_used" => "boards_used",

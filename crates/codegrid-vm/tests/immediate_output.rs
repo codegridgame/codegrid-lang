@@ -70,7 +70,7 @@ fn repeated_immediate_output_conflict_rolls_back_only_the_conflicting_tick() {
 }
 
 #[test]
-fn repeated_custom_immediate_output_pushes_each_value_to_the_caller() {
+fn repeated_custom_immediate_output_is_rejected_before_internal_work() {
     let outer = board(
         vec![
             Cell::entry(Direction::Right),
@@ -94,9 +94,9 @@ fn repeated_custom_immediate_output_pushes_each_value_to_the_caller() {
         3,
     );
     let mut vm = machine(outer, Some(custom), &[]);
-    assert_eq!(vm.run(30), RunOutcome::Halted);
-    // POP adds each stacked byte to the selected register.
-    assert_eq!(vm.snapshot().output, [9, 18, 27]);
+    assert_eq!(vm.run(30), RunOutcome::Error);
+    assert!(vm.snapshot().output.is_empty());
+    assert_eq!(vm.step().errors[0].code(), "CustomDisabled");
 }
 fn board(cells: Vec<Cell>, width: usize) -> Board {
     Board {
@@ -183,7 +183,7 @@ fn immediate_and_register_outputs_conflict_and_roll_back() {
 }
 
 #[test]
-fn custom_immediate_output_pushes_to_caller_stack() {
+fn custom_immediate_output_is_currently_unavailable() {
     let outer = board(
         vec![
             Cell::entry(Direction::Right),
@@ -204,9 +204,10 @@ fn custom_immediate_output_pushes_to_caller_stack() {
         3,
     );
     let mut vm = machine(outer, Some(custom), &[]);
-    assert_eq!(vm.run(20), RunOutcome::Halted);
-    assert_eq!(vm.snapshot().output, [10]);
-    assert_eq!(vm.snapshot().registers[0], 10);
+    assert_eq!(vm.run(20), RunOutcome::Error);
+    assert!(vm.snapshot().output.is_empty());
+    assert_eq!(vm.snapshot().registers[0], 1);
+    assert_eq!(vm.step().errors[0].code(), "CustomDisabled");
 }
 
 #[test]
@@ -252,22 +253,17 @@ fn append_after_interrupted_tick_uses_the_rolled_back_boundary() {
     let outer = board(
         vec![
             Cell::entry(Direction::Right),
-            instruction("#0"),
             instruction(","),
             instruction("."),
             instruction(";"),
-        ],
-        5,
-    );
-    let custom = board(
-        vec![
             Cell::entry(Direction::Right),
-            instruction(".9"),
-            instruction("#]"),
+            Cell::empty(),
+            Cell::empty(),
+            Cell::empty(),
         ],
-        3,
+        4,
     );
-    let mut vm = machine(outer, Some(custom), &[8]);
+    let mut vm = machine(outer, None, &[8]);
     vm.step();
     let before = vm.snapshot();
     let (result, work) = vm.step_with_work_accounting(NonZeroU64::new(1).unwrap());

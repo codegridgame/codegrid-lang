@@ -337,12 +337,12 @@ fn hidden_results_and_pending_projection_disclose_no_private_payload_or_metrics(
     for forbidden in ["snapshot", "events", "trace", "order", "hidden_index"] {
         assert!(result.get(forbidden).is_none());
     }
-    let cost = result["partial_metrics"]["cost"]
+    let gas = result["partial_metrics"]["gas_used"]
         .as_str()
         .unwrap_or("0")
         .parse::<u64>()
         .unwrap();
-    assert!(cost <= 2);
+    assert!(gas <= 11);
 }
 #[test]
 fn reservations_are_released_and_small_responses_stay_complete() {

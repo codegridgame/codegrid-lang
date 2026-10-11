@@ -364,6 +364,26 @@ impl Vm {
             }
         }
 
+        let gas_error = if attempted_metrics.finalize_gas().is_err() {
+            attempted_metrics.retain_representable_gas(&self.metrics);
+            Some(crate::RuntimeErrorKind::GasCounterOverflow)
+        } else if attempted_metrics.gas_used() > self.config.gas_hard_limit().get() {
+            Some(crate::RuntimeErrorKind::GasLimitExceeded {
+                limit: self.config.gas_hard_limit().get(),
+                attempted_gas: attempted_metrics.gas_used(),
+            })
+        } else {
+            None
+        };
+        if let Some(kind) = gas_error {
+            draft.errors.push(RuntimeError::new(
+                attempted_tick,
+                ExecutionScope::Outer,
+                kind,
+            ));
+            RuntimeError::sort_canonical(&mut draft.errors);
+        }
+
         if draft.fault.is_some() {
             self.metrics.merge_tick_attempt(attempted_metrics);
             self.status = VmStatus::Error;

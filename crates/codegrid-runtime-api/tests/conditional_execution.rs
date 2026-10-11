@@ -80,13 +80,13 @@ fn aftercall_does_not_recheck_a_changed_register() {
 #[test]
 fn false_calls_and_returns_preserve_control_flow() {
     let mut vm = machine(
-        "@main\n~> ?1[0 ?1#0 [0 #0 ) . .3 ;\n@F0\n~> ?1] + ]\n@end F0\n@end main\n@C0\n~> ?2#] + . #]\n@end C0",
+        "@main\n~> ?1[0 ?1#0 [0 ) . .3 ;\n@F0\n~> ?1] + ]\n@end F0\n@end main\n@C0\n~> ?2#] + . #]\n@end C0",
         &[],
     );
     assert_eq!(vm.run(40), RunOutcome::Halted);
     let state = vm.snapshot();
-    assert_eq!(state.registers[0], 1);
-    assert_eq!(state.output, vec![1, 3]);
+    assert_eq!(state.registers[0], 0);
+    assert_eq!(state.output, vec![0, 3]);
 }
 
 #[test]
@@ -122,7 +122,7 @@ fn cleared_code_retains_prefix_and_true_suffix_behavior() {
 }
 
 #[test]
-fn fold_prefixes_execute_and_custom_cmp_uses_its_internal_stack() {
+fn fold_prefixes_execute_and_custom_use_is_rejected() {
     let mut folded = machine("@main\n~> $0 ;\n@M0 ?1+ ?0.3 ^\n@end main", &[]);
     assert_eq!(folded.run(20), RunOutcome::Halted);
     assert_eq!(folded.snapshot().output, vec![3]);
@@ -130,9 +130,10 @@ fn fold_prefixes_execute_and_custom_cmp_uses_its_internal_stack() {
         "@main\n~> + ( #0 ) . ;\n@end main\n@C0\n~> + ?= . #]\n@end C0",
         &[],
     );
-    assert_eq!(custom.run(30), RunOutcome::Halted);
+    assert_eq!(custom.run(30), RunOutcome::Error);
     // Internal CMP sees its own empty stack and leaves its register at 1.
-    assert_eq!(custom.snapshot().output, vec![2]);
+    assert!(custom.snapshot().output.is_empty());
+    assert_eq!(custom.snapshot().errors[0].code(), "CustomDisabled");
     assert_eq!(custom.snapshot().threads[0].data_stack, vec![1]);
 }
 

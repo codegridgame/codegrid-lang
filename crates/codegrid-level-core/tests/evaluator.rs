@@ -10,6 +10,7 @@ fn config() -> EvaluationConfig {
             id: "test".into(),
             version: 1,
             per_test_ticks: NonZeroU64::new(100).unwrap(),
+            per_test_gas: NonZeroU64::new(100).unwrap(),
             cumulative_work: NonZeroU64::new(1000).unwrap(),
             per_call_work: NonZeroU64::new(100).unwrap(),
             max_output_bytes: NonZeroU64::new(100).unwrap(),
@@ -49,7 +50,7 @@ fn fresh_state_visible_only_metrics_and_slices() {
     let expected = evaluate(l.clone(), p.clone(), EvaluationMode::Official, config());
     assert_eq!(expected.status, EvaluationStatus::Passed, "{expected:?}");
     assert_eq!(expected.final_metrics.as_ref().unwrap()["ticks"], 6);
-    assert_eq!(expected.final_metrics.as_ref().unwrap()["cost"], 4);
+    assert_eq!(expected.final_metrics.as_ref().unwrap()["gas_used"], 20);
     assert_eq!(expected.rating, Some(3));
     assert_eq!(expected.visible_tests.len(), 2);
     let mut s = start_evaluation(l, p, EvaluationMode::Official, config());
@@ -168,7 +169,7 @@ fn insufficient_budget_rolls_back_and_larger_retry_advances() {
     assert_eq!(vm.committed_ticks(), 1);
 }
 #[test]
-fn custom_generated_forbidden_primary_is_checked_after_commit() {
+fn disabled_custom_cannot_generate_forbidden_primary() {
     use codegrid_ir::CustomDefinition;
     use codegrid_model::{AttachmentInstruction as A, ShiftDirection, Slot};
     let slot = Slot::new(0).unwrap();
@@ -202,7 +203,7 @@ fn custom_generated_forbidden_primary_is_checked_after_commit() {
     let l = load_level_json(value.to_string().as_bytes(), 100000).unwrap();
     let r = evaluate(l.clone(), p.clone(), EvaluationMode::Official, config());
     let mut sliced = start_evaluation(l, p, EvaluationMode::Official, config());
-    for _ in 0..4 {
+    for _ in 0..3 {
         assert_eq!(sliced.advance(NonZeroU64::MIN), EvaluationProgress::Pending);
     }
     let retried = loop {
@@ -212,14 +213,14 @@ fn custom_generated_forbidden_primary_is_checked_after_commit() {
         }
     };
     assert_eq!(retried, r);
+    assert!(matches!(r.status, EvaluationStatus::RuntimeError), "{r:?}");
     assert!(
-        matches!(r.status, EvaluationStatus::ProgramRejected(_)),
-        "{r:?}"
+        matches!(&r.visible_tests[0].outcome, TestOutcome::RuntimeError(codes) if codes == &["CustomDisabled"])
     );
     assert!(r.final_metrics.is_none());
 }
 #[test]
-fn custom_generated_neg_requires_its_independent_permission() {
+fn disabled_custom_cannot_generate_neg() {
     use codegrid_ir::CustomDefinition;
     use codegrid_model::{AttachmentInstruction as A, Slot};
     let slot = Slot::new(0).unwrap();
@@ -253,7 +254,7 @@ fn custom_generated_neg_requires_its_independent_permission() {
     let l = load_level_json(value.to_string().as_bytes(), 100000).unwrap();
     let r = evaluate(l.clone(), p.clone(), EvaluationMode::Official, config());
     let mut sliced = start_evaluation(l, p, EvaluationMode::Official, config());
-    for _ in 0..4 {
+    for _ in 0..3 {
         assert_eq!(sliced.advance(NonZeroU64::MIN), EvaluationProgress::Pending);
     }
     let retried = loop {
@@ -263,9 +264,9 @@ fn custom_generated_neg_requires_its_independent_permission() {
         }
     };
     assert_eq!(retried, r);
+    assert!(matches!(r.status, EvaluationStatus::RuntimeError), "{r:?}");
     assert!(
-        matches!(r.status, EvaluationStatus::ProgramRejected(_)),
-        "{r:?}"
+        matches!(&r.visible_tests[0].outcome, TestOutcome::RuntimeError(codes) if codes == &["CustomDisabled"])
     );
     assert!(r.final_metrics.is_none());
 }
@@ -360,7 +361,7 @@ fn function_folded_and_repeat_static_and_dynamic_metrics() {
     assert_eq!(m["functions_used"], 1);
     assert_eq!(m["boards_used"], 2);
     assert_eq!(m["max_call_stack_depth"], 1);
-    assert_eq!(m["non_empty_cells"], 7);
+    assert_eq!(m["size"], 7);
     let mut p = program(&[
         P::Direction(Direction::Right),
         P::Direction(Direction::Right),
@@ -393,7 +394,7 @@ fn function_folded_and_repeat_static_and_dynamic_metrics() {
     assert_eq!(r.status, EvaluationStatus::Passed);
     let m = r.final_metrics.unwrap();
     assert_eq!(m["boards_used"], 2);
-    assert_eq!(m["non_empty_cells"], 8);
+    assert_eq!(m["size"], 8);
     let mut p = program(&[P::Add, P::Output, P::Halt]).program().clone();
     p.outer.main.cells[1].attachment = Some(A::Repeat(3));
     let r = evaluate(
@@ -404,21 +405,21 @@ fn function_folded_and_repeat_static_and_dynamic_metrics() {
     );
     assert_eq!(r.status, EvaluationStatus::Passed);
     let m = r.final_metrics.unwrap();
-    assert_eq!(m["cost"], 4);
-    assert_eq!(m["cost"], m["operation_count"]);
+    assert_eq!(m["gas_used"], 14);
+    assert_eq!(m["operation_count"], 4);
     assert_eq!(m["instruction_kinds"], 4);
 }
 #[test]
 fn every_constraint_mapping_and_static_debug_behavior() {
     let pairs = [
         ("max_ticks", "ticks"),
-        ("max_cost", "cost"),
+        ("max_gas", "gas_used"),
         ("max_operation_count", "operation_count"),
         ("max_memory_addresses", "memory_addresses_used"),
         ("max_data_stack_depth", "max_data_stack_depth"),
         ("max_instruction_stack_depth", "max_instruction_stack_depth"),
         ("max_call_stack_depth", "max_call_stack_depth"),
-        ("max_non_empty_cells", "non_empty_cells"),
+        ("max_size", "size"),
         ("max_instruction_kinds", "instruction_kinds"),
         ("max_functions_used", "functions_used"),
         ("max_boards_used", "boards_used"),
@@ -435,7 +436,7 @@ fn every_constraint_mapping_and_static_debug_behavior() {
         ));
     }
     let r = evaluate(
-        permissive_level(&[0], serde_json::json!({"max_non_empty_cells":0})),
+        permissive_level(&[0], serde_json::json!({"max_size":0})),
         program(&[P::Output, P::Halt]),
         EvaluationMode::Debug,
         config(),
@@ -526,4 +527,88 @@ fn feedback_reservation_limits_accumulation_before_retaining_next_test() {
     assert_eq!(r.visible_tests.len(), 1);
     assert!(r.final_metrics.is_none());
     assert!(result_representation_bound(&r).unwrap() <= r.config.safety.max_feedback_bytes.get());
+}
+
+#[test]
+fn gas_breakdown_sums_visible_cases_and_size_is_static() {
+    let tests = serde_json::json!([
+        {"visible":true,"input":[9],"expected_output":[9]},
+        {"visible":true,"input":[2],"expected_output":[2]},
+        {"visible":false,"input":[4],"expected_output":[4]}]);
+    let result = evaluate(
+        {
+            // Use the exact loader so every case receives the same independent VM contract.
+            let value = serde_json::json!({"format_version":1,"level_id":"gas","level_version":1,"evaluation_type":"ExactIO","program_rules":{"allowed_instructions":instruction_identifiers(),"allowed_attachments":attachment_identifiers(),"main_board":{"width":100,"height":100},"function_board":{"width":100,"height":100},"max_functions":10,"max_custom":10,"max_threads":10,"memory_enabled":true},"constraints":{},"scoring":{"metrics":{}},"evaluation":{"tests":tests}});
+            load_level_json(value.to_string().as_bytes(), 100000).unwrap()
+        },
+        program(&[P::Read, P::Push, P::Output, P::Halt]),
+        EvaluationMode::Official,
+        config(),
+    );
+    assert_eq!(result.status, EvaluationStatus::Passed);
+    let metrics = result.final_metrics.unwrap();
+    assert_eq!(metrics["size"], 5);
+    assert_eq!(
+        metrics["gas_used"],
+        metrics["execution_gas"] + metrics["memory_gas"] + metrics["stack_gas"]
+    );
+    assert_eq!(metrics["stack_gas"], 2);
+    assert!(!metrics.contains_key("cost"));
+    assert!(!metrics.contains_key("non_empty_cells"));
+}
+
+#[test]
+fn hidden_test_cannot_bypass_the_trusted_gas_limit() {
+    let tests = serde_json::json!([{ "visible":true,"input":[9],"expected_output":[9] }, { "visible":false,"input":[9],"expected_output":[9] }]);
+    let mut cfg = config();
+    cfg.safety.per_test_gas = NonZeroU64::MIN;
+    cfg.shuffle_seed = (0..100)
+        .find(|seed| shuffled_indices(vec![0, 1], *seed)[0] == 1)
+        .unwrap();
+    let result = evaluate(
+        level(tests, serde_json::json!({})),
+        program(&[P::Read, P::Output, P::Halt]),
+        EvaluationMode::Official,
+        cfg,
+    );
+    assert_eq!(result.status, EvaluationStatus::RuntimeError);
+    assert!(result.final_metrics.is_none());
+    assert!(result.rating.is_none());
+    assert!(result.visible_tests.is_empty());
+    assert!(
+        matches!(result.hidden_failure,Some(TestOutcome::RuntimeError(ref codes)) if codes.is_empty())
+    );
+    assert!(result
+        .partial_metrics
+        .get("gas_used")
+        .is_none_or(|n| *n == 0));
+}
+
+#[test]
+fn size_counts_unused_folded_and_function_definitions_once() {
+    use codegrid_ir::FoldedBlock;
+    use codegrid_model::Slot;
+    let slot = Slot::new(0).unwrap();
+    let mut p = program(&[P::Halt]).program().clone();
+    p.outer.main.folded_blocks.insert(
+        slot,
+        FoldedBlock {
+            prefixes: BTreeMap::new(),
+            cells: vec![Some(P::Add), None],
+        },
+    );
+    p.outer.functions.insert(
+        slot,
+        Board {
+            width: 2,
+            height: 1,
+            cells: vec![
+                Cell::entry(Direction::Right),
+                Cell::instruction(P::Halt, None),
+            ],
+            folded_blocks: BTreeMap::new(),
+        },
+    );
+    let verified = VerifiedProgram::new(p).unwrap();
+    assert_eq!(static_metrics(&verified)["size"], 5);
 }

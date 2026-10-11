@@ -367,8 +367,8 @@ colliding with a VM or static-program metric:
 
 ```text
 vm.ticks
-vm.cost
-program.non_empty_cells
+vm.gas_used
+program.size
 scene.<canonical-scene-id>.<scene-metric-id>
 ```
 
@@ -429,12 +429,12 @@ capability:
 
 | Metric ID | Type | Scope and aggregation | Direction | Applicable constraint |
 | --- | --- | --- | --- | --- |
-| `vm.cost` | unsigned integer | all completed Environment decisions, `SUM` | minimize | `max_cost` |
-| `program.non_empty_cells` | unsigned integer | accepted program, `STATIC` once | minimize | `max_program_cells` |
+| `vm.gas_used` | unsigned integer | all completed Environment decisions, `SUM` | minimize | `max_gas` |
+| `program.size` | unsigned integer | accepted program, `STATIC` once | minimize | `max_program_cells` |
 | `scene.test_fixture.moves` | unsigned integer | persistent scene transition count, `SUM` | minimize | `max_fixture_moves` |
 | `scene.test_fixture.items_reached` | unsigned integer | persistent high-water mark, `MAX` | maximize | `min_items_reached` |
 
-At each committed action, the evaluator merges that decision's `vm.cost`,
+At each committed action, the evaluator merges that decision's `vm.gas_used`,
 merges scene transition deltas, and evaluates every configured constraint
 against the Level aggregate. If a goal becomes true at the same point as a
 constraint is breached, use the Environment precedence decision recorded by

@@ -202,11 +202,66 @@ mod tests {
         assert_eq!(vm.snapshot().metrics.operation_count(), 2);
     }
 
+    #[test]
+    fn default_configuration_rejects_custom_even_in_verified_ir() {
+        use codegrid_model::{PrimaryInstruction, Slot};
+        let program = verified_with_custom(
+            vec![Cell::instruction(PrimaryInstruction::Custom(Slot::new(0).unwrap()), None), Cell::instruction(PrimaryInstruction::Halt, None)],
+            vec![Cell::instruction(PrimaryInstruction::CustomReturn, None)],
+        );
+        let mut vm = Vm::new(program, [], VmConfig::new(0, NonZeroU64::MIN)).unwrap();
+        let before = vm.snapshot();
+        let result = vm.step();
+        assert_eq!(result.status, VmStatus::Error);
+        assert_eq!(result.errors[0].kind(), &crate::RuntimeErrorKind::CustomDisabled);
+        assert_eq!(result.metrics.gas_used(), 0);
+        assert_eq!(vm.snapshot().threads, before.threads);
+        assert_eq!(vm.committed_ticks(), 0);
+    }
+
+    #[test]
+    fn gas_counter_overflow_rolls_back_and_retains_exact_prior_breakdown() {
+        use codegrid_model::PrimaryInstruction;
+        let program = verified_cells(vec![Cell::instruction(PrimaryInstruction::Add, None)], 1);
+        let mut vm = Vm::new(program, [], VmConfig::new(0, NonZeroU64::MIN)
+            .with_gas_hard_limit(NonZeroU64::new(u64::MAX).unwrap())).unwrap();
+        vm.metrics.charge_execution(u64::MAX - 2);
+        vm.metrics.finalize_gas().unwrap();
+        let before = vm.snapshot();
+        let result = vm.step();
+        assert_eq!(result.errors[0].kind(), &crate::RuntimeErrorKind::GasCounterOverflow);
+        assert_eq!(result.metrics.gas_used(), u64::MAX - 2);
+        assert_eq!(result.metrics.execution_gas(), u64::MAX - 2);
+        assert_eq!(result.metrics.memory_gas(), 0);
+        assert_eq!(result.metrics.stack_gas(), 0);
+        assert_eq!(vm.snapshot().threads, before.threads);
+        assert_eq!(vm.snapshot().registers, before.registers);
+        assert_eq!(vm.committed_ticks(), 0);
+    }
+
+    #[test]
+    fn uncalled_and_false_guarded_custom_definitions_remain_accepted() {
+        use codegrid_model::{ConditionPrefix, PrimaryInstruction, Slot};
+        for first in [
+            Cell::empty(),
+            Cell::instruction(PrimaryInstruction::Custom(Slot::new(0).unwrap()), None)
+                .with_prefix(ConditionPrefix::Flag),
+        ] {
+            let program = verified_with_custom(
+                vec![first, Cell::instruction(PrimaryInstruction::Halt, None)],
+                vec![Cell::instruction(PrimaryInstruction::CustomReturn, None)],
+            );
+            let mut vm = Vm::new(program, [], VmConfig::new(0, NonZeroU64::MIN)).unwrap();
+            assert_eq!(vm.run(5), crate::RunOutcome::Halted);
+            assert!(vm.step().errors.is_empty());
+        }
+    }
+
     fn config() -> VmConfig {
         VmConfig::new(
             0,
             NonZeroU64::new(100).expect("limit is positive"),
-        )
+        ).with_custom_execution_for_test()
     }
 
     #[test]
@@ -422,7 +477,7 @@ mod tests {
             VmConfig::new(
                 0,
                 NonZeroU64::new(100).expect("limit is positive"),
-            ),
+            ).with_custom_execution_for_test(),
         )
         .expect("entry count fits in u64");
         let snapshot = vm.snapshot();
@@ -507,7 +562,7 @@ mod tests {
             VmConfig::new(
                 1,
                 NonZeroU64::new(1).expect("limit is positive"),
-            ),
+            ).with_custom_execution_for_test(),
         )
         .expect("entry count fits in u64");
 
@@ -729,7 +784,7 @@ mod tests {
         let custom_limit = VmConfig::new(
             0,
             NonZeroU64::new(2).expect("limit is positive"),
-        );
+        ).with_custom_execution_for_test();
         let mut custom_vm =
             Vm::new(custom_halt_program, [], custom_limit).expect("two initial threads fit in u64");
 
@@ -822,7 +877,7 @@ mod tests {
             VmConfig::new(
                 0,
                 NonZeroU64::new(10).expect("limit is positive"),
-            ),
+            ).with_custom_execution_for_test(),
         )
         .expect("one outer initial thread fits in u64");
 
@@ -3147,7 +3202,7 @@ mod tests {
             VmConfig::new(
                 0,
                 NonZeroU64::new(12).expect("Custom limit is positive"),
-            ),
+            ).with_custom_execution_for_test(),
         )
         .expect("one outer initial thread fits in u64");
 
@@ -3494,7 +3549,7 @@ mod tests {
         let limit_two = VmConfig::new(
             0,
             NonZeroU64::new(2).expect("limit is positive"),
-        );
+        ).with_custom_execution_for_test();
         let mut returning_vm =
             Vm::new(returning, [], limit_two).expect("one outer initial thread fits in u64");
         assert_eq!(returning_vm.step().status, VmStatus::Running);
@@ -3936,7 +3991,7 @@ mod tests {
             VmConfig::new(
                 0,
                 NonZeroU64::new(limit).expect("test limits are positive"),
-            )
+            ).with_custom_execution_for_test()
         };
 
         let mut succeeds_on_last_attempt =
@@ -4130,7 +4185,7 @@ mod tests {
             VmConfig::new(
                 0,
                 NonZeroU64::new(2).expect("limit is positive"),
-            ),
+            ).with_custom_execution_for_test(),
         )
         .expect("one initial thread fits in u64");
 

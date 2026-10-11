@@ -2207,6 +2207,36 @@
       "state_effect": "Evaluation does not award final metrics or rating.",
       "code_type": "string",
       "error_number": "9029"
+    },
+    {
+      "layer": "vm",
+      "code": "GasLimitExceeded",
+      "condition": "Attempted Gas exceeds the configured positive hard limit.",
+      "surface": "RuntimeError.code, native CLI/debug and browser/server WASM errors.",
+      "state_effect": "Fail the attempted outer tick, roll back language state and output, retain attempted resource/Gas diagnostics; do not advance committed Tick.",
+      "details": "limit, attempted_gas",
+      "code_type": "string",
+      "error_number": "3011"
+    },
+    {
+      "layer": "vm",
+      "code": "GasCounterOverflow",
+      "condition": "A checked Gas component or total cannot represent the attempted charge.",
+      "surface": "RuntimeError.code, native CLI/debug and browser/server WASM errors.",
+      "state_effect": "Fail the attempted outer tick, roll back language state and output, retain attempted resource/Gas diagnostics; do not advance committed Tick.",
+      "details": "none",
+      "code_type": "string",
+      "error_number": "3012"
+    },
+    {
+      "layer": "vm",
+      "code": "CustomDisabled",
+      "condition": "A Custom Primary is actually executed while Custom use is disabled.",
+      "surface": "RuntimeError.code, native CLI/debug and browser/server WASM errors.",
+      "state_effect": "Fail the attempted outer tick, roll back language state and output, retain attempted resource/Gas diagnostics; do not advance committed Tick.",
+      "details": "none",
+      "code_type": "string",
+      "error_number": "3013"
     }
   ]
 }

@@ -56,7 +56,7 @@
     "memory_enabled": true
   },
   "constraints": {
-    "max_non_empty_cells": 0
+    "max_size": 0
   },
   "scoring": {
     "metrics": {}

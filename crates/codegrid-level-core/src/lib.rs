@@ -16,3 +16,6 @@ pub use metrics::*;
 pub use result::*;
 pub use schema::*;
 pub use validate::*;
+
+/// Gas schedule identity shared by all evaluation hosts.
+pub use codegrid_vm::GAS_SCHEDULE_VERSION;

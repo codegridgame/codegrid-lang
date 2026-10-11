@@ -7,6 +7,8 @@ use codegrid_model::{AttachmentInstruction, PrimaryInstruction, Slot};
 
 use crate::Coordinate;
 
+pub const GAS_SCHEDULE_VERSION: u32 = 1;
+
 /// A dynamic instruction category used by the Instruction Variety metric.
 #[derive(Clone, Copy, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
 pub enum InstructionKind {
@@ -157,6 +159,11 @@ pub enum MetricCounterOverflow {
 /// hash iteration order and suitable for stable host serialization.
 #[derive(Clone, Debug, Default, Eq, PartialEq)]
 pub struct RuntimeMetrics {
+    execution_gas: u64,
+    memory_gas: u64,
+    stack_gas: u64,
+    gas_used: u64,
+    gas_overflow: bool,
     global_tick: u64,
     operation_count: u64,
     used_cells: BTreeSet<StaticCellId>,
@@ -173,6 +180,11 @@ pub struct RuntimeMetrics {
 /// identities of used cells and memory addresses.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct RuntimeMetricSummary {
+    execution_gas: u64,
+    memory_gas: u64,
+    stack_gas: u64,
+    gas_used: u64,
+    gas_overflow: bool,
     global_tick: u64,
     operation_count: u64,
     used_cell_count: usize,
@@ -184,6 +196,22 @@ pub struct RuntimeMetricSummary {
 }
 
 impl RuntimeMetricSummary {
+    pub const fn gas_used(&self) -> u64 {
+        self.gas_used
+    }
+    pub const fn execution_gas(&self) -> u64 {
+        self.execution_gas
+    }
+    pub const fn memory_gas(&self) -> u64 {
+        self.memory_gas
+    }
+    pub const fn stack_gas(&self) -> u64 {
+        self.stack_gas
+    }
+    pub const fn gas_schedule_version(&self) -> u32 {
+        GAS_SCHEDULE_VERSION
+    }
+
     pub const fn global_tick(&self) -> u64 {
         self.global_tick
     }
@@ -220,18 +248,28 @@ impl RuntimeMetricSummary {
 impl RuntimeMetrics {
     pub(crate) fn begin_tick_attempt(&self) -> Self {
         Self {
+            execution_gas: self.execution_gas,
+            memory_gas: self.memory_gas,
+            stack_gas: self.stack_gas,
+            gas_used: self.gas_used,
+            gas_overflow: self.gas_overflow,
             global_tick: self.global_tick,
             operation_count: self.operation_count,
             used_cells: BTreeSet::new(),
             peak_data_stack_usage: self.peak_data_stack_usage,
             peak_instruction_stack_usage: self.peak_instruction_stack_usage,
             peak_call_stack_usage: self.peak_call_stack_usage,
-            used_memory_addresses: BTreeSet::new(),
+            used_memory_addresses: self.used_memory_addresses.clone(),
             instruction_variety: BTreeSet::new(),
         }
     }
 
     pub(crate) fn merge_tick_attempt(&mut self, mut attempt: Self) {
+        self.execution_gas = attempt.execution_gas;
+        self.memory_gas = attempt.memory_gas;
+        self.stack_gas = attempt.stack_gas;
+        self.gas_used = attempt.gas_used;
+        self.gas_overflow = attempt.gas_overflow;
         self.global_tick = attempt.global_tick;
         self.operation_count = attempt.operation_count;
         self.peak_data_stack_usage = attempt.peak_data_stack_usage;
@@ -242,6 +280,22 @@ impl RuntimeMetrics {
             .append(&mut attempt.used_memory_addresses);
         self.instruction_variety
             .append(&mut attempt.instruction_variety);
+    }
+
+    pub const fn gas_used(&self) -> u64 {
+        self.gas_used
+    }
+    pub const fn execution_gas(&self) -> u64 {
+        self.execution_gas
+    }
+    pub const fn memory_gas(&self) -> u64 {
+        self.memory_gas
+    }
+    pub const fn stack_gas(&self) -> u64 {
+        self.stack_gas
+    }
+    pub const fn gas_schedule_version(&self) -> u32 {
+        GAS_SCHEDULE_VERSION
     }
 
     pub const fn global_tick(&self) -> u64 {
@@ -286,6 +340,11 @@ impl RuntimeMetrics {
 
     pub fn summary(&self) -> RuntimeMetricSummary {
         RuntimeMetricSummary {
+            execution_gas: self.execution_gas,
+            memory_gas: self.memory_gas,
+            stack_gas: self.stack_gas,
+            gas_used: self.gas_used,
+            gas_overflow: self.gas_overflow,
             global_tick: self.global_tick,
             operation_count: self.operation_count,
             used_cell_count: self.used_cells.len(),
@@ -297,7 +356,81 @@ impl RuntimeMetrics {
         }
     }
 
+    pub(crate) fn charge_execution(&mut self, price: u64) {
+        if let Some(total) = self.execution_gas.checked_add(price) {
+            self.execution_gas = total;
+        } else {
+            self.gas_overflow = true;
+        }
+    }
+
+    /// An unrepresentable attempted total has no numeric Gas result. Retain
+    /// the last completed tick's exact, reconciling breakdown for diagnostics.
+    pub(crate) fn retain_representable_gas(&mut self, prior: &Self) {
+        self.execution_gas = prior.execution_gas;
+        self.memory_gas = prior.memory_gas;
+        self.stack_gas = prior.stack_gas;
+        self.gas_used = prior.gas_used;
+    }
+
+    pub(crate) fn finalize_gas(&mut self) -> Result<(), ()> {
+        let memory = u64::try_from(self.used_memory_addresses.len())
+            .ok()
+            .and_then(|n| n.checked_mul(10));
+        let stack = self
+            .peak_instruction_stack_usage
+            .checked_mul(4)
+            .and_then(|n| {
+                self.peak_call_stack_usage
+                    .checked_mul(16)
+                    .and_then(|c| n.checked_add(c))
+            })
+            .and_then(|n| n.checked_add(self.peak_data_stack_usage));
+        match (memory, stack) {
+            (Some(memory), Some(stack)) if !self.gas_overflow => {
+                if let Some(total) = self
+                    .execution_gas
+                    .checked_add(memory)
+                    .and_then(|n| n.checked_add(stack))
+                {
+                    self.memory_gas = memory;
+                    self.stack_gas = stack;
+                    self.gas_used = total;
+                    return Ok(());
+                }
+            }
+            _ => {}
+        }
+        self.gas_overflow = true;
+        Err(())
+    }
+
     pub fn record_operation(&mut self, kind: InstructionKind) -> Result<(), MetricCounterOverflow> {
+        self.charge_execution(match kind {
+            InstructionKind::RandomDirection => 1,
+            InstructionKind::Compare
+            | InstructionKind::Condition
+            | InstructionKind::MoveRegisterPointer
+            | InstructionKind::MovePage
+            | InstructionKind::Shift
+            | InstructionKind::Return
+            | InstructionKind::CustomReturn => 2,
+            InstructionKind::Clear
+            | InstructionKind::Add
+            | InstructionKind::Sub
+            | InstructionKind::Neg
+            | InstructionKind::Nand
+            | InstructionKind::Push
+            | InstructionKind::PopAdd
+            | InstructionKind::Decode
+            | InstructionKind::Encode => 3,
+            InstructionKind::Read
+            | InstructionKind::Output
+            | InstructionKind::MemoryLoad
+            | InstructionKind::ReadCode => 5,
+            InstructionKind::MemoryStore | InstructionKind::WriteCode | InstructionKind::Call => 8,
+            InstructionKind::Halt => 0,
+        });
         self.instruction_variety.insert(kind);
         self.operation_count = self
             .operation_count
@@ -337,6 +470,7 @@ impl RuntimeMetrics {
 mod tests {
     use super::{InstructionKind, MemoryLocationId, MemorySpaceId, RuntimeMetrics, StaticCellId};
     use crate::Coordinate;
+
     use codegrid_ir::{BoardId, CodeGridId};
     use codegrid_model::{AttachmentInstruction, PrimaryInstruction, Slot};
     use num_bigint::BigInt;
@@ -348,6 +482,20 @@ mod tests {
             folded_block: None,
             position: Coordinate { x, y: 0 },
         }
+    }
+
+    #[test]
+    fn gas_arithmetic_overflow_does_not_wrap() {
+        let mut metrics = RuntimeMetrics {
+            execution_gas: u64::MAX,
+            ..RuntimeMetrics::default()
+        };
+        metrics.charge_execution(1);
+        assert!(metrics.finalize_gas().is_err());
+        assert_eq!(metrics.execution_gas(), u64::MAX);
+        let mut metrics = RuntimeMetrics::default();
+        metrics.observe_stack_usage(0, 0, u64::MAX);
+        assert!(metrics.finalize_gas().is_err());
     }
 
     #[test]

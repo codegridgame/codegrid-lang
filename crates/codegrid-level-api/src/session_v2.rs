@@ -200,7 +200,7 @@ impl LevelApiV2 {
                 let config = EvaluationConfig { shuffle_seed, custom_execution_limit,
                     safety: ExecutionSafetyProfile { id:self.profile.profile_id.clone(), version:2,
                         max_output_bytes:nz(self.profile.max_output_bytes)?, max_state_units:nz(self.profile.max_state_units)?,
-                        max_feedback_bytes:nz(feedback_budget)?, per_test_ticks:nz(self.profile.max_ticks_per_test)?,
+                        max_feedback_bytes:nz(feedback_budget)?, per_test_ticks:nz(self.profile.max_ticks_per_test)?, per_test_gas:nz(self.profile.max_gas_per_test)?,
                         per_call_work:nz(self.profile.max_work_per_call)?, cumulative_work:nz(self.profile.max_total_work)? } };
                 let bytes = input_bytes.checked_add(feedback_budget).ok_or_else(||resource("Retained state accounting overflow"))?;
                 let handle = self.handle(bytes, available_units.get())?;

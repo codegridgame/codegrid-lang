@@ -391,6 +391,11 @@ impl Serialize for RuntimeMetricSummaryProjection<'_> {
         serialize_object!(serializer, {
             "global_tick" => DisplayValue(metrics.global_tick()),
             "operation_count" => DisplayValue(metrics.operation_count()),
+            "gas_used" => DisplayValue(metrics.gas_used()),
+            "execution_gas" => DisplayValue(metrics.execution_gas()),
+            "memory_gas" => DisplayValue(metrics.memory_gas()),
+            "stack_gas" => DisplayValue(metrics.stack_gas()),
+            "gas_schedule_version" => metrics.gas_schedule_version(),
             "used_cell_count" => DisplayValue(metrics.used_cell_count()),
             "peak_data_stack_usage" => DisplayValue(metrics.peak_data_stack_usage()),
             "peak_instruction_stack_usage" => DisplayValue(metrics.peak_instruction_stack_usage()),
@@ -412,6 +417,11 @@ impl Serialize for RuntimeMetricsProjection<'_> {
         serialize_object!(serializer, {
             "global_tick" => DisplayValue(metrics.global_tick()),
             "operation_count" => DisplayValue(metrics.operation_count()),
+            "gas_used" => DisplayValue(metrics.gas_used()),
+            "execution_gas" => DisplayValue(metrics.execution_gas()),
+            "memory_gas" => DisplayValue(metrics.memory_gas()),
+            "stack_gas" => DisplayValue(metrics.stack_gas()),
+            "gas_schedule_version" => metrics.gas_schedule_version(),
             "used_cell_count" => DisplayValue(metrics.used_cell_count()),
             "used_cells" => UsedCellSequence(metrics.used_cells()),
             "peak_data_stack_usage" => DisplayValue(metrics.peak_data_stack_usage()),
@@ -1051,6 +1061,16 @@ impl Serialize for RuntimeErrorDetailsProjection<'_> {
                 "register" => register,
                 "thread_ids" => ThreadIdSequence(thread_ids)
             }),
+            Kind::GasLimitExceeded {
+                limit,
+                attempted_gas,
+            } => serialize_object!(serializer, {
+                "limit" => DisplayValue(limit),
+                "attempted_gas" => DisplayValue(attempted_gas)
+            }),
+            Kind::GasCounterOverflow | Kind::CustomDisabled => {
+                serializer.serialize_map(Some(0))?.end()
+            }
             Kind::CustomExecutionLimitExceeded { limit } => serialize_object!(serializer, {
                 "limit" => DisplayValue(limit)
             }),

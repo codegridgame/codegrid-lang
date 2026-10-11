@@ -1,16 +1,41 @@
 # CodeGrid Runtime API Specification
 
-**Approved next-generation amendment (2026-10-08; not implemented):**
-[Status Flag and directionless READ](../docs/status-flag-and-read.md)
-defines the pending F state, `?!`, directionless `,`, empty POPADD flag,
-current Level permissions and host synchronization gates without unpublished compatibility.
-It supersedes affected contracts for the next generation only. The current
-implementation, versions and acceptance evidence below remain unchanged;
-they do not establish implementation or parity for this amendment.
+**Implemented amendment (2026-10-08):**
+[Status Flag and directionless READ](../docs/status-flag-and-read.md) defines the current F state,
+`?!`, directionless `,`, empty POPADD flag and Level permissions. These rules
+are implemented in the current contracts and Rust/WASM hosts.
+The [2026-10-11 implementation record](../docs/gas-size-implementation.md)
+records current Gas, Size, Custom restrictions and actual-host evidence.
 
 **Status:** Normative Full Runtime API v3 contract.
 **Version:** Runtime API v3.
 **Language semantics:** [Source specification](codegrid-source-spec.md) and [VM specification](codegrid-vm-spec.md)
+
+## Gas contract amendment (2026-10-11)
+
+Current unpublished API 3 gains explicit `RuntimeConfiguration.gas_hard_limit`
+positive u64 bounded by trusted `HostLimits.max_gas_per_instance`. Host limits
+start at finite default 100,000,000 and can be configured explicitly. A zero
+request or request above the trusted ceiling returns `invalid_configuration`
+with field `gas_hard_limit` before VM creation.
+
+Snapshot and step/run metrics include checked `gas_used`, `execution_gas`,
+`memory_gas`, `stack_gas`, and numeric `gas_schedule_version: 1`. Wire counters
+and budgets are canonical decimal strings. Native CLI `run` accepts positive
+`--gas-hard-limit` (default 100,000,000); Debug launch accepts an optional
+canonical-string `gas_hard_limit` with the same finite default.
+
+Browser Runtime constructor adds final positive decimal-string
+`max_gas_per_instance`. Create configuration requires `gas_hard_limit`. Server
+initialization host limits require `max_gas_per_instance`; create requests
+require `gas_hard_limit`. Current consumers change directly, with no legacy
+reader or mandatory unpublished version bump.
+
+`GasLimitExceeded`, `GasCounterOverflow`, and `CustomDisabled` are shared VM
+errors projected unchanged. The first exposes decimal-string `limit` and
+`attempted_gas`; the latter two have empty details. Custom parsing/compiling
+remains supported, but execution is disabled. Adapters do not calculate Gas.
+See the [recorded decision](../docs/decisions.md#gas-static-size-and-temporary-custom-restriction-2026-10-11).
 
 ## 1. Runtime API v3 and compatibility boundary
 
@@ -93,7 +118,8 @@ CreateInstanceRequest = {
   input: Vec<u8>,
   initial_memory: Vec<{ address: BigInt, value: u8 }>,
   configuration: { seed: u64,
-                   custom_execution_limit: positive u64 }
+                   custom_execution_limit: positive u64,
+                   gas_hard_limit: positive u64 }
 }
 StepRequest        = { api_version: u32, instance: InstanceHandle }
 RunRequest         = { api_version: u32, instance: InstanceHandle,
@@ -133,8 +159,9 @@ feed the canonical IR verifier before any handle or instance is created. A
 client assertion that data was compiled or verified is never authoritative.
 
 `create_instance.configuration` contains exactly the execution settings
-required from the host: `seed` and positive
-`custom_execution_limit`. `input` is an ordered byte sequence. `initial_memory`
+required from the host: `seed`, positive `custom_execution_limit`, and positive
+`gas_hard_limit` no greater than the trusted `max_gas_per_instance` ceiling.
+`input` is an ordered byte sequence. `initial_memory`
 is the sparse outer-memory entry collection described in Section 2. No setting
 is read from process state, environment variables, clocks, or host randomness.
 
@@ -210,17 +237,17 @@ state or normative VM metric changes under the VM work-limit rule.
 The host supplies immutable per-runtime ceilings for source bytes, live
 compiled programs, live instances, input bytes, initial-memory entries, ticks
 per `run` call, cumulative committed Global Ticks per instance, and
-deterministic VM work units per API call. The per-call and per-instance tick
-ceilings and the work-unit ceiling are positive. A zero count/byte ceiling
+deterministic VM work units per API call, and Gas per instance. The per-call and
+per-instance tick ceilings, work-unit ceiling and Gas ceiling are positive. A zero count/byte ceiling
 disables the corresponding capability or admits only an empty payload. These
 ceilings are policy values supplied by the embedding host; this specification
 does not select numerical defaults.
 
-The configured `custom_execution_limit` is distinct from API tick and work
-ceilings. It limits internal Custom ticks per invocation according to the VM
-specification. A host may impose a separate maximum accepted configuration,
-but v3 defines no universal quota value. `CustomExecutionLimitExceeded` is a
-VM runtime error; it must not be converted into a host work-limit yield.
+The retained `custom_execution_limit` setting is distinct from tick, work and
+Gas ceilings. Production Custom dispatch currently returns `CustomDisabled`
+before invocation; no request can enable it. Internal Custom tick-limit rules
+describe retained implementation only. `GasLimitExceeded` and
+`GasCounterOverflow` are terminal VM errors, not host work-limit yields.
 
 Deterministic work units are defined in [VM Spec Section 15](codegrid-vm-spec.md#15-deterministic-work-accounting), not by wall-clock time or `Operation Count`. Work limits bound thread dispatches only. They do not imply a bound on cumulative memory, stacks, output, event history, retained program state, or serialized snapshot size.
 
@@ -249,7 +276,8 @@ Custom invocation state is synchronous and temporary within a caller's
 transition; the snapshot does not invent persistent Custom instance handles.
 Custom effects, failures, events, and memory accesses are represented according
 to the VM contract. Raw metrics preserve all VM-defined identities and counts:
-Global Tick, Operation Count, Used Cells, Used Memory Addresses, stack
+Global Tick, Gas and its execution/memory/stack breakdown, Gas schedule version,
+Operation Count, Used Cells, Used Memory Addresses, stack
 high-water marks, and Instruction Variety. Ordered identity sets are serialized
 in a stable order. Metrics must not be omitted, rounded, silently truncated,
 or replaced with host-specific summaries.

@@ -1,6 +1,11 @@
 # Full Language Specification Status
 
-The current language includes fixed conditional prefixes `?0`–`?2`, CMP `?=`, and random direction `??`; executable IR is format 2. See the [migration manual](../docs/conditional-prefix-migration.md) for semantics, retired forms, compatibility, and verification.
+The current language includes conditional prefixes `?0`–`?2` and `?!`, CMP
+`?=`, random direction `??`, directionless READ and Function-private registers;
+executable IR is format 3. Gas schedule 1 and static Size are implemented;
+Custom execution is temporarily disabled while its syntax remains accepted.
+See the [implementation record](../docs/gas-size-implementation.md) for current
+contracts and verification. Earlier migration documents are historical evidence.
 
 The [error code specification](codegrid-error-codes.md) defines stable source, IR, VM, API, CLI, debug, editor, LSP and WASM error categories, response shapes, compatibility and state effects. Its machine-readable registry is [codegrid-error-codes.json](codegrid-error-codes.json).
 

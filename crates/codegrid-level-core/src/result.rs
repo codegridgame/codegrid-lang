@@ -56,6 +56,7 @@ pub struct EvaluationResult {
     pub level_id: String,
     pub level_version: u32,
     pub evaluator_contract: String,
+    pub gas_schedule_version: u32,
     pub mode: EvaluationMode,
     pub config: EvaluationConfig,
     pub vm_seed: u64,

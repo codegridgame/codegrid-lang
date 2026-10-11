@@ -1,5 +1,9 @@
 # Documentation Index
 
+- [Gas, Size and Custom implementation](gas-size-implementation.md): current
+  Rust contract, downstream synchronization and verification limits.
+- [Residual-contract audit](gas-size-residual-audit.md): remaining historical
+  references and corrections after implementation.
 - [Error code specification](../spec/codegrid-error-codes.md) and [machine-readable registry](../spec/codegrid-error-codes.json): stable identifiers, triggers, return surfaces and compatibility.
 
 ## Full language specifications

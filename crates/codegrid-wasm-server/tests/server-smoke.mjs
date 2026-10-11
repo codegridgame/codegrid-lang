@@ -260,7 +260,7 @@ const allocationRecoveryCreate = {
   program: recoveredCompile.program,
   input: [],
   seed: "0",
-  custom_execution_limit: "100",
+  gas_hard_limit: "100000000", custom_execution_limit: "100",
   initial_memory: [],
 };
 assertResponseReservationFails(allocationRecoveryCreate, allocationRecoveryAbi);
@@ -381,6 +381,7 @@ for (const fixture of suite.cases) {
     input: fixture.run.input,
     seed: fixture.run.seed,
     custom_execution_limit: fixture.run.custom_execution_limit,
+    gas_hard_limit: fixture.run.gas_hard_limit,
     initial_memory: fixture.run.initial_memory ?? [],
   });
   const result = dispatch({
@@ -398,6 +399,7 @@ for (const fixture of suite.cases) {
     input: fixture.run.input,
     seed: fixture.run.seed,
     custom_execution_limit: fixture.run.custom_execution_limit,
+    gas_hard_limit: fixture.run.gas_hard_limit,
     initial_memory: fixture.run.initial_memory ?? [],
   });
   const repeatedResult = dispatch({
@@ -417,7 +419,7 @@ for (const fixture of suite.cases) {
   assert.deepEqual(result.snapshot.registers, expected.registers, `${fixture.id}: registers`);
   assert.deepEqual(result.snapshot.output, expected.output, `${fixture.id}: output`);
   assert.equal(result.snapshot.committed_ticks, expected.committed_ticks, `${fixture.id}: committed ticks`);
-  for (const metric of ["operation_count", "used_cell_count", "used_memory_address_count", "peak_data_stack_usage", "peak_instruction_stack_usage", "peak_call_stack_usage"]) {
+  for (const metric of ["operation_count", "gas_used", "execution_gas", "memory_gas", "stack_gas", "gas_schedule_version", "used_cell_count", "used_memory_address_count", "peak_data_stack_usage", "peak_instruction_stack_usage", "peak_call_stack_usage"]) {
     assert.equal(result.snapshot.metrics[metric], expected[metric], `${fixture.id}: ${metric}`);
   }
   assert.deepEqual(result.snapshot.metrics.instruction_variety, expected.instruction_variety, `${fixture.id}: instruction variety`);
@@ -502,7 +504,7 @@ const inputOverLimit = limitedDispatch({
   program: limitedProgram.program,
   input: [1, 2],
   seed: "0",
-  custom_execution_limit: "100",
+  gas_hard_limit: "100000000", custom_execution_limit: "100",
   initial_memory: [],
 });
 assert.equal(inputOverLimit.error.code, "input_payload_limit_exceeded", "input bytes must obey the configured ceiling");
@@ -513,7 +515,7 @@ const initialMemoryOverLimit = limitedDispatch({
   program: limitedProgram.program,
   input: [],
   seed: "0",
-  custom_execution_limit: "100",
+  gas_hard_limit: "100000000", custom_execution_limit: "100",
   initial_memory: [
     { address: "-1", value: 7 },
     { address: "2", value: 9 },
@@ -527,7 +529,7 @@ const limitedCreate = () => limitedDispatch({
   program: limitedProgram.program,
   input: [],
   seed: "0",
-  custom_execution_limit: "100",
+  gas_hard_limit: "100000000", custom_execution_limit: "100",
   initial_memory: [],
 });
 const workLimited = limitedCreate();
@@ -605,7 +607,7 @@ const oversizedState = boundedResponseDispatch({
   program: boundedProgram.program,
   input: [],
   seed: "0",
-  custom_execution_limit: "100",
+  gas_hard_limit: "100000000", custom_execution_limit: "100",
   initial_memory: [],
 });
 assert.equal(oversizedState.error.code, "instance_state_limit_exceeded", "retained snapshot state must obey its configured ceiling");
@@ -625,7 +627,7 @@ function createLifecycleInstance(input) {
     program: lifecycleProgram.program,
     input,
     seed: "0",
-    custom_execution_limit: "100",
+    gas_hard_limit: "100000000", custom_execution_limit: "100",
     initial_memory: [],
   });
 }
@@ -656,7 +658,7 @@ const isolatedCreated = isolatedDispatch({
   program: isolatedProgram.program,
   input: [7],
   seed: "0",
-  custom_execution_limit: "100",
+  gas_hard_limit: "100000000", custom_execution_limit: "100",
   initial_memory: [],
 });
 const isolatedResult = isolatedDispatch({
@@ -776,6 +778,7 @@ function hostLimits() {
     max_initial_memory_entries: 65536,
     max_run_ticks_per_call: "1000000",
     max_total_ticks_per_instance: "10000000",
+    max_gas_per_instance: "100000000",
     max_work_units_per_call: "1000000",
     max_response_bytes: 8 * 1024 * 1024,
     max_instance_state_bytes: 8 * 1024 * 1024,

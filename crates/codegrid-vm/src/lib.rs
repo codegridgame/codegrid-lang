@@ -15,13 +15,13 @@ mod state;
 mod thread;
 
 pub use codegrid_ir::{TailCallSite, VerifiedProgram};
-pub use config::VmConfig;
+pub use config::{VmConfig, DEFAULT_GAS_HARD_LIMIT};
 pub use engine::{RunOutcome, RunResult, StepResult, VmEvent, WorkLimitExceeded};
 pub use error::{ExecutionScope, RuntimeError, RuntimeErrorKind};
 pub use memory::{effective_address, Memory, MemoryAddress, Page};
 pub use metrics::{
     InstructionKind, MemoryLocationId, MemorySpaceId, MetricCounterOverflow, RuntimeMetricSummary,
-    RuntimeMetrics, StaticCellId,
+    RuntimeMetrics, StaticCellId, GAS_SCHEDULE_VERSION,
 };
 pub use movement::{move_folded, move_normal, Coordinate, FoldStep};
 pub use random::{

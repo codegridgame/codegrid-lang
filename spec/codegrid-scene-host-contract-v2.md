@@ -1,12 +1,11 @@
 # CodeGrid Scene Host Contract v2
 
-**Approved next-generation amendment (2026-10-08; not implemented):**
-[Status Flag and directionless READ](../docs/status-flag-and-read.md)
-defines the pending F state, `?!`, directionless `,`, empty POPADD flag,
-current Level permissions and host synchronization gates without unpublished compatibility.
-It supersedes affected contracts for the next generation only. The current
-implementation, versions and acceptance evidence below remain unchanged;
-they do not establish implementation or parity for this amendment.
+**Implemented amendment (2026-10-08):**
+[Status Flag and directionless READ](../docs/status-flag-and-read.md) defines the current F state,
+`?!`, directionless `,`, empty POPADD flag and Level permissions. These rules
+are implemented in the current contracts and Rust/WASM hosts.
+The [2026-10-11 implementation record](../docs/gas-size-implementation.md)
+records current Gas, Size, Custom restrictions and actual-host evidence.
 
 Status: decided integration contract; Rust scene core, v2 profile loader, native API-2 dispatch, and the selected format-v1 author loader/examples are implemented. Full direct protocol/resource coverage and production host deployment evidence remain open.
 Recorded: 2026-10-05.

@@ -39,7 +39,7 @@ const USAGE: &str = concat!(
     "  codegrid check <program.cg>\n",
     "  codegrid debug --stdio\n",
     "  codegrid run <program.cg> --seed <u64>\n",
-    "    --custom-limit <positive-u64> --max-ticks <positive-u64>\n",
+    "    --custom-limit <positive-u64> --max-ticks <positive-u64> [--gas-hard-limit <positive-u64>]\n",
     "    --max-work-units <positive-u64>\n",
     "    [--input <byte,byte,...> | --input-file <json-file>]\n",
     "    [--initial-memory-file <json-file>]\n",
@@ -50,6 +50,7 @@ const USAGE: &str = concat!(
 );
 
 struct RunOptions {
+    gas_hard_limit: NonZeroU64,
     source_path: PathBuf,
     input: InputSource,
     initial_memory_file: Option<PathBuf>,
@@ -191,6 +192,7 @@ fn parse_run_arguments(arguments: &mut impl Iterator<Item = OsString>) -> Result
     let mut seed = None;
     let mut custom_limit = None;
     let mut max_ticks = None;
+    let mut gas_hard_limit = None;
     let mut max_work_units = None;
 
     while let Some(argument) = arguments.next() {
@@ -231,6 +233,12 @@ fn parse_run_arguments(arguments: &mut impl Iterator<Item = OsString>) -> Result
                 }
                 custom_limit = Some(parse_positive_option(arguments, option)?);
             }
+            "--gas-hard-limit" => {
+                if gas_hard_limit.is_some() {
+                    return Err("--gas-hard-limit may be specified only once".to_owned());
+                }
+                gas_hard_limit = Some(parse_positive_option(arguments, option)?);
+            }
             "--max-ticks" => {
                 if max_ticks.is_some() {
                     return Err("--max-ticks may be specified only once".to_owned());
@@ -256,6 +264,8 @@ fn parse_run_arguments(arguments: &mut impl Iterator<Item = OsString>) -> Result
         None => InputSource::Bytes(input.unwrap_or_default()),
     };
     Ok(Command::Run(RunOptions {
+        gas_hard_limit: gas_hard_limit
+            .unwrap_or(NonZeroU64::new(codegrid_vm::DEFAULT_GAS_HARD_LIMIT).unwrap()),
         source_path: PathBuf::from(source_path),
         input,
         initial_memory_file,
@@ -576,7 +586,8 @@ fn run_file(options: RunOptions) -> i32 {
             return EXIT_STATIC_ERROR;
         }
     };
-    let config = VmConfig::new(options.seed, options.custom_limit);
+    let config = VmConfig::new(options.seed, options.custom_limit)
+        .with_gas_hard_limit(options.gas_hard_limit);
     let mut vm = match Vm::with_initial_memory(program, input, initial_memory, config) {
         Ok(vm) => vm,
         Err(error) => {
@@ -981,6 +992,7 @@ fn configuration_json(
 
         "seed": options.seed.to_string(),
         "custom_execution_limit": options.custom_limit.get().to_string(),
+        "gas_hard_limit": options.gas_hard_limit.get().to_string(),
         "max_ticks": options.max_ticks.get().to_string(),
         "max_work_units": options.max_work_units.get().to_string(),
         "input": input,
@@ -1221,6 +1233,11 @@ fn metrics_json(metrics: &RuntimeMetrics) -> JsonValue {
     json!({
         "global_tick": metrics.global_tick().to_string(),
         "operation_count": metrics.operation_count().to_string(),
+        "gas_used": metrics.gas_used().to_string(),
+        "execution_gas": metrics.execution_gas().to_string(),
+        "memory_gas": metrics.memory_gas().to_string(),
+        "stack_gas": metrics.stack_gas().to_string(),
+        "gas_schedule_version": metrics.gas_schedule_version(),
         "used_cell_count": metrics.used_cell_count().to_string(),
         "used_cells": metrics.used_cells().iter().map(static_cell_json).collect::<Vec<_>>(),
         "used_memory_address_count": metrics.used_memory_address_count().to_string(),
@@ -1376,6 +1393,13 @@ fn runtime_error_details(kind: &RuntimeErrorKind) -> JsonValue {
             "register": register,
             "thread_ids": ids_json(thread_ids),
         }),
+        RuntimeErrorKind::GasLimitExceeded {
+            limit,
+            attempted_gas,
+        } => json!({
+            "limit": limit.to_string(), "attempted_gas": attempted_gas.to_string(),
+        }),
+        RuntimeErrorKind::GasCounterOverflow | RuntimeErrorKind::CustomDisabled => json!({}),
         RuntimeErrorKind::CustomExecutionLimitExceeded { limit } => json!({
             "limit": limit.to_string(),
         }),
@@ -1490,7 +1514,9 @@ fn runtime_error_summary(error: &RuntimeError) -> String {
         error.global_tick(),
         error_number("vm", error.code()).expect("Registered VM error"),
         error.code()
-    )
+    ) + ": "
+        + codegrid_model::error_message(error.error_number().unwrap_or(""), "en")
+            .unwrap_or("Runtime execution failed.")
 }
 
 fn print_usage() {

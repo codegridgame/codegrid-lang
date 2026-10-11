@@ -3931,6 +3931,54 @@
         "pt-br": "Uma métrica do nível excedeu sua restrição configurada.",
         "ru": "Метрика уровня превысила заданное ограничение."
       }
+    },
+    "3011": {
+      "layer": "vm",
+      "code": "GasLimitExceeded",
+      "messages": {
+        "en": "Gas exceeded its configured hard limit.",
+        "de": "Gas hat sein konfiguriertes hartes Limit überschritten.",
+        "fr": "Le Gas a dépassé sa limite stricte configurée.",
+        "es": "Gas ha superado su límite estricto configurado.",
+        "zh-tw": "Gas 超出設定的硬上限。",
+        "ja": "Gas が設定された上限を超えました。",
+        "zh-cn": "Gas 超出配置的硬上限。",
+        "ko": "Gas가 설정된 하드 한도를 초과했습니다.",
+        "pt-br": "Gas excedeu seu limite rígido configurado.",
+        "ru": "Gas превысил установленный жёсткий лимит."
+      }
+    },
+    "3012": {
+      "layer": "vm",
+      "code": "GasCounterOverflow",
+      "messages": {
+        "en": "Gas accounting overflowed its integer range.",
+        "de": "Die Gas-Abrechnung hat ihren Ganzzahlbereich überschritten.",
+        "fr": "Le calcul du Gas dépasse sa plage entière.",
+        "es": "El cálculo de Gas ha desbordado su rango entero.",
+        "zh-tw": "Gas 計費超出整數範圍。",
+        "ja": "Gas の計算が整数範囲を超えました。",
+        "zh-cn": "Gas 计费超出整数范围。",
+        "ko": "Gas 계산이 정수 범위를 초과했습니다.",
+        "pt-br": "O cálculo de Gas excedeu seu intervalo inteiro.",
+        "ru": "Расчёт Gas вышел за пределы целочисленного диапазона."
+      }
+    },
+    "3013": {
+      "layer": "vm",
+      "code": "CustomDisabled",
+      "messages": {
+        "en": "Custom execution is currently disabled.",
+        "de": "Custom-Ausführung ist derzeit deaktiviert.",
+        "fr": "L’exécution Custom est actuellement désactivée.",
+        "es": "La ejecución Custom está deshabilitada actualmente.",
+        "zh-tw": "目前禁止執行 Custom。",
+        "ja": "Custom の実行は現在無効です。",
+        "zh-cn": "目前禁止执行 Custom。",
+        "ko": "Custom 실행은 현재 비활성화되어 있습니다.",
+        "pt-br": "A execução Custom está desativada no momento.",
+        "ru": "Выполнение Custom сейчас отключено."
+      }
     }
   }
 }

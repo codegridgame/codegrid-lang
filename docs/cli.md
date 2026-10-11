@@ -17,6 +17,7 @@ codegrid debug --stdio
 codegrid run <program.cg> --seed <u64>
     --custom-limit <positive-u64> --max-ticks <positive-u64>
     --max-work-units <positive-u64>
+    [--gas-hard-limit <positive-u64>]
     [--input <byte-list> | --input-file <json-file>]
     [--initial-memory-file <json-file>]
 codegrid evaluate <level.json> <program.cg>
@@ -26,6 +27,11 @@ codegrid evaluate <level.json> <program.cg>
 ```
 
 The `run` options `--seed`, `--custom-limit`, `--max-ticks`, and `--max-work-units` are required exactly once. Numeric option values use canonical unsigned ASCII decimal notation: `0` or a nonzero digit followed by zero or more digits, with no sign, separators, whitespace, or leading zero. `--seed` accepts the inclusive range `0..=u64::MAX`. The other numeric options must be in `1..=u64::MAX`. Unknown options, repeated options, missing values, and incompatible input sources are rejected.
+
+`--gas-hard-limit` is optional, positive, and defaults to 100,000,000. It is a
+terminal VM Gas budget, independent of tick slices and dispatch work limits.
+Executing Custom returns `CustomDisabled`; `--custom-limit` retains the setting
+for the preserved implementation and does not enable Custom.
 
 `--input` accepts a comma-separated list of canonical unsigned decimal byte values in `0..=255`; ASCII whitespace around a value is ignored. Empty list elements, including consecutive or trailing commas, are invalid. An explicitly empty value (`--input ""`) supplies an empty sequence. If neither input option is present, the input sequence is empty. `--input` and `--input-file` are mutually exclusive.
 
@@ -54,6 +60,7 @@ compiles source and advances the shared VM; it contains no separate interpreter.
 
 A `launch` request contains `source` (string), `input` (byte array), and canonical decimal strings `seed`, `custom_limit`,
 `max_work_units`, and `max_ticks`. A session accepts one successful launch.
+An optional positive canonical-string `gas_hard_limit` defaults to 100,000,000.
 It returns compiler source locations with one-based UTF-16 line/column ranges
 and the normal Full VM snapshot. Compilation failures return `diagnostics`.
 Locations use compiler IR paths such as `@main[0]`, `@main.F0[1]`, or
@@ -61,7 +68,7 @@ Locations use compiler IR paths such as `@main[0]`, `@main.F0[1]`, or
 
 `{"command":"step"}` advances one atomic Global Tick using
 `step_with_work_limit`, returning the snapshot, committed events and newly
-emitted output. Custom calls are part of that atomic tick. The tick limit
+emitted output. Custom dispatch reports `CustomDisabled` in that atomic tick. The tick limit
 prevents further dispatch after the configured committed tick count; the work
 limit rolls back an interrupted tick under the normative VM rules.
 `{"command":"snapshot"}` reads state without execution.
@@ -106,6 +113,7 @@ The serialized shape is fixed as follows. Names and tagged enum values use lower
   "configuration": {
     "seed": "18446744073709551615",
     "custom_execution_limit": "1000",
+    "gas_hard_limit": "100000000",
     "max_ticks": "10000",
     "max_work_units": "100000",
     "input": [65, 0],
@@ -128,6 +136,11 @@ The serialized shape is fixed as follows. Names and tagged enum values use lower
     "threads": [],
     "metrics": {
       "global_tick":"2",
+      "gas_used":"0",
+      "execution_gas":"0",
+      "memory_gas":"0",
+      "stack_gas":"0",
+      "gas_schedule_version":1,
       "operation_count":"0",
       "used_cell_count":"0",
       "used_cells":[],
@@ -146,7 +159,13 @@ The serialized shape is fixed as follows. Names and tagged enum values use lower
 
 The object above illustrates field types and names; its abbreviated arrays are not a valid execution fixture. The normative contents of each field are:
 
-- `configuration` contains decimal-string `seed`, `custom_execution_limit`, `max_ticks`, and `max_work_units`, plus the ordered input byte array and effective initial Outer memory sorted by numeric address. The memory list omits zero-valued entries.
+- `configuration` contains decimal-string `seed`, `custom_execution_limit`, `gas_hard_limit`, `max_ticks`, and `max_work_units`, plus the ordered input byte array and effective initial Outer memory sorted by numeric address. The memory list omits zero-valued entries.
+
+Metrics also include decimal-string `gas_used`, `execution_gas`, `memory_gas`
+and `stack_gas`, and numeric `gas_schedule_version: 1`. `GasLimitExceeded` has
+decimal-string `limit` and `attempted_gas` details; `GasCounterOverflow` and
+`CustomDisabled` have empty details. Gas errors retain the failed Tick's
+representable accounting while its state/output/events roll back.
 - `diagnostics` contains `{code, severity, message, span}` objects. Severity is `error` or `warning`; span is `{start, end}` with decimal-string half-open UTF-8 byte offsets. Code is assigned by the compiler/verifier at the validation origin and follows the error registry. For `source_error`, `events` and `newly_emitted_output` are empty and `snapshot` is `null`.
 - `snapshot` contains the VM status (`running`, `halted`, or `error`), decimal-string `committed_ticks`, ten register bytes, normalized sparse Outer memory, remaining input, cumulative output, the mutable Outer `runtime_program`, every Outer thread, cumulative raw metrics, structured runtime errors, and an optional fault.
 - `runtime_program` is a `CodeGridView`: `main` and `functions`. Each board contains exact numeric `width` and `height`, row-major `cells` (each with nullable canonical source-token strings `prefix`, `entry`, `primary`, and `attachment`), and `folded_blocks` keyed by numeric Folded Block ID with row token arrays that include any conditional prefix before the Primary. The mutable Outer program view contains no Custom definitions.

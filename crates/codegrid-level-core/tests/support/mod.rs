@@ -18,6 +18,7 @@ pub fn config() -> EvaluationConfig {
             max_state_units: n(100_000),
             max_feedback_bytes: n(1_000_000),
             per_test_ticks: n(1000),
+            per_test_gas: n(1000),
             cumulative_work: n(10_000),
             per_call_work: n(1000),
         },

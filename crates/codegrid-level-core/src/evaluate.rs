@@ -22,6 +22,8 @@ pub struct ExecutionSafetyProfile {
     /// Conservative encoded feedback/result reservation supplied by the host.
     pub max_feedback_bytes: NonZeroU64,
     pub per_test_ticks: NonZeroU64,
+    /// Independent hard Gas budget for every visible or hidden test.
+    pub per_test_gas: NonZeroU64,
     pub cumulative_work: NonZeroU64,
     pub per_call_work: NonZeroU64,
 }
@@ -195,6 +197,7 @@ impl EvaluationSession {
             level_id: self.level.level_id().into(),
             level_version: self.level.level_version(),
             evaluator_contract: "exactio-v1/2026-09-30".into(),
+            gas_schedule_version: crate::GAS_SCHEDULE_VERSION,
             mode: self.mode,
             config: self.config.clone(),
             vm_seed: mix64(self.config.shuffle_seed ^ 0x43474C564D303031),
@@ -280,7 +283,8 @@ impl EvaluationSession {
                 let config = VmConfig::new(
                     mix64(self.config.shuffle_seed ^ 0x43474C564D303031),
                     self.config.custom_execution_limit,
-                );
+                )
+                .with_gas_hard_limit(self.config.safety.per_test_gas);
                 match Vm::new(self.program.clone(), test.input.iter().copied(), config) {
                     Ok(vm) => self.vm = Some(vm),
                     Err(_) => {
@@ -593,6 +597,7 @@ mod diagnostic_tests {
                 max_state_units: NonZeroU64::new(10000).unwrap(),
                 max_feedback_bytes: NonZeroU64::new(100000).unwrap(),
                 per_test_ticks: NonZeroU64::new(100).unwrap(),
+                per_test_gas: NonZeroU64::new(100).unwrap(),
                 cumulative_work: NonZeroU64::new(1000).unwrap(),
                 per_call_work: NonZeroU64::new(100).unwrap(),
             },

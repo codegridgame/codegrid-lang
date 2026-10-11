@@ -405,6 +405,7 @@ mod tests {
             "max_initial_memory_entries": 65536,
             "max_run_ticks_per_call": "1000",
             "max_total_ticks_per_instance": "10000",
+            "max_gas_per_instance": "100000000",
             "max_work_units_per_call": "10000",
             "max_response_bytes": 1048576,
             "max_instance_state_bytes": 524288
@@ -441,6 +442,7 @@ mod tests {
             "abi_version": 4,
             "api_version": 3,
             "operation": name,
+            "gas_hard_limit": "100000000",
         })
     }
 
@@ -601,6 +603,7 @@ mod tests {
             request["input"] = json!([input]);
             request["seed"] = json!("0");
             request["custom_execution_limit"] = json!("100");
+            request["gas_hard_limit"] = json!("100000000");
             request["initial_memory"] = json!([]);
             request
         };
@@ -701,6 +704,7 @@ mod tests {
                     "program":compiled["program"],"input":run["input"],
                     "seed":run["seed"],
                     "custom_execution_limit":run["custom_execution_limit"],
+                    "gas_hard_limit":run["gas_hard_limit"],
                     "initial_memory":run.get("initial_memory").cloned().unwrap_or_else(|| json!([])),
                 }),
             );
@@ -735,6 +739,11 @@ mod tests {
             );
             for metric in [
                 "operation_count",
+                "gas_used",
+                "execution_gas",
+                "memory_gas",
+                "stack_gas",
+                "gas_schedule_version",
                 "used_cell_count",
                 "used_memory_address_count",
                 "peak_data_stack_usage",

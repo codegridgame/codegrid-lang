@@ -139,7 +139,7 @@ fn pointer_wraps_and_repeat_rechecks_flag() {
 }
 
 #[test]
-fn functions_copy_and_restore_flags_custom_copies_and_discards() {
+fn functions_copy_and_restore_flags_before_disabled_custom() {
     let mut vm = machine(
         board(&["~>", ")", "[0", "?!.1", "#0", "?!.2", ";"]),
         vec![board(&["~>", "?!.3", "+", "]"])],
@@ -148,9 +148,10 @@ fn functions_copy_and_restore_flags_custom_copies_and_discards() {
     );
     vm.run(30);
     let state = vm.snapshot();
-    assert_eq!(state.output, [3, 1, 2]);
+    assert_eq!(state.output, [3, 1]);
     assert_eq!(state.threads[0].status_flag, 1);
-    // Custom reads the 4 it just pushed to the caller stack, then clears F.
+    assert_eq!(vm.step().errors[0].code(), "CustomDisabled");
+    // The rejected invocation cannot mutate the caller stack.
     assert!(state.threads[0].data_stack.is_empty());
 }
 

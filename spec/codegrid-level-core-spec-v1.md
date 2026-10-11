@@ -14,7 +14,7 @@ The [Scene Specification v1](codegrid-scene-spec-v1.md), recorded on 2026-10-05,
 defines the current product protocols. For Robot and MechanicalArm, its continuous VM per case supersedes the fresh-VM-per-decision
 Environment model in the conceptual sections below. ExactIO remains unchanged;
 the selected [Scene Level JSON format v1 author contract](codegrid-scene-level-json-v2.md)
-specifies scene data. Its revised loader and fixtures still require migration;
+specifies scene data. The current loader and fixtures implement this contract;
 the path retains an earlier v2 filename.
 
 ---
@@ -327,8 +327,8 @@ Examples of metric-based limits include:
 
 ```text
 max_ticks
-max_cost
-max_non_empty_cells
+max_gas
+max_size
 max_instruction_kinds
 max_functions_used
 max_boards_used
@@ -701,7 +701,9 @@ Any VM runtime error immediately fails the current test.
 Examples include:
 
 ```text
-CustomExecutionLimitExceeded
+CustomDisabled
+GasLimitExceeded
+GasCounterOverflow
 ConcurrentOutputConflict
 ```
 
@@ -789,7 +791,7 @@ Therefore hidden-test execution does not contribute to values used by constraint
 
 ```text
 max_ticks
-max_cost
+max_gas
 max_memory_addresses
 ```
 
@@ -893,7 +895,7 @@ Examples:
 
 ```text
 max_ticks
-max_cost
+max_gas
 ```
 
 Constraints remain Level-level.
@@ -1123,17 +1125,23 @@ Examples may include:
 
 ```text
 ticks
-cost
+gas_used
 instruction_kinds
 max_data_stack_depth
 max_call_stack_depth
-max_custom_stack_depth
+max_instruction_stack_depth
 memory_addresses_used
-non_empty_cells
+size
 boards_used
 ```
 
 Their exact definitions belong to the VM Metrics specification.
+
+The current registry is defined by the ExactIO implementation contract. Gas
+and its execution/memory/stack breakdown sum across visible cases; breakdowns
+are observable but not scoring dimensions. Size is a static nonempty-cell
+count measured once, including explicit Entry, unused Functions, every Folded
+Block reference and each definition body once. Implicit starts add no cell.
 
 ### 29.2 Scene Metrics
 
@@ -1166,7 +1174,11 @@ Examples:
 
 ```text
 ticks
-execution_count
+gas_used
+execution_gas
+memory_gas
+stack_gas
+operation_count
 ```
 
 ### MAX
@@ -1176,7 +1188,7 @@ Examples:
 ```text
 max_data_stack_depth
 max_call_stack_depth
-max_custom_stack_depth
+max_instruction_stack_depth
 memory_addresses_used
 ```
 
@@ -1185,7 +1197,7 @@ memory_addresses_used
 Examples:
 
 ```text
-non_empty_cells
+size
 instruction_kinds
 boards_used
 ```
@@ -1232,7 +1244,7 @@ Example:
 {
   "constraints": {
     "max_ticks": 500,
-    "max_cost": 30
+    "max_gas": 30
   }
 }
 ```
@@ -1262,7 +1274,9 @@ If an Environment constraint becomes irreversibly violated during execution, eva
 ## 34. VM Execution Limits and Evaluation Safety
 
 The VM specification owns its execution limits and error/yield behavior.
-Custom execution-limit exhaustion is a runtime error. Bounded tick/work
+Custom dispatch is currently disabled and returns `CustomDisabled`. Gas limit
+and accounting overflow are terminal VM errors. Custom internal execution-limit
+rules describe retained implementation only. Bounded tick/work
 exhaustion is nonterminal and does not define universal memory, thread, or
 stack quotas. Do not infer global language quotas from host policy.
 
@@ -1316,7 +1330,7 @@ Example:
       "ticks": {
         "target": 200
       },
-      "cost": {
+      "gas_used": {
         "target": 20
       }
     }
@@ -1330,7 +1344,7 @@ Environment example:
 {
   "scoring": {
     "metrics": {
-      "cost": {
+      "gas_used": {
         "target": 4
       },
       "ticks": {
@@ -1380,7 +1394,7 @@ Typical examples:
 
 ```text
 ticks                  minimize
-cost                   minimize
+gas_used                   minimize
 memory_addresses_used  minimize
 ```
 
@@ -1482,7 +1496,7 @@ Example:
 
 ```text
 ticks   ★★★
-cost    ★★
+gas_used    ★★
 memory  ★★★
 ```
 
@@ -1714,7 +1728,9 @@ WrongOutput
 IncompleteOutput
 IncompleteAction
 InvalidAction
-CustomExecutionLimitExceeded
+CustomDisabled
+GasLimitExceeded
+GasCounterOverflow
 ConcurrentOutputConflict
 ResourceLimitExceeded
 InstructionNotAllowed
@@ -1781,7 +1797,7 @@ EvaluationFailed
       "ticks": {
         "target": 200
       },
-      "cost": {
+      "gas_used": {
         "target": 20
       }
     }

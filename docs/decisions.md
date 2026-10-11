@@ -1,5 +1,81 @@
 # Full Language Decisions and Open Questions
 
+## Gas, static Size, and temporary Custom restriction (2026-10-11)
+
+The user authorizes one complete implementation of Tick/Gas/Size, not an MVP.
+The recorded Rust review is [Computation Star Map v2](computation-star-map-rust-review.md).
+This decision supersedes Cost-as-operation-count scoring and its author fields
+in the current unpublished level contract. No legacy aliases or migration layer
+are required. `operation_count` remains an independent auxiliary raw metric.
+
+Size is the count of nonempty static source cells in all accepted program
+boards, including unused Functions. Explicit Entry counts as 1. Implicit start
+adds no cell; the actual first cell is counted normally. Each Folded Block
+reference cell counts as 1 in addition to its definition's nonempty body cells;
+each definition is counted once. Conditions, immediates and Attachments do not
+add another cell. Runtime visitation and code mutation never change Size.
+Rust currently has no level-supplied locked instruction cells; no hypothetical
+fixed-code ownership/exemption is introduced by this change.
+
+Gas Schedule 1 prices actual executed VM operations as follows. Each listed
+price is the complete base fee, with no universal extra operation fee.
+
+| Operation | Gas |
+| --- | ---: |
+| Direction, RandomDirection | 1 |
+| Conditional prefix, Compare | 2 |
+| Register pointer movement, MovePage, Shift | 2 |
+| Clear, Add, Sub, Neg, Nand, Push, PopAdd, Decode, Encode | 3 |
+| Read, Output, OutputImmediate, MemoryLoad, ReadCode Attachment | 5 |
+| MemoryStore, WriteCode Attachment, Call | 8 |
+| Return, Folded Block shell dispatch | 2 |
+| Empty cell, Entry, Halt, Repeat Attachment itself, implicit Folded Block exit | 0 |
+
+A false prefix pays only its condition fee. Repeated operations pay on each
+actual execution; attachment effects are charged separately without charging
+the same underlying operation twice. Empty input reads, empty pops, and empty
+memory stores still pay their base operation fee. An empty store does not
+create a cold-address charge. OutputImmediate pays the output price only.
+
+The first actual data-memory access to `(memory space, address)` adds 10 Gas.
+Absent zero reads count. Code accesses and fixed registers have no cold fee.
+Capacity charges use the existing normative aggregate stack sampling: each
+new data/instruction/call capacity unit costs 1/4/16, respectively, with no
+refund or second charge below an already billed peak. Tail-call frame reuse
+does not add capacity; CALL base Gas is independent. Distinct per-type peaks
+are separate capacities, not a simultaneous byte measurement.
+
+Custom implementation and parsing remain present, but an actually executed
+Custom Primary returns `CustomDisabled` before invoking its body. A skipped
+conditional Custom and unused definitions do not execute Custom. No production
+configuration can re-enable it. Retained internal unit tests may exercise the
+implementation through a private test-only seam; this is not a host capability.
+
+VMs use an explicit positive hard Gas budget, defaulting to 100,000,000. Hosts
+may supply trusted ceilings and cannot accept a request that exceeds them.
+Gas exceeding the budget aborts the attempted outer Tick and rolls back its
+language state/output/events; committed Tick does not advance. Attempted Gas
+and resource diagnostics are retained, including the charge that crossed the
+limit. Checked Gas overflow has its own structured failure, never wrapping.
+When an attempted charge cannot fit u64, retain the preceding exact Gas total
+and breakdown and report `GasCounterOverflow`; raw attempted resource metrics
+remain available. No formal score exists for that failed execution. This makes
+the representable diagnostic breakdown reconcile without pretending to encode
+an unrepresentable attempted total.
+Per-call work interruption restores metrics, so retry/resume cannot double bill.
+Budget equality is permitted. Tick/work/state/output ceilings remain separate.
+
+Each test uses a fresh VM and cold-address/capacity ledger. Hidden tests obey
+hard Gas safety but never contribute formal metrics or soft comparisons.
+Visible `gas_used` and its execution/memory/stack breakdowns are summed per case;
+static `size` is measured once. `max_gas` and `max_size` are level constraints.
+`gas_schedule_version` is a small numeric identity (1); wide numeric metrics
+and budgets use exact decimal strings at host boundaries. Replay identity
+includes accepted program, input, seed, initial memory, schedule and relevant
+evaluation configuration. Existing independent metric-target star ratings remain.
+Candidate rates are assessed with representative programs and may be revised
+coherently before completion if those checks expose a genuine pricing issue.
+
 ## Robot author-map revision (2026-10-05)
 
 The user selects a terrain/object/test separation and resets the scene author
@@ -65,6 +141,10 @@ sections 15 and 34 require normative clarification against these VM rules
 before implementation; this change does not edit either specification.
 
 ### ExactIO first-phase contract (2026-09-30)
+
+Historical decision: the Cost metric in this paragraph was superseded by the
+2026-10-11 Gas/Size decision above. Retained Custom execution descriptions are
+subject to the current production restriction.
 
 The user explicitly selected cost as VM Operation Count, explicit per-evaluation
 first-phase WriteCode support, and enforcement of the

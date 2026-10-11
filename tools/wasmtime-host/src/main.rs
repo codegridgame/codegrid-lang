@@ -472,6 +472,7 @@ fn create_instance_request(program: &str, run: &Value) -> Value {
         "initial_memory": run.get("initial_memory").cloned().unwrap_or_else(|| json!([])),
         "seed": run["seed"],
         "custom_execution_limit": run["custom_execution_limit"],
+        "gas_hard_limit": run["gas_hard_limit"],
     })
 }
 
@@ -510,6 +511,7 @@ fn compare_fixture_expectations(
     );
     for metric in [
         "operation_count",
+        "gas_used", "execution_gas", "memory_gas", "stack_gas", "gas_schedule_version",
         "used_cell_count",
         "used_memory_address_count",
         "peak_data_stack_usage",
@@ -741,6 +743,8 @@ fn run_native_cli(cli_path: &Path, fixture: &Value, work_limit: u64) -> Result<N
                 .as_str()
                 .context("fixture seed must be a decimal string")?,
         )
+        .arg("--gas-hard-limit")
+        .arg(run["gas_hard_limit"].as_str().context("fixture Gas budget must be a decimal string")?)
         .arg("--custom-limit")
         .arg(
             run["custom_execution_limit"]
@@ -994,6 +998,7 @@ fn normalize_metrics(metrics: &Value, shape: ResultShape) -> Result<Value> {
             "global_tick",
             "instruction_variety",
             "operation_count",
+            "gas_used", "execution_gas", "memory_gas", "stack_gas", "gas_schedule_version",
             "peak_call_stack_usage",
             "peak_data_stack_usage",
             "peak_instruction_stack_usage",
@@ -1020,6 +1025,11 @@ fn normalize_metrics(metrics: &Value, shape: ResultShape) -> Result<Value> {
     Ok(json!({
         "global_tick": metrics["global_tick"],
         "operation_count": metrics["operation_count"],
+        "gas_used": metrics["gas_used"],
+        "execution_gas": metrics["execution_gas"],
+        "memory_gas": metrics["memory_gas"],
+        "stack_gas": metrics["stack_gas"],
+        "gas_schedule_version": metrics["gas_schedule_version"],
         "used_cell_count": metrics["used_cell_count"],
         "used_cells": used_cells,
         "used_memory_address_count": metrics["used_memory_address_count"],
@@ -1533,6 +1543,7 @@ fn initialize_request(max_work_units_per_call: u64) -> Value {
             "max_initial_memory_entries": 65_536,
             "max_run_ticks_per_call": "1000000",
             "max_total_ticks_per_instance": "10000000",
+            "max_gas_per_instance": "100000000",
             "max_work_units_per_call": max_work_units_per_call.to_string(),
             "max_response_bytes": 8 * 1024 * 1024,
             "max_instance_state_bytes": 8 * 1024 * 1024,

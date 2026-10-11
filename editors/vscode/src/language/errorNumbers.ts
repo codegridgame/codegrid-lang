@@ -244,4 +244,7 @@ export const errorNumbers: Readonly<Record<string, string>> = {
   "level:level.test_failed": "9027",
   "level:level.runtime_error": "9028",
   "level:level.constraint_exceeded": "9029",
+  "vm:GasLimitExceeded": "3011",
+  "vm:GasCounterOverflow": "3012",
+  "vm:CustomDisabled": "3013",
 };

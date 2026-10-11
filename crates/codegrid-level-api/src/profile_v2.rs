@@ -37,6 +37,8 @@ pub struct SafetyProfileV2 {
     #[serde(deserialize_with = "positive")]
     pub max_ticks_per_test: u64,
     #[serde(deserialize_with = "positive")]
+    pub max_gas_per_test: u64,
+    #[serde(deserialize_with = "positive")]
     pub max_work_per_call: u64,
     #[serde(deserialize_with = "positive")]
     pub max_total_work: u64,
@@ -98,6 +100,7 @@ impl SafetyProfileV2 {
             max_handles: self.max_handles,
             max_response_bytes: self.max_response_bytes,
             max_ticks_per_test: self.max_ticks_per_test,
+            max_gas_per_test: self.max_gas_per_test,
             max_work_per_call: self.max_work_per_call,
             max_total_work: self.max_total_work,
         }
@@ -116,6 +119,7 @@ impl SafetyProfileV2 {
         "max_handles":self.max_handles.to_string(),
         "max_response_bytes":self.max_response_bytes.to_string(),
         "max_ticks_per_test":self.max_ticks_per_test.to_string(),
+        "max_gas_per_test":self.max_gas_per_test.to_string(),
         "max_work_per_call":self.max_work_per_call.to_string(),
         "max_total_work":self.max_total_work.to_string(),
         "scene_limits":{

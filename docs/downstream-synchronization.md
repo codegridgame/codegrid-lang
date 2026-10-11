@@ -45,8 +45,8 @@ This is an AI workflow requirement; it does not install a filesystem watcher.
    source identities, versions, and file hashes. Never relabel an old binary as
    the new implementation.
 5. Update downstream examples, fixtures, AI generation prompts, documentation,
-   and module rules where their behavior or responsibilities changed. Preserve
-   explicit compatibility readers for old saved data; do not silently rewrite
+   and module rules where their behavior or responsibilities changed. Add
+   compatibility readers only for an explicitly published baseline; do not silently rewrite
    player programs or conflate a historical filename with a schema version.
 6. Run relevant upstream tests and downstream type checks, unit tests, builds,
    and actual-host integration checks. Verify the affected execution path, not
@@ -79,7 +79,8 @@ directories remain the active consumers.
 - Web Full assets come from `codegrid-wasm-browser`; server Full assets come from
   `codegrid-wasm-server`. Update host constructor arguments, requests, versions,
   result/status/error shapes, quotas, and projections whenever contracts change.
-  Retain old versioned artifacts only as deliberate compatibility history.
+  Retain old versioned artifacts only when an explicitly published baseline
+  requires them; current unpublished consumers use current artifacts directly.
 - Keep source commit/dirty-state identity and fixture hashes truthful. Regenerate
   provenance through the repository's build tools. API/ABI versions and level
   `format_version` are distinct and must come from their respective contracts.

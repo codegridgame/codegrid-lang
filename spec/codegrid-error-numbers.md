@@ -248,3 +248,6 @@ Generated from [codegrid-error-codes.json](codegrid-error-codes.json). Numbers a
 | `9027` | level | `level.test_failed` | A v1 ExactIO correctness check or v2 scene correctness/action/goal check fails; v2 scene distinctions use typed reasons. |
 | `9028` | level | `level.runtime_error` | A level test encounters a VM runtime error; public details follow visibility rules. |
 | `9029` | level | `level.constraint_exceeded` | A permitted metric exceeds a configured level constraint. |
+| `3011` | vm | `GasLimitExceeded` | Attempted Gas exceeds the configured positive hard limit. |
+| `3012` | vm | `GasCounterOverflow` | A checked Gas component or total cannot represent the attempted charge. |
+| `3013` | vm | `CustomDisabled` | A Custom Primary is actually executed while Custom use is disabled. |

@@ -473,3 +473,13 @@ Malformed, detached, repeated, out-of-range, or obsolete conditional source atom
 ### Invalid-cell message context
 
 The parser includes the rejected source atom in invalid-cell messages and describes the detected token, prefix, suffix, count, or Primary/Attachment restriction. The UTF-8 span selects the same complete atom. Prefixing a malformed body does not replace its specific cause with a generic prefix error. This refines message context without adding or changing error identities; consumers must use the code or number, not message text, for programmatic decisions.
+
+## Gas and temporary Custom restriction (2026-10-11)
+
+| Code | Trigger | Details |
+| --- | --- | --- |
+| `GasLimitExceeded` | Attempted Gas exceeds the configured positive hard limit. | limit, attempted_gas |
+| `GasCounterOverflow` | A checked Gas component or total cannot represent the attempted charge. | none |
+| `CustomDisabled` | A Custom Primary is actually executed while Custom use is disabled. | none |
+
+These runtime errors roll back the attempted outer Tick and preserve attempted diagnostics; committed Tick does not advance.

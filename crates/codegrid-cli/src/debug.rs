@@ -41,12 +41,18 @@ enum Request {
         input: Vec<u8>,
         seed: String,
         custom_limit: String,
+        #[serde(default = "default_gas_limit")]
+        gas_hard_limit: String,
         max_work_units: String,
         max_ticks: String,
     },
     Step,
     Snapshot,
     Disconnect,
+}
+
+fn default_gas_limit() -> String {
+    codegrid_vm::DEFAULT_GAS_HARD_LIMIT.to_string()
 }
 
 #[derive(Default)]
@@ -64,6 +70,7 @@ impl Session {
                 input,
                 seed,
                 custom_limit,
+                gas_hard_limit,
                 max_work_units,
                 max_ticks,
             } => {
@@ -75,6 +82,7 @@ impl Session {
                 }
                 let seed = decimal(&seed, false)?;
                 let custom_limit = decimal(&custom_limit, true)?;
+                let gas_hard_limit = decimal(&gas_hard_limit, true)?;
                 let work_limit = decimal(&max_work_units, true)?;
                 let tick_limit = decimal(&max_ticks, true)?;
                 let compilation = match codegrid_compiler::compile_with_symbols(&source) {
@@ -98,6 +106,10 @@ impl Session {
                         VmConfig::new(
                             seed,
                             NonZeroU64::new(custom_limit).ok_or("custom limit must be positive")?,
+                        )
+                        .with_gas_hard_limit(
+                            NonZeroU64::new(gas_hard_limit)
+                                .ok_or("gas hard limit must be positive")?,
                         ),
                     )
                     .map_err(|error| {
@@ -228,6 +240,7 @@ mod tests {
             input: vec![65],
             seed: "18446744073709551615".into(),
             custom_limit: "1000".into(),
+            gas_hard_limit: "100000000".into(),
             max_work_units: "100000".into(),
             max_ticks: "1000".into(),
         }

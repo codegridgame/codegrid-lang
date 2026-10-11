@@ -157,7 +157,7 @@ A central level metric registry maps public metric names to existing VM raw
 metrics or verified-program static measurements. Each entry defines scope,
 aggregation (`SUM`, `MAX`, or `STATIC`), optimization direction, and applicable
 constraint names. Scene entries are fixed per scene type. Levels cannot add
-entries or redefine these properties. Do not implement `cost` by guessing a
+entries or redefine these properties. Do not implement `gas_used` by guessing a
 formula from VM ticks or operations.
 
 Only visible ExactIO tests contribute to official aggregates and level metric
@@ -173,9 +173,11 @@ Keep three limit classes separate:
 
 - Logical level constraints determine `ConstraintExceeded` from aggregated
   level metrics.
-- Deterministic execution hard limits bound tests, Custom execution, and scene
-  decisions, including hidden tests. `CustomExecutionLimitExceeded` is a VM
-  runtime error and rolls back the attempted tick. VM `TickLimitReached` and
+- Deterministic execution hard limits bound tests and scene decisions,
+  including hidden tests. `GasLimitExceeded` and `GasCounterOverflow` are VM
+  runtime errors and roll back the attempted tick. Custom dispatch returns
+  `CustomDisabled`; its internal limits remain retained implementation rules.
+  VM `TickLimitReached` and
   host work exhaustion are nonterminal execution yields, not runtime errors.
   A separate cumulative evaluation safety ceiling may end an evaluation with
   a typed resource-limit outcome; its contract must distinguish that outcome
@@ -254,7 +256,7 @@ verification work is tracked in the current scene conformance plan.
 
 The [ExactIO implementation contract](../spec/codegrid-level-exactio-contract-v1.md)
 resolves the first-phase schema, capability mapping, metric registry (including
-cost as Operation Count), shuffle/VM seeds,
+weighted Gas and independent Operation Count), shuffle/VM seeds,
 and terminal-tick priorities. The following remaining work does not block
 implementing Rust ExactIO against that contract:
 

@@ -27,6 +27,7 @@ pub fn project_scene_result(
             level_id: &r.level_id,
             level_version: r.level_version,
             evaluator_contract: &r.evaluator_contract,
+            gas_schedule_version: r.gas_schedule_version,
             mode: r.mode,
             config: &r.config,
             vm_seed: r.vm_seed,

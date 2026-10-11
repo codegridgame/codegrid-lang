@@ -1,14 +1,13 @@
 # CodeGrid Scene Level JSON Format v1
 
-**Approved next-generation amendment (2026-10-08; not implemented):**
-[Status Flag and directionless READ](../docs/status-flag-and-read.md)
-defines the pending F state, `?!`, directionless `,`, empty POPADD flag,
-current Level permissions and host synchronization gates without unpublished compatibility.
-It supersedes affected contracts for the next generation only. The current
-implementation, versions and acceptance evidence below remain unchanged;
-they do not establish implementation or parity for this amendment.
+**Implemented amendment (2026-10-08):**
+[Status Flag and directionless READ](../docs/status-flag-and-read.md) defines the current F state,
+`?!`, directionless `,`, empty POPADD flag and Level permissions. These rules
+are implemented in the current contracts and Rust/WASM hosts.
+The [2026-10-11 implementation record](../docs/gas-size-implementation.md)
+records current Gas, Size, Custom restrictions and actual-host evidence.
 
-Status: revised author-file contract; the existing loader and fixtures require migration to this revision. The filename retains its earlier name until the documentation layout is consolidated.
+Status: current author-file contract, implemented by the Rust loader and fixtures. The filename retains its historical v2 name; the logical format is 1.
 Recorded: 2026-10-05.
 Authorities: [Scene Spec v1](codegrid-scene-spec-v1.md) and the
 [continuous session design](../docs/scene-session-design.md).
@@ -238,10 +237,32 @@ in replay identity. New host wire fields require a recorded version decision.
 The [v2 author examples](../examples/scene-level-v2/README.md) contain complete
 JSON documents for every scene and six deliberately invalid counterparts.
 Their manifest records expected validation and exact offending paths.
-They are specification examples, not current loader-accepted fixtures or
-execution evidence. Promote them only after implementing Rust validation and
-running the [scene conformance plan](../docs/scene-conformance-plan.md).
+The Rust loader checks their accepted/rejected outcomes against the manifest.
+Actual-host execution evidence is maintained separately in the
+[implementation record](../docs/gas-size-implementation.md); validation examples
+alone do not establish execution parity.
 
-The existing example files and loader tests describe the earlier implementation.
-They require migration to format_version 1 and the revised Robot map contract;
-their earlier passing results do not establish acceptance of this revision.
+## Gas and Size metrics
+
+The current metric vocabulary uses `gas_used` and `size`, with `max_gas` and
+`max_size` constraints. Former Cost and nonempty-cell metric names are rejected
+without aliases. Gas schedule version 1 is identified by `gas_schedule_version`
+in evaluation results.
+
+Size counts each nonempty source cell, including explicit Entry and each Folded
+Block reference. Folded Block body nonempty cells count once per definition,
+including unused definitions. Function bodies count once, including unused
+functions. Implicit Entry adds no cell. Runtime code changes do not alter Size.
+No fixed-cell exemption exists in the current program contract.
+
+Each test starts with independent Gas, cold-memory tracking, and stack capacity
+peaks. `gas_used`, `execution_gas`, `memory_gas`, and `stack_gas` are summed over
+visible cases; their breakdown satisfies `gas_used = execution_gas + memory_gas
++ stack_gas`. Hidden cases contribute no public metrics or soft constraints but
+remain subject to the trusted per-test Gas ceiling. Auxiliary dynamic peaks use
+maximum aggregation; static metrics count once per program.
+
+Only `gas_used` is selectable for scoring or a soft Gas constraint; breakdown
+metrics are diagnostic result fields, not author-defined score dimensions.
+Failed evaluations have no final metrics or rating. Runtime Gas-limit failure
+remains a structured runtime error and cannot produce a successful score.

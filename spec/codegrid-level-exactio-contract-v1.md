@@ -1,17 +1,16 @@
 # Level Core v1 ExactIO Implementation Contract
 
-**Approved next-generation amendment (2026-10-08; not implemented):**
-[Status Flag and directionless READ](../docs/status-flag-and-read.md)
-defines the pending F state, `?!`, directionless `,`, empty POPADD flag,
-current Level permissions and host synchronization gates without unpublished compatibility.
-It supersedes affected contracts for the next generation only. The current
-implementation, versions and acceptance evidence below remain unchanged;
-they do not establish implementation or parity for this amendment.
+**Implemented amendment (2026-10-08):**
+[Status Flag and directionless READ](../docs/status-flag-and-read.md) defines the current F state,
+`?!`, directionless `,`, empty POPADD flag and Level permissions. These rules
+are implemented in the current contracts and Rust/WASM hosts.
+The [2026-10-11 implementation record](../docs/gas-size-implementation.md)
+records current Gas, Size, Custom restrictions and actual-host evidence.
 
 Status: decided for the first implementation phase on 2026-09-30.
 
 This contract supplements [Level Core v1](codegrid-level-core-spec-v1.md).
-The user selected dynamic `cost`, fixed four-direction toroidal boards, WriteCode
+The user selected dynamic `gas_used`, fixed four-direction toroidal boards, WriteCode
 support, and enforcement of the whitelist on generated code, then authorized
 the recommended remaining choices. Source acceptance and VM transitions remain
 defined by their existing specifications. Environment scene protocols and the
@@ -140,7 +139,7 @@ and their bodies are checked regardless of invocation permissions.
 `REPEAT`, `CONDITION_0`, `CONDITION_1`, and `CONDITION_2`, `CONDITION_FLAG`. The four conditional
 capabilities permit only the corresponding fixed prefix and are counted
 separately in static instruction kinds. All evaluated prefixes, including
-false ones, cost one VM operation and share the Condition runtime kind. CMP
+false ones, count one VM operation and share the Condition runtime kind. CMP
 has independent CMP permission and costs one operation per execution, even
 with an empty stack. Guarded Primaries are checked whether or not they execute. REPEAT permits only counts accepted by the source/IR specification.
 Primary permission never implies Attachment permission. Suffix Attachments obey their existing Primary compatibility matrix; conditional prefixes independently apply to every otherwise valid Primary, including nonencodable Primaries and Folded Block contents. Validation is purely structural;
@@ -174,13 +173,13 @@ and does not redefine VM raw metrics.
 | Metric | Measurement | Across eligible tests/steps | Constraint |
 | --- | --- | --- | --- |
 | ticks | Committed Global Tick | SUM | max_ticks |
-| cost | VM Operation Count, including Custom work, every conditional prefix evaluation, and metric-bearing suffix Attachments | SUM | max_cost |
-| operation_count | Exact alias of cost | SUM | max_operation_count |
+| gas_used | VM weighted execution Gas plus cold memory and stack capacity charges under the identified Gas schedule | SUM | max_gas |
+| operation_count | VM Operation Count; independent of weighted Gas | SUM | max_operation_count |
 | memory_addresses_used | Cardinality of VM Used Memory Addresses | MAX | max_memory_addresses |
 | max_data_stack_depth | VM Peak Data Stack Usage | MAX | max_data_stack_depth |
 | max_instruction_stack_depth | VM Peak Instruction Stack Usage | MAX | max_instruction_stack_depth |
 | max_call_stack_depth | VM Peak Call Stack Usage | MAX | max_call_stack_depth |
-| non_empty_cells | Cells with an initial Primary or Entry, including structural invocation shells and Folded Block bodies; an Attachment adds no extra cell | STATIC | max_non_empty_cells |
+| size | Cells with an initial Primary or Entry, including structural invocation shells and Folded Block bodies; an Attachment adds no extra cell | STATIC | max_size |
 | instruction_kinds | Distinct permitted Primary capability kinds present in initial code, with READ as one kind; count each distinct Attachment kind as well; exclude Empty and Entry | STATIC | max_instruction_kinds |
 | functions_used | Number of defined Functions across outer and Custom code grids | STATIC | max_functions_used |
 | boards_used | Number of Main, Function, and Folded Block boards across outer and Custom code grids | STATIC | max_boards_used |
@@ -200,9 +199,11 @@ metric/constraint names are `LevelInvalid`.
 
 ExactIO aggregates visible tests only, including repeated tests. Environment
 will aggregate every decision step using this registry plus its scene registry.
-Aliases are accepted as separate peer scoring entries; if both cost and
-operation_count are selected, they refer to the same value and each configured
-target/constraint applies. No alias introduces extra execution or weighting.
+Gas and Operation Count are independent dimensions; each configured target
+and constraint applies to its own value. Gas breakdowns are result-only fields,
+with SUM aggregation across visible cases. The breakdown components reconcile
+exactly with total Gas. Every visible and hidden case has an independent trusted
+Gas ceiling; source and author level data cannot relax it.
 
 Compute two-star thresholds in a widened integer domain: minimize uses
 `ceil(3 * target / 2)`, maximize uses `floor(2 * target / 3)` if a future metric
@@ -314,3 +315,26 @@ priorities remain as defined above.
 ## Conditional language migration (2026-10-03)
 
 IF_ZERO and IF_ZERO direction capability identifiers are removed. Migrate corresponding program rules to conditional Attachment permissions plus the underlying Primary permissions. Direction Primaries remain always permitted. CMP requires CMP permission; STACK permission does not imply CMP. The level envelope remains format 1 with its approved capability vocabulary; runtime language acceptance and IR format 2 are defined by the updated source/VM specifications.
+
+## Current Gas/Size amendment
+
+Gas uses VM Gas schedule version 1. It is not an Operation Count alias. The
+trusted execution safety profile requires an independent positive
+`per_test_gas`; public host profiles name this ceiling `max_gas_per_test` and
+encode it as a canonical u64 decimal string. Every test, including hidden
+cases, receives the ceiling through `VmConfig::with_gas_hard_limit`.
+
+Results carry `gas_schedule_version`. Public metric maps sum `gas_used`,
+`execution_gas`, `memory_gas`, and `stack_gas` across visible cases. Auxiliary
+VM peak metrics use maximum aggregation and source Size counts once.
+Explicit Entry contributes one Size; implicit Entry contributes none. Every
+Folded Block invocation cell counts one and every definition's nonempty body
+cells count once, including unused definitions. There is no fixed-cell
+exemption. Former metric and constraint names are rejected without aliases.
+
+Custom definitions remain parseable and retain their implementation. Actual
+Custom execution produces `CustomDisabled`; conditional skips and unused
+definitions do not dispatch Custom. Level permissions remain an independent
+structural acceptance contract and cannot re-enable disabled VM execution.
+Gas limit failures are structured runtime errors; failed evaluations have no
+final metrics or rating.

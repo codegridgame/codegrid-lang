@@ -150,7 +150,7 @@ Production Steam/backend integration remains open.
 
 ## Conditional-prefix migration verification (2026-10-03)
 
-The current manifest contains 41 level cases. After adding CMP and per-value conditional-prefix permissions, actual native CLI, browser worker, Node WebAssembly, and Wasmtime comparisons passed all 41 complete semantic results. Added cases cover permitted/denied CMP, independently denied prefixes, static instruction kinds, and prefix operation cost. Folded permission diagnostics have a focused exact-cell-path test. The dated 36-case reports and artifact hashes above remain historical evidence, not current build identities.
+The current manifest contains 41 level cases. After adding CMP and per-value conditional-prefix permissions, actual native CLI, browser worker, Node WebAssembly, and Wasmtime comparisons passed all 41 complete semantic results. Added cases cover permitted/denied CMP, independently denied prefixes, static instruction kinds, and prefix operation gas_used. Folded permission diagnostics have a focused exact-cell-path test. The dated 36-case reports and artifact hashes above remain historical evidence, not current build identities.
 
 ## Scene protocol design acceptance (2026-10-05)
 

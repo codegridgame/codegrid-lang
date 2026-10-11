@@ -57,17 +57,21 @@ response includes both version fields and the operation where one is known.
     "max_run_ticks_per_call": "1000000",
     "max_total_ticks_per_instance": "10000000",
     "max_work_units_per_call": "1000000",
+    "max_gas_per_instance": "100000000",
     "max_response_bytes": 8388608,
     "max_instance_state_bytes": 8388608
   }
 }
 ```
 
-These values may be lowered but not raised above the adapter ceilings shown.
+Count, byte, tick and work values may be lowered but not raised above the
+adapter ceilings shown. Gas is a trusted positive u64 ceiling; the example
+chooses 100,000,000 without defining an adapter maximum of that value.
 The response and snapshot limits must each be at least 256 bytes, and the
 snapshot limit cannot exceed the response limit. Runtime count and byte
 ceilings may be zero; per-call ticks, cumulative ticks, and work units must be
-positive. All configuration comes from the trusted embedding server, not the
+positive. Gas also requires a positive decimal-string ceiling no greater than
+`u64::MAX`. All configuration comes from the trusted embedding server, not the
 requesting client.
 
 Supported operations are `check`, `compile`, `program_view`, `create_instance`,
@@ -80,7 +84,8 @@ Supported operations are `check`, `compile`, `program_view`, `create_instance`,
   without recompiling.
 - `create_instance` takes `program`, an `input` byte array,
   decimal-string `seed`, positive decimal-string
-  `custom_execution_limit`, and optional `initial_memory`. Each initial-memory
+  `custom_execution_limit`, required positive decimal-string `gas_hard_limit`
+  no greater than the trusted Gas ceiling, and optional `initial_memory`. Each initial-memory
   item is `{ "address": "<canonical signed decimal>", "value": <0..255> }`.
   Missing initial memory means an empty array. Duplicate addresses are rejected;
   zero-valued entries are accepted and normalized away by the Runtime API.
@@ -123,6 +128,8 @@ compile/program-view result contains the verified Outer and Custom CodeGrid
 views.
 
 Full raw `metrics` contain decimal-string `global_tick`, `operation_count`,
+`gas_used`, `execution_gas`, `memory_gas`, `stack_gas`, numeric
+`gas_schedule_version: 1`,
 `used_cell_count`, `used_memory_address_count`, and the three stack high-water
 values, plus ordered `used_cells`, `used_memory_addresses`, and
 `instruction_variety`. Used-cell identities include CodeGrid, Board, optional
@@ -159,7 +166,7 @@ staging, serializer formatting, total process memory, or wall-clock duration.
 ## Local validation
 
 Native tests exercise ABI v4 request validation, lifecycle, wide integer and
-initial-memory conversion, and all 81 shared Full conformance cases. The
+initial-memory conversion, and all 107 shared Full conformance cases. The
 `server-smoke.mjs` runner additionally exercises the no-import Wasm exports,
 buffer lifecycle, configured memory maximum, ABI v4 operations, Full fixture
 fields, and resource ceilings in Node's WebAssembly host. These local tests do
@@ -173,7 +180,8 @@ node crates/codegrid-wasm-server/tests/server-smoke.mjs
 ```
 
 The standalone [Wasmtime host harness](../../tools/wasmtime-host/README.md)
-still expects the superseded ABI v3/API v2 contract and has not yet been
-migrated to this Full ABI v4. It is not a v4 conformance check. Host fuel,
+checks current ABI v4/API v3 against complete native CLI results, including
+Gas and disabled Custom. Executing Custom returns `CustomDisabled`; retained
+syntax and implementation do not expose a production enable switch. Host fuel,
 wall-clock deadlines, process memory, concurrency, and cancellation remain the
 embedding server's responsibility.

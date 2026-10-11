@@ -104,3 +104,29 @@ fn trusted_rust_configuration_cannot_bypass_validation() {
     profile.max_response_bytes = 511;
     assert!(profile.validate().is_err());
 }
+
+#[test]
+fn per_test_gas_is_required_positive_exact_and_trusted() {
+    let base: Value = serde_json::from_str(PROFILE).unwrap();
+    for invalid in [
+        json!("0"),
+        json!("01"),
+        json!("+1"),
+        json!("18446744073709551616"),
+        json!(1),
+        Value::Null,
+    ] {
+        let mut value = base.clone();
+        value["max_gas_per_test"] = invalid;
+        assert!(SafetyProfileV2::from_json(&value.to_string()).is_err());
+    }
+    let mut missing = base.clone();
+    missing.as_object_mut().unwrap().remove("max_gas_per_test");
+    assert!(SafetyProfileV2::from_json(&missing.to_string()).is_err());
+    let mut exact = base;
+    exact["max_gas_per_test"] = json!(u64::MAX.to_string());
+    let mut profile = SafetyProfileV2::from_json(&exact.to_string()).unwrap();
+    assert_eq!(profile.max_gas_per_test, u64::MAX);
+    profile.max_gas_per_test = 0;
+    assert!(profile.validate().is_err());
+}

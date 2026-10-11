@@ -344,3 +344,27 @@ fn removed_scene_identifiers_and_metrics_are_rejected() {
         assert_eq!(load(&v).unwrap_err().reason, "UnsupportedMetric");
     }
 }
+
+#[test]
+fn gas_and_size_are_current_author_contract_without_legacy_aliases() {
+    let mut value = example("exactio");
+    value["constraints"] = json!({"max_gas":u64::MAX,"max_size":0});
+    value["scoring"]["metrics"] = json!({"gas_used":{"target":u64::MAX},"size":{"target":0}});
+    assert!(load(&value).is_ok());
+    for old in ["max_cost", "max_non_empty_cells"] {
+        let mut invalid = value.clone();
+        invalid["constraints"][old] = json!(1);
+        assert!(load(&invalid).is_err());
+    }
+    for invalid_name in [
+        "cost",
+        "non_empty_cells",
+        "execution_gas",
+        "memory_gas",
+        "stack_gas",
+    ] {
+        let mut invalid = value.clone();
+        invalid["scoring"]["metrics"][invalid_name] = json!({"target":1});
+        assert!(load(&invalid).is_err());
+    }
+}
