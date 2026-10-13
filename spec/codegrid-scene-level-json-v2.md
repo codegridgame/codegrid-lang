@@ -172,10 +172,11 @@ Each test has exactly visible, input, and expected_output. input is a nonempty
 array of ordered records, each exactly:
 
 ```json
-{ "color": 1, "true_inspection": 0 }
+{ "color": 1, "true_inspection": 3 }
 ```
 
-color and true_inspection are integers 0–2, with Scene Spec's numeric enums.
+color is an integer 0–2. true_inspection is 1 DEFECT, 2 IRREPARABLE, or 3 NORMAL;
+0 UNINSPECTED is not an author-provided true result.
 Reject input runtime-state bytes and initial processed/packed flags.
 expected_output is a nonempty array of visible state bytes, length no greater
 than input length. Require bits 7–6 zero, color not 3, and processed/packed zero

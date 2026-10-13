@@ -923,3 +923,12 @@ for empty hands, matching dual-arm snapshots. Registers and continuous VM state
 persist. Existing terminal/invalid-action rules remain. ExactIO is unchanged.
 Debug input publication is InputUpdated. This decision supersedes older
 append/event-input scene contracts.
+
+## 2026-10-13: MechanicalArm inspection bitmap ordering
+
+The user explicitly swapped the two-bit codes for UNINSPECTED and NORMAL:
+0 UNINSPECTED, 1 DEFECT, 2 IRREPARABLE, 3 NORMAL. Colors and flag bits are
+unchanged. Hidden author true_inspection uses 1/2/3 and rejects 0.
+Fresh robots expose color only until inspection. Repair sets inspection bits
+to 3; processed/packed states require inspection 3. Empty hands remain 255.
+Update current fixtures and consumers directly, with no unpublished legacy reader.

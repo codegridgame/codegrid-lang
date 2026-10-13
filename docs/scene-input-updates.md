@@ -14,7 +14,7 @@ Both arm layouts publish current-hand snapshots every round. Initial input is
 `[255]` or `[255,255]`; empty hands remain 255. A command updates observations
 without changing the item byte. GRAB preserves the acquired state; only
 worktable transformations change it. New input robots start UNINSPECTED:
-a blue robot is 13 even when its hidden true state is irreparable; inspection
+a blue robot is 1 even when its hidden true state is irreparable; inspection
 reveals state 9. Existing terminal and illegal-action rules remain.
 
 The Rust VM exposes atomic input replacement at completed tick boundaries.
@@ -24,8 +24,8 @@ contains the current-hand snapshot for both layouts. ExactIO is unchanged.
 
 ## Source and downstream synchronization
 
-Source base: `b9a71a0d1d2c497f903e6f33c038f4281273d75c`, source_dirty=true.
-Evaluator: `codegrid-level-source-sha256:37550f19fbc4f3e343b942ead45e8097ae23dcb5c348134b3f12b38973fd63ea`.
+Source base: `ae58c0ecb7e75104b6d0eb967b50f616d7e9af49`, source_dirty=true.
+Evaluator: `codegrid-level-source-sha256:25f19c0df75cc8da3ef879bbc870986f71301f0202840bf0345812242eeeefc8`.
 Preserved pre-existing changes in both working trees.
 
 Updated downstream `apps/editor/src/scene-wasm/` and
@@ -51,3 +51,19 @@ Steam editor receives the updated scene set.
   of 1000 to remain within the harness fuel per request.
 
 No production deployment, physical hardware, or Steamworks acceptance is claimed.
+
+## Final inspection bitmap ordering
+
+The same-day follow-up swaps UNINSPECTED/NORMAL: bits 3–2 are 00 UNINSPECTED,
+01 DEFECT, 10 IRREPARABLE, 11 NORMAL. Hidden true_inspection accepts 1, 2, 3;
+0 is not a real detection result. Blue arrival is 1; inspected normal is 13;
+processed normal is 29; packed normal is 45; processed and packed normal is 61.
+GRAB preserves state, Repair sets inspection bits to 11, and table preconditions
+and legal output validation use this final ordering. Empty hands remain 255.
+
+Final bitmap verification: 152 Rust Level Core/API tests, formatter/diff checks,
+72 complete native/Node/browser/Wasmtime results and matching WASM Debug traces,
+editor 91 tests, client-application 228 tests, API 95 tests, desktop/compact arm
+editing E2E, full workspace type checks, editor build and offline Electron pass.
+Only codegrid-lang is committed/pushed at the user's request; downstream source,
+WASM, fixtures and provenance updates remain locally applied and uncommitted.

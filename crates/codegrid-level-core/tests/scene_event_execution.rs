@@ -152,7 +152,7 @@ fn inspection_is_revealed_only_on_ready_and_illegal_packing_has_location() {
         .unwrap()
         .contains("true_inspection"));
     let first_grab = trace.iter().find(|e| e["kind"] == "ActionApplied").unwrap();
-    assert_eq!(first_grab["data"]["effect"]["after_state"], 13);
+    assert_eq!(first_grab["data"]["effect"]["after_state"], 1);
     let ready = trace
         .iter()
         .find(|e| {
@@ -191,9 +191,9 @@ fn dual_buffer_drop_cannot_be_grabbed_until_following_round() {
     assert_eq!(rounds[2]["data"]["observation"], json!([255, 255]));
     assert_eq!(
         rounds[2]["data"]["transitions"],
-        json!([{"kind":"BufferReady","buffer":"Left","state":13}])
+        json!([{"kind":"BufferReady","buffer":"Left","state":1}])
     );
-    assert_eq!(rounds[3]["data"]["observation"], json!([255, 13]));
+    assert_eq!(rounds[3]["data"]["observation"], json!([255, 1]));
 }
 #[test]
 fn unvisited_patrol_fails_on_halt_without_action_events() {

@@ -42,11 +42,11 @@
         "input": [
           {
             "color": 1,
-            "true_inspection": 0
+            "true_inspection": 3
           }
         ],
         "expected_output": [
-          33
+          45
         ]
       }
     ]

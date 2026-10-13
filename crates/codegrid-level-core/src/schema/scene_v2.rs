@@ -404,9 +404,15 @@ fn case(config: &SceneConfig, v: &Value, p: &str) -> Result<SceneCase, LevelErro
                     true_inspection: byte(
                         &r["true_inspection"],
                         &format!("{q}.true_inspection"),
-                        2,
+                        3,
                     )?,
                 });
+                if input.last().unwrap().true_inspection == 0 {
+                    return Err(LevelError::invalid(
+                        "InvalidRobotState",
+                        &format!("{q}.true_inspection"),
+                    ));
+                }
             }
             let expected = bytes(&m["expected_output"], &format!("{p}.expected_output"))?;
             if input.is_empty() || expected.is_empty() || expected.len() > input.len() {
@@ -416,7 +422,7 @@ fn case(config: &SceneConfig, v: &Value, p: &str) -> Result<SceneCase, LevelErro
                 ));
             }
             for (i, b) in expected.iter().enumerate() {
-                if b & 192 != 0 || b & 3 == 3 || (b & 48 != 0 && (b >> 2) & 3 != 0) {
+                if b & 192 != 0 || b & 3 == 3 || (b & 48 != 0 && (b >> 2) & 3 != 3) {
                     return Err(LevelError::invalid(
                         "InvalidRobotState",
                         &format!("{p}.expected_output[{i}]"),

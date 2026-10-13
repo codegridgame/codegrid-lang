@@ -50,7 +50,7 @@ export function runSceneConformance(request, cases, assert) {
     }
     if (fixture.id === 'mechanical-arm.current-hand') {
       const snapshots = events.filter(event => event.kind === 'InputUpdated').map(event => event.data.bytes);
-      assert(JSON.stringify(snapshots) === JSON.stringify([[255], [13], [13], [255], [255]]), 'single-arm updates every command');
+      assert(JSON.stringify(snapshots) === JSON.stringify([[255], [1], [1], [255], [255]]), 'single-arm updates every command');
     }
     results.push({id: fixture.id, result: response.result, events});
     assert(JSON.stringify(call('evaluation_result', {evaluation: started.handle}).result) === JSON.stringify(response.result), fixture.id + ': stable result');

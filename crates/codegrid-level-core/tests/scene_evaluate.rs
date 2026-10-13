@@ -230,8 +230,8 @@ fn mechanical_comparison_excludes_hidden_input_robot_records() {
     else {
         panic!("arm comparison")
     };
-    assert_eq!(expected_output, &[33]);
-    assert_eq!(actual_output, &[33]);
+    assert_eq!(expected_output, &[45]);
+    assert_eq!(actual_output, &[45]);
 }
 
 #[test]

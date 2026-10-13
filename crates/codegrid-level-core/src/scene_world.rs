@@ -303,7 +303,7 @@ impl ArmWorld {
             input: input
                 .iter()
                 .map(|robot| ArmRobot {
-                    state: 12 | robot.color,
+                    state: robot.color,
                     true_inspection: robot.true_inspection,
                 })
                 .collect(),
@@ -368,10 +368,10 @@ impl ArmWorld {
         let processed = robot.state & 16 != 0;
         let packed = robot.state & 32 != 0;
         let valid = match table {
-            Inspection => inspection == 3 && !processed && !packed,
+            Inspection => inspection == 0 && !processed && !packed,
             Repair => inspection == 1 && !processed && !packed,
-            Processing => inspection == 0 && !processed && !packed,
-            Packing => inspection == 0 && !packed,
+            Processing => inspection == 3 && !processed && !packed,
+            Packing => inspection == 3 && !packed,
             Removal => true,
         };
         if !valid {
@@ -379,7 +379,7 @@ impl ArmWorld {
         }
         match table {
             Inspection => robot.state = (robot.state & 3) | (robot.true_inspection << 2),
-            Repair => robot.state &= !12,
+            Repair => robot.state = (robot.state & !12) | 12,
             Processing => robot.state |= 16,
             Packing => robot.state |= 32,
             Removal => {}
@@ -534,9 +534,9 @@ mod arm_tests {
             ],
             &[InputRobot {
                 color: 1,
-                true_inspection: 0,
+                true_inspection: 3,
             }],
-            &[33],
+            &[45],
         )
     }
     fn round(world: &mut ArmWorld, action: u8) -> Vec<u8> {
@@ -548,9 +548,9 @@ mod arm_tests {
         let mut world = arm(1);
         assert_eq!(world.initial_input(), [255]);
         assert_eq!(round(&mut world, 0), [255]);
-        assert_eq!(round(&mut world, 1), [13]);
-        assert_eq!(round(&mut world, 0), [13]);
-        assert_eq!(round(&mut world, 4), [13]);
+        assert_eq!(round(&mut world, 1), [1]);
+        assert_eq!(round(&mut world, 0), [1]);
+        assert_eq!(round(&mut world, 4), [1]);
         assert_eq!(round(&mut world, 2), [255]);
         assert_eq!(round(&mut world, 3), [255]);
         assert_eq!(round(&mut world, 1), [255]);
@@ -559,18 +559,18 @@ mod arm_tests {
     fn inspection_direct_pack_and_output_fifo() {
         let mut world = arm(1);
         assert_eq!(world.initial_input(), [255]);
-        assert_eq!(round(&mut world, 1), [13]);
-        round(&mut world, 4);
-        round(&mut world, 2);
-        assert!(world.hands[0].is_none());
         assert_eq!(round(&mut world, 1), [1]);
         round(&mut world, 4);
         round(&mut world, 2);
-        assert_eq!(round(&mut world, 1), [33]);
+        assert!(world.hands[0].is_none());
+        assert_eq!(round(&mut world, 1), [13]);
+        round(&mut world, 4);
+        round(&mut world, 2);
+        assert_eq!(round(&mut world, 1), [45]);
         round(&mut world, 4);
         world.act(0, 2).unwrap();
         assert!(world.complete());
-        assert_eq!(world.actual, [33]);
+        assert_eq!(world.actual, [45]);
     }
     #[test]
     fn pending_buffer_cannot_be_grabbed_same_round_and_keeps_identity() {
@@ -584,26 +584,26 @@ mod arm_tests {
         assert_eq!(world.observation(), [255, 255]);
         world.end_round(Vec::new()).unwrap();
         world.act(1, 1).unwrap();
-        assert_eq!(world.observation(), [255, 13]);
-        assert_eq!(world.hands[1].unwrap().true_inspection, 0);
+        assert_eq!(world.observation(), [255, 1]);
+        assert_eq!(world.hands[1].unwrap().true_inspection, 3);
     }
     #[test]
     fn table_preconditions_and_removal() {
         let uninspected = ArmRobot {
-            state: 13,
+            state: 1,
             true_inspection: 1,
         };
         let defect = ArmWorld::transform(Worktable::Inspection, uninspected).unwrap();
         assert_eq!(defect.state, 5);
         let normal = ArmWorld::transform(Worktable::Repair, defect).unwrap();
-        assert_eq!(normal.state, 1);
+        assert_eq!(normal.state, 13);
         let processed = ArmWorld::transform(Worktable::Processing, normal).unwrap();
-        assert_eq!(processed.state, 17);
+        assert_eq!(processed.state, 29);
         assert_eq!(
             ArmWorld::transform(Worktable::Packing, processed)
                 .unwrap()
                 .state,
-            49
+            61
         );
         for (table, robot) in [
             (Worktable::Inspection, normal),
@@ -630,13 +630,13 @@ mod arm_tests {
         world.act(0, 1).unwrap();
         assert_eq!(world.act(0, 2), Err(ArmError::InvalidDropTarget));
         world.input.push_back(ArmRobot {
-            state: 12,
+            state: 0,
             true_inspection: 2,
         });
         assert_eq!(world.act(0, 1), Err(ArmError::OccupiedHand));
         world.orientations[0] = 1;
         world.slots[0] = SlotState::Pending(ArmRobot {
-            state: 12,
+            state: 0,
             true_inspection: 2,
         });
         assert_eq!(world.act(0, 1), Err(ArmError::OccupiedHand));
@@ -645,19 +645,19 @@ mod arm_tests {
         assert!(world.act(0, 1).unwrap().is_empty());
         world.orientations[0] = 3;
         world.hands[0] = Some(ArmRobot {
-            state: 13,
-            true_inspection: 0,
+            state: 1,
+            true_inspection: 3,
         });
         assert_eq!(
             world.act(0, 2),
             Err(ArmError::WrongOutput {
                 index: 0,
-                expected: Some(33),
-                actual: 13
+                expected: Some(45),
+                actual: 1
             })
         );
         assert!(world.hands[0].is_none());
-        assert_eq!(world.actual, [13]);
+        assert_eq!(world.actual, [1]);
     }
 }
 

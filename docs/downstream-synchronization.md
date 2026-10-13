@@ -139,3 +139,19 @@ b9a71a0d1d2c497f903e6f33c038f4281273d75c with source_dirty=true.
 results and WASM traces pass. Downstream editor 91/API 95 tests, full workspace
 type checks, architecture check, editor build and offline Electron pass.
 See [verification and source identity](scene-input-updates.md).
+
+## 2026-10-13 final MechanicalArm inspection bitmap
+
+The user swapped UNINSPECTED/NORMAL codes to 0/3; DEFECT and IRREPARABLE
+remain 1/2. Hidden true_inspection accepts only 1/2/3. Initial blue item state
+is 1, normal blue is 13, processed normal blue is 29, packed normal blue is 45,
+and processed/packed normal blue is 61. GRAB preserves state; worktables alone
+perform transformations. This supersedes earlier same-day bitmap examples.
+
+Updated Rust state initialization, table operations, author/output validation,
+fixtures, tests, and normative specs. Updated downstream editor state choices,
+defaults, arrival/output controls, client author validation, fixture bytes,
+actual-WASM consumers and both artifact/provenance sets. No player-data migration
+or compatibility reader is introduced. User requested committing/pushing only
+codegrid-lang; downstream synchronization remains locally applied and uncommitted.
+See [final bitmap and verification](scene-input-updates.md#final-inspection-bitmap-ordering).

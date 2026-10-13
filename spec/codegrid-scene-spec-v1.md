@@ -273,7 +273,7 @@ Packing, Removal. Dual arms cannot access each other's private tables.
 ### 8.2 Robot data and encoding
 
 An input robot's author data contains only color (0–2) and hidden true
-inspection (0 NORMAL, 1 DEFECT, 2 IRREPARABLE). Authors cannot provide
+inspection (1 DEFECT, 2 IRREPARABLE, 3 NORMAL). Authors cannot provide
 UNINSPECTED, processed, or packed initial states. Preserve input FIFO order.
 On its first grab from input, the robot's visible inspection is UNINSPECTED,
 processed and packed are zero, and its color is the author color. The hidden
@@ -286,7 +286,7 @@ Visible state is one byte:
 | 7–6 | Reserved, must be zero |
 | 5 | Packed |
 | 4 | Processed |
-| 3–2 | Inspection: 0 NORMAL, 1 DEFECT, 2 IRREPARABLE, 3 UNINSPECTED |
+| 3–2 | Inspection: 0 UNINSPECTED, 1 DEFECT, 2 IRREPARABLE, 3 NORMAL |
 | 1–0 | Color: 0 NONE, 1 BLUE, 2 RED; 3 invalid |
 
 State is `color | (inspection << 2) | (processed << 4) | (packed << 5)`.

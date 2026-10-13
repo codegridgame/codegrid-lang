@@ -293,12 +293,12 @@ fn mechanical_robot_state_domain_and_table_slots_are_finite() {
     let mut accepted = 0;
     for byte in 0..=255 {
         v["evaluation"]["tests"][0]["expected_output"] = json!([byte]);
-        let legal = byte & 192 == 0 && byte & 3 != 3 && (byte & 48 == 0 || (byte >> 2) & 3 == 0);
+        let legal = byte & 192 == 0 && byte & 3 != 3 && (byte & 48 == 0 || (byte >> 2) & 3 == 3);
         assert_eq!(load(&v).is_ok(), legal, "state {byte}");
         accepted += usize::from(legal);
     }
     assert_eq!(accepted, 21);
-    v["evaluation"]["tests"][0]["expected_output"] = json!([33]);
+    v["evaluation"]["tests"][0]["expected_output"] = json!([45]);
     v["scene_config"]["worktables"] = json!(["Inspection", "Inspection", null, "Removal"]);
     load(&v).unwrap();
     v["scene_config"]["worktables"] = json!([]);
@@ -366,5 +366,14 @@ fn gas_and_size_are_current_author_contract_without_legacy_aliases() {
         let mut invalid = value.clone();
         invalid["scoring"]["metrics"][invalid_name] = json!({"target":1});
         assert!(load(&invalid).is_err());
+    }
+}
+
+#[test]
+fn author_true_inspection_uses_detected_codes_only() {
+    let mut v = example("mechanical-arm");
+    for state in 0..=3 {
+        v["evaluation"]["tests"][0]["input"][0]["true_inspection"] = json!(state);
+        assert_eq!(load(&v).is_ok(), state != 0, "true inspection {state}");
     }
 }
