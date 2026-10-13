@@ -58,7 +58,7 @@ direct positive/negative cases from Scene Spec Section 11.
 | session.state | Registers, memory, stacks, mutable code, input, and PRNG persist within case; No per-action VM reconstruction |
 | session.reset | Next case begins after a self-modifying, stateful case; Standard state and original verified code; no queued bytes/frame/world leak |
 | session.capacity | Observation cannot be fully reserved; ResourceLimitExceeded; no partial replacement or speculative round events |
-| session.privacy | Hidden case/inspection and visible permitted observation; No hidden definitions/traces/metrics escape projections |
+| session.privacy | Hidden case data and visible permitted observation; No hidden definitions/traces/metrics escape projections |
 
 ## Delivery gates and evidence
 
@@ -82,7 +82,7 @@ direct positive/negative cases from Scene Spec Section 11.
 
 The loader implements strict author loading for ExactIO, Robot, and
 MechanicalArm. Current schema tests cover the example manifest, removed-scene
-rejection, all MechanicalArm state bytes, Robot associations/starts, strict
+rejection, all 192 valid MechanicalArm module bytes, Robot associations/starts, strict
 envelopes, trusted size limits, and applicable metric restrictions.
 
 ## Host v2 acceptance additions
@@ -104,8 +104,8 @@ envelopes, trusted size limits, and applicable metric restrictions.
 ## Scene protocol implementation evidence
 
 The Rust `scene_protocol` layer constructs scenes from validated definitions,
-frames dual actor bytes before dispatch, stops at terminal A, and preserves A
-effects when B fails. Private `scene_world` transitions implement Robot and MechanicalArm; static
+frames dual actor bytes before dispatch. Robot stops at terminal A and retains A
+effects when B fails. MechanicalArm validates and stages both actors atomically. Private `scene_world` transitions implement Robot and MechanicalArm; static
 comparisons use ExactIO.
 The Rust-only VM `replace_input` reserves whole replacements and discards unread data
 and execution metrics.
@@ -148,7 +148,7 @@ browser/server comparisons remain required before capability registration.
 
 Native tests verify atomic event publication, reserved case termination,
 actor ordering, terminal A handling, preservation of A effects on B failure,
-MechanicalArm inspection disclosure and delayed buffers, initial goals,
+MechanicalArm immediate flipping, weighted stacks, and atomic shared conflicts, initial goals,
 Official feedback exclusion, and capacity reclamation after acknowledgement.
 Definition unit totals are cached during author loading; case advancement does
 not repeatedly scan all immutable maps. Static incomplete output does not
@@ -201,9 +201,9 @@ ceilings represented as decimal strings. Level/source replay hashes use exact
 original input bytes. Browser/server transport v2, actual WASM comparisons, and
 complete cross-host resource/event-work audits remain delivery gates.
 
-## Actual scene host execution evidence
+## Historical scene host execution evidence before module redesign
 
-The current `fixtures/scene-v2/conformance-v2.json` manifest supplies 15 runs
+The pre-redesign `fixtures/scene-v2/conformance-v2.json` manifest supplied 15 runs
 for ExactIO, Robot, and MechanicalArm, including Debug/Official execution,
 byte boundaries, classification, small slices, and reactive observations. CLI integration tests invoke these files through
 `evaluate --api-version 2`. Browser `SceneLevelSession` and portable ABI 2 use
@@ -212,7 +212,7 @@ the same Rust API; v1 constructors/transport requests remain supported.
 `scripts/test-scene-hosts.mjs`, the actual Chromium module Worker, and Wasmtime
 `level-parity --scene-v2` produce separate reports. `compare-scene-hosts.mjs`
 compares every complete result to native CLI and every Debug event to the
-portable report. All 15 current runs match, including MechanicalArm inspection/packing,
+portable report. The historical 15-run snapshot matched, including the superseded inspection/packing scene,
 ExactIO byte boundaries/classification, Robot patrol, Official event exclusion, and slice
 trace equivalence. Encoded 64 MiB memory limits, zero portable imports, and
 Wasmtime fuel exhaustion are checked. These are actual executions, not parity
@@ -243,3 +243,15 @@ checks report exactly ExactIO, Robot, and MechanicalArm. Removed scene
 identifiers are rejected, and ExactIO accepts arbitrary byte inputs/outputs
 without paper-tape or quality-specific domain restrictions. Earlier delivery
 stages and their test counts below are historical evidence.
+
+## MechanicalArm module logistics acceptance (2026-10-13)
+
+The current schema directly replaces inspection/packing with typed global
+stations and two modes. Focused tests exhaust all 256 byte values (192 accepted),
+reject duplicate station IDs, enforce capacities/weight/conservation, verify
+immediate flips, shared no-op conflicts, complete-frame rollback, final normal
+termination, and held-module target failure. The current actual-host manifest
+adds final-layout multi-case/sliced runs, shared conflict, heavy-on-light failure,
+and final flip targets. Historical host counts above are not acceptance evidence
+for this new contract; current verification is recorded by the task completion
+and downstream synchronization report.

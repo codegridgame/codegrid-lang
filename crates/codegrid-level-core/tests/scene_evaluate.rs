@@ -218,7 +218,7 @@ fn hidden_resource_failure_exposes_no_player_failure_or_hidden_metrics() {
     assert_eq!(result.partial_metrics.get("ticks").copied().unwrap_or(0), 0);
 }
 #[test]
-fn mechanical_comparison_excludes_hidden_input_robot_records() {
+fn mechanical_comparison_contains_public_module_bytes() {
     let v = author("arm");
     let p = program(&[".1", ".4", ".2", ".1", ".4", ".2", ".1", ".4", ".2", ";"]);
     let result = evaluate_scene(load(&v), p, EvaluationMode::Official, config(), limits());
@@ -230,8 +230,8 @@ fn mechanical_comparison_excludes_hidden_input_robot_records() {
     else {
         panic!("arm comparison")
     };
-    assert_eq!(expected_output, &[45]);
-    assert_eq!(actual_output, &[45]);
+    assert_eq!(expected_output, &[5]);
+    assert_eq!(actual_output, &[5]);
 }
 
 #[test]

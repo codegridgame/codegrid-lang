@@ -47,7 +47,7 @@ wide integers or bytes. Preserve exact Unicode IDs without normalization.
 | --- | --- | --- |
 | ExactIO | ExactIO | None: exactly `{}` |
 | Robot | Environment | robot_count |
-| MechanicalArm | Environment | arm_count, worktables |
+| MechanicalArm | Environment | arm_count, mode, stations |
 
 A mismatched family/scene combination is invalid, even if the tests happen
 to resemble another scene. Configuration is level-wide and shared by all cases.
@@ -155,34 +155,25 @@ color and object; associated mechanisms must be repaired or removed before expor
 
 ## 7. MechanicalArm records
 
-Config has exactly arm_count (1 or 2) and worktables (exactly four entries).
-Each entry is null or one of Inspection, Repair, Processing, Packing, Removal.
-Duplicates are legal. Slots are fixed:
+Config has exactly arm_count (1 or 2), mode (OUTPUT_SEQUENCE or FINAL_LAYOUT),
+and stations. Each station record has exactly station_id and station_type.
+Provide every ID exactly once: 0..5 for one arm or 0..9 for two. Record order
+is immaterial. Types are STACK, FLIP, INPUT, OUTPUT. Capacities derive from
+type: STACK=4, FLIP=1, INPUT/OUTPUT=0. At most one each special type is allowed.
+OUTPUT_SEQUENCE requires OUTPUT; FINAL_LAYOUT forbids conveyors.
 
-| Mode | worktables array order |
-| --- | --- |
-| One arm | Orientations 1, 2, 4, 5 |
-| Two arms | A orientation 1, A orientation 2, B orientation 4, B orientation 5 |
-
-Null means a noninteractive empty slot. Buffers, conveyors, actor locations,
-empty initial hands, and LEFT initial orientations are fixed by the protocol,
-not additional configuration fields.
-
-Each test has exactly visible, input, and expected_output. input is a nonempty
-array of ordered records, each exactly:
-
-```json
-{ "color": 1, "true_inspection": 3 }
-```
-
-color is an integer 0–2. true_inspection is 1 DEFECT, 2 IRREPARABLE, or 3 NORMAL;
-0 UNINSPECTED is not an author-provided true result.
-Reject input runtime-state bytes and initial processed/packed flags.
-expected_output is a nonempty array of visible state bytes, length no greater
-than input length. Require bits 7–6 zero, color not 3, and processed/packed zero
-unless inspection is NORMAL. Byte 255 is invalid. NORMAL packed with processed
-zero is legal. Do not require the loader to prove solvability or identify a
-specific input robot for each expected state.
+OUTPUT_SEQUENCE cases contain exactly visible, initial_station_contents,
+input_queue, expected_output. FINAL_LAYOUT cases contain exactly visible,
+initial_station_contents, target_station_contents. Contents arrays have one
+bottom-to-top array per numeric global station ID. Enforce capacity, valid
+module bytes, empty conveyors, and no heavy module above light. Bytes have
+color 0/1/2 in bits 1..0, face in bit 2, weight in bit 3, number in bits 7..4.
+255 and all color-3 bytes are invalid modules. A nonempty input_queue requires
+INPUT. Expected output must be nonempty; it may consume a subset of modules.
+Final initial/target inventory must match after clearing bit 2. Rust derives
+target count-prefixed bytes; independent expected_output is forbidden.
+Hands/directions start fixed and are not author target fields. Loading FLIP
+contents preserves the authored face. Validation does not prove reachability.
 
 ## 8. Validation surfaces and host integration
 
@@ -221,7 +212,7 @@ specific field path and the shared `IntegerOutOfRange` reason.
 
 Case execution is not initial-state deserialization: decode untrusted records,
 validate them into opaque definitions, then construct fresh VM/world state.
-All hidden records, including MechanicalArm true_inspection, stay behind the
+All hidden case records, stay behind the
 existing hidden-test privacy boundary. Trusted load/test/world/feedback ceilings
 apply to every case; authors cannot disable them through this JSON.
 

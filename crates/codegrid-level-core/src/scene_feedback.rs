@@ -24,22 +24,12 @@ impl Serialize for SceneActor {
 }
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum SceneInteraction {
-    Input,
-    Output,
-    BufferLeft,
-    BufferRight,
-    Worktable(usize),
-    Unavailable,
+    Station(usize),
 }
 impl SceneInteraction {
     pub fn name(self) -> &'static str {
         match self {
-            Self::Input => "Input",
-            Self::Output => "Output",
-            Self::BufferLeft => "BufferLeft",
-            Self::BufferRight => "BufferRight",
-            Self::Worktable(_) => "Worktable",
-            Self::Unavailable => "Unavailable",
+            Self::Station(_) => "Station",
         }
     }
 }
@@ -61,9 +51,13 @@ pub enum SceneEffect {
 }
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum SceneRoundChange {
-    TableReady { worktable_index: usize, state: u8 },
-    BufferReady { right: bool, state: u8 },
-    DoorOpened { door_id: u8 },
+    StationUpdated {
+        station_id: usize,
+        contents: Vec<u8>,
+    },
+    DoorOpened {
+        door_id: u8,
+    },
 }
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum SceneEventPayload {
@@ -82,7 +76,7 @@ pub enum SceneEventPayload {
     InputUpdated {
         bytes: Vec<u8>,
     },
-    RobotProduced {
+    ModuleProduced {
         state: u8,
         output_index: u64,
     },
@@ -165,9 +159,8 @@ pub fn visible_failure_value(failure: &VisibleSceneFailure, static_scene: bool) 
                     actor, interaction, ..
                 } => {
                     details.insert("interaction".into(), json!(interaction.name()));
-                    if let SceneInteraction::Worktable(index) = interaction {
-                        details.insert("worktable_index".into(), json!(index));
-                    }
+                    let SceneInteraction::Station(index) = interaction;
+                    details.insert("station_id".into(), json!(index));
                     details.insert("actor".into(), json!(if *actor == 0 { "A" } else { "B" }));
                     ("level.test_failed", "IllegalOperation")
                 }
@@ -215,9 +208,8 @@ impl SceneEffect {
                 after_state,
             } => {
                 let mut value = json!({"scene_type":"MechanicalArm","interaction":interaction.name(),"from_orientation":from_orientation,"to_orientation":to_orientation,"before_state":before_state,"after_state":after_state});
-                if let SceneInteraction::Worktable(index) = interaction {
-                    value["worktable_index"] = json!(index);
-                }
+                let SceneInteraction::Station(index) = interaction;
+                value["station_id"] = json!(index);
                 value
             }
         }
@@ -226,13 +218,10 @@ impl SceneEffect {
 impl SceneRoundChange {
     fn value(&self) -> Value {
         match self {
-            Self::TableReady {
-                worktable_index,
-                state,
-            } => json!({"kind":"TableReady","worktable_index":worktable_index,"state":state}),
-            Self::BufferReady { right, state } => {
-                json!({"kind":"BufferReady","buffer":if *right {"Right"}else{"Left"},"state":state})
-            }
+            Self::StationUpdated {
+                station_id,
+                contents,
+            } => json!({"kind":"StationUpdated","station_id":station_id,"contents":contents}),
             Self::DoorOpened { door_id } => json!({"kind":"DoorOpened","door_id":door_id}),
         }
     }
@@ -256,7 +245,7 @@ impl SceneEventPayload {
             Self::ActionApplied { .. } => "ActionApplied",
             Self::RoundCompleted { .. } => "RoundCompleted",
             Self::InputUpdated { .. } => "InputUpdated",
-            Self::RobotProduced { .. } => "RobotProduced",
+            Self::ModuleProduced { .. } => "ModuleProduced",
             Self::CaseEnded { .. } => "CaseEnded",
         }
     }
@@ -274,7 +263,7 @@ impl SceneEventPayload {
                 json!({"rounds":rounds.to_string(),"observation":observation,"transitions":transitions.iter().map(SceneRoundChange::value).collect::<Vec<_>>()})
             }
             Self::InputUpdated { bytes } => json!({"bytes":bytes}),
-            Self::RobotProduced {
+            Self::ModuleProduced {
                 state,
                 output_index,
             } => json!({"state":state,"output_index":output_index.to_string()}),

@@ -248,3 +248,63 @@ fn every_advertised_scene_executes_through_api_two() {
         assert_ne!(terminal["result"]["status"], "Fault");
     }
 }
+
+#[test]
+fn mechanical_arm_final_layout_projects_exact_station_bytes_after_halt() {
+    let mut api = api();
+    let mut author: Value = serde_json::from_str(include_str!(
+        "../../../examples/scene-level-v2/exactio.json"
+    ))
+    .unwrap();
+    author["scene_type"] = json!("MechanicalArm");
+    author["evaluation_type"] = json!("Environment");
+    author["scene_config"] = json!({
+        "arm_count": 1,
+        "mode": "FINAL_LAYOUT",
+        "stations": (0..6).map(|station_id| json!({
+            "station_id": station_id, "station_type": "STACK"
+        })).collect::<Vec<_>>()
+    });
+    author["program_rules"]["allowed_instructions"] =
+        json!(codegrid_level_core::instruction_identifiers());
+    author["evaluation"]["tests"] = json!([{
+        "visible": true,
+        "initial_station_contents": [[0], [], [], [], [], []],
+        "target_station_contents": [[], [0], [], [], [], []]
+    }]);
+    let level = request(
+        &mut api,
+        json!({
+            "operation": "load_level", "level_json": author.to_string()
+        }),
+    );
+    assert_eq!(level["status"], "ok", "{level}");
+    let program = request(
+        &mut api,
+        json!({
+            "operation": "compile_program", "source": "@main\n.1 .4 .2 ;\n@end main"
+        }),
+    );
+    assert_eq!(program["status"], "ok", "{program}");
+    let started = start(
+        &mut api,
+        level["handle"].clone(),
+        program["handle"].clone(),
+        "Debug",
+    );
+    assert_eq!(started["status"], "ok", "{started}");
+    let result = request(
+        &mut api,
+        json!({
+            "operation": "advance_evaluation", "evaluation": started["handle"], "work_budget": "1000000"
+        }),
+    );
+    assert_eq!(result["result"]["status"], "Passed", "{result}");
+    assert_eq!(
+        result["result"]["visible_cases"][0]["comparison"],
+        json!({
+            "expected_output": [0, 1, 0, 0, 0, 0, 0],
+            "actual_output": [0, 1, 0, 0, 0, 0, 0]
+        })
+    );
+}

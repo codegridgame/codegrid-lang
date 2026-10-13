@@ -55,9 +55,10 @@ supplies a work slice; the session retains state on Pending. In order:
 4. On commit, record VM metrics and apply generated-code guards, including
    transient committed Custom mutations using the existing evaluator guard.
 5. Process newly committed outer output exactly once. Buffer an incomplete
-   frame. For a complete frame dispatch/decode A, then B only if still Running.
-6. Retain completed actor effects on a scene error. Do not promote pending
-   doors/tables/buffers or publish a snapshot after terminal scene failure.
+   frame. Robot dispatches A then B only while Running. MechanicalArm preflights both
+   bytes/shared conflicts and stages A then B atomically.
+6. Robot retains completed actor effects on a scene error. MechanicalArm
+   discards the complete failed scene candidate. No failed round publishes input.
 7. On a nonterminal completed round, apply round-end work and compute the next
    observation. Robot and MechanicalArm WAIT actions still advance rounds.
 8. Check constraints and terminal rules before updating input. If
@@ -115,11 +116,11 @@ account scene memory. Checked counter
 overflow is an evaluator/resource outcome, not wrapped gameplay data.
 
 Hidden cases must not disclose definitions, observations, action sequences,
-world locations, true inspection, or metric contribution. Visible inspection
-results are permitted observations, not a leak of the whole hidden definition.
+world locations, modules, or metric contribution. Visible hand/station
+observations must remain within their allowlisted case projection.
 Source snapshots and public scene projections need explicit allowlists. Failed
 or resource-terminal candidates emit no speculative public events. Completed
-A effects retained after B's scene failure may appear in permitted visible
+Robot A effects retained after B's scene failure may appear in permitted visible
 feedback; they are not speculative or hidden-case disclosures.
 
 ## Integration gates
@@ -182,7 +183,7 @@ need implementation and cross-host verification.
 
 Native tests verify atomic event publication, reserved case termination,
 actor ordering, terminal A handling, preservation of A effects on B failure,
-MechanicalArm inspection disclosure and delayed buffers, initial goals,
+MechanicalArm immediate flipping, weighted stacks, and atomic shared conflicts, initial goals,
 Official feedback exclusion, and capacity reclamation after acknowledgement.
 Definition unit totals are cached during author loading; case advancement does
 not repeatedly scan all immutable maps. Static incomplete output does not

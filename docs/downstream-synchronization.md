@@ -155,3 +155,32 @@ actual-WASM consumers and both artifact/provenance sets. No player-data migratio
 or compatibility reader is introduced. User requested committing/pushing only
 codegrid-lang; downstream synchronization remains locally applied and uncommitted.
 See [final bitmap and verification](scene-input-updates.md#final-inspection-bitmap-ordering).
+
+## 2026-10-13 MechanicalArm module logistics replacement
+
+The user authorized direct replacement after resolving action mapping, empty
+hand 255, three colors and atomic dual rounds. MechanicalArm now uses 192 module
+bytes, fixed six/ten stations, STACK/FLIP/INPUT/OUTPUT and OUTPUT_SEQUENCE /
+FINAL_LAYOUT. Final targets serialize only exact station contents; inventory
+conservation enforces all required modules are placed. Input snapshots replace
+unread bytes at every completed nonterminal frame. Robot semantics are unchanged.
+
+Synchronized editor draft/import/export/module controls, Rust author validation,
+playtest station feedback, API publication evaluation, examples, tests, browser
+bindings/WASM and actual provenance. Publication uses Official mode to execute
+hidden cases and removes only name/description metadata from Rust scene input.
+The signed/stored publish envelope is preserved. No legacy reader or user-data
+conversion is introduced. Full language WASM adapters have no level-core
+execution dependency and their contracts are unchanged; their artifacts retain
+their original truthful provenance.
+
+Source base: 17641b5a2582d43822db3586419204588239ab13, source_dirty=true.
+Evaluator: codegrid-level-source-sha256:df21818653fe066f55f7224bfac23d2608e4cf54aad48f037138a3f9c862f60a.
+Checks: 607 Rust workspace tests; formatter; 77 complete scene results across
+native CLI, browser Worker, Node WASM and Wasmtime, with matching WASM Debug
+traces and 64-MiB memory ceilings; downstream workspace architecture/type checks;
+client-application 228, API-contract 37, editor 88 and API 102 tests; editor/API
+builds; six actual browser arm checks at 1440/375/320px; offline Electron
+execution/persistence. Editor chunk-size warnings remain. No production
+Workerd publication, Steamworks or physical-device acceptance is claimed.
+Steam's independent game-screen rebuild remains outside this scene/editor work.

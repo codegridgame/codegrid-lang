@@ -43,7 +43,7 @@
       "file": "mechanical-arm-invalid.json",
       "expected_validation": "LevelInvalid",
       "path": "$.evaluation.tests[0].expected_output[0]",
-      "reason": "DEFECT inspection cannot have processed=1."
+      "reason": "Empty-hand sentinel 255 cannot be an output module."
     }
   ]
 }

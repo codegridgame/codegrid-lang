@@ -741,6 +741,13 @@ impl SceneCaseSession {
                     .transition_work_bound()
                     .and_then(|n| n.checked_add(machine.retained_units()))
                     .and_then(|n| {
+                        n.checked_add(if self.pending_halt {
+                            machine.halt_work_bound()
+                        } else {
+                            0
+                        })
+                    })
+                    .and_then(|n| {
                         if feedback.is_some() {
                             n.checked_add(8192)?.checked_add(self.feedback_end_bound)
                         } else {
@@ -759,6 +766,14 @@ impl SceneCaseSession {
                 if machine
                     .retained_units()
                     .checked_mul(2)
+                    .and_then(|n| n.checked_add(machine.transition_peak_units()))
+                    .and_then(|n| {
+                        n.checked_add(if self.pending_halt {
+                            machine.halt_peak_units()
+                        } else {
+                            0
+                        })
+                    })
                     .and_then(|n| n.checked_add(self.definition_units))
                     .and_then(|n| n.checked_add(old_events))
                     .and_then(|n| n.checked_add(self.pending_output.len() as u64 + 16))
@@ -803,7 +818,14 @@ impl SceneCaseSession {
                     break;
                 };
                 let constraint = constraints_exceeded(&metrics, self.level.constraints());
-                if !constraint && self.pending_halt && self.pending_output.len() == 1 {
+                if !constraint
+                    && self.pending_halt
+                    && self.pending_output.len() == 1
+                    && candidate.outcome() == &SceneOutcome::Running
+                {
+                    if !self.bill_scene(candidate.halt_work_bound(), &mut scene_remaining) {
+                        break;
+                    }
                     candidate.halt();
                 }
                 let terminal = candidate.outcome() != &SceneOutcome::Running;
@@ -937,6 +959,24 @@ impl SceneCaseSession {
                 continue;
             }
             if self.pending_halt {
+                let machine = self.machine.as_ref().unwrap();
+                let work = machine.halt_work_bound();
+                let peak = machine
+                    .retained_units()
+                    .checked_add(machine.halt_peak_units())
+                    .and_then(|n| n.checked_add(self.definition_units))
+                    .and_then(|n| {
+                        n.checked_add(feedback.as_ref().map_or(0, |s| s.retained_scene_units()))
+                    });
+                if peak.is_none_or(|n| n > self.limits.max_scene_state_units.get()) {
+                    self.finish(EvaluationStatus::ResourceLimitExceeded, Vec::new());
+                    break;
+                }
+                if !self.reserve_scene_work(work, scene_remaining)
+                    || !self.bill_scene(work, &mut scene_remaining)
+                {
+                    break;
+                }
                 self.machine.as_mut().unwrap().halt();
                 let status = if self.machine.as_ref().unwrap().outcome() == &SceneOutcome::Passed {
                     EvaluationStatus::Passed

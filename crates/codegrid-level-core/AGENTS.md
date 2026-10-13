@@ -56,7 +56,11 @@ Robot and MechanicalArm replace all unread VM input with the latest snapshot
 at a completed nonterminal round boundary. One actor updates per valid command;
 two actors retain complete A/B frames. Robot bytes are color before position.
 Both arm layouts publish current-hand state, including 255 for empty hands;
-single-arm initial input is [255]. GRAB preserves item state; worktables own
-transformations. Feedback names input publication InputUpdated. ExactIO remains
+single-arm initial input is [255]. GRAB preserves module state; FLIP DROP toggles only face bit 2.
+MechanicalArm stages complete A/B frames atomically, including shared-station
+GRAB/DROP conflict preflight, even for no-ops. Robot retains its existing actor
+dispatch policy. Typed stations own capacities and stack rules. FINAL_LAYOUT
+compares station contents only on normal VM termination; the loader derives
+target bytes and enforces conservation with face masked. Feedback names input publication InputUpdated. ExactIO remains
 unchanged. Queue limits measure replacement size; cumulative limits charge every
 complete published observation.

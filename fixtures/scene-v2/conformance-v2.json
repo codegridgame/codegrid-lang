@@ -655,6 +655,52 @@
       "seed": "0",
       "custom_limit": "1000",
       "expected_status": "TestFailed"
+    },
+    {
+      "id": "mechanical-arm.final-layout",
+      "level": "mechanical-arm-final.json",
+      "program": "mechanical-arm-final.cg",
+      "mode": "Debug",
+      "seed": "0",
+      "custom_limit": "1000",
+      "expected_status": "Passed"
+    },
+    {
+      "id": "mechanical-arm.final-layout-slice",
+      "level": "mechanical-arm-final.json",
+      "program": "mechanical-arm-final.cg",
+      "mode": "Debug",
+      "seed": "0",
+      "custom_limit": "1000",
+      "expected_status": "Passed",
+      "work_budget": "1"
+    },
+    {
+      "id": "mechanical-arm.shared-conflict",
+      "level": "mechanical-arm-shared-conflict.json",
+      "program": "mechanical-arm-shared-conflict.cg",
+      "mode": "Debug",
+      "seed": "0",
+      "custom_limit": "1000",
+      "expected_status": "TestFailed"
+    },
+    {
+      "id": "mechanical-arm.heavy-stack",
+      "level": "mechanical-arm-heavy-stack.json",
+      "program": "mechanical-arm-heavy-stack.cg",
+      "mode": "Debug",
+      "seed": "0",
+      "custom_limit": "1000",
+      "expected_status": "TestFailed"
+    },
+    {
+      "id": "mechanical-arm.flip-final",
+      "level": "mechanical-arm-flip-final.json",
+      "program": "mechanical-arm-flip-final.cg",
+      "mode": "Debug",
+      "seed": "0",
+      "custom_limit": "1000",
+      "expected_status": "Passed"
     }
   ]
 }

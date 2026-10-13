@@ -1,0 +1,119 @@
+{
+  "format_version": 1,
+  "level_id": "fixture.mechanical-arm.shared-conflict",
+  "level_version": 1,
+  "evaluation_type": "Environment",
+  "scene_type": "MechanicalArm",
+  "scene_config": {
+    "arm_count": 2,
+    "mode": "FINAL_LAYOUT",
+    "stations": [
+      {
+        "station_id": 0,
+        "station_type": "STACK"
+      },
+      {
+        "station_id": 1,
+        "station_type": "STACK"
+      },
+      {
+        "station_id": 2,
+        "station_type": "STACK"
+      },
+      {
+        "station_id": 3,
+        "station_type": "STACK"
+      },
+      {
+        "station_id": 4,
+        "station_type": "STACK"
+      },
+      {
+        "station_id": 5,
+        "station_type": "STACK"
+      },
+      {
+        "station_id": 6,
+        "station_type": "STACK"
+      },
+      {
+        "station_id": 7,
+        "station_type": "STACK"
+      },
+      {
+        "station_id": 8,
+        "station_type": "STACK"
+      },
+      {
+        "station_id": 9,
+        "station_type": "STACK"
+      }
+    ]
+  },
+  "program_rules": {
+    "allowed_instructions": [
+      "OUTPUT_IMMEDIATE",
+      "READ",
+      "CLEAR",
+      "ADD",
+      "SUB",
+      "REGISTER_POINTER",
+      "STACK",
+      "CMP",
+      "OUTPUT",
+      "HALT"
+    ],
+    "allowed_attachments": [
+      "CONDITION_0",
+      "CONDITION_1",
+      "CONDITION_2"
+    ],
+    "main_board": {
+      "width": 6,
+      "height": 1
+    },
+    "function_board": {
+      "width": 16,
+      "height": 16
+    },
+    "max_functions": 0,
+    "max_custom": 0,
+    "max_threads": 1,
+    "memory_enabled": false
+  },
+  "constraints": {},
+  "scoring": {
+    "metrics": {}
+  },
+  "evaluation": {
+    "tests": [
+      {
+        "visible": true,
+        "initial_station_contents": [
+          [],
+          [],
+          [],
+          [],
+          [],
+          [],
+          [],
+          [],
+          [],
+          []
+        ],
+        "target_station_contents": [
+          [],
+          [],
+          [],
+          [],
+          [],
+          [],
+          [],
+          [],
+          [],
+          []
+        ]
+      }
+    ]
+  }
+}

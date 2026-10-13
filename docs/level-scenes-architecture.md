@@ -9,8 +9,8 @@ complete protocol/resource coverage remains pending.
 | Product scene | Evaluation family | Correctness | Current delivery |
 | --- | --- | --- | --- |
 | ExactIO | ExactIO | Expected byte sequence, existing halt/constraint/outcome rules | Implemented |
-| Robot | Dynamic scene | All required patrol points visited | API-2 and WASM v2 implemented; initial parity verified |
-| MechanicalArm | Dynamic scene | Expected visible robot-state sequence | API-2 and WASM v2 implemented; initial parity verified |
+| Robot | Dynamic scene | All required patrol points visited | API-2 and WASM v2 implemented; current host evidence tracked in synchronization report |
+| MechanicalArm | Dynamic scene | Exact module output sequence or final station layout | API-2 and WASM v2 implemented; current host evidence tracked in synchronization report |
 
 Terminal is excluded. Robot is the selected identity; MaintenanceRobot in old
 examples is not an alias. Robot's current goal is patrol completion, superseding

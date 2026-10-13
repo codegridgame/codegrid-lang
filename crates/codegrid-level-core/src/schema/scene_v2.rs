@@ -2,12 +2,16 @@ use super::*;
 use crate::scenes::SceneKind;
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
-pub enum Worktable {
-    Inspection,
-    Repair,
-    Processing,
-    Packing,
-    Removal,
+pub enum StationType {
+    Stack,
+    Flip,
+    Input,
+    Output,
+}
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum MechanicalArmMode {
+    OutputSequence,
+    FinalLayout,
 }
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum SceneConfig {
@@ -18,7 +22,8 @@ pub enum SceneConfig {
     },
     MechanicalArm {
         actors: u8,
-        tables: [Option<Worktable>; 4],
+        mode: MechanicalArmMode,
+        stations: Vec<StationType>,
     },
 }
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -45,11 +50,6 @@ pub struct RobotMap {
     pub cells: Vec<MapCell>,
     pub starts: Vec<RobotStart>,
 }
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
-pub struct InputRobot {
-    pub color: u8,
-    pub true_inspection: u8,
-}
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum SceneCaseData {
     Static {
@@ -58,7 +58,8 @@ pub enum SceneCaseData {
     },
     Robot,
     MechanicalArm {
-        input: Vec<InputRobot>,
+        initial: Vec<Vec<u8>>,
+        input: Vec<u8>,
         expected: Vec<u8>,
     },
 }
@@ -75,9 +76,17 @@ impl SceneCase {
                 (input.len() as u64).checked_add(expected.len() as u64)
             }
             SceneCaseData::Robot => Some(0),
-            SceneCaseData::MechanicalArm { input, expected } => {
-                (input.len() as u64).checked_add(expected.len() as u64)
-            }
+            SceneCaseData::MechanicalArm {
+                initial,
+                input,
+                expected,
+            } => initial
+                .iter()
+                .try_fold(initial.len() as u64, |n, stack| {
+                    n.checked_add(stack.len() as u64)
+                })?
+                .checked_add(input.len() as u64)?
+                .checked_add(expected.len() as u64),
         }
     }
 }
@@ -156,30 +165,88 @@ fn config(kind: SceneKind, v: &Value) -> Result<SceneConfig, LevelError> {
             SceneConfig::Robot { actors, map }
         }
         SceneKind::MechanicalArm => {
-            let m = object(v, p, &["arm_count", "worktables"])?;
+            let m = object(v, p, &["arm_count", "mode", "stations"])?;
             let actors = actor_count(&m["arm_count"], "$.scene_config.arm_count")?;
-            let arr = array(&m["worktables"], "$.scene_config.worktables")?;
-            if arr.len() != 4 {
+            let mode = match string(&m["mode"], "$.scene_config.mode")? {
+                "OUTPUT_SEQUENCE" => MechanicalArmMode::OutputSequence,
+                "FINAL_LAYOUT" => MechanicalArmMode::FinalLayout,
+                _ => {
+                    return Err(LevelError::invalid(
+                        "UnsupportedMechanicalArmMode",
+                        "$.scene_config.mode",
+                    ))
+                }
+            };
+            let count = if actors == 1 { 6 } else { 10 };
+            let records = array(&m["stations"], "$.scene_config.stations")?;
+            if records.len() != count {
                 return Err(LevelError::invalid(
-                    "InvalidWorktableSlots",
-                    "$.scene_config.worktables",
+                    "InvalidStationCount",
+                    "$.scene_config.stations",
                 ));
             }
-            let mut tables = [None; 4];
-            for (i, v) in arr.iter().enumerate() {
-                if !v.is_null() {
-                    let p = format!("$.scene_config.worktables[{i}]");
-                    tables[i] = Some(match string(v, &p)? {
-                        "Inspection" => Worktable::Inspection,
-                        "Repair" => Worktable::Repair,
-                        "Processing" => Worktable::Processing,
-                        "Packing" => Worktable::Packing,
-                        "Removal" => Worktable::Removal,
-                        _ => return Err(LevelError::invalid("UnsupportedWorktableType", &p)),
-                    });
+            let mut stations = vec![None; count];
+            for (i, record) in records.iter().enumerate() {
+                let q = format!("$.scene_config.stations[{i}]");
+                let r = object(record, &q, &["station_id", "station_type"])?;
+                let id = usize::from(byte(
+                    &r["station_id"],
+                    &format!("{q}.station_id"),
+                    (count - 1) as u64,
+                )?);
+                if stations[id].is_some() {
+                    return Err(LevelError::invalid(
+                        "DuplicateStationId",
+                        &format!("{q}.station_id"),
+                    ));
+                }
+                stations[id] = Some(
+                    match string(&r["station_type"], &format!("{q}.station_type"))? {
+                        "STACK" => StationType::Stack,
+                        "FLIP" => StationType::Flip,
+                        "INPUT" => StationType::Input,
+                        "OUTPUT" => StationType::Output,
+                        _ => {
+                            return Err(LevelError::invalid(
+                                "UnsupportedStationType",
+                                &format!("{q}.station_type"),
+                            ))
+                        }
+                    },
+                );
+            }
+            let stations: Vec<_> = stations.into_iter().map(Option::unwrap).collect();
+            for kind in [StationType::Flip, StationType::Input, StationType::Output] {
+                if stations.iter().filter(|s| **s == kind).count() > 1 {
+                    return Err(LevelError::invalid(
+                        "DuplicateStationType",
+                        "$.scene_config.stations",
+                    ));
                 }
             }
-            SceneConfig::MechanicalArm { actors, tables }
+            match mode {
+                MechanicalArmMode::OutputSequence if !stations.contains(&StationType::Output) => {
+                    return Err(LevelError::invalid(
+                        "MissingOutputStation",
+                        "$.scene_config.stations",
+                    ))
+                }
+                MechanicalArmMode::FinalLayout
+                    if stations.contains(&StationType::Input)
+                        || stations.contains(&StationType::Output) =>
+                {
+                    return Err(LevelError::invalid(
+                        "InvalidFinalLayoutStation",
+                        "$.scene_config.stations",
+                    ))
+                }
+                _ => {}
+            }
+            SceneConfig::MechanicalArm {
+                actors,
+                mode,
+                stations,
+            }
         }
     })
 }
@@ -384,52 +451,133 @@ fn robot_map(v: &Value, p: &str, actors: u8) -> Result<RobotMap, LevelError> {
     let starts = expected_starts.iter().map(|id| starts[*id]).collect();
     Ok(RobotMap { cells, starts })
 }
+fn module_bytes(v: &Value, p: &str) -> Result<Vec<u8>, LevelError> {
+    let values = bytes(v, p)?;
+    for (i, value) in values.iter().enumerate() {
+        if value & 3 == 3 {
+            return Err(LevelError::invalid(
+                "InvalidModuleByte",
+                &format!("{p}[{i}]"),
+            ));
+        }
+    }
+    Ok(values)
+}
+fn station_contents(
+    v: &Value,
+    p: &str,
+    stations: &[StationType],
+) -> Result<Vec<Vec<u8>>, LevelError> {
+    let records = array(v, p)?;
+    if records.len() != stations.len() {
+        return Err(LevelError::invalid("InvalidStationContents", p));
+    }
+    let mut result = Vec::with_capacity(stations.len());
+    for (i, (record, kind)) in records.iter().zip(stations).enumerate() {
+        let q = format!("{p}[{i}]");
+        let contents = module_bytes(record, &q)?;
+        let capacity = match kind {
+            StationType::Stack => 4,
+            StationType::Flip => 1,
+            _ => 0,
+        };
+        if contents.len() > capacity {
+            return Err(LevelError::invalid("StationCapacityExceeded", &q));
+        }
+        if contents
+            .windows(2)
+            .any(|pair| pair[0] & 8 == 0 && pair[1] & 8 != 0)
+        {
+            return Err(LevelError::invalid("InvalidModuleStack", &q));
+        }
+        result.push(contents);
+    }
+    Ok(result)
+}
 fn case(config: &SceneConfig, v: &Value, p: &str) -> Result<SceneCase, LevelError> {
     let fields: &[&str] = match config {
         SceneConfig::Robot { .. } => &["visible"],
+        SceneConfig::MechanicalArm {
+            mode: MechanicalArmMode::OutputSequence,
+            ..
+        } => &[
+            "visible",
+            "initial_station_contents",
+            "input_queue",
+            "expected_output",
+        ],
+        SceneConfig::MechanicalArm {
+            mode: MechanicalArmMode::FinalLayout,
+            ..
+        } => &[
+            "visible",
+            "initial_station_contents",
+            "target_station_contents",
+        ],
         _ => &["visible", "input", "expected_output"],
     };
     let m = object(v, p, fields)?;
     let visible = boolean(&m["visible"], &format!("{p}.visible"))?;
     let data = match config {
         SceneConfig::Robot { .. } => SceneCaseData::Robot,
-        SceneConfig::MechanicalArm { .. } => {
-            let arr = array(&m["input"], &format!("{p}.input"))?;
-            let mut input = Vec::new();
-            for (i, v) in arr.iter().enumerate() {
-                let q = format!("{p}.input[{i}]");
-                let r = object(v, &q, &["color", "true_inspection"])?;
-                input.push(InputRobot {
-                    color: byte(&r["color"], &format!("{q}.color"), 2)?,
-                    true_inspection: byte(
-                        &r["true_inspection"],
-                        &format!("{q}.true_inspection"),
-                        3,
-                    )?,
-                });
-                if input.last().unwrap().true_inspection == 0 {
-                    return Err(LevelError::invalid(
-                        "InvalidRobotState",
-                        &format!("{q}.true_inspection"),
-                    ));
+        SceneConfig::MechanicalArm { mode, stations, .. } => {
+            let initial = station_contents(
+                &m["initial_station_contents"],
+                &format!("{p}.initial_station_contents"),
+                stations,
+            )?;
+            let (input, expected) = match mode {
+                MechanicalArmMode::OutputSequence => {
+                    let input = module_bytes(&m["input_queue"], &format!("{p}.input_queue"))?;
+                    let expected =
+                        module_bytes(&m["expected_output"], &format!("{p}.expected_output"))?;
+                    if expected.is_empty() {
+                        return Err(LevelError::invalid(
+                            "InvalidModuleSequence",
+                            &format!("{p}.expected_output"),
+                        ));
+                    }
+                    if !input.is_empty() && !stations.contains(&StationType::Input) {
+                        return Err(LevelError::invalid(
+                            "MissingInputStation",
+                            &format!("{p}.input_queue"),
+                        ));
+                    }
+                    (input, expected)
                 }
-            }
-            let expected = bytes(&m["expected_output"], &format!("{p}.expected_output"))?;
-            if input.is_empty() || expected.is_empty() || expected.len() > input.len() {
-                return Err(LevelError::invalid(
-                    "InvalidRobotSequence",
-                    &format!("{p}.expected_output"),
-                ));
-            }
-            for (i, b) in expected.iter().enumerate() {
-                if b & 192 != 0 || b & 3 == 3 || (b & 48 != 0 && (b >> 2) & 3 != 3) {
-                    return Err(LevelError::invalid(
-                        "InvalidRobotState",
-                        &format!("{p}.expected_output[{i}]"),
-                    ));
+                MechanicalArmMode::FinalLayout => {
+                    let target = station_contents(
+                        &m["target_station_contents"],
+                        &format!("{p}.target_station_contents"),
+                        stations,
+                    )?;
+                    let inventory = |contents: &[Vec<u8>]| {
+                        let mut counts = [0usize; 256];
+                        for value in contents.iter().flatten() {
+                            counts[usize::from(*value & !4)] += 1;
+                        }
+                        counts
+                    };
+                    if inventory(&initial) != inventory(&target) {
+                        return Err(LevelError::invalid(
+                            "ModuleConservationMismatch",
+                            &format!("{p}.target_station_contents"),
+                        ));
+                    }
+                    let expected = target
+                        .iter()
+                        .flat_map(|stack| {
+                            std::iter::once(stack.len() as u8).chain(stack.iter().copied())
+                        })
+                        .collect();
+                    (Vec::new(), expected)
                 }
+            };
+            SceneCaseData::MechanicalArm {
+                initial,
+                input,
+                expected,
             }
-            SceneCaseData::MechanicalArm { input, expected }
         }
         _ => {
             let input = bytes(&m["input"], &format!("{p}.input"))?;
@@ -565,7 +713,7 @@ pub fn load_scene_level_json(
         .collect::<Option<Vec<_>>>()
         .ok_or_else(|| LevelError::invalid("TestDataSizeExceeded", "$.evaluation.tests"))?;
     let config_units = match &config {
-        SceneConfig::MechanicalArm { .. } => 4u64,
+        SceneConfig::MechanicalArm { stations, .. } => stations.len() as u64,
         SceneConfig::Robot { map, .. } => {
             map.cells.len() as u64
                 + map.starts.len() as u64

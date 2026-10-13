@@ -31,7 +31,8 @@ pub enum IllegalOperationReason {
     OccupiedHand,
     OccupiedTarget,
     InvalidDropTarget,
-    InvalidTableInput,
+    HeavyOnLight,
+    SharedStationConflict,
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -87,10 +88,20 @@ impl SceneMachine {
                     usize::from(*actors),
                 ),
                 (
-                    SceneCaseData::MechanicalArm { input, expected },
-                    SceneConfig::MechanicalArm { actors, tables },
+                    SceneCaseData::MechanicalArm {
+                        initial,
+                        input,
+                        expected,
+                    },
+                    SceneConfig::MechanicalArm {
+                        actors,
+                        mode,
+                        stations,
+                    },
                 ) => (
-                    Box::new(MechanicalArmRuntime::new(*actors, *tables, input, expected)),
+                    Box::new(MechanicalArmRuntime::new(
+                        *actors, *mode, stations, initial, input, expected,
+                    )),
                     usize::from(*actors),
                 ),
                 _ => return None,
@@ -135,6 +146,30 @@ impl SceneMachine {
     /// Reserve this bound before a non-resumable transition, then charge actual work.
     pub fn transition_work_bound(&self) -> Option<u64> {
         self.retained_units().checked_mul(8)?.checked_add(64)
+    }
+    pub fn transition_peak_units(&self) -> u64 {
+        if self.runtime.kind() == SceneKind::MechanicalArm && self.will_complete_frame() {
+            self.runtime.retained_units()
+        } else {
+            0
+        }
+    }
+    pub fn halt_peak_units(&self) -> u64 {
+        if self.runtime.kind() == SceneKind::MechanicalArm {
+            self.runtime.expected_output().map_or(0, |s| s.len() as u64)
+        } else {
+            0
+        }
+    }
+    pub fn halt_work_bound(&self) -> u64 {
+        if self.runtime.kind() == SceneKind::MechanicalArm {
+            self.runtime
+                .expected_output()
+                .map_or(0, |s| s.len() as u64 * 2)
+                + 1
+        } else {
+            0
+        }
     }
     pub fn will_complete_frame(&self) -> bool {
         self.runtime.mode() == SceneRuntimeMode::ActorFrame && self.pending.len() + 1 == self.actors
@@ -225,6 +260,15 @@ impl SceneMachine {
             .checked_add(1)
             .ok_or(SceneCounterError::Overflow)?;
         let actions = std::mem::take(&mut self.pending);
+        let atomic = self.runtime.kind() == SceneKind::MechanicalArm;
+        if atomic {
+            self.work += self.runtime.retained_units();
+        }
+        let committed = atomic.then(|| self.runtime.clone());
+        if let Some(failure) = self.runtime.preflight(&actions) {
+            self.outcome = SceneOutcome::Failed(failure);
+            return self.transition(Vec::new(), true, events);
+        }
         let mut observation = Vec::new();
         for (actor, action) in actions.into_iter().enumerate() {
             self.work += 1; // Actor byte decoded.
@@ -263,7 +307,7 @@ impl SceneMachine {
                         let state = self.actual_output().unwrap()[produced];
                         events.push(SceneProtocolEvent {
                             actor,
-                            payload: SceneEventPayload::RobotProduced {
+                            payload: SceneEventPayload::ModuleProduced {
                                 state,
                                 output_index: produced as u64,
                             },
@@ -272,6 +316,14 @@ impl SceneMachine {
                 }
             }
             if self.outcome != SceneOutcome::Running {
+                if let Some(mut previous) = committed {
+                    // Failed frames bill attempted work but publish no world effects.
+                    let attempted = self.runtime.transition_work(self.actors, true);
+                    previous.reset_transition_work();
+                    self.runtime = previous;
+                    self.work += attempted;
+                    events.clear();
+                }
                 return self.transition(Vec::new(), true, events);
             }
         }
@@ -281,7 +333,15 @@ impl SceneMachine {
         } else {
             Vec::new()
         };
-        observation = self.runtime.end_round(observation)?;
+        observation = match self.runtime.end_round(observation) {
+            Ok(observation) => observation,
+            Err(error) => {
+                if let Some(previous) = committed {
+                    self.runtime = previous;
+                }
+                return Err(error);
+            }
+        };
         if feedback && self.rounds() > previous_rounds {
             let snapshot = observation.clone();
             self.work += snapshot.len() as u64;
@@ -294,13 +354,19 @@ impl SceneMachine {
                 },
             });
         }
+        if atomic && self.runtime.frame_complete() {
+            self.outcome = SceneOutcome::Passed;
+            observation.clear();
+        }
         self.transition(observation, true, events)
     }
     pub fn halt(&mut self) {
         if self.outcome != SceneOutcome::Running {
             return;
         }
-        self.outcome = if self.runtime.mode() == SceneRuntimeMode::StaticOutput
+        self.outcome = if self.pending.is_empty() && self.runtime.halt_complete() {
+            SceneOutcome::Passed
+        } else if self.runtime.mode() == SceneRuntimeMode::StaticOutput
             && self.runtime.expected_output().is_some_and(<[u8]>::is_empty)
             && self.runtime.actual_output().is_some_and(<[u8]>::is_empty)
         {
@@ -398,5 +464,144 @@ mod runtime_seam_tests {
         assert_eq!(committed.outcome(), &SceneOutcome::Running);
         assert_eq!(committed.rounds(), 0);
         assert_eq!(candidate.rounds(), 0);
+    }
+}
+
+#[cfg(test)]
+mod atomic_arm_tests {
+    use super::*;
+    use crate::{MechanicalArmMode, StationType};
+    fn dual(stations: Vec<StationType>, initial: Vec<Vec<u8>>, expected: Vec<u8>) -> SceneMachine {
+        let mut runtime = MechanicalArmRuntime::new(
+            2,
+            MechanicalArmMode::OutputSequence,
+            &stations,
+            &initial,
+            &[],
+            &expected,
+        );
+        let initial_input = runtime.take_initial_input();
+        SceneMachine {
+            runtime: Box::new(runtime),
+            actors: 2,
+            pending: vec![],
+            outcome: SceneOutcome::Running,
+            frames: 0,
+            initial_input,
+            work: 0,
+        }
+    }
+    fn frame(machine: &mut SceneMachine, a: u8, b: u8) -> SceneTransition {
+        assert!(!machine.consume_debug(a).unwrap().completed_frame);
+        machine.consume_debug(b).unwrap()
+    }
+    #[test]
+    fn invalid_b_cancels_a_and_publishes_no_effects() {
+        let mut machine = dual(vec![StationType::Stack; 10], vec![vec![]; 10], vec![1]);
+        let before = machine.runtime.clone();
+        let result = frame(&mut machine, 4, 99);
+        let mut expected = vec![];
+        before.write_semantic_state(&mut expected);
+        let mut actual = vec![];
+        machine.runtime.write_semantic_state(&mut actual);
+        assert_eq!(expected, actual);
+        assert!(result.events.is_empty());
+        assert_eq!(machine.rounds(), 0);
+    }
+    #[test]
+    fn shared_empty_station_interactions_fail_before_noops() {
+        let mut machine = dual(vec![StationType::Stack; 10], vec![vec![]; 10], vec![1]);
+        frame(&mut machine, 4, 4);
+        frame(&mut machine, 4, 0);
+        frame(&mut machine, 4, 0);
+        frame(&mut machine, 4, 0);
+        frame(&mut machine, 4, 0);
+        assert!(matches!(
+            frame(&mut machine, 1, 2).outcome,
+            SceneOutcome::Failed(SceneFailure::IllegalOperation {
+                operation: IllegalOperationReason::SharedStationConflict,
+                ..
+            })
+        ));
+    }
+    #[test]
+    fn last_output_does_not_hide_b_error_and_rolls_back_a() {
+        let mut stations = vec![StationType::Stack; 10];
+        stations[1] = StationType::Output;
+        stations[6] = StationType::Input;
+        let mut initial = vec![vec![]; 10];
+        initial[0] = vec![1];
+        let mut machine = dual(stations, initial, vec![1]);
+        frame(&mut machine, 1, 0);
+        frame(&mut machine, 4, 0);
+        // A would produce the final module; B's invalid byte must still fail.
+        let result = frame(&mut machine, 2, 99);
+        assert!(matches!(result.outcome, SceneOutcome::Failed(_)));
+        assert_eq!(machine.actual_output(), Some(&[][..]));
+        assert!(result.events.is_empty());
+    }
+    #[test]
+    fn final_output_is_rolled_back_when_b_drop_is_illegal() {
+        let mut stations = vec![StationType::Stack; 10];
+        stations[1] = StationType::Output;
+        stations[7] = StationType::Input;
+        let mut initial = vec![vec![]; 10];
+        initial[0] = vec![1];
+        initial[6] = vec![2];
+        let mut machine = dual(stations, initial, vec![1]);
+        frame(&mut machine, 1, 1);
+        frame(&mut machine, 4, 4);
+        frame(&mut machine, 0, 4);
+        frame(&mut machine, 0, 4);
+        let result = frame(&mut machine, 2, 2);
+        assert!(matches!(
+            result.outcome,
+            SceneOutcome::Failed(SceneFailure::IllegalOperation { actor: 1, .. })
+        ));
+        assert_eq!(machine.actual_output(), Some(&[][..]));
+        assert!(result.events.is_empty());
+    }
+    #[test]
+    fn successful_final_output_waits_for_b_and_updates_terminal_round() {
+        let mut stations = vec![StationType::Stack; 10];
+        stations[1] = StationType::Output;
+        let mut initial = vec![vec![]; 10];
+        initial[0] = vec![1];
+        let mut machine = dual(stations, initial, vec![1]);
+        frame(&mut machine, 1, 0);
+        frame(&mut machine, 4, 0);
+        let result = frame(&mut machine, 2, 4);
+        assert_eq!(result.outcome, SceneOutcome::Passed);
+        assert_eq!(machine.rounds(), 3);
+        assert!(result.observation.is_empty());
+        assert_eq!(
+            result
+                .events
+                .iter()
+                .filter(|e| matches!(e.payload, SceneEventPayload::ActionApplied { .. }))
+                .count(),
+            2
+        );
+    }
+    #[test]
+    fn action_failure_rolls_back_earlier_turn_and_success_runs_whole_frame() {
+        let mut stations = vec![StationType::Stack; 10];
+        stations[7] = StationType::Input;
+        let mut initial = vec![vec![]; 10];
+        initial[6] = vec![1];
+        let mut machine = dual(stations, initial, vec![1]);
+        frame(&mut machine, 0, 1);
+        frame(&mut machine, 0, 4);
+        frame(&mut machine, 0, 4);
+        frame(&mut machine, 0, 4);
+        let before = machine.runtime.clone();
+        let result = frame(&mut machine, 4, 2);
+        assert!(matches!(result.outcome, SceneOutcome::Failed(_)));
+        assert!(result.events.is_empty());
+        let mut a = vec![];
+        let mut b = vec![];
+        before.write_semantic_state(&mut a);
+        machine.runtime.write_semantic_state(&mut b);
+        assert_eq!(a, b);
     }
 }

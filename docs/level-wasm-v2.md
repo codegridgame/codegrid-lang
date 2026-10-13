@@ -53,7 +53,7 @@ pipeline, executes the [scene manifest](../fixtures/scene-v2/conformance-v2.json
 and compares complete results plus permitted Debug traces across actual hosts.
 The default maximum is 67108864 bytes and is checked in the encoded WASM memory.
 
-Current evidence covers 15 runs: ExactIO, Robot, and MechanicalArm in Debug
+Historical evidence before the 2026-10-13 module redesign covered 15 runs: ExactIO, Robot, and MechanicalArm in Debug
 and Official modes, additional ExactIO byte/classification cases, small-work-
 slice Environment variants, and Robot observation/constraint cases. Complete results match native
 CLI, an actual Chromium module Worker, Node WebAssembly, and Wasmtime 49.0.1.
@@ -61,3 +61,9 @@ Debug event traces match all three WASM hosts, including the slice variants.
 The portable artifact imports nothing; Wasmtime also checks fuel exhaustion.
 This fixture set does not prove every protocol vector, complete resource/work
 accounting, production integration, JS/process memory ceilings, or deployment.
+
+The MechanicalArm module redesign changes current author data and feedback
+without a version bump. Its expanded manifest adds final layouts, weighted-stack
+rejection, shared conflicts, and immediate flips. Historical 15-run parity does
+not establish parity for these semantics; consult current synchronization
+verification before claiming host equivalence.

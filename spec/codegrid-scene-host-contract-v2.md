@@ -67,7 +67,7 @@ The v1 behavior and emitted reason values do not change.
 | Illegal active action/domain output | TestFailed | level.test_failed (9027) | InvalidOutput |
 | Legal action with forbidden interaction/table state | TestFailed | level.test_failed (9027) | IllegalOperation |
 | Successful HALT before a dynamic goal/frame is complete | TestFailed | level.test_failed (9027) | IncompleteGoal |
-| Wrong expected byte/MechanicalArm robot-state byte | TestFailed | level.wrong_output (9025) | WrongOutput |
+| Wrong expected byte/MechanicalArm module byte | TestFailed | level.wrong_output (9025) | WrongOutput |
 | Static comparison HALT before expected bytes | TestFailed | level.incomplete_output (9026) | IncompleteOutput |
 | VM runtime error | RuntimeError | Existing forwarded VM code(s); aggregate level.runtime_error (9028) | RuntimeError |
 | Initial or generated program capability violation | ProgramRejected | level.program_rejected | Existing typed structural/generated reason |
@@ -97,12 +97,12 @@ details is an object containing only fields applicable to that failure:
 | value | Offending byte 0–255 |
 | output_index | Canonical zero-based u64 string for expected-sequence comparison |
 | expected, actual | Byte values for WrongOutput only |
-| interaction | Input, Output, BufferLeft, BufferRight, Worktable, or Unavailable |
-| worktable_index | Number 0–3, using the author worktables array order |
+| interaction | Station |
+| station_id | Global station number 0–5 or 0–9 |
 | pending_actions | Number 0 or 1 at incomplete dynamic HALT |
 | runtime_errors | For RuntimeError only: array of exact forwarded VM code/error_number pairs |
 
-Omit irrelevant details; never serialize hidden true inspection or an entire
+Omit irrelevant details; never serialize hidden case data or an entire
 world through a failure. For initialization failures tick may be absent. A
 frame index is assigned only when a complete frame is collected; an incomplete
 HALT may include pending_actions without frame_index.
@@ -133,10 +133,20 @@ reasons where applicable. Add these v2 reason spellings, not new numeric codes:
 | DuplicateSceneId | Repeated patrol ID, repeated trigger ID, or repeated door ID within its own type |
 | InvalidDoorReference | A trigger ID has no matching door ID |
 | UnpairedDoor | A door ID has no matching trigger ID |
-| InvalidWorktableSlots | MechanicalArm table array length not four |
-| UnsupportedWorktableType | Table enum unknown |
-| InvalidRobotState | Expected state has illegal color/reserved bits/flags/EMPTY |
-| InvalidRobotSequence | Empty MechanicalArm input/expected or expected longer than input |
+| UnsupportedMechanicalArmMode | Mode is neither OUTPUT_SEQUENCE nor FINAL_LAYOUT |
+| InvalidStationCount | Station count does not match arm layout |
+| DuplicateStationId | A global station ID occurs twice |
+| UnsupportedStationType | Type is not STACK, FLIP, INPUT, or OUTPUT |
+| DuplicateStationType | More than one FLIP, INPUT, or OUTPUT |
+| MissingOutputStation | OUTPUT_SEQUENCE has no OUTPUT |
+| InvalidFinalLayoutStation | FINAL_LAYOUT contains conveyors |
+| InvalidModuleByte | Color bits are 3, including empty-hand 255 |
+| InvalidStationContents | Initial/target array count differs from station count |
+| StationCapacityExceeded | Contents exceed derived capacity, including nonempty conveyors |
+| InvalidModuleStack | Heavy module lies above light module |
+| InvalidModuleSequence | Expected module sequence is empty |
+| MissingInputStation | Nonempty input_queue without INPUT |
+| ModuleConservationMismatch | Final target inventory differs after masking face bit |
 
 Range violations in numeric indices, IDs, colors, or byte flags retain
 IntegerOutOfRange rather than duplicating those meanings. Invalid direction
@@ -236,7 +246,7 @@ visible_cases instead of v1 visible_tests. Each visible case is a tagged record:
 For static scenes comparison has exactly input, expected_output, and actual_output
 byte arrays. MechanicalArm comparison has exactly expected_output and actual_output;
 dynamic Robot comparison is null. MechanicalArm never
-includes hidden true_inspection author records here. For a hidden case emit no
+includes hidden case author records here. For a hidden case emit no
 visible_cases entry. Passed cases have failure=null. Resource/cancel/fault
 interruptions use NotCompleted, with the evaluation's typed failure category
 at the common result level, not a fabricated player failure.
@@ -247,7 +257,7 @@ Summary fields are explicit by scene:
 | --- | --- |
 | ExactIO | {} |
 | Robot | frames, rounds, visited_patrol_points, required_patrol_points |
-| MechanicalArm | frames, rounds, matched_output_robots |
+| MechanicalArm | frames, rounds, matched_output_modules |
 
 All summary counters are canonical u64 strings. Scene rounds are public feedback,
 not new scoring names. frames counts complete accepted-for-dispatch frames;
@@ -297,7 +307,7 @@ is not retried as a substitute for an uncertain advance result.
 | ActionApplied | action byte, effect object |
 | RoundCompleted | rounds counter, latest observation byte array, transitions array |
 | InputUpdated | bytes array; complete replacement snapshot (initial input bytes for ExactIO) |
-| RobotProduced | state byte, output_index counter |
+| ModuleProduced | state byte, output_index counter |
 | CaseEnded | outcome and nullable visible failure |
 
 ActionApplied effect contains a scene_type tag and these required visible values:
@@ -305,19 +315,17 @@ Robot from_position/
 to_position and from_direction/to_direction; MechanicalArm interaction,
 from_orientation/to_orientation, and before_state/after_state (255 means empty).
 Position/direction/state/action values are JSON numbers; counts and indices
-are decimal strings. MechanicalArm's interaction is a public interaction name
-and worktable_index is additionally required only for Worktable. Interaction
-identifies the slot faced before the action; Unavailable names the lower-arm
-orientation 0. Unpopulated table slots retain their Worktable/index identity
-for feedback even though the gameplay interaction is unavailable. No-op actions
-are events with unchanged values. Tables/buffers may be named
-by public slot index but may not reveal hidden robot true_inspection. Never
-include author source records or a raw world snapshot. Unknown kinds/fields
+are decimal strings. MechanicalArm interaction is Station with station_id
+identifying the global station faced before the action. No-op actions retain
+unchanged values. RoundCompleted transitions include StationUpdated records
+with station_id and bottom-to-top contents. Atomic failed MechanicalArm frames
+publish no partial successful action/module/round events. Never include hidden
+case author records or an unrestricted raw world snapshot. Unknown kinds/fields
 are errors for a fixed version, not silently ignored schema extensions.
 
 Initialization publishes CaseStarted, then InputUpdated if bytes are queued,
 then CaseEnded for an initial terminal goal. For a frame, publish A's effect
-events then B's if dispatched; RobotProduced follows its ActionApplied.
+events then B's if dispatched; ModuleProduced follows its ActionApplied.
 RoundCompleted follows actual round-end publication, then InputUpdated.
 CaseEnded is last for a visible case. A scene-failure event can retain completed
 A effects but emits no RoundCompleted/input update. A resource-discarded draft
@@ -325,26 +333,17 @@ emits no speculative events. Both arm layouts publish current-hand snapshots
 in RoundCompleted, followed by InputUpdated. Dynamic updates discard all unread
 old input, preserving already read register values.
 
-Event publication/reservation is all-or-none per resumable scene draft. Store
+Event publication/reservation is all-or-none per resumable scene draft. For Robot store
 committed actor effects needed on B failure, and reserve their visible event
 capacity before publication. Official/hidden execution never constructs these
 debug payloads or increments the public event sequence.
 
-RoundCompleted transitions contains only published visible world changes,
-in fixed order: table promotions by worktable_index, buffer promotions left
-then right, followed by opened doors in numeric ID order.
-Irrelevant transition families are empty for a scene. Each record is exactly:
-
-| kind | Additional fields |
-| --- | --- |
-| TableReady | worktable_index number 0–3, state byte |
-| BufferReady | buffer Left or Right, state byte |
-| DoorOpened | door_id number 0–255 |
-
-These are public derived scene state, never hidden author records. Inspection
-state is revealed only when the Inspection transformation completes, not before.
-The sequence order is for serialization only; all promotions occur at the
-specified round boundary and never permit B to use A's same-round Pending item.
+RoundCompleted transitions contain published visible world changes. MechanicalArm
+uses StationUpdated records in numeric global station order, each with
+station_id and bottom-to-top contents. Robot uses DoorOpened with door_id.
+These are derived public state, never hidden case author records. FLIP changes
+face immediately on DROP; atomic MechanicalArm failures publish no partial
+transitions. Robot retains its committed A effect if B fails.
 
 ## 7. Acceptance and delivery
 

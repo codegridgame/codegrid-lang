@@ -94,19 +94,19 @@ fn robot_initial_input_and_partial_frame_halt() {
     assert_eq!(m.frames(), 0);
 }
 #[test]
-fn arm_event_input_and_direct_packing_sequence() {
+fn arm_input_flip_and_output_sequence() {
     let mut m = machine(&example("arm"));
     assert_eq!(m.initial_input(), [255]);
     assert_eq!(m.consume(1).unwrap().observation, [1]);
     m.consume(4).unwrap();
     m.consume(2).unwrap();
-    assert_eq!(m.consume(1).unwrap().observation, [13]);
+    assert_eq!(m.consume(1).unwrap().observation, [5]);
     m.consume(4).unwrap();
     m.consume(2).unwrap();
-    assert_eq!(m.consume(1).unwrap().observation, [45]);
+    assert_eq!(m.consume(1).unwrap().observation, [5]);
     m.consume(4).unwrap();
     let terminal = m.consume(2).unwrap();
     assert_eq!(terminal.outcome, SceneOutcome::Passed);
     assert!(terminal.observation.is_empty());
-    assert_eq!(m.actual_output(), Some([45].as_slice()));
+    assert_eq!(m.actual_output(), Some([5].as_slice()));
 }

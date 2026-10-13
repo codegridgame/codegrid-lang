@@ -932,3 +932,22 @@ unchanged. Hidden author true_inspection uses 1/2/3 and rejects 0.
 Fresh robots expose color only until inspection. Repair sets inspection bits
 to 3; processed/packed states require inspection 3. Empty hands remain 255.
 Update current fixtures and consumers directly, with no unpublished legacy reader.
+
+## 2026-10-13: MechanicalArm module logistics replacement
+
+The user authorized direct replacement with module transport, stacking, and
+flipping. Retain action bytes 0 WAIT, 1 GRAB, 2 DROP, 3 TURN_LEFT, 4 TURN_RIGHT
+and unread-input replacement per completed round. Color codes 0/1/2 are valid;
+color 3 is invalid. Bits 2/3 are face/weight, bits 4..7 number: 192 modules,
+255 exclusively empty hand. Single IDs are 0..5; dual A=[0,1,2,3,4,5],
+B=[6,5,4,7,8,9]. Capacities derive from type: STACK=4, FLIP=1, conveyors=0.
+At most one FLIP/INPUT/OUTPUT is allowed. Empty DROP always does nothing.
+Dual A/B commands are atomic: preflight shared GRAB/DROP conflicts including
+no-ops, stage A then B, commit only if both succeed. A finishing output cannot
+bypass B. Failed scene rounds do not roll back VM ticks.
+OUTPUT_SEQUENCE passes after a valid complete round matches all expected bytes.
+FINAL_LAYOUT forbids conveyors and compares exact count-prefixed contents only
+at normal termination, excluding hands/directions. Initial/target inventory
+conserves modules with face bit masked; heavy remains below light. Loading FLIP
+contents preserves authored face. No compatibility reader, player-data rewrite,
+or mandatory version bump is introduced.

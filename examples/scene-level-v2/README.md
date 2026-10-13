@@ -11,14 +11,13 @@ execution conformance.
 | --- | --- | --- |
 | ExactIO | [exactio.json](exactio.json) | [exactio-invalid.json](exactio-invalid.json): unknown config field |
 | Robot | [robot.json](robot.json) | [robot-invalid.json](robot-invalid.json): duplicate object index |
-| MechanicalArm | [mechanical-arm.json](mechanical-arm.json) | [mechanical-arm-invalid.json](mechanical-arm-invalid.json): DEFECT plus processed |
+| MechanicalArm | [mechanical-arm.json](mechanical-arm.json) | [mechanical-arm-invalid.json](mechanical-arm-invalid.json): invalid module byte 255 |
 
 Robot configuration contains the static map once under `scene_config`; each
 test record contains only `visible`. The map uses 16 terrain rows (`.`/`0`/`1`),
 sparse colors, and sparse mutually exclusive start/patrol/trigger/door objects.
 Equal trigger/door IDs pair a mechanism. See the Robot section of the author
-specification. MechanicalArm demonstrates direct packing of an inspected
-NORMAL BLUE robot, with expected visible state 33.
+specification. MechanicalArm flips module byte 1 to byte 5 and transports it to OUTPUT.
 
 No program is embedded; program rules and scoring describe example author choices. The examples establish shape and invalid data cases, not solvability, scores, or native/WASM parity. Loader validation and full execution conformance are covered by separate Rust and host tests; these documents alone do not establish either result.
 

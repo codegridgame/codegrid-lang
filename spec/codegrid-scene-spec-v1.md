@@ -8,7 +8,7 @@ Source: the user-selected conversation [Scene definition review](chatgpt-convers
 
 This specification defines three scenes: ExactIO, Robot, and MechanicalArm. It translates the selected conversation into
 an implementation-oriented English contract. The existing compiler and VM do
-not interpret actors, robot parts, maps, or worktables.
+not interpret actors, modules, maps, or stations.
 Scenes interpret ordinary byte input and committed byte output in the Rust level
 layer. Presentation and animation remain in the game host.
 
@@ -65,8 +65,9 @@ categories for those outcomes.
 Successful HALT is not automatically a scene pass. If its goal is unfinished,
 fail with the logical reason `IncompleteGoal`; a partially collected dual-actor
 frame is also unfinished. ExactIO with empty expected output pass
-only on successful HALT without any output. Complete nonempty goals pass
-immediately without requiring HALT or consumption of remaining input.
+only on successful HALT without any output. Complete nonempty ExactIO/OUTPUT_SEQUENCE goals pass
+immediately without requiring HALT or consumption of remaining input. MechanicalArm
+FINAL_LAYOUT compares only on normal VM termination.
 
 Scene outcome names are logical categories, not new published error codes:
 
@@ -107,13 +108,10 @@ Robot and MechanicalArm use these action bytes:
 Other bytes fail as `InvalidOutput`.
 For a single actor, one output is a complete frame. For two actors, collect
 two outputs: first A, then B. Do not execute A until both outputs are collected.
-Decode and validate each collected byte only when its actor is dispatched,
-A then B, against the updated scene state. Invalid A fails without actor
-effects. Invalid B fails only if A did not already terminate the case.
-Retain completed A effects if B fails; skip round-end promotions and
-observations. Scene rounds do not roll back previously completed actors.
-If A produces a
-terminal outcome, stop immediately without executing B or round-end work.
+Robot decodes each byte when dispatched, A before B against updated state.
+Robot retains A effects if B fails and stops immediately if A is terminal.
+MechanicalArm instead validates and stages the entire atomic frame as Section 8
+defines; it commits no partial A effects and always validates B.
 WAIT is an action. Robot and MechanicalArm advance a completed nonterminal
 round even when both actors wait or movement/grab is a no-op.
 
@@ -250,133 +248,40 @@ Rust imposes no Color/PackedRobot domain or Item/Batch case-length policy.
 
 ## 8. MechanicalArm
 
-### 8.1 Actors, directions, and layout
+One arm has six stations 0..5. Two arms have ten stations, mapping A directions
+0..5 to [0,1,2,3,4,5] and B to [6,5,4,7,8,9]. Stations 4 and 5 are shared.
+Arms start empty facing 0. Turns add 1 (right) or 5 (left), modulo 6.
+Each station is STACK (capacity four), FLIP (capacity one), INPUT, or OUTPUT.
+At most one each FLIP/INPUT/OUTPUT is allowed. Conveyors store no contents.
 
-Configure one or two arms. Every arm starts empty and facing LEFT; the author
-cannot override this. Orientations are:
+Module bits 1..0 are color 0/1/2 (3 invalid), bit 2 face, bit 3 weight
+(1 heavy), bits 7..4 number. All 192 valid bytes, including zero, are modules;
+255 exclusively means empty hand. FLIP DROP immediately XORs bit 2. Authored
+initial/target FLIP contents retain their face. Heavy cannot lie above light.
 
-| Index | Direction | Single arm | Upper arm A | Lower arm B |
-| --- | --- | --- | --- | --- |
-| 0 | LEFT | Input | Input | Unavailable |
-| 1 | UPPER_LEFT | Worktable | Upper worktable 1 | Shared buffer left |
-| 2 | UPPER_RIGHT | Worktable | Upper worktable 2 | Shared buffer right |
-| 3 | RIGHT | Output | Output | Output |
-| 4 | LOWER_RIGHT | Worktable | Shared buffer right | Lower worktable 2 |
-| 5 | LOWER_LEFT | Worktable | Shared buffer left | Lower worktable 1 |
+Retain actions 0 WAIT, 1 GRAB, 2 DROP, 3 TURN_LEFT, 4 TURN_RIGHT. GRAB takes
+the top stack module, FLIP module, or INPUT FIFO head. Empty targets and OUTPUT
+GRAB do nothing. Occupied-hand GRAB fails only if a retrievable module exists.
+Empty-hand DROP always does nothing, including INPUT. Held DROP to INPUT,
+full STACK, occupied FLIP, or heavy above light fails. OUTPUT DROP removes and
+compares the entire module byte.
 
-TURN_RIGHT sets `(orientation + 1) % 6`; TURN_LEFT sets
-`(orientation + 5) % 6`. Each turn is exactly 60 degrees. There are four fixed
-optional worktable slots total, populated with 0–4 tables. Unpopulated slots
-are noninteractive. Table types may repeat: Inspection, Repair, Processing,
-Packing, Removal. Dual arms cannot access each other's private tables.
+Dual frames collect A/B before effects, preflight action validity and any pair
+of shared-station GRAB/DROP commands (including no-ops), then stage A before B.
+Both must succeed before committing any scene state or successful feedback.
+A completing output cannot bypass B validation. VM ticks remain committed.
+Every nonterminal completed round replaces unread VM input with current hands,
+A before B. Initial input is [255] or [255,255]. Pending A at halt fails.
+Robot retains its existing ordered dispatch and early-terminal behavior.
 
-### 8.2 Robot data and encoding
-
-An input robot's author data contains only color (0–2) and hidden true
-inspection (1 DEFECT, 2 IRREPARABLE, 3 NORMAL). Authors cannot provide
-UNINSPECTED, processed, or packed initial states. Preserve input FIFO order.
-On its first grab from input, the robot's visible inspection is UNINSPECTED,
-processed and packed are zero, and its color is the author color. The hidden
-inspection result stays within the scene until Inspection completes.
-
-Visible state is one byte:
-
-| Bit(s) | Meaning |
-| --- | --- |
-| 7–6 | Reserved, must be zero |
-| 5 | Packed |
-| 4 | Processed |
-| 3–2 | Inspection: 0 UNINSPECTED, 1 DEFECT, 2 IRREPARABLE, 3 NORMAL |
-| 1–0 | Color: 0 NONE, 1 BLUE, 2 RED; 3 invalid |
-
-State is `color | (inspection << 2) | (processed << 4) | (packed << 5)`.
-UNINSPECTED, DEFECT, and IRREPARABLE require processed=0 and packed=0.
-Processed or packed requires NORMAL. A packed normal robot may be processed
-or unprocessed: Inspection followed directly by Packing is valid.
-Byte 255 is EMPTY for all arm observations and never a valid robot state.
-
-### 8.3 Conveyors and worktables
-
-Only single/upper arms grab the input FIFO head. An empty input is a no-op.
-Lower-arm input access is unavailable and GRAB there is a no-op. DROP with a
-held robot onto input fails. Output cannot be grabbed; GRAB there is a no-op.
-DROP onto output immediately removes the held robot into the output FIFO,
-empties the hand, and performs expected-output comparison. Output has no
-occupancy limit. Dual outputs are ordered A before B.
-
-Ordinary tables have Empty, Processing(robot), and Ready(robot) states.
-Legal DROP to Empty makes it Processing. Complete its transformation and make
-it Ready at the end of the round; it is grabbable starting next round.
-
-| Table | Required input | Completion effect |
-| --- | --- | --- |
-| Inspection | UNINSPECTED, processed=0, packed=0 | Reveal hidden true inspection |
-| Repair | DEFECT, processed=0, packed=0 | Set visible inspection to NORMAL |
-| Processing | NORMAL, processed=0, packed=0 | Set processed=1 |
-| Packing | NORMAL, packed=0 | Set packed=1; processed is not required |
-| Removal | Any valid state | Immediately delete the robot and empty the hand |
-
-Removal never becomes Processing/Ready, never occupies the table, and cannot
-be grabbed later. Packed robots may go only to buffers, output, or Removal;
-they cannot enter any transforming table. Reinspection, repairing NORMAL or
-IRREPARABLE, reprocessing, and repacking are illegal and fail immediately.
-
-Shared buffers have Empty, Pending(robot), and Ready(robot) states. DROP to
-Empty makes Pending; make it Ready at round end. B cannot grab an item A
-dropped into a buffer earlier in the same round. A successful grab empties
-the source and transfers the same robot, including its hidden identity/state.
-
-### 8.4 GRAB and DROP rules
-
-| GRAB situation | Result |
-| --- | --- |
-| Empty hand, accessible ready robot | Transfer robot to hand |
-| Empty hand, empty/unavailable target | No-op |
-| Empty hand, Processing table or Pending buffer | No-op |
-| Occupied hand, empty/unavailable target | No-op |
-| Occupied hand, target contains a robot | Fail; no second robot may be grabbed |
-
-Output and Removal do not retain grabbable robots. Input contains a robot
-only while its FIFO is nonempty. Processing/Pending occupancy still counts as
-containing a robot for the occupied-hand error rule.
-
-| DROP situation | Result |
-| --- | --- |
-| Empty hand, any target | No-op |
-| Held robot, legal empty ordinary table | Processing, subject to table precondition |
-| Held robot, empty buffer | Pending |
-| Held robot, output | Immediate output comparison |
-| Held robot, Removal | Immediate deletion |
-| Held robot, occupied table/buffer | Fail |
-| Held robot, input/noninteractive/unavailable slot | Fail |
-
-### 8.5 Rounds and observations
-
-One arm's action completes one round, including WAIT, TURN, GRAB, DROP, and
-no-ops. Two arms require A/B actions, execute A then B, and only then complete
-Processing/Pending transitions at round end. If terminal during A or B, skip
-remaining actions and round-end work.
-
-Both layouts use current-hand snapshots. Single-arm initial input is `[255]`;
-each completed round still Running replaces unread input with `[state]`.
-Dual-arm initial input is `[255, 255]`; each completed round still Running
-replaces unread input with `[A_state, B_state]`. A held hand contributes its
-visible byte, an empty one 255. WAIT, TURN, DROP, unsuccessful GRAB, and other
-valid no-ops update input even when the snapshot is unchanged. Successful grabs
-from buffers follow the same snapshot rule. Removal has no retrievable state.
-
-### 8.6 Expected robots and goal
-
-Require at least one input robot and one expected state, with
-`expected_output.len() <= input.len()`. Every expected byte must satisfy the
-visible-state rules: reserved bits zero, color not 3, flags compatible with
-inspection, and not 255. This is state validation, not a requirement to prove
-that the particular conveyor sequence/worktable layout can solve the level.
-
-Compare the full visible state of each robot entering output, in FIFO order.
-A mismatch or excess output while active fails. A final match passes
-immediately even if robots remain in input, hands, tables, or buffers.
-Packing need not follow Processing unless the expected state requires both.
+OUTPUT_SEQUENCE requires OUTPUT and a nonempty expected sequence. Prefix
+mismatch/overflow fails; completion passes after the entire valid round.
+Remaining modules are allowed. FINAL_LAYOUT permits only STACK/FLIP and
+compares exact station contents only at normal VM termination, never at a
+resource limit, cancellation, or fault. Serialize stations in numeric order,
+each count followed by bottom-to-top bytes. Hands/directions are excluded.
+Initial/target inventories must match with face bit cleared; a held module
+therefore leaves a target module missing. Each case starts fresh VM/world.
 
 ## 9. Validation and implementation records
 
@@ -388,18 +293,18 @@ an out-of-range author value into a byte. Required logical records include:
 | --- | --- |
 | ExactIO | Input bytes, expected bytes |
 | Robot | 256 map cells, 1–2 actor starts/directions, patrol set, trigger/door associations |
-| MechanicalArm | Arm count, four optional table slots, ordered input robot definitions, expected state bytes |
+| MechanicalArm | Arm count, mode, typed stations, initial contents, module queues or targets |
 
 Validation covers all bounds and structural restrictions in Sections 3–8,
 including duplicate/missing IDs, dangling trigger/door references, unique dual
-starts, legal table types, and per-case reset requirements. Only host-trusted
+starts, legal station types, and per-case reset requirements. Only host-trusted
 ceilings bound otherwise unspecified author collection sizes; do not invent
 gameplay limits for quality inspection batches or MechanicalArm conveyors.
 
 The Rust scene layer owns validation, observation encoding, action decoding,
 ordered transitions, goals, and scene metrics. Compiler/model/VM stay independent
 of game rules. Hosts delegate to the shared evaluator; they must not implement
-a second scene interpreter. Keep hidden case data and hidden true inspection
+a second scene interpreter. Keep hidden case data
 out of public results, snapshots, traces, and presentation beyond permitted
 observations under the existing privacy contract.
 
@@ -435,7 +340,7 @@ reopen the accepted gameplay protocol.
 | Shared | Fresh-case isolation including self-modified code; same-case memory persistence; replace unread old snapshots; empty READ; HALT with incomplete frame/goal; failed VM tick consumes no scene output; terminal goal with pending B |
 | ExactIO | First/middle mismatch; final match; unread input; empty expected and HALT; empty expected and output |
 | Robot | All directions; boundary/VOID/door blocking; forward same-height and jump different-height; swap/shared-target/vacated-cell collision; shared patrols; trigger activation and one-round door delay; snapshots |
-| MechanicalArm | All six orientations and both layouts; duplicate/absent tables; FIFO input; hidden inspection; byte packing; illegal flags/255; every table precondition; direct normal Packing; repeat transformation failure; Removal; occupied GRAB/DROP; pending buffer/table delay; event/snapshot queues; ordered outputs and immediate pass |
+| MechanicalArm | All 192 module bytes; capacities and weighted stacks; FIFO input; immediate flips; atomic complete frames; shared no-op conflicts; refreshed hands; exact output sequence; final layouts on normal termination |
 | Hosts | Same definitions, inputs, actions, statuses, errors, metrics, and privacy projections in actual native/browser/server execution before claiming parity |
 
 This document establishes requirements, not implementation or test-pass evidence.

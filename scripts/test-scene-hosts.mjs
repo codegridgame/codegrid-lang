@@ -60,6 +60,10 @@ for (const id of ['robot','mechanical-arm']) {
   assert.deepEqual(results.find(r=>r.id===id+'.pass').result,results.find(r=>r.id===id+'.slice').result,id+': slice result');
   assert.deepEqual(results.find(r=>r.id===id+'.pass').events,results.find(r=>r.id===id+'.slice').events,id+': slice trace');
 }
+const finalLayout = results.find(r=>r.id==='mechanical-arm.final-layout');
+const finalLayoutSlice = results.find(r=>r.id==='mechanical-arm.final-layout-slice');
+assert.deepEqual(finalLayout.result,finalLayoutSlice.result,'final layout: slice result');
+assert.deepEqual(finalLayout.events,finalLayoutSlice.events,'final layout: slice events');
 const reactive = results.find(r=>r.id==='robot.read-observation');
 const reactiveSlice = results.find(r=>r.id==='robot.read-observation-slice');
 assert.deepEqual(reactive.result,reactiveSlice.result,'updated observation: slice result');

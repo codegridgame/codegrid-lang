@@ -237,430 +237,6 @@ mod tests {
     }
 }
 
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
-struct ArmRobot {
-    state: u8,
-    true_inspection: u8,
-}
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
-enum SlotState {
-    Empty,
-    Pending(ArmRobot),
-    Ready(ArmRobot),
-}
-impl SlotState {
-    fn occupied(self) -> bool {
-        !matches!(self, Self::Empty)
-    }
-}
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
-enum ArmTarget {
-    Input,
-    Output,
-    Table(usize),
-    Buffer(usize),
-    Unavailable,
-}
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
-pub(crate) enum ArmError {
-    InvalidOutput,
-    OccupiedHand,
-    OccupiedTarget,
-    InvalidDropTarget,
-    InvalidTableInput,
-    WrongOutput {
-        index: usize,
-        expected: Option<u8>,
-        actual: u8,
-    },
-    CounterOverflow,
-}
-#[derive(Clone, Debug, Eq, PartialEq)]
-pub(crate) struct ArmWorld {
-    pub orientations: Vec<u8>,
-    hands: Vec<Option<ArmRobot>>,
-    input: std::collections::VecDeque<ArmRobot>,
-    tables: [Option<crate::Worktable>; 4],
-    slots: [SlotState; 4],
-    buffers: [SlotState; 2],
-    expected: Vec<u8>,
-    pub actual: Vec<u8>,
-    pub matched: u64,
-    robot_count: usize,
-    pub rounds: u64,
-    pub work: u64,
-}
-impl ArmWorld {
-    pub fn new(
-        actors: u8,
-        tables: [Option<crate::Worktable>; 4],
-        input: &[crate::InputRobot],
-        expected: &[u8],
-    ) -> Self {
-        Self {
-            orientations: vec![0; usize::from(actors)],
-            hands: vec![None; usize::from(actors)],
-            input: input
-                .iter()
-                .map(|robot| ArmRobot {
-                    state: robot.color,
-                    true_inspection: robot.true_inspection,
-                })
-                .collect(),
-            tables,
-            slots: [SlotState::Empty; 4],
-            buffers: [SlotState::Empty; 2],
-            expected: expected.to_vec(),
-            actual: Vec::new(),
-            matched: 0,
-            robot_count: input.len(),
-            rounds: 0,
-            work: 0,
-        }
-    }
-    pub fn complete(&self) -> bool {
-        self.actual.len() == self.expected.len()
-    }
-    pub fn observation(&self) -> Vec<u8> {
-        self.hands
-            .iter()
-            .map(|hand| hand.map_or(255, |robot| robot.state))
-            .collect()
-    }
-    pub fn initial_input(&self) -> Vec<u8> {
-        self.observation()
-    }
-    fn target(&self, actor: usize) -> ArmTarget {
-        let orientation = self.orientations[actor];
-        if orientation == 3 {
-            return ArmTarget::Output;
-        }
-        if self.hands.len() == 1 {
-            return match orientation {
-                0 => ArmTarget::Input,
-                1 => ArmTarget::Table(0),
-                2 => ArmTarget::Table(1),
-                4 => ArmTarget::Table(2),
-                5 => ArmTarget::Table(3),
-                _ => ArmTarget::Unavailable,
-            };
-        }
-        match (actor, orientation) {
-            (0, 0) => ArmTarget::Input,
-            (0, 1) => ArmTarget::Table(0),
-            (0, 2) => ArmTarget::Table(1),
-            (0, 4) | (1, 2) => ArmTarget::Buffer(1),
-            (0, 5) | (1, 1) => ArmTarget::Buffer(0),
-            (1, 4) => ArmTarget::Table(3),
-            (1, 5) => ArmTarget::Table(2),
-            _ => ArmTarget::Unavailable,
-        }
-    }
-    fn effective_target(&self, actor: usize) -> ArmTarget {
-        match self.target(actor) {
-            ArmTarget::Table(index) if self.tables[index].is_none() => ArmTarget::Unavailable,
-            target => target,
-        }
-    }
-    fn transform(table: crate::Worktable, mut robot: ArmRobot) -> Result<ArmRobot, ArmError> {
-        use crate::Worktable::*;
-        let inspection = (robot.state >> 2) & 3;
-        let processed = robot.state & 16 != 0;
-        let packed = robot.state & 32 != 0;
-        let valid = match table {
-            Inspection => inspection == 0 && !processed && !packed,
-            Repair => inspection == 1 && !processed && !packed,
-            Processing => inspection == 3 && !processed && !packed,
-            Packing => inspection == 3 && !packed,
-            Removal => true,
-        };
-        if !valid {
-            return Err(ArmError::InvalidTableInput);
-        }
-        match table {
-            Inspection => robot.state = (robot.state & 3) | (robot.true_inspection << 2),
-            Repair => robot.state = (robot.state & !12) | 12,
-            Processing => robot.state |= 16,
-            Packing => robot.state |= 32,
-            Removal => {}
-        }
-        Ok(robot)
-    }
-    /// Return single-arm event input; publication is deferred to the session.
-    pub fn act(&mut self, actor: usize, action: u8) -> Result<Vec<u8>, ArmError> {
-        if action > 4 {
-            return Err(ArmError::InvalidOutput);
-        }
-        self.work += 1; // Actor inspected.
-        if action == 0 {
-            return Ok(Vec::new());
-        }
-        if action == 3 || action == 4 {
-            self.work += 1;
-            self.orientations[actor] =
-                (self.orientations[actor] + if action == 3 { 5 } else { 1 }) % 6;
-            return Ok(Vec::new());
-        }
-        self.work += 1; // Target slot/input inspected.
-        let target = self.effective_target(actor);
-        if action == 1 {
-            let occupied = match target {
-                ArmTarget::Input => !self.input.is_empty(),
-                ArmTarget::Table(index) => self.slots[index].occupied(),
-                ArmTarget::Buffer(index) => self.buffers[index].occupied(),
-                _ => false,
-            };
-            if self.hands[actor].is_some() {
-                return if occupied {
-                    Err(ArmError::OccupiedHand)
-                } else {
-                    Ok(Vec::new())
-                };
-            }
-            let acquired = match target {
-                ArmTarget::Input => self.input.pop_front(),
-                ArmTarget::Table(index) => match self.slots[index] {
-                    SlotState::Ready(robot) => {
-                        self.slots[index] = SlotState::Empty;
-                        Some(robot)
-                    }
-                    _ => None,
-                },
-                ArmTarget::Buffer(index) => match self.buffers[index] {
-                    SlotState::Ready(robot) => {
-                        self.buffers[index] = SlotState::Empty;
-                        Some(robot)
-                    }
-                    _ => None,
-                },
-                _ => None,
-            };
-            if acquired.is_some() {
-                self.work += 3;
-            } // Robot inspected, source and hand updated.
-            self.hands[actor] = acquired;
-            return Ok(if self.hands.len() == 1 {
-                acquired.into_iter().map(|r| r.state).collect()
-            } else {
-                Vec::new()
-            });
-        }
-        let Some(robot) = self.hands[actor] else {
-            return Ok(Vec::new());
-        };
-        self.work += 1; // Held robot inspected.
-        match target {
-            ArmTarget::Input | ArmTarget::Unavailable => return Err(ArmError::InvalidDropTarget),
-            ArmTarget::Output => {
-                let index = self.actual.len();
-                let expected = self.expected.get(index).copied();
-                self.work += 3; // Expected inspected, output and hand updated.
-                self.robot_count -= 1;
-                self.actual.push(robot.state);
-                self.hands[actor] = None;
-                if expected != Some(robot.state) {
-                    return Err(ArmError::WrongOutput {
-                        index,
-                        expected,
-                        actual: robot.state,
-                    });
-                }
-                self.matched += 1;
-            }
-            ArmTarget::Buffer(index) => {
-                if self.buffers[index].occupied() {
-                    return Err(ArmError::OccupiedTarget);
-                }
-                self.work += 2;
-                self.buffers[index] = SlotState::Pending(robot);
-                self.hands[actor] = None;
-            }
-            ArmTarget::Table(index) => {
-                if self.slots[index].occupied() {
-                    return Err(ArmError::OccupiedTarget);
-                }
-                let table = self.tables[index].expect("effective target has table");
-                if table != crate::Worktable::Removal {
-                    Self::transform(table, robot)?;
-                    self.slots[index] = SlotState::Pending(robot);
-                } else {
-                    self.robot_count -= 1;
-                }
-                self.work += 2; // Table/Removal and hand updated.
-                self.hands[actor] = None;
-            }
-        }
-        Ok(Vec::new())
-    }
-    pub fn end_round(&mut self, _single_event: Vec<u8>) -> Result<Vec<u8>, ArmError> {
-        let rounds = self
-            .rounds
-            .checked_add(1)
-            .ok_or(ArmError::CounterOverflow)?;
-        for (index, slot) in self.slots.iter_mut().enumerate() {
-            self.work += 1;
-            if let SlotState::Pending(robot) = *slot {
-                self.work += 3; // Table/robot inspected and completed slot updated.
-                *slot = SlotState::Ready(Self::transform(
-                    self.tables[index].expect("occupied table exists"),
-                    robot,
-                )?);
-            }
-        }
-        for slot in &mut self.buffers {
-            self.work += 1;
-            if let SlotState::Pending(robot) = *slot {
-                self.work += 1;
-                *slot = SlotState::Ready(robot);
-            }
-        }
-        self.rounds = rounds;
-        Ok(self.observation())
-    }
-}
-
-#[cfg(test)]
-mod arm_tests {
-    use super::*;
-    use crate::{InputRobot, Worktable};
-    fn arm(actors: u8) -> ArmWorld {
-        ArmWorld::new(
-            actors,
-            [
-                Some(Worktable::Inspection),
-                Some(Worktable::Packing),
-                Some(Worktable::Repair),
-                Some(Worktable::Removal),
-            ],
-            &[InputRobot {
-                color: 1,
-                true_inspection: 3,
-            }],
-            &[45],
-        )
-    }
-    fn round(world: &mut ArmWorld, action: u8) -> Vec<u8> {
-        let event = world.act(0, action).unwrap();
-        world.end_round(event).unwrap()
-    }
-    #[test]
-    fn single_arm_updates_every_valid_command_with_current_hand() {
-        let mut world = arm(1);
-        assert_eq!(world.initial_input(), [255]);
-        assert_eq!(round(&mut world, 0), [255]);
-        assert_eq!(round(&mut world, 1), [1]);
-        assert_eq!(round(&mut world, 0), [1]);
-        assert_eq!(round(&mut world, 4), [1]);
-        assert_eq!(round(&mut world, 2), [255]);
-        assert_eq!(round(&mut world, 3), [255]);
-        assert_eq!(round(&mut world, 1), [255]);
-    }
-    #[test]
-    fn inspection_direct_pack_and_output_fifo() {
-        let mut world = arm(1);
-        assert_eq!(world.initial_input(), [255]);
-        assert_eq!(round(&mut world, 1), [1]);
-        round(&mut world, 4);
-        round(&mut world, 2);
-        assert!(world.hands[0].is_none());
-        assert_eq!(round(&mut world, 1), [13]);
-        round(&mut world, 4);
-        round(&mut world, 2);
-        assert_eq!(round(&mut world, 1), [45]);
-        round(&mut world, 4);
-        world.act(0, 2).unwrap();
-        assert!(world.complete());
-        assert_eq!(world.actual, [45]);
-    }
-    #[test]
-    fn pending_buffer_cannot_be_grabbed_same_round_and_keeps_identity() {
-        let mut world = arm(2);
-        assert_eq!(world.initial_input(), [255, 255]);
-        world.act(0, 1).unwrap();
-        world.end_round(Vec::new()).unwrap();
-        world.orientations = [5, 1].to_vec();
-        world.act(0, 2).unwrap();
-        world.act(1, 1).unwrap();
-        assert_eq!(world.observation(), [255, 255]);
-        world.end_round(Vec::new()).unwrap();
-        world.act(1, 1).unwrap();
-        assert_eq!(world.observation(), [255, 1]);
-        assert_eq!(world.hands[1].unwrap().true_inspection, 3);
-    }
-    #[test]
-    fn table_preconditions_and_removal() {
-        let uninspected = ArmRobot {
-            state: 1,
-            true_inspection: 1,
-        };
-        let defect = ArmWorld::transform(Worktable::Inspection, uninspected).unwrap();
-        assert_eq!(defect.state, 5);
-        let normal = ArmWorld::transform(Worktable::Repair, defect).unwrap();
-        assert_eq!(normal.state, 13);
-        let processed = ArmWorld::transform(Worktable::Processing, normal).unwrap();
-        assert_eq!(processed.state, 29);
-        assert_eq!(
-            ArmWorld::transform(Worktable::Packing, processed)
-                .unwrap()
-                .state,
-            61
-        );
-        for (table, robot) in [
-            (Worktable::Inspection, normal),
-            (Worktable::Repair, normal),
-            (Worktable::Processing, processed),
-            (Worktable::Packing, defect),
-        ] {
-            assert_eq!(
-                ArmWorld::transform(table, robot),
-                Err(ArmError::InvalidTableInput)
-            );
-        }
-        let mut world = arm(1);
-        round(&mut world, 1);
-        world.orientations[0] = 5;
-        round(&mut world, 2);
-        assert!(world.hands[0].is_none());
-        assert_eq!(world.slots[3], SlotState::Empty);
-    }
-    #[test]
-    fn grab_drop_occupancy_and_invalid_target_rules() {
-        let mut world = arm(1);
-        world.act(0, 2).unwrap();
-        world.act(0, 1).unwrap();
-        assert_eq!(world.act(0, 2), Err(ArmError::InvalidDropTarget));
-        world.input.push_back(ArmRobot {
-            state: 0,
-            true_inspection: 2,
-        });
-        assert_eq!(world.act(0, 1), Err(ArmError::OccupiedHand));
-        world.orientations[0] = 1;
-        world.slots[0] = SlotState::Pending(ArmRobot {
-            state: 0,
-            true_inspection: 2,
-        });
-        assert_eq!(world.act(0, 1), Err(ArmError::OccupiedHand));
-        assert_eq!(world.act(0, 2), Err(ArmError::OccupiedTarget));
-        world.hands[0] = None;
-        assert!(world.act(0, 1).unwrap().is_empty());
-        world.orientations[0] = 3;
-        world.hands[0] = Some(ArmRobot {
-            state: 1,
-            true_inspection: 3,
-        });
-        assert_eq!(
-            world.act(0, 2),
-            Err(ArmError::WrongOutput {
-                index: 0,
-                expected: Some(45),
-                actual: 1
-            })
-        );
-        assert!(world.hands[0].is_none());
-        assert_eq!(world.actual, [1]);
-    }
-}
-
 fn push_len(out: &mut Vec<u8>, len: usize) {
     out.extend_from_slice(&(len as u64).to_le_bytes());
 }
@@ -699,63 +275,6 @@ impl RobotWorld {
         self.visited.len() as u64
     }
 }
-impl ArmWorld {
-    pub fn expected_output(&self) -> &[u8] {
-        &self.expected
-    }
-    pub fn retained_units(&self) -> u64 {
-        (self.hands.len() + self.robot_count + 4 + 2 + self.expected.len() + self.actual.len())
-            as u64
-    }
-    /// Deterministic semantic encoding for exact cycle detection. Excludes the
-    /// immutable tables and expected output and the monotone round/work
-    /// counters.
-    pub(crate) fn write_semantic_state(&self, out: &mut Vec<u8>) {
-        out.extend_from_slice(&self.orientations);
-        push_len(out, self.hands.len());
-        for hand in &self.hands {
-            write_arm_robot(out, *hand);
-        }
-        push_len(out, self.input.len());
-        for robot in &self.input {
-            write_arm_robot(out, Some(*robot));
-        }
-        for slot in self.slots.iter().chain(self.buffers.iter()) {
-            match slot {
-                SlotState::Empty => out.push(0),
-                SlotState::Pending(robot) => {
-                    out.push(1);
-                    out.push(robot.state);
-                    out.push(robot.true_inspection);
-                }
-                SlotState::Ready(robot) => {
-                    out.push(2);
-                    out.push(robot.state);
-                    out.push(robot.true_inspection);
-                }
-            }
-        }
-        push_len(out, self.actual.len());
-        out.extend_from_slice(&self.actual);
-        out.extend_from_slice(&self.matched.to_le_bytes());
-        out.extend_from_slice(&(self.robot_count as u64).to_le_bytes());
-    }
-    /// Monotone goal progress: correctly produced output robots.
-    pub(crate) fn progress_counter(&self) -> u64 {
-        self.matched
-    }
-}
-fn write_arm_robot(out: &mut Vec<u8>, robot: Option<ArmRobot>) {
-    match robot {
-        None => out.push(0),
-        Some(robot) => {
-            out.push(1);
-            out.push(robot.state);
-            out.push(robot.true_inspection);
-        }
-    }
-}
-
 pub(crate) enum ActorSnapshot {
     Robot {
         position: u8,
@@ -825,62 +344,349 @@ impl RobotWorld {
             .collect()
     }
 }
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub(crate) enum ArmError {
+    InvalidOutput,
+    OccupiedHand,
+    OccupiedTarget,
+    InvalidDropTarget,
+    HeavyOnLight,
+    SharedStationConflict,
+    WrongOutput {
+        index: usize,
+        expected: Option<u8>,
+        actual: u8,
+    },
+    CounterOverflow,
+}
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub(crate) struct ArmWorld {
+    pub orientations: Vec<u8>,
+    hands: Vec<Option<u8>>,
+    stations: Vec<crate::StationType>,
+    contents: Vec<Vec<u8>>,
+    input: std::collections::VecDeque<u8>,
+    mode: crate::MechanicalArmMode,
+    expected: Vec<u8>,
+    pub actual: Vec<u8>,
+    pub matched: u64,
+    pub rounds: u64,
+    pub work: u64,
+}
 impl ArmWorld {
-    pub fn public_interaction(&self, actor: usize) -> crate::scene_feedback::SceneInteraction {
-        use crate::scene_feedback::SceneInteraction as I;
-        match self.target(actor) {
-            ArmTarget::Input => I::Input,
-            ArmTarget::Output => I::Output,
-            ArmTarget::Table(index) => I::Worktable(index),
-            ArmTarget::Buffer(0) => I::BufferLeft,
-            ArmTarget::Buffer(_) => I::BufferRight,
-            ArmTarget::Unavailable => I::Unavailable,
+    pub fn new(
+        actors: u8,
+        mode: crate::MechanicalArmMode,
+        stations: &[crate::StationType],
+        initial: &[Vec<u8>],
+        input: &[u8],
+        expected: &[u8],
+    ) -> Self {
+        Self {
+            orientations: vec![0; actors as usize],
+            hands: vec![None; actors as usize],
+            stations: stations.to_vec(),
+            contents: initial.to_vec(),
+            input: input.iter().copied().collect(),
+            mode,
+            expected: expected.to_vec(),
+            actual: Vec::new(),
+            matched: 0,
+            rounds: 0,
+            work: initial.iter().map(|s| s.len() as u64 + 1).sum::<u64>()
+                + stations.len() as u64
+                + input.len() as u64
+                + expected.len() as u64,
         }
     }
-    pub fn debug_snapshot(&mut self, actor: usize) -> ActorSnapshot {
-        self.work += 1 + u64::from(self.hands[actor].is_some());
-        let interaction = self.public_interaction(actor);
-        if matches!(
-            interaction,
-            crate::scene_feedback::SceneInteraction::Worktable(_)
-        ) {
-            self.work += 1;
+    pub fn target(&self, actor: usize) -> usize {
+        if actor == 0 {
+            self.orientations[actor] as usize
+        } else {
+            [6, 5, 4, 7, 8, 9][self.orientations[actor] as usize]
         }
+    }
+    pub fn preflight(&mut self, actions: &[u8]) -> Option<(usize, ArmError)> {
+        for (actor, action) in actions.iter().enumerate() {
+            self.work += 1;
+            if *action > 4 {
+                return Some((actor, ArmError::InvalidOutput));
+            }
+        }
+        if actions.len() == 2
+            && matches!(actions[0], 1 | 2)
+            && matches!(actions[1], 1 | 2)
+            && self.target(0) == self.target(1)
+        {
+            return Some((1, ArmError::SharedStationConflict));
+        }
+        None
+    }
+    pub fn complete(&self) -> bool {
+        self.mode == crate::MechanicalArmMode::OutputSequence
+            && self.actual.len() == self.expected.len()
+    }
+    pub fn halt_complete(&mut self) -> bool {
+        if self.mode == crate::MechanicalArmMode::FinalLayout {
+            self.actual = self.layout();
+            self.actual == self.expected
+        } else {
+            self.complete()
+        }
+    }
+    fn layout(&self) -> Vec<u8> {
+        self.contents
+            .iter()
+            .flat_map(|s| std::iter::once(s.len() as u8).chain(s.iter().copied()))
+            .collect()
+    }
+    pub fn observation(&self) -> Vec<u8> {
+        self.hands.iter().map(|h| h.unwrap_or(255)).collect()
+    }
+    pub fn initial_input(&self) -> Vec<u8> {
+        self.observation()
+    }
+    pub fn act(&mut self, actor: usize, action: u8) -> Result<Vec<u8>, ArmError> {
+        use crate::StationType;
+        self.work += 1;
+        if action > 4 {
+            return Err(ArmError::InvalidOutput);
+        }
+        if action == 0 {
+            return Ok(Vec::new());
+        }
+        if action == 3 || action == 4 {
+            self.orientations[actor] =
+                (self.orientations[actor] + if action == 3 { 5 } else { 1 }) % 6;
+            self.work += 1;
+            return Ok(Vec::new());
+        }
+        let target = self.target(actor);
+        let kind = self.stations[target];
+        self.work += 1;
+        if action == 1 {
+            let available = if kind == StationType::Input {
+                !self.input.is_empty()
+            } else if kind == StationType::Output {
+                false
+            } else {
+                !self.contents[target].is_empty()
+            };
+            if !available {
+                return Ok(Vec::new());
+            }
+            if self.hands[actor].is_some() {
+                return Err(ArmError::OccupiedHand);
+            }
+            self.hands[actor] = if kind == StationType::Input {
+                self.input.pop_front()
+            } else {
+                self.contents[target].pop()
+            };
+            self.work += 2;
+            return Ok(Vec::new());
+        }
+        let Some(item) = self.hands[actor] else {
+            return Ok(Vec::new());
+        };
+        match kind {
+            StationType::Input => return Err(ArmError::InvalidDropTarget),
+            StationType::Output => {
+                let index = self.actual.len();
+                let expected = self.expected.get(index).copied();
+                self.work += 1;
+                if expected != Some(item) {
+                    return Err(ArmError::WrongOutput {
+                        index,
+                        expected,
+                        actual: item,
+                    });
+                }
+                let matched = self
+                    .matched
+                    .checked_add(1)
+                    .ok_or(ArmError::CounterOverflow)?;
+                self.actual.push(item);
+                self.matched = matched;
+            }
+            StationType::Stack => {
+                if self.contents[target].len() == 4 {
+                    return Err(ArmError::OccupiedTarget);
+                }
+                if item & 8 != 0
+                    && self.contents[target]
+                        .last()
+                        .is_some_and(|below| below & 8 == 0)
+                {
+                    return Err(ArmError::HeavyOnLight);
+                }
+                self.contents[target].push(item);
+            }
+            StationType::Flip => {
+                if !self.contents[target].is_empty() {
+                    return Err(ArmError::OccupiedTarget);
+                }
+                self.contents[target].push(item ^ 4);
+            }
+        }
+        self.hands[actor] = None;
+        self.work += 2;
+        Ok(Vec::new())
+    }
+    pub fn end_round(&mut self, _: Vec<u8>) -> Result<Vec<u8>, ArmError> {
+        self.rounds = self
+            .rounds
+            .checked_add(1)
+            .ok_or(ArmError::CounterOverflow)?;
+        Ok(self.observation())
+    }
+    pub fn expected_output(&self) -> &[u8] {
+        &self.expected
+    }
+    pub fn retained_units(&self) -> u64 {
+        (self.orientations.len()
+            + self.hands.len()
+            + self.stations.len()
+            + self.contents.len()
+            + self.contents.iter().map(Vec::len).sum::<usize>()
+            + self.input.len()
+            + self.expected.len()
+            + self.actual.len()) as u64
+    }
+    pub fn write_semantic_state(&self, out: &mut Vec<u8>) {
+        out.extend(&self.orientations);
+        out.extend(self.observation());
+        push_len(out, self.input.len());
+        out.extend(&self.input);
+        out.extend(self.layout());
+        push_len(out, self.actual.len());
+        out.extend(&self.actual);
+    }
+    pub fn progress_counter(&self) -> u64 {
+        self.matched
+    }
+    pub fn public_interaction(&self, actor: usize) -> crate::scene_feedback::SceneInteraction {
+        crate::scene_feedback::SceneInteraction::Station(self.target(actor))
+    }
+    pub fn debug_snapshot(&mut self, actor: usize) -> ActorSnapshot {
+        self.work += 1;
         ActorSnapshot::Arm {
             orientation: self.orientations[actor],
-            state: self.hands[actor].map_or(255, |r| r.state),
-            interaction,
+            state: self.hands[actor].unwrap_or(255),
+            interaction: self.public_interaction(actor),
         }
     }
     pub fn round_changes(
         &mut self,
     ) -> Result<Vec<crate::scene_feedback::SceneRoundChange>, ArmError> {
-        use crate::scene_feedback::SceneRoundChange;
-        let mut changes = Vec::new();
-        for (index, slot) in self.slots.iter().enumerate() {
-            self.work += 1;
-            if let SlotState::Pending(robot) = slot {
-                self.work += 3;
-                let robot = Self::transform(
-                    self.tables[index].expect("pending table configured"),
-                    *robot,
-                )?;
-                changes.push(SceneRoundChange::TableReady {
-                    worktable_index: index,
-                    state: robot.state,
-                });
+        self.work += self
+            .contents
+            .iter()
+            .map(|s| 1 + s.len() as u64)
+            .sum::<u64>();
+        Ok(self
+            .contents
+            .iter()
+            .enumerate()
+            .map(
+                |(station_id, contents)| crate::scene_feedback::SceneRoundChange::StationUpdated {
+                    station_id,
+                    contents: contents.clone(),
+                },
+            )
+            .collect())
+    }
+}
+
+#[cfg(test)]
+mod arm_redesign_tests {
+    use super::*;
+    use crate::{MechanicalArmMode as Mode, StationType as Station};
+    fn world(stations: Vec<Station>, initial: Vec<Vec<u8>>) -> ArmWorld {
+        ArmWorld::new(1, Mode::FinalLayout, &stations, &initial, &[], &[])
+    }
+    #[test]
+    fn stack_grab_is_lifo_and_preserves_full_byte() {
+        let mut arm = world(
+            vec![Station::Stack; 6],
+            vec![vec![9, 17], vec![], vec![], vec![], vec![], vec![]],
+        );
+        assert_eq!(arm.initial_input(), [255]);
+        arm.act(0, 1).unwrap();
+        assert_eq!(arm.observation(), [17]);
+        assert_eq!(arm.contents[0], [9]);
+        assert_eq!(arm.act(0, 1), Err(ArmError::OccupiedHand));
+        arm.act(0, 4).unwrap();
+        arm.act(0, 2).unwrap();
+        assert_eq!(arm.contents[1], [17]);
+    }
+    #[test]
+    fn flip_is_immediate_and_cannot_make_empty_sentinel() {
+        for byte in 0u8..=254 {
+            if byte & 3 == 3 {
+                continue;
             }
+            let mut arm = world(
+                vec![Station::Flip; 6],
+                vec![vec![], vec![], vec![], vec![], vec![], vec![]],
+            );
+            arm.hands[0] = Some(byte);
+            arm.act(0, 2).unwrap();
+            assert_eq!(arm.contents[0], [byte ^ 4]);
+            arm.act(0, 1).unwrap();
+            assert_eq!(arm.observation(), [byte ^ 4]);
+            assert_ne!(byte ^ 4, 255);
         }
-        for (index, slot) in self.buffers.iter().enumerate() {
-            self.work += 1;
-            if let SlotState::Pending(robot) = slot {
-                self.work += 1;
-                changes.push(SceneRoundChange::BufferReady {
-                    right: index == 1,
-                    state: robot.state,
-                });
-            }
-        }
-        Ok(changes)
+    }
+    #[test]
+    fn heavy_drop_and_capacity_fail_without_losing_hand() {
+        let mut arm = world(
+            vec![Station::Stack; 6],
+            vec![vec![1], vec![9, 9, 9, 9], vec![], vec![], vec![], vec![]],
+        );
+        arm.hands[0] = Some(9);
+        assert_eq!(arm.act(0, 2), Err(ArmError::HeavyOnLight));
+        assert_eq!(arm.hands[0], Some(9));
+        arm.orientations[0] = 1;
+        assert_eq!(arm.act(0, 2), Err(ArmError::OccupiedTarget));
+    }
+    #[test]
+    fn empty_drop_at_input_is_noop_and_output_cannot_be_grabbed() {
+        let mut arm = world(
+            vec![
+                Station::Input,
+                Station::Output,
+                Station::Stack,
+                Station::Stack,
+                Station::Stack,
+                Station::Stack,
+            ],
+            vec![vec![]; 6],
+        );
+        arm.act(0, 2).unwrap();
+        arm.hands[0] = Some(0);
+        assert_eq!(arm.act(0, 2), Err(ArmError::InvalidDropTarget));
+        arm.orientations[0] = 1;
+        arm.act(0, 1).unwrap();
+        assert_eq!(arm.hands[0], Some(0));
+    }
+    #[test]
+    fn final_layout_uses_station_counts_and_faces_without_hands() {
+        let initial = vec![vec![9, 1], vec![], vec![], vec![], vec![], vec![]];
+        let mut arm = ArmWorld::new(
+            1,
+            Mode::FinalLayout,
+            &vec![Station::Stack; 6],
+            &initial,
+            &[],
+            &[2, 9, 1, 0, 0, 0, 0, 0],
+        );
+        assert!(!arm.complete());
+        assert!(arm.halt_complete());
+        arm.hands[0] = Some(0);
+        assert!(arm.halt_complete());
+        arm.contents[0][1] ^= 4;
+        assert!(!arm.halt_complete());
     }
 }

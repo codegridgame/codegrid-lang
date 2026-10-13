@@ -141,60 +141,72 @@ fn door_changes_publish_only_at_round_completion() {
     );
 }
 #[test]
-fn inspection_is_revealed_only_on_ready_and_illegal_packing_has_location() {
-    let mut v = author("arm");
-    v["evaluation"]["tests"][0]["input"][0]["true_inspection"] = json!(1);
-    let mut s = start(&v, &[".1", ".4", ".2", ".1", ".4", ".2", ";"], limits());
+fn flip_is_immediate_and_failed_input_drop_has_station_location() {
+    let v = author("arm");
+    let mut s = start(&v, &[".1", ".4", ".2", ".1", ".3", ".2", ";"], limits());
     let result = finish(&mut s, 1);
     assert_eq!(result.status, EvaluationStatus::TestFailed);
     let trace = events(&mut s);
-    assert!(!serde_json::to_string(&trace)
-        .unwrap()
-        .contains("true_inspection"));
-    let first_grab = trace.iter().find(|e| e["kind"] == "ActionApplied").unwrap();
-    assert_eq!(first_grab["data"]["effect"]["after_state"], 1);
-    let ready = trace
+    let snapshots = trace
         .iter()
-        .find(|e| {
-            e["kind"] == "RoundCompleted"
-                && !e["data"]["transitions"].as_array().unwrap().is_empty()
-        })
-        .unwrap();
+        .filter(|e| e["kind"] == "InputUpdated")
+        .map(|e| e["data"]["bytes"].clone())
+        .collect::<Vec<_>>();
     assert_eq!(
-        ready["data"]["transitions"],
-        json!([{"kind":"TableReady","worktable_index":0,"state":5}])
+        snapshots,
+        vec![
+            json!([255]),
+            json!([1]),
+            json!([1]),
+            json!([255]),
+            json!([5]),
+            json!([5])
+        ]
     );
-    assert_eq!(ready["data"]["observation"], json!([255]));
+    assert!(trace.iter().any(|e| e["kind"] == "RoundCompleted"
+        && e["data"]["transitions"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .any(|t| t["station_id"] == 1 && t["contents"] == json!([5]))));
     let end = trace.last().unwrap();
     assert_eq!(end["data"]["failure"]["reason"], "IllegalOperation");
-    assert_eq!(
-        end["data"]["failure"]["details"]["interaction"],
-        "Worktable"
-    );
-    assert_eq!(end["data"]["failure"]["details"]["worktable_index"], 1);
+    assert_eq!(end["data"]["failure"]["details"]["station_id"], 0);
 }
 #[test]
-fn dual_buffer_drop_cannot_be_grabbed_until_following_round() {
+fn dual_shared_noop_conflict_publishes_no_partial_actions() {
     let mut v = author("arm");
     v["scene_config"]["arm_count"] = json!(2);
-    let mut s = start(
-        &v,
-        &[".1", ".0", ".3", ".4", ".2", ".1", ".0", ".1", ";"],
-        limits(),
-    );
-    finish(&mut s, 1);
+    v["scene_config"]["stations"] = json!((0..10)
+        .map(|id| json!({"station_id":id,"station_type":if id==3 {"OUTPUT"} else {"STACK"}}))
+        .collect::<Vec<_>>());
+    v["evaluation"]["tests"][0]["initial_station_contents"] =
+        json!([[], [], [], [], [], [], [], [], [], []]);
+    v["evaluation"]["tests"][0]["input_queue"] = json!([]);
+    // A turns left toward shared station 5, B turns right toward the same station.
+    let mut s = start(&v, &[".3", ".4", ".2", ".1", ";"], limits());
+    assert_eq!(finish(&mut s, 1).status, EvaluationStatus::TestFailed);
     let trace = events(&mut s);
-    let rounds = trace
-        .iter()
-        .filter(|e| e["kind"] == "RoundCompleted")
-        .collect::<Vec<_>>();
-    assert_eq!(rounds[2]["data"]["observation"], json!([255, 255]));
     assert_eq!(
-        rounds[2]["data"]["transitions"],
-        json!([{"kind":"BufferReady","buffer":"Left","state":1}])
+        trace
+            .iter()
+            .filter(|e| e["kind"] == "ActionApplied")
+            .count(),
+        2
     );
-    assert_eq!(rounds[3]["data"]["observation"], json!([255, 1]));
+    assert_eq!(
+        trace
+            .iter()
+            .filter(|e| e["kind"] == "RoundCompleted")
+            .count(),
+        1
+    );
+    assert_eq!(
+        trace.last().unwrap()["data"]["failure"]["reason"],
+        "IllegalOperation"
+    );
 }
+
 #[test]
 fn unvisited_patrol_fails_on_halt_without_action_events() {
     let v = author("robot");

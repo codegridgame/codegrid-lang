@@ -8,7 +8,7 @@ use crate::scene_protocol::{
 };
 use crate::scene_world::{ActorSnapshot, ArmError, ArmWorld, RobotWorld, TransitionError};
 use crate::scenes::SceneKind;
-use crate::{InputRobot, Worktable};
+use crate::{MechanicalArmMode, StationType};
 use std::collections::BTreeMap;
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -60,6 +60,15 @@ pub(super) trait SceneRuntime: SceneRuntimeClone {
     fn transition(&mut self, command: SceneCommand)
         -> Result<RuntimeTransition, SceneCounterError>;
     fn record_action_feedback_work(&mut self) {}
+    fn preflight(&mut self, _actions: &[u8]) -> Option<SceneFailure> {
+        None
+    }
+    fn frame_complete(&mut self) -> bool {
+        false
+    }
+    fn halt_complete(&mut self) -> bool {
+        false
+    }
     fn initial_complete(&mut self) -> bool {
         false
     }
@@ -333,12 +342,14 @@ pub(super) struct MechanicalArmRuntime {
 impl MechanicalArmRuntime {
     pub fn new(
         actors: u8,
-        tables: [Option<Worktable>; 4],
-        input: &[InputRobot],
+        mode: MechanicalArmMode,
+        stations: &[StationType],
+        initial: &[Vec<u8>],
+        input: &[u8],
         expected: &[u8],
     ) -> Self {
         Self {
-            world: ArmWorld::new(actors, tables, input, expected),
+            world: ArmWorld::new(actors, mode, stations, initial, input, expected),
         }
     }
 }
@@ -365,7 +376,7 @@ impl SceneRuntime for MechanicalArmRuntime {
         };
         let result = match self.world.act(actor, action) {
             Ok(observation) => RuntimeTransition {
-                outcome: self.world.complete().then_some(SceneOutcome::Passed),
+                outcome: None,
                 observation,
             },
             Err(ArmError::CounterOverflow) => return Err(SceneCounterError::Overflow),
@@ -394,7 +405,10 @@ impl SceneRuntime for MechanicalArmRuntime {
                     ArmError::OccupiedHand => IllegalOperationReason::OccupiedHand,
                     ArmError::OccupiedTarget => IllegalOperationReason::OccupiedTarget,
                     ArmError::InvalidDropTarget => IllegalOperationReason::InvalidDropTarget,
-                    ArmError::InvalidTableInput => IllegalOperationReason::InvalidTableInput,
+                    ArmError::HeavyOnLight => IllegalOperationReason::HeavyOnLight,
+                    ArmError::SharedStationConflict => {
+                        IllegalOperationReason::SharedStationConflict
+                    }
                     _ => unreachable!("handled arm error"),
                 };
                 RuntimeTransition {
@@ -410,6 +424,27 @@ impl SceneRuntime for MechanicalArmRuntime {
         Ok(result)
     }
 
+    fn preflight(&mut self, actions: &[u8]) -> Option<SceneFailure> {
+        self.world
+            .preflight(actions)
+            .map(|(actor, error)| match error {
+                ArmError::InvalidOutput => SceneFailure::InvalidOutput {
+                    actor: Some(actor as u8),
+                    value: actions[actor],
+                },
+                _ => SceneFailure::IllegalOperation {
+                    actor: actor as u8,
+                    operation: IllegalOperationReason::SharedStationConflict,
+                    interaction: self.world.public_interaction(actor),
+                },
+            })
+    }
+    fn frame_complete(&mut self) -> bool {
+        self.world.complete()
+    }
+    fn halt_complete(&mut self) -> bool {
+        self.world.halt_complete()
+    }
     fn record_action_feedback_work(&mut self) {
         self.world.work += 1;
     }
@@ -442,7 +477,7 @@ impl SceneRuntime for MechanicalArmRuntime {
 
     fn summary(&self) -> BTreeMap<&'static str, u64> {
         let mut result = BTreeMap::new();
-        result.insert("matched_output_robots", self.world.matched);
+        result.insert("matched_output_modules", self.world.matched);
         result
     }
 

@@ -137,7 +137,7 @@ fn arm_events_follow_committed_ticks() {
     let p = program(&[".1", ".4", ".2", ".1", ".4", ".2", ".1", ".4", ".2", ";"]);
     let result = run(session(&v, p, config(), limits()), 1);
     assert_eq!(result.status, EvaluationStatus::Passed);
-    assert_eq!(result.summary["matched_output_robots"], 1);
+    assert_eq!(result.summary["matched_output_modules"], 1);
 }
 #[test]
 fn rollback_output_is_never_dispatched_and_cancel_is_terminal() {
@@ -262,4 +262,24 @@ fn replacement_fits_queue_limit_and_discards_partial_snapshot() {
     );
     assert_eq!(result.status, EvaluationStatus::Passed);
     assert_eq!(result.summary["rounds"], 1);
+}
+
+#[test]
+fn final_layout_compares_on_normal_halt_and_requires_all_modules() {
+    let mut v = author("arm");
+    v["scene_config"]["mode"] = json!("FINAL_LAYOUT");
+    for station in v["scene_config"]["stations"].as_array_mut().unwrap() {
+        station["station_type"] = json!("STACK");
+    }
+    v["evaluation"]["tests"][0] = json!({"visible":true,"initial_station_contents":[[0],[],[],[],[],[]],"target_station_contents":[[],[0],[],[],[],[]]});
+    let solved = run(
+        session(&v, program(&[".1", ".4", ".2", ";"]), config(), limits()),
+        1,
+    );
+    assert_eq!(solved.status, EvaluationStatus::Passed);
+    let held = run(session(&v, program(&[".1", ";"]), config(), limits()), 1);
+    assert_eq!(held.status, EvaluationStatus::TestFailed);
+    v["evaluation"]["tests"][0]["target_station_contents"] = json!([[0], [], [], [], [], []]);
+    let initial = run(session(&v, program(&[";"]), config(), limits()), 1);
+    assert_eq!(initial.status, EvaluationStatus::Passed);
 }

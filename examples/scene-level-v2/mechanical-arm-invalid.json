@@ -6,11 +6,32 @@
   "scene_type": "MechanicalArm",
   "scene_config": {
     "arm_count": 1,
-    "worktables": [
-      "Inspection",
-      "Packing",
-      null,
-      null
+    "mode": "OUTPUT_SEQUENCE",
+    "stations": [
+      {
+        "station_id": 0,
+        "station_type": "INPUT"
+      },
+      {
+        "station_id": 1,
+        "station_type": "FLIP"
+      },
+      {
+        "station_id": 2,
+        "station_type": "STACK"
+      },
+      {
+        "station_id": 3,
+        "station_type": "OUTPUT"
+      },
+      {
+        "station_id": 4,
+        "station_type": "STACK"
+      },
+      {
+        "station_id": 5,
+        "station_type": "STACK"
+      }
     ]
   },
   "program_rules": {
@@ -49,14 +70,19 @@
     "tests": [
       {
         "visible": true,
-        "input": [
-          {
-            "color": 1,
-            "true_inspection": 3
-          }
-        ],
         "expected_output": [
-          21
+          255
+        ],
+        "initial_station_contents": [
+          [],
+          [],
+          [],
+          [],
+          [],
+          []
+        ],
+        "input_queue": [
+          1
         ]
       }
     ]

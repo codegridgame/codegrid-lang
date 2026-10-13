@@ -56,7 +56,7 @@ fn documented_invalid_examples_return_exact_paths() {
         ),
         (
             include_str!("../../../examples/scene-level-v2/mechanical-arm-invalid.json"),
-            "InvalidRobotState",
+            "InvalidModuleByte",
             "$.evaluation.tests[0].expected_output[0]",
         ),
     ];
@@ -288,21 +288,21 @@ fn robot_map_terrain_and_sparse_color_validation_is_strict() {
 }
 
 #[test]
-fn mechanical_robot_state_domain_and_table_slots_are_finite() {
+fn mechanical_module_domain_and_station_ids_are_finite() {
     let mut v = example("mechanical-arm");
     let mut accepted = 0;
     for byte in 0..=255 {
         v["evaluation"]["tests"][0]["expected_output"] = json!([byte]);
-        let legal = byte & 192 == 0 && byte & 3 != 3 && (byte & 48 == 0 || (byte >> 2) & 3 == 3);
-        assert_eq!(load(&v).is_ok(), legal, "state {byte}");
+        let legal = byte & 3 != 3;
+        assert_eq!(load(&v).is_ok(), legal, "module {byte}");
         accepted += usize::from(legal);
     }
-    assert_eq!(accepted, 21);
-    v["evaluation"]["tests"][0]["expected_output"] = json!([45]);
-    v["scene_config"]["worktables"] = json!(["Inspection", "Inspection", null, "Removal"]);
-    load(&v).unwrap();
-    v["scene_config"]["worktables"] = json!([]);
-    assert_eq!(load(&v).unwrap_err().reason, "InvalidWorktableSlots");
+    assert_eq!(accepted, 192);
+    v["evaluation"]["tests"][0]["expected_output"] = json!([5]);
+    v["scene_config"]["stations"][1]["station_id"] = json!(0);
+    assert_eq!(load(&v).unwrap_err().reason, "DuplicateStationId");
+    v["scene_config"]["stations"] = json!([]);
+    assert_eq!(load(&v).unwrap_err().reason, "InvalidStationCount");
 }
 
 #[test]
@@ -370,10 +370,18 @@ fn gas_and_size_are_current_author_contract_without_legacy_aliases() {
 }
 
 #[test]
-fn author_true_inspection_uses_detected_codes_only() {
+fn final_layout_checks_capacity_weight_and_conservation() {
     let mut v = example("mechanical-arm");
-    for state in 0..=3 {
-        v["evaluation"]["tests"][0]["input"][0]["true_inspection"] = json!(state);
-        assert_eq!(load(&v).is_ok(), state != 0, "true inspection {state}");
+    v["scene_config"]["mode"] = json!("FINAL_LAYOUT");
+    for station in v["scene_config"]["stations"].as_array_mut().unwrap() {
+        station["station_type"] = json!("STACK");
     }
+    v["evaluation"]["tests"][0] = json!({"visible":true,"initial_station_contents":[[8,0],[],[],[],[],[]],"target_station_contents":[[],[8,4],[],[],[],[]]});
+    load(&v).unwrap();
+    v["evaluation"]["tests"][0]["target_station_contents"][1] = json!([4, 8]);
+    assert_eq!(load(&v).unwrap_err().reason, "InvalidModuleStack");
+    v["evaluation"]["tests"][0]["target_station_contents"][1] = json!([8]);
+    assert_eq!(load(&v).unwrap_err().reason, "ModuleConservationMismatch");
+    v["evaluation"]["tests"][0]["target_station_contents"][1] = json!([8, 0, 0, 0, 0]);
+    assert_eq!(load(&v).unwrap_err().reason, "StationCapacityExceeded");
 }
