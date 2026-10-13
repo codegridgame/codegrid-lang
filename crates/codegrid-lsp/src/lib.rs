@@ -692,7 +692,12 @@ fn attachment_description(attachment: AttachmentInstruction) -> &'static str {
             2 => "Repeat x2",
             3 => "Repeat x3",
             4 => "Repeat x4",
-            _ => "Repeat x5",
+            5 => "Repeat x5",
+            6 => "Repeat x6",
+            7 => "Repeat x7",
+            8 => "Repeat x8",
+            9 => "Repeat x9",
+            _ => "Repeat",
         },
     }
 }

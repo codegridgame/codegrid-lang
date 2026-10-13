@@ -21,6 +21,7 @@ pub fn config() -> EvaluationConfig {
             per_test_gas: n(1000),
             cumulative_work: n(10_000),
             per_call_work: n(1000),
+            no_progress_ticks: None,
         },
     }
 }

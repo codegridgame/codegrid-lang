@@ -47,3 +47,16 @@ before cloning and change cursors only on successful commit.
 
 The executable catalog contains ExactIO, Robot, and MechanicalArm.
 Paper tape and quality inspection are host presentations of ExactIO; Elevator has no runtime registration.
+Fixed main-board cells constrain only initial submitted program validation; generated-code guards must not recheck fixed-cell equality. Capability permissions and metrics still apply normally.
+Optional instruction_limits is an initial whole-program placement inventory independent of capabilities. Count all source scopes and Folded Block definitions once, including fixed cells; generated-code guards must not enforce inventory limits. Keep group membership in the Scene contract and reuse canonical kind functions.
+
+## Dynamic scene input updates (2026-10-13)
+
+Robot and MechanicalArm replace all unread VM input with the latest snapshot
+at a completed nonterminal round boundary. One actor updates per valid command;
+two actors retain complete A/B frames. Robot bytes are color before position.
+Both arm layouts publish current-hand state, including 255 for empty hands;
+single-arm initial input is [255]. GRAB preserves item state; worktables own
+transformations. Feedback names input publication InputUpdated. ExactIO remains
+unchanged. Queue limits measure replacement size; cumulative limits charge every
+complete published observation.

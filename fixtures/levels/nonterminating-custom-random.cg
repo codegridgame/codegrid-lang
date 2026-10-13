@@ -1,0 +1,8 @@
+@main
+@size 2x1
+~> >
+@end main
+@C0
+@size 3x1
+~> ?? #]
+@end C0

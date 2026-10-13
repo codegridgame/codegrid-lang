@@ -1,5 +1,8 @@
+mod fixed;
+pub(crate) mod instruction_limits;
 mod scene_v2;
 use crate::validate::{attachment_identifiers, instruction_identifiers};
+pub use fixed::FixedCell;
 pub use scene_v2::*;
 use serde::de::{self, MapAccess, Visitor};
 use serde::Deserializer;
@@ -28,6 +31,8 @@ pub struct BoardBounds {
 }
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct ProgramRules {
+    pub instruction_limits: BTreeMap<String, u32>,
+    pub fixed_cells: Vec<FixedCell>,
     pub allowed_instructions: BTreeSet<String>,
     pub allowed_attachments: BTreeSet<String>,
     pub main_board: BoardBounds,
@@ -368,8 +373,15 @@ pub fn load_level_json(input: &[u8], max_bytes: usize) -> Result<ValidatedLevel,
 }
 fn parse_rules(value: &Value) -> Result<ProgramRules, LevelError> {
     let p = "$.program_rules";
+    let mut normalized = value.clone();
+    if let Some(map) = normalized.as_object_mut() {
+        map.entry("fixed_cells")
+            .or_insert_with(|| Value::Array(Vec::new()));
+        map.entry("instruction_limits")
+            .or_insert_with(|| Value::Object(Default::default()));
+    }
     let r = object(
-        value,
+        &normalized,
         p,
         &[
             "allowed_instructions",
@@ -380,9 +392,16 @@ fn parse_rules(value: &Value) -> Result<ProgramRules, LevelError> {
             "max_custom",
             "max_threads",
             "memory_enabled",
+            "fixed_cells",
+            "instruction_limits",
         ],
     )?;
     Ok(ProgramRules {
+        instruction_limits: instruction_limits::parse(&r["instruction_limits"])?,
+        fixed_cells: fixed::parse_fixed_cells(
+            &r["fixed_cells"],
+            &bounds(&r["main_board"], "$.program_rules.main_board")?,
+        )?,
         allowed_instructions: capabilities(
             &r["allowed_instructions"],
             "$.program_rules.allowed_instructions",

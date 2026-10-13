@@ -370,6 +370,33 @@
       "seed": "18446744073709551615",
       "custom_limit": "1000",
       "expected_status": "ConstraintExceeded"
+    },
+    {
+      "id": "nonterminating-cycle",
+      "level": "nonterminating-cycle.json",
+      "program": "nonterminating-cycle.cg",
+      "mode": "Official",
+      "seed": "18446744073709551615",
+      "custom_limit": "1000",
+      "expected_status": "NonTerminating"
+    },
+    {
+      "id": "nonterminating-no-progress-fallback",
+      "level": "nonterminating-no-progress.json",
+      "program": "nonterminating-no-progress.cg",
+      "mode": "Official",
+      "seed": "18446744073709551615",
+      "custom_limit": "1000",
+      "expected_status": "ResourceLimitExceeded"
+    },
+    {
+      "id": "nonterminating-custom-random-fallback",
+      "level": "nonterminating-custom-random.json",
+      "program": "nonterminating-custom-random.cg",
+      "mode": "Official",
+      "seed": "18446744073709551615",
+      "custom_limit": "1000",
+      "expected_status": "ResourceLimitExceeded"
     }
   ]
 }

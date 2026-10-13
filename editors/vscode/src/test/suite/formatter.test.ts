@@ -56,7 +56,7 @@ suite('CodeGrid formatter', () => {
   test('declines incomplete tokens, malformed attachments, and structural directives it cannot preserve', () => {
     const declines = [
       '~> # _\n', '~> $ _\n', '~> ,v _\n', '~> [\n', '~> #\n', '~> $\n',
-      '~> ?x1\n', '~> #]x2\n', '~> *\n', '~> +x6\n', '~> ++\n', '~> ;x2\n',
+      '~> ?x1\n', '~> #]x2\n', '~> *\n', '~> +x10\n', '~> ++\n', '~> ;x2\n',
       '~> ~x\n', '~> _x2\n', '@C0\n~> ;\n', '@F0\n~> ;\n', '@M0 +\n',
       '@size 0x2\n~> ;\n', '@size 00x2\n~> ;\n', '@size 2x2x2\n~> ;\n', '@end main extra\n', '@end main.bad\n', '@unknown\n',
       '@size 99999999999999999999999x1\n~> ;\n',

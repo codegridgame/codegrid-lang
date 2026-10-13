@@ -177,7 +177,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                     started
                 } else {
                     loop {
-                        let result=host.api(json!({"operation":"advance_evaluation","evaluation":started["handle"],"work_budget":case["work_budget"].as_str().unwrap_or("1000000")}))?;
+                        let result=host.api(json!({"operation":"advance_evaluation","evaluation":started["handle"],"work_budget":case["work_budget"].as_str().unwrap_or("1000000")})).map_err(|error| format!("Fixture {} advance: {error:?}", case["id"]))?;
                         if result["status"] != "pending" {
                             break result;
                         }

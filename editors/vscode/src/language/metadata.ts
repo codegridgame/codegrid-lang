@@ -50,7 +50,7 @@ export const PRIMARIES: PrimaryInfo[] = [
   primary('.', 'OUTPUT', 46, 'output', 'Appends the current R0 byte to output.'),
   ...Array.from({ length: 10 }, (_, digit) =>
     primary(`.${digit}`, `Immediate Output ${digit}`, null, 'output',
-      'Outputs a literal byte without changing registers or the register pointer. In Custom code, pushes onto the caller stack. Repeat x2 through x5 and conditional prefixes are allowed; no Instruction Code, ReadCode or WriteCode.')
+      'Outputs a literal byte without changing registers or the register pointer. In Custom code, pushes onto the caller stack. Repeat x2 through x9 and conditional prefixes are allowed; no Instruction Code, ReadCode or WriteCode.')
   ),
   primary('(', 'PUSH', 40, 'stack'),
   primary(')', 'POP_ADD', 41, 'stack'),
@@ -98,7 +98,7 @@ export type CellToken =
 export type ConditionToken = '?0' | '?1' | '?2' | '?!';
 export const CONDITIONS: ConditionToken[] = ['?0', '?1', '?2', '?!'];
 
-export type AttachmentToken = '*' | '=' | 'x2' | 'x3' | 'x4' | 'x5';
+export type AttachmentToken = '*' | '=' | 'x2' | 'x3' | 'x4' | 'x5' | 'x6' | 'x7' | 'x8' | 'x9';
 
 export interface PrimaryCellSpelling {
   token: string;
@@ -116,7 +116,7 @@ export const PRIMARY_CELL_SPELLINGS: PrimaryCellSpelling[] = PRIMARIES.flatMap((
     );
   }
   if ((item.code !== null || item.family === 'output') && item.family !== 'call' && item.family !== 'return') {
-    for (const count of [2, 3, 4, 5] as const) {
+    for (const count of [2, 3, 4, 5, 6, 7, 8, 9] as const) {
       const attachment = `x${count}` as AttachmentToken;
       spellings.push({ token: `${item.token}${attachment}`, primary: item, attachment });
     }

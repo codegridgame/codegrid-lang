@@ -1,5 +1,20 @@
 # Mandatory downstream synchronization
 
+## 2026-10-12 explicit host repositioning
+
+VM, RuntimeApi and BrowserRuntime expose a validated same-board normal-thread
+repositioning operation. Steam resumes a completed revealed selection branch
+with current resources, then executes ordinary Rust ticks. It journals the
+step/position/direction for replay and breaks the rendered route at relocation.
+Steam and Web browser bindings/WASM use the same rebuilt set and generated
+`scripts/record-browser-build.mjs` provenance (base
+`b9a71a0d1d2c497f903e6f33c038f4281273d75c`, dirty source). Existing server and
+Scene hosts do not expose this operation; instruction, Server ABI and Scene
+contracts are unchanged, so their binaries retain their actual provenance.
+Validation: affected Rust crate tests, exact native pre/post state comparison,
+Steam unit/type checks/build and real Chrome branch execution/replay, Web
+unit/type checks, downstream architecture and the 64-MiB WASM memory ceiling.
+
 This document is a required completion gate for AI-assisted changes in
 `C:/source/codegrid-lang`. The downstream application repository is
 `C:/source/bf-steam-wt`. This requirement was requested on 2026-10-06 because
@@ -106,3 +121,21 @@ If a repository, toolchain, required host, or check is unavailable, report
 **downstream synchronization incomplete**, naming the affected files, blocker,
 completed work, and remaining verification. Do not silently skip the consumer
 or report the overall mechanism change as fully complete.
+
+## 2026-10-13 dynamic scene input replacement
+
+Robot observations now put color before position. Robot and MechanicalArm
+replace unread input each nonterminal round; both arm layouts provide hand
+snapshots, including single-arm initial/empty 255. GRAB preserves item state;
+worktables perform transformations. Single/dual frame boundaries remain.
+Shared Debug publication is InputUpdated. ExactIO and language host contracts
+remain unchanged. This explicit user decision supersedes scene append rules.
+
+Updated editor and API level-eval WASM/binding sets, source/build provenance,
+local-byte patch hashes, API evaluator identity, feedback labels, scene docs,
+and focused actual-WASM tests in C:/source/bf-steam-wt. Source base is
+b9a71a0d1d2c497f903e6f33c038f4281273d75c with source_dirty=true.
+352 Rust tests, formatter checks, all 72 native/Node/browser/Wasmtime scene
+results and WASM traces pass. Downstream editor 91/API 95 tests, full workspace
+type checks, architecture check, editor build and offline Electron pass.
+See [verification and source identity](scene-input-updates.md).

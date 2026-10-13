@@ -846,3 +846,80 @@ formatters and parsers do not accept topology directives. No aliases or
 compatibility-only migration layers are retained under the unpublished-release
 policy. Array bounds, scene-world obstacles and UI placement constraints remain
 independent data-validation rules.
+
+## Fixed initial main-board instructions (2026-10-11)
+
+The user requested fixed instruction positions in the level editor and explicitly
+selected main-board-only scope and runtime self modification allowed. The Level
+contract therefore checks exact initial Cell values only; generated-code guards
+continue capability validation without fixed-position equality. Optional
+program_rules.fixed_cells carries zero-based x/y and main/prefix/suffix.
+No metric or capability exemptions and no format bump are introduced. Native
+Level Core/API tests and 59 complete native/Chromium/Node/Wasmtime cases pass,
+including a fixed WriteCode cell rewriting itself. Editor artifacts are rebuilt
+with actual provenance; this decision does not claim published release status.
+
+## Shared instruction type inventories (2026-10-11)
+
+The user requests a whole-program placement inventory: one direction item can
+be rotated among four directions, while two register-pointer items with only
+POINTER_LEFT enabled permit at most two left pointers. Keep capabilities and
+quantities independent. Extend optional program_rules.instruction_limits,
+count source definitions once across all scopes, and constrain only initial
+submission, consistent with the approved runtime self modification policy.
+The Scene contract records group membership and counting rules. No VM changes
+or unpublished format compatibility layer are needed.
+
+
+## Repeat suffix range extension (2026-10-12)
+
+The user explicitly extends Repeat from `x2`–`x5` to `x2`–`x9`.
+This decision updates the current source and VM contracts, canonical attachment
+inventory, diagnostics, editor assistance, and downstream authoring contracts.
+Repeat still executes its Primary once per tick, for the stated total count;
+prefix reevaluation, movement, cancellation, conflicts, and rollback are unchanged.
+CALL and RETURN still reject Repeat. Immediate output accepts the same range.
+`x0`, `x1`, multi-digit counts, and non-ASCII digits remain invalid. No API or
+IR format version bump or compatibility reader is required before publication.
+
+## Early non-termination detection (2026-10-13)
+
+Toroidal boards make accidental infinite loops common, and running every
+non-terminating case to its tick ceiling wastes the whole budget on each run.
+The level evaluator therefore samples each case's full semantic state at
+committed tick boundaries and ends the evaluation immediately with a new
+`NonTerminating` outcome and typed reasons:
+
+- `StateCycle` (code `level.state_cycle`, 9030): an exact `Eq` comparison of
+  the future-determining case state — the VM semantic projection, the
+  deterministic scene machine encoding, and the monotone goal-progress
+  counter — repeats at two committed ticks. Sampling uses Brent cycle finding
+  with constant memory and deduplicates observations by committed tick, so a
+  reported cycle is sound: the deterministic case can never progress further.
+- `NoProgress` (code `level.no_progress`, 9031): a host-configured heuristic
+  that ends the evaluation after `no_progress_ticks` consecutive committed
+  ticks without goal progress. Absent or null disables the heuristic.
+
+Exact cycle detection is enabled only when case semantics are Markovian in
+the sampled state: programs without custom definitions, or with
+`RANDOM_DIRECTION` rejected by level capabilities. Custom invocations reseed
+their thread PRNG from the global tick, so defining a custom that may execute
+random direction disables exact detection and the tick/work budgets remain
+the only backstop. Detection runs after fault, error, output, and constraint
+checks and before the tick and work ceilings, in Debug and Official modes
+alike, and ends the whole evaluation without final metrics or rating. VM
+semantics and the vm-spec are unchanged; projection exposes the status as
+`"NonTerminating"` with a failure object shaped like a fault, and the CLI
+maps it to the evaluation-failure exit code.
+
+## 2026-10-13: Dynamic scene input replacement
+
+The user explicitly changed Robot observations to `[color, position]` or
+`[A_color, A_position, B_color, B_position]`. Robot and MechanicalArm replace
+all unread input after each valid nonterminal round, including WAIT, turns,
+and no-ops. Single actors update per command; dual actors retain A/B frames.
+Single-arm initial input is `[255]`; each round supplies `[state]`, with 255
+for empty hands, matching dual-arm snapshots. Registers and continuous VM state
+persist. Existing terminal/invalid-action rules remain. ExactIO is unchanged.
+Debug input publication is InputUpdated. This decision supersedes older
+append/event-input scene contracts.

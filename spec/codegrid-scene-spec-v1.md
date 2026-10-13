@@ -40,10 +40,13 @@ mutable code, input/output, round counters, actor state, pending transitions,
 and per-case scene metrics. No state leaks between cases.
 
 Within a dynamic scene case, keep the same VM across actions and rounds.
-Append new observation bytes to the tail of its remaining input queue; never
-replace unread bytes. Registers, memory, stacks, execution position, and mutable
+Replace all unread input with the latest complete observation after each valid
+nonterminal round, including WAIT, turns, and no-ops. Discard partially consumed
+old snapshots; already read register values persist. One actor updates per
+command; two actors retain the complete A/B frame boundary.
+Registers, memory, stacks, execution position, and mutable
 code persist according to ordinary VM semantics. Only a new case resets them.
-The shared scene session implements input append and continuous execution.
+The shared scene session implements input replacement and continuous execution.
 Host adapters delegate these transitions to Rust rather than reproducing them.
 
 ### 2.2 READ, OUTPUT, and termination
@@ -87,7 +90,7 @@ Existing ExactIO terminal priority applies to static comparison profiles.
 Dynamic scenes use the explicit priority in Section 2.4; the earlier ExactIO
 contract left Environment priority open. Passing a
 scene does not bypass a violated constraint. Once a case is terminal, consume
-no further scene actions and append no observations.
+no further scene actions and publish no observations.
 
 ### 2.3 Rounds and actor frames
 
@@ -117,7 +120,7 @@ round even when both actors wait or movement/grab is a no-op.
 ### 2.4 Tick boundary and terminal priority
 
 The orchestrator must process scene output after each committed outer tick,
-append resulting observations before the next tick, and only then resume the
+replace input with resulting observations before the next tick, and only then resume the
 same VM. Do not batch unprocessed VM ticks across a host slice. A partial dual
 frame yields no scene action or new observation. Host slice size must not change
 the observation sequence, world state, or result.
@@ -146,7 +149,7 @@ Robot starts and patrol points occupy distinct cells, so valid author maps canno
 complete their patrol goal during initialization. Per-case dynamic counters start
 at zero.
 
-Reserve/validate input append capacity before publishing a successful scene
+Reserve/validate input replacement capacity before publishing a successful scene
 transition and observation. Insufficient capacity produces ResourceLimitExceeded,
 not dropped input or altered bytes. Previously committed VM effects remain
 committed; resource-terminal scene projections must be defined by the session
@@ -230,15 +233,15 @@ round end, perform no remaining door updates.
 ### 6.4 Observation protocol
 
 Queue an initial snapshot before the first action. After each complete round
-still Running, append another snapshot:
+still Running, replace unread input with another snapshot:
 
 | Actors | Snapshot |
 | --- | --- |
-| One | `[position, color]` |
-| Two | `[A_position, A_color, B_position, B_color]` |
+| One | `[color, position]` |
+| Two | `[A_color, A_position, B_color, B_position]` |
 
 Color is the current cell's color. Direction is not included. Map and initial
-direction are scene definition/presentation data. Do not replace unread snapshots.
+direction are scene definition/presentation data. Discard unread old snapshots.
 
 ## 7. Quality presentation
 
@@ -290,7 +293,7 @@ State is `color | (inspection << 2) | (processed << 4) | (packed << 5)`.
 UNINSPECTED, DEFECT, and IRREPARABLE require processed=0 and packed=0.
 Processed or packed requires NORMAL. A packed normal robot may be processed
 or unprocessed: Inspection followed directly by Packing is valid.
-Byte 255 is EMPTY for dual-arm observations and never a valid robot state.
+Byte 255 is EMPTY for all arm observations and never a valid robot state.
 
 ### 8.3 Conveyors and worktables
 
@@ -354,15 +357,13 @@ no-ops. Two arms require A/B actions, execute A then B, and only then complete
 Processing/Pending transitions at round end. If terminal during A or B, skip
 remaining actions and round-end work.
 
-Single-arm input is event-based. There is no initial snapshot or EMPTY byte.
-Append the acquired visible state only after successful GRAB from input,
-Inspection, Repair, Processing, or Packing. WAIT, TURN, DROP, and unsuccessful
-GRAB append nothing. Removal has no retrievable state.
-
-Dual-arm input uses snapshots: initial `[255, 255]`, then
-`[A_state, B_state]` after every completed round still Running, even if neither
-hand changed. A held hand contributes its visible byte, an empty one 255.
-Append at queue tail.
+Both layouts use current-hand snapshots. Single-arm initial input is `[255]`;
+each completed round still Running replaces unread input with `[state]`.
+Dual-arm initial input is `[255, 255]`; each completed round still Running
+replaces unread input with `[A_state, B_state]`. A held hand contributes its
+visible byte, an empty one 255. WAIT, TURN, DROP, unsuccessful GRAB, and other
+valid no-ops update input even when the snapshot is unchanged. Successful grabs
+from buffers follow the same snapshot rule. Removal has no retrievable state.
 
 ### 8.6 Expected robots and goal
 
@@ -415,7 +416,7 @@ a continuous VM with all ordinary state retained within a case. Sections 2 and
 6 now define these rules; they are not optional implementation choices.
 
 The [scene session design](../docs/scene-session-design.md) defines ownership,
-queue append, transactional boundaries, slicing, resource accounting, and
+queue replacement, transactional boundaries, slicing, resource accounting, and
 integration requirements. The [scene conformance plan](../docs/scene-conformance-plan.md)
 defines concrete acceptance vectors and delivery gates. The selected
 [Scene Level JSON format v1 contract](codegrid-scene-level-json-v2.md) fixes
@@ -431,7 +432,7 @@ reopen the accepted gameplay protocol.
 
 | Area | Direct cases |
 | --- | --- |
-| Shared | Fresh-case isolation including self-modified code; same-case memory persistence; append behind unread data; empty READ; HALT with incomplete frame/goal; failed VM tick consumes no scene output; terminal goal with pending B |
+| Shared | Fresh-case isolation including self-modified code; same-case memory persistence; replace unread old snapshots; empty READ; HALT with incomplete frame/goal; failed VM tick consumes no scene output; terminal goal with pending B |
 | ExactIO | First/middle mismatch; final match; unread input; empty expected and HALT; empty expected and output |
 | Robot | All directions; boundary/VOID/door blocking; forward same-height and jump different-height; swap/shared-target/vacated-cell collision; shared patrols; trigger activation and one-round door delay; snapshots |
 | MechanicalArm | All six orientations and both layouts; duplicate/absent tables; FIFO input; hidden inspection; byte packing; illegal flags/255; every table precondition; direct normal Packing; repeat transformation failure; Removal; occupied GRAB/DROP; pending buffer/table delay; event/snapshot queues; ordered outputs and immediate pass |

@@ -1,6 +1,7 @@
 //! Deterministic logical level validation and evaluation above the language VM.
 pub mod evaluate;
 pub mod metrics;
+pub mod nontermination;
 pub mod result;
 pub mod scene_evaluate;
 pub mod scene_feedback;

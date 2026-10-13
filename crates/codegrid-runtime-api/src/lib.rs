@@ -880,6 +880,29 @@ impl RuntimeApi {
         self.step_view(request).map(StepResponseView::into_owned)
     }
 
+    /// Host-directed repositioning at a normal step boundary, without execution.
+    pub fn reposition_thread(
+        &mut self,
+        request: SnapshotRequest,
+        thread: u64,
+        position: Coordinate,
+        direction: Direction,
+    ) -> Result<(), ApiError> {
+        self.validate_version(request.api_version)?;
+        let vm =
+            self.instances
+                .get_mut(&request.instance)
+                .ok_or(ApiError::UnknownInstanceHandle {
+                    handle: request.instance,
+                })?;
+        if !vm.reposition_thread(thread, position, direction) {
+            return Err(ApiError::InvalidConfiguration {
+                field: "thread_position",
+            });
+        }
+        Ok(())
+    }
+
     /// Applies one VM transition and returns a borrowed Full snapshot for
     /// immediate host serialization.
     ///

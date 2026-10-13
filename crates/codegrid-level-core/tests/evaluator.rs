@@ -16,6 +16,7 @@ fn config() -> EvaluationConfig {
             max_output_bytes: NonZeroU64::new(100).unwrap(),
             max_state_units: NonZeroU64::new(10000).unwrap(),
             max_feedback_bytes: NonZeroU64::new(1000000).unwrap(),
+            no_progress_ticks: None,
         },
     }
 }
@@ -611,4 +612,95 @@ fn size_counts_unused_folded_and_function_definitions_once() {
     );
     let verified = VerifiedProgram::new(p).unwrap();
     assert_eq!(static_metrics(&verified)["size"], 5);
+}
+
+fn level_allowing(tests: serde_json::Value, allowed: &[&str]) -> ValidatedLevel {
+    let value = serde_json::json!({"format_version":1,"level_id":"test","level_version":1,"evaluation_type":"ExactIO","program_rules":{"allowed_instructions":allowed,"allowed_attachments":[],"main_board":{"width":100,"height":1},"function_board":{"width":100,"height":1},"max_functions":10,"max_custom":10,"max_threads":1,"memory_enabled":true},"constraints":{},"scoring":{"metrics":{}},"evaluation":{"tests":tests}});
+    load_level_json(value.to_string().as_bytes(), 100000).unwrap()
+}
+
+#[test]
+fn state_cycle_detection_stops_long_before_the_tick_ceiling() {
+    let tests = serde_json::json!([{"visible":true,"input":[],"expected_output":[]}]);
+    let l = level_allowing(tests, &["MOVE_RIGHT"]);
+    let p = program(&[P::Direction(Direction::Right)]);
+    let mut c = config();
+    c.safety.per_test_ticks = NonZeroU64::new(10000).unwrap();
+    c.safety.per_test_gas = NonZeroU64::new(1000000).unwrap();
+    c.safety.cumulative_work = NonZeroU64::new(1000000).unwrap();
+    c.safety.per_call_work = NonZeroU64::new(1000000).unwrap();
+    for mode in [EvaluationMode::Debug, EvaluationMode::Official] {
+        let r = evaluate(l.clone(), p.clone(), mode, c.clone());
+        assert!(
+            matches!(
+                r.status,
+                EvaluationStatus::NonTerminating(NonTerminationReason::StateCycle)
+            ),
+            "{mode:?}: {r:?}"
+        );
+        assert!(r.partial_metrics["ticks"] < 100, "{mode:?}: {r:?}");
+    }
+}
+
+#[test]
+fn no_progress_needs_a_host_window_and_falls_back_to_budgets() {
+    let tests = serde_json::json!([{"visible":true,"input":[],"expected_output":[]}]);
+    let l = level_allowing(tests, &["ADD", "STACK"]);
+    // The data stack grows without bound, so exact cycle detection never fires.
+    let p = program(&[P::Add, P::Push]);
+    let mut c = config();
+    c.safety.per_test_gas = NonZeroU64::new(100000).unwrap();
+    c.safety.cumulative_work = NonZeroU64::new(100000).unwrap();
+    c.safety.per_call_work = NonZeroU64::new(100000).unwrap();
+    let fallback = evaluate(l.clone(), p.clone(), EvaluationMode::Official, c.clone());
+    assert_eq!(fallback.status, EvaluationStatus::ResourceLimitExceeded);
+    assert_eq!(fallback.partial_metrics["ticks"], 100);
+    c.safety.no_progress_ticks = Some(NonZeroU64::new(32).unwrap());
+    let r = evaluate(l, p, EvaluationMode::Official, c);
+    assert!(matches!(
+        r.status,
+        EvaluationStatus::NonTerminating(NonTerminationReason::NoProgress)
+    ));
+    assert!(r.partial_metrics["ticks"] < 100, "{r:?}");
+}
+
+#[test]
+fn custom_definitions_fall_back_to_budget_termination() {
+    use codegrid_ir::CustomDefinition;
+    use codegrid_model::Slot;
+    let slot = Slot::new(0).unwrap();
+    let mut p = program(&[P::Direction(Direction::Right)]).program().clone();
+    // Defining a custom whose body may execute RandomDirection disables exact
+    // cycle detection even though the custom is never invoked.
+    p.customs.insert(
+        slot,
+        CustomDefinition {
+            program: ScopedProgram {
+                main: Board {
+                    width: 3,
+                    height: 1,
+                    cells: vec![
+                        Cell::entry(Direction::Right),
+                        Cell::instruction(P::RandomDirection, None),
+                        Cell::instruction(P::CustomReturn, None),
+                    ],
+                    folded_blocks: BTreeMap::new(),
+                },
+                functions: BTreeMap::new(),
+            },
+        },
+    );
+    let p = VerifiedProgram::new(p).unwrap();
+    let tests = serde_json::json!([{"visible":true,"input":[],"expected_output":[]}]);
+    let l = level_allowing(
+        tests,
+        &["MOVE_RIGHT", "CUSTOM", "CUSTOM_RETURN", "RANDOM_DIRECTION"],
+    );
+    let mut c = config();
+    c.safety.per_test_gas = NonZeroU64::new(1000000).unwrap();
+    c.safety.cumulative_work = NonZeroU64::new(1000000).unwrap();
+    c.safety.per_call_work = NonZeroU64::new(1000000).unwrap();
+    let r = evaluate(l, p, EvaluationMode::Official, c);
+    assert_eq!(r.status, EvaluationStatus::ResourceLimitExceeded, "{r:?}");
+    assert_eq!(r.partial_metrics["ticks"], 100);
 }

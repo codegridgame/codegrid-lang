@@ -13,7 +13,7 @@ export function runFullSmoke(BrowserRuntime, suite, baseline, assert, deepEqual)
   const runtime = createRuntime(BrowserRuntime);
   assert(runtime.api_version() === RUNTIME_API_VERSION, "the adapter must expose Runtime API v3");
 
-  for (const [atom, reason] of [[".3*", "ReadCode"], ["?0.3*", "ReadCode"], [".3x6", "2 through 5"], ["[0x3", "Function CALL"]]) {
+  for (const [atom, reason] of [[".3*", "ReadCode"], ["?0.3*", "ReadCode"], [".3x10", "2 through 9"], ["[0x3", "Function CALL"]]) {
     const response = parseJson(runtime.compile(`~> ${atom} ;\n`), `${atom}: diagnostic`);
     const diagnostic = response.outcome.items.find((item) => item.code === "source.invalid_cell");
     assert(diagnostic && diagnostic.message.includes(`'${atom}'`) && diagnostic.message.includes(reason), `${atom}: identify the invalid atom and forbidden rule`);

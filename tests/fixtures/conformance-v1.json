@@ -750,6 +750,55 @@
       }
     },
     {
+      "id": "repeat-x9-executes-once-per-tick",
+      "source": "~> +x9 . ;\n",
+      "run": {
+        "seed": "0",
+        "custom_execution_limit": "100",
+        "max_ticks": "20",
+        "input": [],
+        "gas_hard_limit": "100000000"
+      },
+      "expected": {
+        "process_exit_code": 0,
+        "status": "halted",
+        "vm_status": "halted",
+        "output": [
+          9
+        ],
+        "registers": [
+          9,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "committed_ticks": "12",
+        "operation_count": "11",
+        "used_cell_count": "4",
+        "used_memory_address_count": "0",
+        "peak_data_stack_usage": "0",
+        "peak_instruction_stack_usage": "0",
+        "peak_call_stack_usage": "0",
+        "instruction_variety": [
+          "Add",
+          "Output",
+          "Halt"
+        ],
+        "error_codes": [],
+        "gas_used": "32",
+        "execution_gas": "32",
+        "memory_gas": "0",
+        "stack_gas": "0",
+        "gas_schedule_version": 1
+      }
+    },
+    {
       "id": "repeat-read-consumes-one-input-per-execution",
       "source": "~> ,x3 . ;\n",
       "run": {

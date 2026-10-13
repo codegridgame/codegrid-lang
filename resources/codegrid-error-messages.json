@@ -1,7 +1,7 @@
 {
   "schema": "codegrid.error.messages",
   "schema_version": 1,
-  "registry_version": 2,
+  "registry_version": 3,
   "default_locale": "en",
   "locales": [
     "en",
@@ -3978,6 +3978,38 @@
         "ko": "Custom 실행은 현재 비활성화되어 있습니다.",
         "pt-br": "A execução Custom está desativada no momento.",
         "ru": "Выполнение Custom сейчас отключено."
+      }
+    },
+    "9030": {
+      "layer": "level",
+      "code": "level.state_cycle",
+      "messages": {
+        "en": "Execution entered an exact repeating state cycle.",
+        "de": "Die Ausführung hat einen exakten sich wiederholenden Zustandszyklus erreicht.",
+        "fr": "L’exécution est entrée dans un cycle d’état exact qui se répète.",
+        "es": "La ejecución entró en un ciclo de estado exacto que se repite.",
+        "zh-tw": "執行進入了精確重複的狀態循環。",
+        "ja": "実行は正確に繰り返す状態サイクルに入りました。",
+        "zh-cn": "执行进入了精确重复的状态循环。",
+        "ko": "실행이 정확히 반복되는 상태 사이클에 들어갔습니다.",
+        "pt-br": "A execução entrou em um ciclo de estado exato que se repete.",
+        "ru": "Выполнение вошло в точный повторяющийся цикл состояний."
+      }
+    },
+    "9031": {
+      "layer": "level",
+      "code": "level.no_progress",
+      "messages": {
+        "en": "Execution made no progress for the configured tick window.",
+        "de": "Die Ausführung hat im konfigurierten Taktfenster keinen Fortschritt erzielt.",
+        "fr": "L’exécution n’a fait aucun progrès pendant la fenêtre de ticks configurée.",
+        "es": "La ejecución no avanzó durante la ventana de ticks configurada.",
+        "zh-tw": "在設定的步數視窗內執行沒有任何進展。",
+        "ja": "設定されたティック区間の間、実行は進展しませんでした。",
+        "zh-cn": "在配置的步数窗口内执行没有任何进展。",
+        "ko": "구성된 틱 구간 동안 실행이 전혀 진전되지 않았습니다.",
+        "pt-br": "A execução não obteve progresso durante a janela de ticks configurada.",
+        "ru": "Выполнение не продвинулось в течение настроенного окна тиков."
       }
     }
   }

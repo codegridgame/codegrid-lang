@@ -40,7 +40,7 @@ suite('Full editor metadata', () => {
       assert.ok(parseCellToken(token), `${token} is a complete attached cell token`);
     }
     for (const token of [
-      ',^', ',v', ',<', ',>', '?!,vx3', '?!?0+', '?', '#^', '#v', '#<', '#>', '?0', '?3+', '?0?1+', '?0_', '?0~>', '?x1', '+x6', '+x2x3', '^*=', '[0x2', ']x2', '$0*', ';=', '#00', '[10', '$10', '#vextra', '~V', '~v*', '_x2', '++', ';x2',
+      ',^', ',v', ',<', ',>', '?!,vx3', '?!?0+', '?', '#^', '#v', '#<', '#>', '?0', '?3+', '?0?1+', '?0_', '?0~>', '?x1', '+x10', '+x2x3', '^*=', '[0x2', ']x2', '$0*', ';=', '#00', '[10', '$10', '#vextra', '~V', '~v*', '_x2', '++', ';x2',
     ]) {
       assert.strictEqual(parseCellToken(token), null, `${token} must not be split into a known token`);
     }

@@ -25,6 +25,8 @@ Execute verified Full CodeGrid IR with deterministic multi-thread semantics and 
 
 ## Validation
 
+- `reposition_thread` is an explicit host operation between steps. It accepts only an existing normal thread in a running VM and an in-bounds coordinate within its current board. It changes only position/direction, preserving all execution resources and metrics; it contains no selection or game policy.
+
 Test every Full tick phase, Primary and Attachment behavior, input/output, concurrent conflicts, commit/rollback, calls/resumes/tail calls, Folded Blocks, Custom isolation/limits, deterministic random vectors, snapshots, events, and raw metrics. Run the shared Full fixtures and compare native and actual WebAssembly hosts when available.
 
 The Rust-only `append_input` operation receives explicit bytes between completed
@@ -32,3 +34,7 @@ steps, reserves the entire append, preserves unread FIFO data, and changes no
 language metric. Its allocation/lifecycle errors are not VM runtime errors.
 Scene definitions, queue ceilings, and publication policy remain in the level
 layer; language host adapters do not expose arbitrary input mutation.
+
+The Rust-only `replace_input` atomically replaces unread bytes between completed
+steps after reserving the whole vector, preserving registers, state, and metrics.
+Scene timing remains in the level layer.

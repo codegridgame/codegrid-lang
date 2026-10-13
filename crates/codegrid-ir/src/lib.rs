@@ -522,12 +522,12 @@ fn validate_cell(
     }
     if let Some(primary) = cell.primary {
         if let Some(attachment) = cell.attachment {
-            if matches!(attachment, AttachmentInstruction::Repeat(count) if !(2..=5).contains(&count))
+            if matches!(attachment, AttachmentInstruction::Repeat(count) if !(2..=9).contains(&count))
             {
                 errors.push(error(
                     path,
                     "ir.repeat_count",
-                    "Repeat count must be from 2 through 5.",
+                    "Repeat count must be from 2 through 9.",
                 ));
             }
             let immediate_repeat = matches!(primary, PrimaryInstruction::OutputImmediate(_))

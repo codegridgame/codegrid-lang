@@ -1719,6 +1719,11 @@ TestFailed
 RuntimeError
 UnsupportedFormatVersion
 UnsupportedSceneType
+ConstraintExceeded
+ResourceLimitExceeded
+Cancelled
+Fault
+NonTerminating
 ```
 
 Useful typed sub-reasons include:
@@ -1738,6 +1743,8 @@ TooManyFunctions
 ThreadNotAllowed
 MemoryNotAllowed
 BoardSizeExceeded
+StateCycle
+NoProgress
 ```
 
 Different failure origins must not be collapsed into one generic:
@@ -1745,6 +1752,27 @@ Different failure origins must not be collapsed into one generic:
 ```text
 EvaluationFailed
 ```
+
+`NonTerminating` ends an active evaluation early, like `ResourceLimitExceeded`,
+without final metrics or rating, and carries exactly one typed reason:
+
+- `StateCycle` (code `level.state_cycle`, 9030): the full future-determining
+  case state — the VM semantic projection plus the deterministic scene machine
+  encoding plus the monotone goal-progress counter — repeats exactly at two
+  committed tick boundaries. Comparison is exact equality, never hashing, and
+  observations are deduplicated by committed tick. A reported cycle is sound:
+  the deterministic case can never make further progress.
+- `NoProgress` (code `level.no_progress`, 9031): a host-configured heuristic
+  window of consecutive committed ticks without goal progress. Absent
+  configuration disables the check.
+
+Exact cycle detection is sound only when case semantics are Markovian in the
+sampled state. Custom invocations reseed their thread PRNG from the global
+tick, so a program that defines customs and may execute `RANDOM_DIRECTION`
+under the level capabilities disables exact detection; the tick/work budgets
+remain the only backstop in that case. Detection runs after fault, error,
+output, and constraint checks and before the tick and work ceilings, and ends
+the whole evaluation in Debug and Official modes alike.
 
 ---
 

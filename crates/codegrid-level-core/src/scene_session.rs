@@ -1,5 +1,8 @@
 //! One continuous VM per scene case, with atomic world/input publication.
 use crate::evaluate::{check_scope, retained_state_units};
+use crate::nontermination::{
+    exact_cycle_detection_eligible, CaseState, CycleDetector, NoProgressTracker, VmSemanticState,
+};
 use crate::scene_feedback::{
     SceneActor, SceneEventDraft, SceneEventPayload, SceneFeedbackError, SceneFeedbackStore,
 };
@@ -73,6 +76,9 @@ pub struct SceneCaseSession {
     feedback_end_bound: u64,
     feedback_reserved_work: u64,
     feedback_result_base: u64,
+    cycle: CycleDetector<CaseState>,
+    no_progress: Option<NoProgressTracker>,
+    cycle_eligible: bool,
 }
 
 /// Definition ownership is charged separately from independent mutable worlds.
@@ -178,6 +184,8 @@ impl SceneCaseSession {
             .checked_mul(512)
             .and_then(|n| n.checked_add(4096))
             .ok_or(SceneCaseStartError::NumericOverflow)?;
+        let cycle_eligible = exact_cycle_detection_eligible(&program, level.rules());
+        let no_progress = config.safety.no_progress_ticks.map(NoProgressTracker::new);
         let mut session = Self {
             level,
             program,
@@ -204,6 +212,9 @@ impl SceneCaseSession {
             feedback_end_bound,
             feedback_reserved_work: 0,
             feedback_result_base: 0,
+            cycle: CycleDetector::new(),
+            no_progress,
+            cycle_eligible,
         };
         if let Err(reason) = validate_program_rules(session.level.rules(), &session.program) {
             session.finish(EvaluationStatus::ProgramRejected(reason), Vec::new());
@@ -624,7 +635,7 @@ impl SceneCaseSession {
                     )];
                     if !input.is_empty() {
                         events.push(self.event_draft(
-                            SceneEventPayload::InputAppended {
+                            SceneEventPayload::InputUpdated {
                                 bytes: input.clone(),
                             },
                             None,
@@ -703,6 +714,12 @@ impl SceneCaseSession {
                 self.total_input = input_count;
                 self.vm = Some(vm);
                 self.machine = Some(machine);
+                self.cycle = CycleDetector::new();
+                self.no_progress = self
+                    .config
+                    .safety
+                    .no_progress_ticks
+                    .map(NoProgressTracker::new);
                 if !self.publish_metrics() {
                     break;
                 }
@@ -818,9 +835,7 @@ impl SceneCaseSession {
                     })
                     .and_then(|n| n.checked_add(old_events));
                 if peak.is_none_or(|n| n > self.limits.max_scene_state_units.get())
-                    || (vm.snapshot_view().input().count() as u64)
-                        .checked_add(observation.len() as u64)
-                        .is_none_or(|n| n > self.limits.max_input_queue_bytes.get())
+                    || (observation.len() as u64) > self.limits.max_input_queue_bytes.get()
                     || input_total
                         .is_none_or(|n| n > self.limits.max_total_input_bytes_per_test.get())
                     || retained_state_units(vm, &self.program)
@@ -855,7 +870,7 @@ impl SceneCaseSession {
                         .collect::<Vec<_>>();
                     if !observation.is_empty() {
                         events.push(self.event_draft(
-                            SceneEventPayload::InputAppended {
+                            SceneEventPayload::InputUpdated {
                                 bytes: observation.clone(),
                             },
                             None,
@@ -897,7 +912,7 @@ impl SceneCaseSession {
                         .vm
                         .as_mut()
                         .unwrap()
-                        .append_input(&observation)
+                        .replace_input(&observation)
                         .is_err()
                 {
                     drop(batch);
@@ -932,6 +947,32 @@ impl SceneCaseSession {
                 break;
             }
             let vm = self.vm.as_ref().unwrap();
+            // Non-termination detection at the committed-tick rest point:
+            // pending output is drained and the VM is about to step.
+            {
+                let tick = vm.committed_ticks();
+                let machine = self.machine.as_ref().unwrap();
+                let progress = machine.progress_counter();
+                let mut detected = None;
+                if self.cycle_eligible {
+                    let state = CaseState {
+                        vm: VmSemanticState::from_snapshot(&vm.snapshot()),
+                        machine: machine.semantic_state_bytes(),
+                        progress,
+                    };
+                    detected = self.cycle.observe(tick, &state);
+                }
+                if detected.is_none() {
+                    detected = self
+                        .no_progress
+                        .as_mut()
+                        .and_then(|tracker| tracker.observe(tick, progress));
+                }
+                if let Some(reason) = detected {
+                    self.finish(EvaluationStatus::NonTerminating(reason), Vec::new());
+                    break;
+                }
+            }
             if vm.committed_ticks() >= self.config.safety.per_test_ticks.get()
                 || self.vm_work >= self.config.safety.cumulative_work.get()
             {

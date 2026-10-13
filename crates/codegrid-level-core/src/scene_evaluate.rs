@@ -532,6 +532,7 @@ impl SceneEvaluationSession {
                     | EvaluationStatus::Cancelled
                     | EvaluationStatus::Fault(_)
                     | EvaluationStatus::ProgramRejected(_)
+                    | EvaluationStatus::NonTerminating(_)
             ) {
                 self.finish(status);
                 break;
@@ -556,7 +557,8 @@ pub(crate) fn case_terminal_projection(
         EvaluationStatus::ResourceLimitExceeded
         | EvaluationStatus::Cancelled
         | EvaluationStatus::Fault(_)
-        | EvaluationStatus::ProgramRejected(_) => VisibleSceneOutcome::NotCompleted,
+        | EvaluationStatus::ProgramRejected(_)
+        | EvaluationStatus::NonTerminating(_) => VisibleSceneOutcome::NotCompleted,
         _ => match &result.outcome {
             Some(SceneOutcome::Passed) => VisibleSceneOutcome::Passed,
             Some(SceneOutcome::Failed(SceneFailure::WrongOutput { .. })) => {

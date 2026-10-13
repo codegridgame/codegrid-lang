@@ -928,9 +928,10 @@ fn evaluation_result_exit(response: &JsonValue) -> i32 {
         .and_then(JsonValue::as_str)
     {
         Some("Passed") => EXIT_SUCCESS,
-        Some("ProgramRejected" | "TestFailed" | "RuntimeError" | "ConstraintExceeded") => {
-            EXIT_EVALUATION_FAILED
-        }
+        Some(
+            "ProgramRejected" | "TestFailed" | "RuntimeError" | "ConstraintExceeded"
+            | "NonTerminating",
+        ) => EXIT_EVALUATION_FAILED,
         Some("ResourceLimitExceeded" | "Cancelled") => EXIT_RESOURCE_LIMIT,
         Some("Fault") => EXIT_VM_FAULT,
         Some(other) => {

@@ -79,7 +79,7 @@ pub enum SceneEventPayload {
         observation: Vec<u8>,
         transitions: Vec<SceneRoundChange>,
     },
-    InputAppended {
+    InputUpdated {
         bytes: Vec<u8>,
     },
     RobotProduced {
@@ -246,7 +246,7 @@ impl SceneEventPayload {
                 transitions,
                 ..
             } => observation.len() as u64 + transitions.len() as u64,
-            Self::InputAppended { bytes } => bytes.len() as u64,
+            Self::InputUpdated { bytes } => bytes.len() as u64,
             _ => 0,
         }
     }
@@ -255,7 +255,7 @@ impl SceneEventPayload {
             Self::CaseStarted { .. } => "CaseStarted",
             Self::ActionApplied { .. } => "ActionApplied",
             Self::RoundCompleted { .. } => "RoundCompleted",
-            Self::InputAppended { .. } => "InputAppended",
+            Self::InputUpdated { .. } => "InputUpdated",
             Self::RobotProduced { .. } => "RobotProduced",
             Self::CaseEnded { .. } => "CaseEnded",
         }
@@ -273,7 +273,7 @@ impl SceneEventPayload {
             } => {
                 json!({"rounds":rounds.to_string(),"observation":observation,"transitions":transitions.iter().map(SceneRoundChange::value).collect::<Vec<_>>()})
             }
-            Self::InputAppended { bytes } => json!({"bytes":bytes}),
+            Self::InputUpdated { bytes } => json!({"bytes":bytes}),
             Self::RobotProduced {
                 state,
                 output_index,

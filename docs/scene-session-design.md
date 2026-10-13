@@ -1,6 +1,6 @@
 # Continuous Scene Session Design
 
-Status: VM append, scene transitions, continuous cases, multi-case evaluation, native API 2, and WASM adapters implemented; initial actual-host parity verified; full direct-vector and resource audit pending.
+Status: VM input replacement, scene transitions, continuous cases, multi-case evaluation, native API 2, and WASM adapters implemented; initial actual-host parity verified; full direct-vector and resource audit pending.
 Recorded: 2026-10-05.
 Authority: [Scene Spec v1](../spec/codegrid-scene-spec-v1.md).
 
@@ -30,19 +30,19 @@ state. Within that session never recreate the VM merely because a round ends.
 Start the next case only after disposing of mutable code, remaining input,
 world state, partial frame, metrics, and PRNG state from the previous one.
 
-## The append boundary
+## The input update boundary
 
-An internal VM operation must append explicit input bytes at a committed tick
-boundary. It must reject mutation of a VM in an unfinished tick, preserve unread
-bytes and their order, and neither execute instructions nor increment language
+An internal VM operation must replace unread input with explicit bytes at a committed tick
+boundary. It must reject mutation of a VM in an unfinished tick, discard unread
+bytes after reserving the complete replacement, and neither execute instructions nor increment language
 metrics. The VM must not invoke scene callbacks or load scene definitions.
-Validate/reserve the whole appended vector; never append a partial vector.
+Validate/reserve the whole replacement vector; never publish a partial vector.
 Allocation/ceiling failure belongs to a typed resource surface, not a language
-runtime error. Empty append has no semantic effect.
+runtime error. Empty replacement clears input.
 
 Keep this operation internal to the Rust evaluator initially. The [Scene Host Contract v2](../spec/codegrid-scene-host-contract-v2.md)
 exports evaluator operations and Debug feedback, not arbitrary public input
-mutation. Existing external APIs must not acquire a host append surface.
+mutation. Existing external APIs must not acquire a host input mutation surface.
 
 ## Advancing a case
 
@@ -57,14 +57,14 @@ supplies a work slice; the session retains state on Pending. In order:
 5. Process newly committed outer output exactly once. Buffer an incomplete
    frame. For a complete frame dispatch/decode A, then B only if still Running.
 6. Retain completed actor effects on a scene error. Do not promote pending
-   doors/tables/buffers or append a snapshot after terminal scene failure.
+   doors/tables/buffers or publish a snapshot after terminal scene failure.
 7. On a nonterminal completed round, apply round-end work and compute the next
    observation. Robot and MechanicalArm WAIT actions still advance rounds.
-8. Check constraints and terminal rules before appending any observation. If
+8. Check constraints and terminal rules before updating input. If
    still Running, reserve complete observation capacity and publish the
-   candidate successful round and queue append together, then permit the next
+   candidate successful round and queue replacement together, then permit the next
    VM tick. A terminal goal or constraint failure publishes completed actor
-   effects without appending more input. Never resume the VM while scene output
+   effects without updating input. Never resume the VM while scene output
    is unprocessed.
 
 VM and world are distinct transaction domains: a rejected VM tick produces no
@@ -74,7 +74,7 @@ have run without terminal outcome. This is not an all-or-nothing actor round.
 
 If input-capacity reservation fails after computing a successful candidate
 round, terminate as ResourceLimitExceeded without publishing that candidate
-round or any appended bytes. Retain the last published scene/input boundary
+round or any published bytes. Retain the last published scene/input boundary
 for bounded feedback, alongside the already committed VM state. Do not expose
 the temporary candidate as a completed world transition or emit its events.
 This resource outcome is not a player scene failure and needs no fabricated
@@ -87,7 +87,7 @@ the final Passed level result. Follow Scene Spec Section 2.4 for terminal order.
 
 ## Determinism and replay
 
-Actor order, output consumption, and queue append depend on committed ticks,
+Actor order, output consumption, and queue replacement depend on committed ticks,
 not wall-clock time, animation, callbacks, or host slice size. Store a partial
 frame across Pending returns; do not reconsume previously handled output.
 Do not reseed the VM on every action. Preserve the ordinary per-thread PRNG
@@ -105,7 +105,7 @@ failure category, and public-event order with several host slice sizes.
 Extend the existing [safety accounting](level-safety-accounting.md) for actual
 retained scene definitions, world records, frame bytes, conveyor/hand/table/buffer robots, patrol/trigger/door sets, and
 pending observation bytes. Each retained input byte is counted once in its
-owning queue; cumulative appended bytes require a separate checked ceiling.
+owning queue; cumulative published bytes require a separate checked ceiling.
 Keep scene metrics, VM Operation Count, work units, and rounds distinct.
 
 Use trusted positive ceilings for cumulative ticks/work, queue size, cumulative
@@ -127,7 +127,7 @@ feedback; they are not speculative or hidden-case disclosures.
 Before the first executable dynamic scene:
 
 - Migrate the loader and examples to the selected [Level JSON format v1 author contract](../spec/codegrid-scene-level-json-v2.md), which has no legacy scene-format branch; add logical validation before registration.
-- Implement the append operation and continuous-case loop using existing
+- Implement the replacement operation and continuous-case loop using existing
   compiler/VM APIs and the existing dependency direction.
 - Implement the fixed typed scene reasons and visible result/event allowlists
   in the [Scene Host Contract v2](../spec/codegrid-scene-host-contract-v2.md);

@@ -1,5 +1,9 @@
 use crate::{
     metrics::{aggregate, constraints_exceeded, dynamic_metrics, rating, static_metrics, Metrics},
+    nontermination::{
+        exact_cycle_detection_eligible, CaseState, CycleDetector, NoProgressTracker,
+        VmSemanticState,
+    },
     result::*,
     schema::ValidatedLevel,
     validate::{validate_primary, validate_program},
@@ -26,6 +30,9 @@ pub struct ExecutionSafetyProfile {
     pub per_test_gas: NonZeroU64,
     pub cumulative_work: NonZeroU64,
     pub per_call_work: NonZeroU64,
+    /// Consecutive committed ticks without goal progress that end evaluation
+    /// early with `NonTerminating(NoProgress)`. Disabled when absent.
+    pub no_progress_ticks: Option<NonZeroU64>,
 }
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct EvaluationConfig {
@@ -57,6 +64,9 @@ pub struct EvaluationSession {
     result: Option<EvaluationResult>,
     feedback_bytes: u64,
     generated_diagnostic: Option<GeneratedRejectionDiagnostic>,
+    cycle: CycleDetector<CaseState>,
+    no_progress: Option<NoProgressTracker>,
+    cycle_eligible: bool,
 }
 /// Trusted diagnostic retained inside the opaque session, never projected.
 #[allow(dead_code)]
@@ -139,6 +149,8 @@ pub fn start_evaluation(
         config.shuffle_seed,
     );
     let metrics = static_metrics(&program);
+    let cycle_eligible = exact_cycle_detection_eligible(&program, level.rules());
+    let no_progress = config.safety.no_progress_ticks.map(NoProgressTracker::new);
     let mut session = EvaluationSession {
         level,
         program,
@@ -157,6 +169,9 @@ pub fn start_evaluation(
         result: None,
         feedback_bytes: 0,
         generated_diagnostic: None,
+        cycle: CycleDetector::new(),
+        no_progress,
+        cycle_eligible,
     };
     if let Err(reason) = validate_program(&session.level, &session.program) {
         session.finish(EvaluationStatus::ProgramRejected(reason));
@@ -293,6 +308,12 @@ impl EvaluationSession {
                     }
                 }
                 self.matched = 0;
+                self.cycle = CycleDetector::new();
+                self.no_progress = self
+                    .config
+                    .safety
+                    .no_progress_ticks
+                    .map(NoProgressTracker::new);
             }
             let vm = self.vm.as_mut().unwrap();
             if retained_state_units(vm, &self.program)
@@ -402,6 +423,7 @@ impl EvaluationSession {
                 }
             };
             let constraint = constraints_exceeded(&current, self.level.constraints());
+            let continuing = outcome.is_none();
             if let Some(outcome) = outcome {
                 if outcome != TestOutcome::Passed {
                     let status = if matches!(outcome, TestOutcome::RuntimeError(_)) {
@@ -463,6 +485,30 @@ impl EvaluationSession {
                 self.metrics = current;
                 self.finish(self.failure.clone().unwrap());
                 break;
+            }
+            if continuing {
+                let vm = self.vm.as_ref().unwrap();
+                let tick = vm.committed_ticks();
+                let progress = self.matched as u64;
+                let mut detected = None;
+                if self.cycle_eligible {
+                    let state = CaseState {
+                        vm: VmSemanticState::from_snapshot(&vm.snapshot()),
+                        machine: Vec::new(),
+                        progress,
+                    };
+                    detected = self.cycle.observe(tick, &state);
+                }
+                if detected.is_none() {
+                    detected = self
+                        .no_progress
+                        .as_mut()
+                        .and_then(|tracker| tracker.observe(tick, progress));
+                }
+                if let Some(reason) = detected {
+                    self.finish(EvaluationStatus::NonTerminating(reason));
+                    break;
+                }
             }
             if state_exceeded || output_exceeded {
                 self.finish(EvaluationStatus::ResourceLimitExceeded);
@@ -600,6 +646,7 @@ mod diagnostic_tests {
                 per_test_gas: NonZeroU64::new(100).unwrap(),
                 cumulative_work: NonZeroU64::new(1000).unwrap(),
                 per_call_work: NonZeroU64::new(100).unwrap(),
+                no_progress_ticks: None,
             },
         };
         let mut session = start_evaluation(level, program, EvaluationMode::Official, config);

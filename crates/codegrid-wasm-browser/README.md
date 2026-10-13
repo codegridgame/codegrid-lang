@@ -33,8 +33,17 @@ work-unit and Gas limits are positive canonical unsigned decimal strings; keep
 them as strings rather than converting them to JavaScript Number.
 
 The binding exposes api_version, check, compile, program_view,
-create_instance, step, run, snapshot, release_instance, and
+create_instance, step, run, snapshot, reposition_thread, release_instance, and
 release_program. Each operation returns a JSON string with api_version: 3.
+
+`reposition_thread(instance, thread, x, y, direction)` is an explicit host control
+between steps. Instance and thread IDs are canonical decimal strings; x/y must
+be nonnegative u32 integers and direction is `up`, `down`, `left`, or `right`.
+It accepts only a normal thread in a running VM and a coordinate inside the
+thread's current board. Only its position and direction change; resources,
+stacks, mutable program and metrics remain intact. The result is a quota-checked
+Full snapshot. Invalid control requests return `invalid_configuration` with
+field `thread_position`. Game policy remains in the host.
 Handles, source spans, Page values, memory addresses, thread IDs, ticks, and
 other wide integers use canonical decimal strings. Byte values, register
 indexes, slots, dimensions, and coordinates use JSON numbers.

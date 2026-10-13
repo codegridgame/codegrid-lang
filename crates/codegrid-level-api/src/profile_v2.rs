@@ -1,5 +1,5 @@
 //! Strict trusted scene profile conversion. Scene semantics remain in level core.
-use crate::profile::{positive, ApiError, CommonLimits};
+use crate::profile::{optional_positive, positive, ApiError, CommonLimits};
 use codegrid_level_core::scene_session::SceneLimits;
 use serde::Deserialize;
 use serde_json::{json, Value};
@@ -42,6 +42,10 @@ pub struct SafetyProfileV2 {
     pub max_work_per_call: u64,
     #[serde(deserialize_with = "positive")]
     pub max_total_work: u64,
+    /// Optional host heuristic: consecutive committed ticks without goal
+    /// progress that end evaluation early. Absent disables the heuristic.
+    #[serde(default, deserialize_with = "optional_positive")]
+    pub no_progress_ticks: Option<u64>,
     pub scene_limits: SceneProfileLimits,
 }
 
@@ -122,6 +126,7 @@ impl SafetyProfileV2 {
         "max_gas_per_test":self.max_gas_per_test.to_string(),
         "max_work_per_call":self.max_work_per_call.to_string(),
         "max_total_work":self.max_total_work.to_string(),
+        "no_progress_ticks":self.no_progress_ticks.map(|n|n.to_string()),
         "scene_limits":{
             "max_input_queue_bytes":self.scene_limits.max_input_queue_bytes.to_string(),
             "max_total_input_bytes_per_test":self.scene_limits.max_total_input_bytes_per_test.to_string(),

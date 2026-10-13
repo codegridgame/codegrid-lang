@@ -31,7 +31,7 @@ fn kinds(events: &[Value]) -> Vec<&str> {
 #[test]
 fn robot_events_and_results_are_identical_across_vm_slices() {
     let v = two_point_robot();
-    let tokens = [",", ",", ".1", ",", ".", ";"];
+    let tokens = [",", ",", ".1", ",", ",", ".", ";"];
     let mut large = start(&v, &tokens, limits());
     let mut small = start(&v, &tokens, limits());
     assert_eq!(finish(&mut large, 1000), finish(&mut small, 1));
@@ -42,17 +42,17 @@ fn robot_events_and_results_are_identical_across_vm_slices() {
         kinds(&trace),
         [
             "CaseStarted",
-            "InputAppended",
+            "InputUpdated",
             "ActionApplied",
             "RoundCompleted",
-            "InputAppended",
+            "InputUpdated",
             "ActionApplied",
             "CaseEnded"
         ]
     );
     assert_eq!(trace[2]["data"]["effect"]["from_position"], 0);
     assert_eq!(trace[2]["data"]["effect"]["to_position"], 1);
-    assert_eq!(trace[3]["data"]["observation"], json!([1, 0]));
+    assert_eq!(trace[3]["data"]["observation"], json!([0, 1]));
     assert_eq!(trace[5]["data"]["effect"]["to_position"], 2);
     for (index, event) in trace.iter().enumerate() {
         assert_eq!(event["sequence"], (index + 1).to_string());
@@ -69,7 +69,7 @@ fn terminal_a_ignores_invalid_b_without_round_events() {
     let trace = events(&mut s);
     assert_eq!(
         kinds(&trace),
-        ["CaseStarted", "InputAppended", "ActionApplied", "CaseEnded"]
+        ["CaseStarted", "InputUpdated", "ActionApplied", "CaseEnded"]
     );
     assert_eq!(trace[2]["actor"], "A");
     assert_eq!(trace[2]["frame_index"], "1");
@@ -88,7 +88,7 @@ fn invalid_b_retains_a_effect_but_no_round_or_observation() {
     let trace = events(&mut s);
     assert_eq!(
         kinds(&trace),
-        ["CaseStarted", "InputAppended", "ActionApplied", "CaseEnded"]
+        ["CaseStarted", "InputUpdated", "ActionApplied", "CaseEnded"]
     );
     assert_eq!(trace[2]["data"]["effect"]["to_position"], 1);
     assert_eq!(trace[3]["data"]["failure"]["details"]["actor"], "B");
@@ -98,13 +98,13 @@ fn invalid_b_retains_a_effect_but_no_round_or_observation() {
 fn input_and_event_capacity_failures_publish_only_last_boundary_and_end() {
     let v = two_point_robot();
     let mut l = limits();
-    l.max_input_queue_bytes = n(2);
+    l.max_total_input_bytes_per_test = n(3);
     let mut s = start(&v, &[".1", ";"], l);
     let result = finish(&mut s, 1000);
     assert_eq!(result.status, EvaluationStatus::ResourceLimitExceeded);
     assert_eq!(result.visible_cases[0].summary["frames"], 0);
     let trace = events(&mut s);
-    assert_eq!(kinds(&trace), ["CaseStarted", "InputAppended", "CaseEnded"]);
+    assert_eq!(kinds(&trace), ["CaseStarted", "InputUpdated", "CaseEnded"]);
     assert_eq!(trace[2]["data"]["outcome"], "NotCompleted");
     let mut l = limits();
     l.max_scene_events_per_evaluation = n(3);
@@ -164,7 +164,7 @@ fn inspection_is_revealed_only_on_ready_and_illegal_packing_has_location() {
         ready["data"]["transitions"],
         json!([{"kind":"TableReady","worktable_index":0,"state":5}])
     );
-    assert_eq!(ready["data"]["observation"], json!([]));
+    assert_eq!(ready["data"]["observation"], json!([255]));
     let end = trace.last().unwrap();
     assert_eq!(end["data"]["failure"]["reason"], "IllegalOperation");
     assert_eq!(
@@ -202,7 +202,7 @@ fn unvisited_patrol_fails_on_halt_without_action_events() {
     let result = finish(&mut s, 1);
     assert_eq!(result.status, EvaluationStatus::TestFailed);
     let trace = events(&mut s);
-    assert_eq!(kinds(&trace), ["CaseStarted", "InputAppended", "CaseEnded"]);
+    assert_eq!(kinds(&trace), ["CaseStarted", "InputUpdated", "CaseEnded"]);
     assert_eq!(trace[0]["data"]["observation"], json!([0, 0]));
     assert_eq!(trace[2]["data"]["failure"]["reason"], "IncompleteGoal");
 }
@@ -236,7 +236,7 @@ fn resource_work_end_is_reserved_and_acknowledgement_frees_event_capacity() {
     );
     assert_eq!(
         kinds(&events(&mut s)),
-        ["CaseStarted", "InputAppended", "CaseEnded"]
+        ["CaseStarted", "InputUpdated", "CaseEnded"]
     );
     assert!(s.scene_work() <= 12_000);
     let mut l = limits();

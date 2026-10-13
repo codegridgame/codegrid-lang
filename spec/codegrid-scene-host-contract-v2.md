@@ -75,6 +75,7 @@ The v1 behavior and emitted reason values do not change.
 | Checked scene metric/counter arithmetic overflow | Fault | level.metric_overflow | NumericOverflow |
 | VM fault/initialization fault | Fault | Existing level.vm_fault / level.vm_initialization_fault | Existing typed fault |
 | Trusted evaluation ceiling prevents completion | ResourceLimitExceeded | level.resource_limit | ResourceLimitExceeded |
+| Proven exact state cycle or configured no-progress window ends evaluation early | NonTerminating | level.state_cycle (9030) / level.no_progress (9031) | StateCycle / NoProgress |
 | Cancelled evaluation | Cancelled | level.cancelled | Cancelled |
 
 InvalidOutput is scene-specific: an action outside 0–4, floor outside 0–9,
@@ -159,8 +160,8 @@ noncanonical, or out-of-range values. No implicit defaults.
 
 | scene_limits field | Scope and check |
 | --- | --- |
-| max_input_queue_bytes | Maximum unread VM input bytes per active case, including initial input and every append; reserve before enqueue |
-| max_total_input_bytes_per_test | Cumulative initial/enqueued bytes per case, even after READ removes them; charge only complete published appends |
+| max_input_queue_bytes | Maximum unread VM input bytes per active case, including initial input and each replacement; reserve before publication |
+| max_total_input_bytes_per_test | Cumulative initial/enqueued bytes per case, even after READ removes them; charge only complete published updates |
 | max_scene_state_units | Total retained scene definition/world/frame/candidate/observation units across the API instance; reserve before retaining/cloning |
 | max_scene_frames_per_test | Complete collected action frames per dynamic case, check before actor dispatch |
 | max_scene_work_per_call | Per-advance internal scene work ceiling; distinct from VM dispatch work |
@@ -292,10 +293,10 @@ is not retried as a substitute for an uncertain advance result.
 
 | kind | Exact data fields |
 | --- | --- |
-| CaseStarted | observation, nullable for empty/event-based initial input |
+| CaseStarted | observation, nullable for empty initial input |
 | ActionApplied | action byte, effect object |
-| RoundCompleted | rounds counter, observation byte array (empty for single-arm event input), transitions array |
-| InputAppended | bytes array; exactly the newly appended permitted observation/event bytes |
+| RoundCompleted | rounds counter, latest observation byte array, transitions array |
+| InputUpdated | bytes array; complete replacement snapshot (initial input bytes for ExactIO) |
 | RobotProduced | state byte, output_index counter |
 | CaseEnded | outcome and nullable visible failure |
 
@@ -314,15 +315,15 @@ by public slot index but may not reveal hidden robot true_inspection. Never
 include author source records or a raw world snapshot. Unknown kinds/fields
 are errors for a fixed version, not silently ignored schema extensions.
 
-Initialization publishes CaseStarted, then InputAppended if bytes are queued,
+Initialization publishes CaseStarted, then InputUpdated if bytes are queued,
 then CaseEnded for an initial terminal goal. For a frame, publish A's effect
 events then B's if dispatched; RobotProduced follows its ActionApplied.
-RoundCompleted follows actual round-end publication, then InputAppended.
+RoundCompleted follows actual round-end publication, then InputUpdated.
 CaseEnded is last for a visible case. A scene-failure event can retain completed
-A effects but emits no RoundCompleted/input append. A resource-discarded draft
-emits no speculative events. Single-arm successful grabs use InputAppended
-for event-based bytes; RoundCompleted observation is empty rather than
-inventing a fixed snapshot.
+A effects but emits no RoundCompleted/input update. A resource-discarded draft
+emits no speculative events. Both arm layouts publish current-hand snapshots
+in RoundCompleted, followed by InputUpdated. Dynamic updates discard all unread
+old input, preserving already read register values.
 
 Event publication/reservation is all-or-none per resumable scene draft. Store
 committed actor effects needed on B failure, and reserve their visible event

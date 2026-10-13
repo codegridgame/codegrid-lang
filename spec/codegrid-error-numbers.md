@@ -57,7 +57,7 @@ Generated from [codegrid-error-codes.json](codegrid-error-codes.json). Numbers a
 | `2007` | ir | `ir.fold_primary` | A Folded Block contains a forbidden instruction. |
 | `2008` | ir | `ir.entry_instruction` | An Entry shares its cell with a Primary or Attachment. |
 | `2009` | ir | `ir.detached_attachment` | A prefix or suffix Attachment has no initial Primary (including an invalid folded prefix coordinate). |
-| `2010` | ir | `ir.repeat_count` | Repeat count is outside 2 through 5. |
+| `2010` | ir | `ir.repeat_count` | Repeat count is outside 2 through 9. |
 | `2011` | ir | `ir.attachment_primary` | A suffix Attachment is attached to a nonencodable Primary; conditional prefixes have independent eligibility. |
 | `2012` | ir | `ir.repeat_call_return` | Repeat is attached to CALL or RETURN. |
 | `2013` | ir | `ir.return_scope` | RETURN is outside a Function. |
@@ -251,3 +251,5 @@ Generated from [codegrid-error-codes.json](codegrid-error-codes.json). Numbers a
 | `3011` | vm | `GasLimitExceeded` | Attempted Gas exceeds the configured positive hard limit. |
 | `3012` | vm | `GasCounterOverflow` | A checked Gas component or total cannot represent the attempted charge. |
 | `3013` | vm | `CustomDisabled` | A Custom Primary is actually executed while Custom use is disabled. |
+| `9030` | level | `level.state_cycle` | An exact semantic state cycle repeats at committed tick boundaries so the active case can never make further progress. |
+| `9031` | level | `level.no_progress` | No goal progress occurs for the host-configured consecutive committed-tick window. |

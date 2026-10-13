@@ -31,7 +31,7 @@ fn complete_frame_dispatches_in_order_and_terminal_a_ignores_invalid_b() {
     set_robot_path(&mut v, 4);
     set_robot_start(&mut v, "B", 3, "left");
     let mut m = machine(&v);
-    assert_eq!(m.take_initial_input(), [0, 0, 3, 0]);
+    assert_eq!(m.take_initial_input(), [0, 0, 0, 3]);
     assert!(m.take_initial_input().is_empty());
     let first = m.consume(1).unwrap();
     assert!(!first.completed_frame);
@@ -96,7 +96,7 @@ fn robot_initial_input_and_partial_frame_halt() {
 #[test]
 fn arm_event_input_and_direct_packing_sequence() {
     let mut m = machine(&example("arm"));
-    assert!(m.initial_input().is_empty());
+    assert_eq!(m.initial_input(), [255]);
     assert_eq!(m.consume(1).unwrap().observation, [13]);
     m.consume(4).unwrap();
     m.consume(2).unwrap();

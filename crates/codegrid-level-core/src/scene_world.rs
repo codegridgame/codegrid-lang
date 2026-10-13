@@ -68,7 +68,7 @@ impl RobotWorld {
     pub fn observation(&self) -> Vec<u8> {
         self.robots
             .iter()
-            .flat_map(|robot| [robot.position, self.map[usize::from(robot.position)].color])
+            .flat_map(|robot| [self.map[usize::from(robot.position)].color, robot.position])
             .collect()
     }
     pub fn act(&mut self, actor: usize, action: u8) -> Result<(), TransitionError> {
@@ -168,7 +168,7 @@ mod tests {
             &cells,
         );
         world.act(0, 1).unwrap();
-        assert_eq!(world.observation(), [34, 2]);
+        assert_eq!(world.observation(), [2, 34]);
         world.act(0, 1).unwrap();
         assert_eq!(world.robots[0].position, 34);
         world.act(0, 2).unwrap();
@@ -328,11 +328,7 @@ impl ArmWorld {
             .collect()
     }
     pub fn initial_input(&self) -> Vec<u8> {
-        if self.hands.len() == 2 {
-            self.observation()
-        } else {
-            Vec::new()
-        }
+        self.observation()
     }
     fn target(&self, actor: usize) -> ArmTarget {
         let orientation = self.orientations[actor];
@@ -496,7 +492,7 @@ impl ArmWorld {
         }
         Ok(Vec::new())
     }
-    pub fn end_round(&mut self, single_event: Vec<u8>) -> Result<Vec<u8>, ArmError> {
+    pub fn end_round(&mut self, _single_event: Vec<u8>) -> Result<Vec<u8>, ArmError> {
         let rounds = self
             .rounds
             .checked_add(1)
@@ -519,11 +515,7 @@ impl ArmWorld {
             }
         }
         self.rounds = rounds;
-        Ok(if self.hands.len() == 2 {
-            self.observation()
-        } else {
-            single_event
-        })
+        Ok(self.observation())
     }
 }
 
@@ -552,9 +544,21 @@ mod arm_tests {
         world.end_round(event).unwrap()
     }
     #[test]
+    fn single_arm_updates_every_valid_command_with_current_hand() {
+        let mut world = arm(1);
+        assert_eq!(world.initial_input(), [255]);
+        assert_eq!(round(&mut world, 0), [255]);
+        assert_eq!(round(&mut world, 1), [13]);
+        assert_eq!(round(&mut world, 0), [13]);
+        assert_eq!(round(&mut world, 4), [13]);
+        assert_eq!(round(&mut world, 2), [255]);
+        assert_eq!(round(&mut world, 3), [255]);
+        assert_eq!(round(&mut world, 1), [255]);
+    }
+    #[test]
     fn inspection_direct_pack_and_output_fifo() {
         let mut world = arm(1);
-        assert!(world.initial_input().is_empty());
+        assert_eq!(world.initial_input(), [255]);
         assert_eq!(round(&mut world, 1), [13]);
         round(&mut world, 4);
         round(&mut world, 2);
@@ -657,6 +661,9 @@ mod arm_tests {
     }
 }
 
+fn push_len(out: &mut Vec<u8>, len: usize) {
+    out.extend_from_slice(&(len as u64).to_le_bytes());
+}
 impl RobotWorld {
     pub fn retained_units(&self) -> u64 {
         self.map_units
@@ -669,6 +676,28 @@ impl RobotWorld {
     pub fn summary(&self) -> (u64, u64) {
         (self.visited.len() as u64, self.required)
     }
+    /// Deterministic semantic encoding for exact cycle detection. Excludes the
+    /// immutable map and the monotone round/work counters.
+    pub(crate) fn write_semantic_state(&self, out: &mut Vec<u8>) {
+        push_len(out, self.robots.len());
+        for robot in &self.robots {
+            out.push(robot.position);
+            out.push(robot.direction);
+        }
+        for set in [
+            &self.visited,
+            &self.triggered,
+            &self.pending,
+            &self.open_doors,
+        ] {
+            push_len(out, set.len());
+            out.extend(set.iter().copied());
+        }
+    }
+    /// Monotone goal progress: visited patrol points.
+    pub(crate) fn progress_counter(&self) -> u64 {
+        self.visited.len() as u64
+    }
 }
 impl ArmWorld {
     pub fn expected_output(&self) -> &[u8] {
@@ -677,6 +706,53 @@ impl ArmWorld {
     pub fn retained_units(&self) -> u64 {
         (self.hands.len() + self.robot_count + 4 + 2 + self.expected.len() + self.actual.len())
             as u64
+    }
+    /// Deterministic semantic encoding for exact cycle detection. Excludes the
+    /// immutable tables and expected output and the monotone round/work
+    /// counters.
+    pub(crate) fn write_semantic_state(&self, out: &mut Vec<u8>) {
+        out.extend_from_slice(&self.orientations);
+        push_len(out, self.hands.len());
+        for hand in &self.hands {
+            write_arm_robot(out, *hand);
+        }
+        push_len(out, self.input.len());
+        for robot in &self.input {
+            write_arm_robot(out, Some(*robot));
+        }
+        for slot in self.slots.iter().chain(self.buffers.iter()) {
+            match slot {
+                SlotState::Empty => out.push(0),
+                SlotState::Pending(robot) => {
+                    out.push(1);
+                    out.push(robot.state);
+                    out.push(robot.true_inspection);
+                }
+                SlotState::Ready(robot) => {
+                    out.push(2);
+                    out.push(robot.state);
+                    out.push(robot.true_inspection);
+                }
+            }
+        }
+        push_len(out, self.actual.len());
+        out.extend_from_slice(&self.actual);
+        out.extend_from_slice(&self.matched.to_le_bytes());
+        out.extend_from_slice(&(self.robot_count as u64).to_le_bytes());
+    }
+    /// Monotone goal progress: correctly produced output robots.
+    pub(crate) fn progress_counter(&self) -> u64 {
+        self.matched
+    }
+}
+fn write_arm_robot(out: &mut Vec<u8>, robot: Option<ArmRobot>) {
+    match robot {
+        None => out.push(0),
+        Some(robot) => {
+            out.push(1);
+            out.push(robot.state);
+            out.push(robot.true_inspection);
+        }
     }
 }
 

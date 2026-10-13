@@ -95,7 +95,7 @@ fn parse_attached_primary(token: &str) -> Result<CellToken, CellTokenError> {
             return Err(CellTokenError {
                 code: "source.invalid_cell",
                 message: match primary {
-                    PrimaryInstruction::OutputImmediate(_) => "Immediate output .0 through .9 allows only Repeat x2 through x5; ReadCode (*) and WriteCode (=) are not allowed.",
+                    PrimaryInstruction::OutputImmediate(_) => "Immediate output .0 through .9 allows only Repeat x2 through x9; ReadCode (*) and WriteCode (=) are not allowed.",
                     PrimaryInstruction::Halt => "HALT (;) cannot carry a suffix Attachment.",
                     PrimaryInstruction::FoldedBlock(_) => "A Folded Block call cannot carry a suffix Attachment.",
                     PrimaryInstruction::Custom(_) | PrimaryInstruction::CustomReturn => "A Custom call or return cannot carry a suffix Attachment.",
@@ -111,7 +111,7 @@ fn parse_attached_primary(token: &str) -> Result<CellToken, CellTokenError> {
         {
             return Err(CellTokenError {
                 code: "source.invalid_cell",
-                message: "Repeat is not allowed on Function CALL ([0 through [9) or RETURN (]); use an ordinary call/return without x2 through x5.",
+                message: "Repeat is not allowed on Function CALL ([0 through [9) or RETURN (]); use an ordinary call/return without x2 through x9.",
             });
         }
         return Ok(CellToken::Instruction {
@@ -159,14 +159,14 @@ fn invalid_token_message(token: &str) -> &'static str {
     if let Some((primary, count)) = token.rsplit_once('x') {
         if PrimaryInstruction::from_token(primary).is_some() {
             return if !count.is_empty() && count.bytes().all(|byte| byte.is_ascii_digit()) {
-                "Repeat count must be a single digit from 2 through 5; use x2, x3, x4, or x5."
+                "Repeat count must be a single digit from 2 through 9; use x2 through x9."
             } else {
-                "Malformed Repeat suffix; use x2, x3, x4, or x5 immediately after the Primary."
+                "Malformed Repeat suffix; use x2 through x9 immediately after the Primary."
             };
         }
     }
     if token.starts_with('.') && token != "." {
-        return "Immediate output must be .0 through .9 with exactly one ASCII digit; only an optional Repeat suffix x2 through x5 is allowed.";
+        return "Immediate output must be .0 through .9 with exactly one ASCII digit; only an optional Repeat suffix x2 through x9 is allowed.";
     }
     if token.starts_with('[') || token.starts_with('$') || token.starts_with('#') {
         return "Unknown or malformed Primary reference; Function CALL uses [0 through [9, Folded Block CALL uses $0 through $9, and Custom CALL uses #0 through #9 or #] for return.";
@@ -233,7 +233,7 @@ mod tests {
         for token in [
             ",^", ",v", ",<", ",>", "?!,v", ",^x2", "*", "=", "x2", "#0x3", "#00", "++", "+*x3",
             "+x2*", ";x2", ";*", ";=", "$0x2", "[0x3", "[0x2", "]x2", "#]x2", "~>x2", "~>*", "_x2",
-            "[[0", "+x0", "+x6",
+            "[[0", "+x0", "+x10",
         ] {
             assert!(parse_cell_token(token).is_err(), "{token} must be rejected");
         }

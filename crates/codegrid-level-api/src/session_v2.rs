@@ -201,7 +201,8 @@ impl LevelApiV2 {
                     safety: ExecutionSafetyProfile { id:self.profile.profile_id.clone(), version:2,
                         max_output_bytes:nz(self.profile.max_output_bytes)?, max_state_units:nz(self.profile.max_state_units)?,
                         max_feedback_bytes:nz(feedback_budget)?, per_test_ticks:nz(self.profile.max_ticks_per_test)?, per_test_gas:nz(self.profile.max_gas_per_test)?,
-                        per_call_work:nz(self.profile.max_work_per_call)?, cumulative_work:nz(self.profile.max_total_work)? } };
+                        per_call_work:nz(self.profile.max_work_per_call)?, cumulative_work:nz(self.profile.max_total_work)?,
+                        no_progress_ticks:self.profile.no_progress_ticks.map(nz).transpose()? } };
                 let bytes = input_bytes.checked_add(feedback_budget).ok_or_else(||resource("Retained state accounting overflow"))?;
                 let handle = self.handle(bytes, available_units.get())?;
                 self.evaluations.insert(handle.clone(), Retained { value:start_scene_evaluation(level,program,mode,config,scene_limits),bytes,scene_units:available_units.get(),provenance });
@@ -326,7 +327,7 @@ mod feedback_response_tests {
                 tick: Some(0),
                 frame_index: None,
                 actor: None,
-                payload: SceneEventPayload::InputAppended {
+                payload: SceneEventPayload::InputUpdated {
                     bytes: vec![255; 1000],
                 },
             }])

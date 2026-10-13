@@ -13,6 +13,51 @@ fn machine(source: &str, input: &[u8]) -> Vm {
 }
 
 #[test]
+fn host_reposition_preserves_state_and_executes_the_destination_on_the_next_tick() {
+    let mut vm = machine("~> , ( _ , . ;", &[7, 9]);
+    for _ in 0..3 {
+        vm.step();
+    }
+    let before = vm.snapshot();
+    assert!(!vm.reposition_thread(
+        99,
+        codegrid_vm::Coordinate { x: 4, y: 0 },
+        codegrid_model::Direction::Right
+    ));
+    assert!(!vm.reposition_thread(
+        0,
+        codegrid_vm::Coordinate { x: 7, y: 0 },
+        codegrid_model::Direction::Right
+    ));
+    assert_eq!(vm.snapshot(), before);
+    assert!(vm.reposition_thread(
+        0,
+        codegrid_vm::Coordinate { x: 4, y: 0 },
+        codegrid_model::Direction::Right
+    ));
+    let after = vm.snapshot();
+    assert_eq!(after.registers, before.registers);
+    assert_eq!(after.input, before.input);
+    assert_eq!(after.output, before.output);
+    assert_eq!(after.committed_ticks, before.committed_ticks);
+    assert_eq!(after.threads[0].data_stack, before.threads[0].data_stack);
+    let mut expected = before;
+    expected.threads[0].position = codegrid_vm::Coordinate { x: 4, y: 0 };
+    expected.threads[0].direction = codegrid_model::Direction::Right;
+    assert_eq!(after, expected);
+    vm.step();
+    vm.step();
+    assert_eq!(vm.snapshot().output, vec![9]);
+    assert!(vm.snapshot().input.is_empty());
+    vm.step();
+    assert!(!vm.reposition_thread(
+        0,
+        codegrid_vm::Coordinate { x: 4, y: 0 },
+        codegrid_model::Direction::Right
+    ));
+}
+
+#[test]
 fn cmp_peeks_unsigned_values_and_uses_the_selected_register() {
     for (a, b, expected) in [(7, 7, 0), (255, 0, 1), (0, 255, 2)] {
         let mut vm = machine("~> , ( } , ?= . ;", &[a, b]);

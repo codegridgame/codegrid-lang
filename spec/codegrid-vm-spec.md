@@ -85,7 +85,7 @@ Primary-before-Attachment is the rule for ordinary instructions with WriteCode: 
 
 ### 5.2 Repeat
 
-Repeat(N) executes its attached Primary N times over N ticks, for N in 2 through 5. The first execution occurs on the tick that reaches the cell. While repetitions remain, the thread stays at that cell and does not move; it reexecutes the Primary on each following tick. Before each attempted execution, reevaluate the fixed prefix against that context's tick-start selected register. A false condition cancels remaining repetitions, returns to Normal, and moves once in the current direction. After the final successful execution it moves once in the resulting direction and returns to Normal.
+Repeat(N) executes its attached Primary N times over N ticks, for N in 2 through 9. The first execution occurs on the tick that reaches the cell. While repetitions remain, the thread stays at that cell and does not move; it reexecutes the Primary on each following tick. Before each attempted execution, reevaluate the fixed prefix against that context's tick-start selected register. A false condition cancels remaining repetitions, returns to Normal, and moves once in the current direction. After the final successful execution it moves once in the resulting direction and returns to Normal.
 
 The phase records total repetitions and successful repetitions already completed. A failed tick does not advance this phase. Each Primary execution counts separately in Operation Count. Repeat itself is not an operation kind.
 
@@ -262,7 +262,7 @@ WriteCode modifies the current mutable code copy. In a Custom invocation it chan
 
 ### 8.3 Repeat
 
-Repeat(N) reexecutes its attached Primary N times over separate ticks, for N in 2 through 5, as in Section 5.2. The verifier rejects unsupported counts and Repeat on CALL or RETURN. Since a cell has only one suffix Attachment, Repeat cannot combine with ReadCode or WriteCode.
+Repeat(N) reexecutes its attached Primary N times over separate ticks, for N in 2 through 9, as in Section 5.2. The verifier rejects unsupported counts and Repeat on CALL or RETURN. Since a cell has only one suffix Attachment, Repeat cannot combine with ReadCode or WriteCode.
 
 ### 8.4 CALL and RETURN timing
 
@@ -316,7 +316,7 @@ unchanged. Private writes roll back when any shared effect rejects the tick.
 NEG is a write even for fixed points 0 and 128; it obeys existing equal-value
 write conflict rules. Main threads still share the Main bank.
 
-OutputImmediate has no Instruction Code and accepts only Repeat suffixes x2 through x5; conditional prefixes are permitted. Repeat uses the ordinary per-tick Primary execution, movement, conflicts, rollback, work accounting, and Custom caller-stack routing. ReadCode and WriteCode remain invalid. It cannot
+OutputImmediate has no Instruction Code and accepts only Repeat suffixes x2 through x9; conditional prefixes are permitted. Repeat uses the ordinary per-tick Primary execution, movement, conflicts, rollback, work accounting, and Custom caller-stack routing. ReadCode and WriteCode remain invalid. It cannot
 be represented on the Instruction Stack. Existing Instruction Codes remain
 unchanged. All immediate forms count as the existing Output metric kind, not
 as separate kinds for each digit.

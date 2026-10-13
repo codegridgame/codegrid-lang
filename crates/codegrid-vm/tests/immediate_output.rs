@@ -19,7 +19,7 @@ fn repeated_digit(digit: u8, count: u8) -> Cell {
 #[test]
 fn immediate_repeat_emits_once_per_tick_and_matches_bounded_execution() {
     for digit in 0..10 {
-        for count in 2..=5 {
+        for count in 2..=9 {
             let main = board(
                 vec![
                     Cell::entry(Direction::Right),
@@ -276,4 +276,48 @@ fn append_after_interrupted_tick_uses_the_rolled_back_boundary() {
     assert_eq!(vm.run(20), RunOutcome::Halted);
     assert_eq!(vm.snapshot().output, [8]);
     assert_eq!(vm.snapshot().input, [7]);
+}
+
+#[test]
+fn replacement_discards_partial_input_and_preserves_execution_state() {
+    let mut vm = machine(
+        board(
+            vec![
+                instruction(","),
+                instruction(","),
+                instruction("."),
+                instruction(";"),
+            ],
+            4,
+        ),
+        None,
+        &[9, 8, 7],
+    );
+    vm.step();
+    let before = vm.snapshot();
+    assert_eq!(before.input, [8, 7]);
+    vm.replace_input(&[6]).unwrap();
+    let after = vm.snapshot();
+    assert_eq!(after.input, [6]);
+    assert_eq!(after.registers, before.registers);
+    assert_eq!(after.threads, before.threads);
+    assert_eq!(after.metrics, before.metrics);
+    assert_eq!(vm.run(10), RunOutcome::Halted);
+    assert_eq!(vm.snapshot().output, [6]);
+    assert_eq!(
+        vm.replace_input(&[5]),
+        Err(codegrid_vm::InputAppendError::Terminal)
+    );
+}
+
+#[test]
+fn empty_replacement_clears_unread_input() {
+    let mut vm = machine(
+        board(vec![instruction(","), instruction(";")], 2),
+        None,
+        &[9],
+    );
+    vm.replace_input(&[]).unwrap();
+    assert!(vm.snapshot().input.is_empty());
+    assert_eq!(vm.run(10), RunOutcome::Halted);
 }

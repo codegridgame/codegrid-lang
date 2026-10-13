@@ -116,6 +116,38 @@ impl Vm {
         self.config
     }
 
+    /// Reposition one normal thread within its current board at a step boundary.
+    /// No instruction executes and all other state and metrics remain intact.
+    pub fn reposition_thread(
+        &mut self,
+        id: u64,
+        position: Coordinate,
+        direction: Direction,
+    ) -> bool {
+        if self.status != VmStatus::Running {
+            return false;
+        }
+        let Some(thread) = self.threads.iter_mut().find(|thread| thread.id == id) else {
+            return false;
+        };
+        if thread.phase != ExecutionPhase::Normal {
+            return false;
+        }
+        let board = match thread.board {
+            codegrid_ir::BoardId::Main => Some(&self.runtime_program.main),
+            codegrid_ir::BoardId::Function(slot) => self.runtime_program.functions.get(&slot),
+        };
+        let Some(board) = board else {
+            return false;
+        };
+        if position.x >= board.width || position.y >= board.height {
+            return false;
+        }
+        thread.position = position;
+        thread.direction = direction;
+        true
+    }
+
     /// Append explicit data at a completed step boundary without executing code.
     ///
     /// Steps are synchronous and retain no unfinished tick between calls, so
@@ -130,6 +162,21 @@ impl Vm {
             .try_reserve(values.len())
             .map_err(|_| InputAppendError::Capacity)?;
         self.input.extend(values.iter().copied());
+        Ok(())
+    }
+
+    /// Replace unread input atomically at a completed step boundary.
+    /// Registers, execution state, and language metrics are preserved.
+    pub fn replace_input(&mut self, values: &[Value]) -> Result<(), InputAppendError> {
+        if self.status != VmStatus::Running {
+            return Err(InputAppendError::Terminal);
+        }
+        let mut input = std::collections::VecDeque::new();
+        input
+            .try_reserve(values.len())
+            .map_err(|_| InputAppendError::Capacity)?;
+        input.extend(values.iter().copied());
+        self.input = input;
         Ok(())
     }
 

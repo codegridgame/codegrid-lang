@@ -524,13 +524,17 @@ pub enum AttachmentInstruction {
 }
 
 impl AttachmentInstruction {
-    pub const ALL: [Self; 6] = [
+    pub const ALL: [Self; 10] = [
         Self::ReadCode,
         Self::WriteCode,
         Self::Repeat(2),
         Self::Repeat(3),
         Self::Repeat(4),
         Self::Repeat(5),
+        Self::Repeat(6),
+        Self::Repeat(7),
+        Self::Repeat(8),
+        Self::Repeat(9),
     ];
 
     pub fn from_token(token: &str) -> Option<Self> {
@@ -541,6 +545,10 @@ impl AttachmentInstruction {
             "x3" => Some(Self::Repeat(3)),
             "x4" => Some(Self::Repeat(4)),
             "x5" => Some(Self::Repeat(5)),
+            "x6" => Some(Self::Repeat(6)),
+            "x7" => Some(Self::Repeat(7)),
+            "x8" => Some(Self::Repeat(8)),
+            "x9" => Some(Self::Repeat(9)),
             _ => None,
         }
     }
@@ -683,13 +691,13 @@ mod tests {
 
     #[test]
     fn every_attachment_has_one_exact_source_token() {
-        assert_eq!(AttachmentInstruction::ALL.len(), 6);
+        assert_eq!(AttachmentInstruction::ALL.len(), 10);
         for attachment in AttachmentInstruction::ALL {
             let token = attachment.token();
             assert_eq!(AttachmentInstruction::from_token(&token), Some(attachment));
             assert_eq!(PrimaryInstruction::from_token(&token), None);
         }
-        for token in ["x0", "x1", "x6", "x10", "x2x3", "*x2"] {
+        for token in ["x0", "x1", "x10", "x９", "x2x3", "*x2"] {
             assert_eq!(AttachmentInstruction::from_token(token), None, "{token}");
         }
     }

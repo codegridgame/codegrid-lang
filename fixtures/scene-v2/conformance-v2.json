@@ -527,6 +527,134 @@
       "seed": "18446744073709551615",
       "custom_limit": "1000",
       "expected_status": "ProgramRejected"
+    },
+    {
+      "id": "fixed.runtime-write-allowed",
+      "level": "fixed-self-modify.json",
+      "program": "fixed-self-modify.cg",
+      "mode": "Debug",
+      "seed": "0",
+      "custom_limit": "100",
+      "expected_status": "Passed"
+    },
+    {
+      "level": "direction-stock.json",
+      "seed": "0",
+      "mode": "Debug",
+      "id": "inventory.direction-stock",
+      "program": "direction-stock.cg",
+      "expected_status": "Passed",
+      "custom_limit": "100"
+    },
+    {
+      "level": "direction-stock.json",
+      "seed": "0",
+      "mode": "Debug",
+      "id": "inventory.direction-stock-exceeded",
+      "program": "direction-stock-exceeded.cg",
+      "expected_status": "ProgramRejected",
+      "custom_limit": "100"
+    },
+    {
+      "level": "pointer-stock.json",
+      "seed": "0",
+      "mode": "Debug",
+      "id": "inventory.pointer-stock",
+      "program": "pointer-stock.cg",
+      "expected_status": "Passed",
+      "custom_limit": "100"
+    },
+    {
+      "level": "pointer-stock.json",
+      "seed": "0",
+      "mode": "Debug",
+      "id": "inventory.pointer-stock-exceeded",
+      "program": "pointer-stock-exceeded.cg",
+      "expected_status": "ProgramRejected",
+      "custom_limit": "100"
+    },
+    {
+      "id": "nonterminating.cycle",
+      "level": "../levels-scene/nonterminating-cycle.json",
+      "program": "../levels-scene/nonterminating-cycle.cg",
+      "mode": "Debug",
+      "seed": "18446744073709551615",
+      "custom_limit": "1000",
+      "expected_status": "NonTerminating"
+    },
+    {
+      "id": "nonterminating.official-cycle",
+      "level": "../levels-scene/nonterminating-cycle.json",
+      "program": "../levels-scene/nonterminating-cycle.cg",
+      "mode": "Official",
+      "seed": "18446744073709551615",
+      "custom_limit": "1000",
+      "expected_status": "NonTerminating"
+    },
+    {
+      "id": "nonterminating.robot",
+      "level": "../levels-scene/nonterminating-robot.json",
+      "program": "../levels-scene/nonterminating-robot.cg",
+      "mode": "Debug",
+      "seed": "18446744073709551615",
+      "custom_limit": "1000",
+      "expected_status": "NonTerminating"
+    },
+    {
+      "id": "nonterminating.arm",
+      "level": "../levels-scene/nonterminating-arm.json",
+      "program": "../levels-scene/nonterminating-arm.cg",
+      "mode": "Debug",
+      "seed": "18446744073709551615",
+      "custom_limit": "1000",
+      "expected_status": "NonTerminating"
+    },
+    {
+      "id": "nonterminating.no-progress-fallback",
+      "level": "../levels-scene/nonterminating-no-progress.json",
+      "program": "../levels-scene/nonterminating-no-progress.cg",
+      "mode": "Debug",
+      "seed": "18446744073709551615",
+      "custom_limit": "1000",
+      "expected_status": "ResourceLimitExceeded",
+      "work_budget": "1000"
+    },
+    {
+      "id": "nonterminating.custom-random-fallback",
+      "level": "../levels-scene/nonterminating-custom-random.json",
+      "program": "../levels-scene/nonterminating-custom-random.cg",
+      "mode": "Debug",
+      "seed": "18446744073709551615",
+      "custom_limit": "1000",
+      "expected_status": "ResourceLimitExceeded",
+      "work_budget": "1000"
+    },
+    {
+      "id": "robot.unread-replacement",
+      "level": "robot-read-observation.json",
+      "program": "robot-unread-replacement.cg",
+      "mode": "Debug",
+      "seed": "0",
+      "custom_limit": "1000",
+      "expected_status": "Passed"
+    },
+    {
+      "id": "robot.partial-replacement",
+      "level": "robot-read-observation.json",
+      "program": "robot-partial-replacement.cg",
+      "mode": "Debug",
+      "seed": "0",
+      "custom_limit": "1000",
+      "expected_status": "Passed"
+    },
+    {
+      "id": "mechanical-arm.current-hand",
+      "level": "mechanical-arm.json",
+      "program": "arm-current-hand.cg",
+      "mode": "Debug",
+      "seed": "0",
+      "custom_limit": "1000",
+      "expected_status": "TestFailed"
     }
   ]
 }

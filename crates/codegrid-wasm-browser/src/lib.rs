@@ -520,6 +520,57 @@ impl BrowserRuntime {
         self.create_instance_data(program, input, initial_memory_json, configuration_json)
     }
 
+    /// Repositions a normal thread without executing or resetting the VM.
+    pub fn reposition_thread(
+        &mut self,
+        instance: JsValue,
+        thread: JsValue,
+        x: f64,
+        y: f64,
+        direction: JsValue,
+    ) -> String {
+        let instance = bounded_string(&instance, 20)
+            .ok()
+            .and_then(|value| parse_instance_handle(&value));
+        let thread = bounded_string(&thread, 20)
+            .ok()
+            .and_then(|value| parse_u64(&value));
+        let direction = bounded_string(&direction, 5).ok();
+        let direction = match direction.as_deref().unwrap_or("") {
+            "up" => Some(Direction::Up),
+            "down" => Some(Direction::Down),
+            "left" => Some(Direction::Left),
+            "right" => Some(Direction::Right),
+            _ => None,
+        };
+        let (Some(instance), Some(thread), Some(direction), Some(x), Some(y)) = (
+            instance,
+            thread,
+            direction,
+            parse_u32_number(x),
+            parse_u32_number(y),
+        ) else {
+            return self.api_error(ApiError::InvalidConfiguration {
+                field: "thread_position",
+            });
+        };
+        match self.runtime.reposition_thread(
+            SnapshotRequest {
+                api_version: RUNTIME_API_VERSION,
+                instance,
+            },
+            thread,
+            Coordinate {
+                x: x as usize,
+                y: y as usize,
+            },
+            direction,
+        ) {
+            Ok(()) => self.snapshot_handle(&instance.get().to_string()),
+            Err(error) => self.api_error(error),
+        }
+    }
+
     /// Executes exactly one outer Global Tick.
     pub fn step(&mut self, instance: JsValue) -> String {
         let Some(instance) = bounded_string(&instance, 20).ok() else {

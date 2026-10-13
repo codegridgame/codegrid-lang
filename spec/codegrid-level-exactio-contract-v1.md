@@ -338,3 +338,8 @@ definitions do not dispatch Custom. Level permissions remain an independent
 structural acceptance contract and cannot re-enable disabled VM execution.
 Gas limit failures are structured runtime errors; failed evaluations have no
 final metrics or rating.
+
+Optional program_rules.fixed_cells follows the fixed main-board initial
+instruction contract in codegrid-scene-level-json-v2.md. Only initial submission
+is constrained; runtime self modification remains allowed.
+Optional program_rules.instruction_limits follows the initial whole-program instruction inventory section in codegrid-scene-level-json-v2.md; it is independent of capabilities and does not constrain runtime self modification.

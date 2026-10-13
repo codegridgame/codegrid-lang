@@ -189,12 +189,32 @@ pub fn validate_program_rules(
     program: &VerifiedProgram,
 ) -> Result<(), ProgramRejection> {
     let p = program.program();
+    validate_fixed_cells(r, &p.outer.main)?;
+    crate::schema::instruction_limits::validate(&r.instruction_limits, program)?;
     if p.customs.len() > r.max_custom as usize {
         return Err(reject("CustomCountExceeded", "customs"));
     }
     scoped(r, &p.outer, "outer")?;
     for (slot, c) in &p.customs {
         scoped(r, &c.program, &format!("customs[{}]", slot.get()))?;
+    }
+    Ok(())
+}
+pub(crate) fn validate_fixed_cells(
+    r: &ProgramRules,
+    board: &Board,
+) -> Result<(), ProgramRejection> {
+    for fixed in &r.fixed_cells {
+        let path = format!("outer.main.cells[{},{}]", fixed.x, fixed.y);
+        if fixed.x as usize >= board.width
+            || fixed.y as usize >= board.height
+            || board
+                .cells
+                .get(fixed.y as usize * board.width + fixed.x as usize)
+                != Some(&fixed.instruction)
+        {
+            return Err(reject("FixedCellMismatch", &path));
+        }
     }
     Ok(())
 }
@@ -271,6 +291,8 @@ mod tests {
     use std::collections::{BTreeMap, BTreeSet};
     fn rules() -> ProgramRules {
         ProgramRules {
+            instruction_limits: BTreeMap::new(),
+            fixed_cells: Vec::new(),
             allowed_instructions: instruction_identifiers()
                 .iter()
                 .map(|s| s.to_string())

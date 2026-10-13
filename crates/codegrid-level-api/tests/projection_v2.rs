@@ -47,6 +47,7 @@ fn run(value: Value, mode: EvaluationMode) -> SceneEvaluationResult {
             per_test_gas: n(profile.max_gas_per_test),
             per_call_work: n(profile.max_work_per_call),
             cumulative_work: n(profile.max_total_work),
+            no_progress_ticks: profile.no_progress_ticks.map(n),
         },
     };
     let mut session = start_scene_evaluation(
@@ -162,4 +163,105 @@ fn insufficient_response_capacity_returns_error_without_partial_success() {
         "level_api.response_too_large"
     );
     assert_eq!(project(&result)["status"], "result");
+}
+
+fn run_loop(
+    source: &str,
+    value: Value,
+    mode: EvaluationMode,
+    window: Option<u64>,
+) -> SceneEvaluationResult {
+    let profile = SafetyProfileV2::from_json(include_str!(
+        "../../../examples/scene-host-v2/profile-local-v2.json"
+    ))
+    .unwrap();
+    let level = load_scene_level_json(
+        value.to_string().as_bytes(),
+        LoadLimits {
+            max_level_bytes: 1_000_000,
+            max_tests: 100,
+            max_total_test_bytes: 1_000_000,
+        },
+    )
+    .unwrap();
+    let program = codegrid_compiler::compile(source).unwrap();
+    let config = EvaluationConfig {
+        shuffle_seed: 42,
+        custom_execution_limit: n(100),
+        safety: ExecutionSafetyProfile {
+            id: profile.profile_id.clone(),
+            version: 2,
+            max_output_bytes: n(profile.max_output_bytes),
+            max_state_units: n(profile.max_state_units),
+            max_feedback_bytes: n(profile.max_response_bytes),
+            per_test_ticks: n(profile.max_ticks_per_test),
+            per_test_gas: n(profile.max_gas_per_test),
+            per_call_work: n(profile.max_work_per_call),
+            cumulative_work: n(profile.max_total_work),
+            no_progress_ticks: window.map(n),
+        },
+    };
+    let mut session = start_scene_evaluation(
+        level,
+        program,
+        mode,
+        config,
+        profile.scene_limits.to_core().unwrap(),
+    );
+    for _ in 0..1000 {
+        if let SceneEvaluationProgress::Complete(result) = session.advance(n(1000), n(100_000)) {
+            return result;
+        }
+    }
+    panic!("bounded fixture did not terminate")
+}
+
+fn empty_tests(mut value: Value) -> Value {
+    value["evaluation"]["tests"] = json!([{"visible":true,"input":[],"expected_output":[]}]);
+    value
+}
+
+#[test]
+fn nonterminating_cycle_projects_failure_like_fault() {
+    let result = run_loop(
+        "@main\n@size 2x1\n~> >\n@end main\n",
+        empty_tests(author("exact")),
+        EvaluationMode::Debug,
+        None,
+    );
+    assert!(matches!(
+        result.status,
+        EvaluationStatus::NonTerminating(NonTerminationReason::StateCycle)
+    ));
+    let wire = project(&result);
+    let body = &wire["result"];
+    assert_eq!(body["status"], "NonTerminating");
+    assert_eq!(body["failure"]["code"], "level.state_cycle");
+    assert_eq!(body["failure"]["error_number"], "9030");
+    assert_eq!(body["failure"]["reason"], "StateCycle");
+    assert_eq!(
+        body["configuration"]["safety"]["no_progress_ticks"],
+        Value::Null
+    );
+}
+
+#[test]
+fn no_progress_window_projects_failure_and_profile_echo() {
+    let result = run_loop(
+        "@main\n@size 3x1\n~> + (\n@end main\n",
+        empty_tests(author("exact")),
+        EvaluationMode::Debug,
+        Some(64),
+    );
+    assert!(matches!(
+        result.status,
+        EvaluationStatus::NonTerminating(NonTerminationReason::NoProgress)
+    ));
+    let wire = project(&result);
+    let body = &wire["result"];
+    assert_eq!(body["status"], "NonTerminating");
+    assert_eq!(body["failure"]["code"], "level.no_progress");
+    assert_eq!(body["failure"]["error_number"], "9031");
+    assert_eq!(body["failure"]["reason"], "NoProgress");
+    assert_eq!(body["configuration"]["safety"]["no_progress_ticks"], "64");
 }

@@ -62,9 +62,9 @@ for (const id of ['robot','mechanical-arm']) {
 }
 const reactive = results.find(r=>r.id==='robot.read-observation');
 const reactiveSlice = results.find(r=>r.id==='robot.read-observation-slice');
-assert.deepEqual(reactive.result,reactiveSlice.result,'appended observation: slice result');
-assert.deepEqual(reactive.events,reactiveSlice.events,'appended observation: slice events');
-assert.equal(reactive.result.partial_metrics.ticks,'6');
+assert.deepEqual(reactive.result,reactiveSlice.result,'updated observation: slice result');
+assert.deepEqual(reactive.events,reactiveSlice.events,'updated observation: slice events');
+assert.equal(reactive.result.partial_metrics.ticks,'7');
 assert.equal(reactive.result.visible_cases[0].summary.frames,'2');
 assert.equal(reactive.result.visible_cases[0].summary.rounds,'1');
 writeFileSync(resolve(root,'target/scene-native-report.json'),JSON.stringify({runtime:'native CLI',results:native},null,2));

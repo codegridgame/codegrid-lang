@@ -70,6 +70,11 @@ pub(super) trait SceneRuntime: SceneRuntimeClone {
     fn summary(&self) -> BTreeMap<&'static str, u64>;
     fn expected_output(&self) -> Option<&[u8]>;
     fn actual_output(&self) -> Option<&[u8]>;
+    /// Deterministic semantic encoding for exact cycle detection. Must exclude
+    /// immutable definition data and monotone round/work counters.
+    fn write_semantic_state(&self, out: &mut Vec<u8>);
+    /// Monotone goal-progress counter used by no-progress detection.
+    fn progress_counter(&self) -> u64;
     fn rounds(&self) -> u64;
     fn debug_snapshot(&mut self, actor: usize) -> Option<ActorSnapshot>;
     fn round_changes(&mut self) -> Result<Vec<SceneRoundChange>, SceneCounterError>;
@@ -167,6 +172,17 @@ impl SceneRuntime for StaticRuntime {
 
     fn actual_output(&self) -> Option<&[u8]> {
         Some(&self.actual)
+    }
+
+    fn write_semantic_state(&self, out: &mut Vec<u8>) {
+        out.extend_from_slice(&(self.input.len() as u64).to_le_bytes());
+        out.extend_from_slice(&self.input);
+        out.extend_from_slice(&(self.actual.len() as u64).to_le_bytes());
+        out.extend_from_slice(&self.actual);
+    }
+
+    fn progress_counter(&self) -> u64 {
+        self.actual.len() as u64
     }
 
     fn rounds(&self) -> u64 {
@@ -280,6 +296,14 @@ impl SceneRuntime for RobotRuntime {
 
     fn actual_output(&self) -> Option<&[u8]> {
         None
+    }
+
+    fn write_semantic_state(&self, out: &mut Vec<u8>) {
+        self.world.write_semantic_state(out);
+    }
+
+    fn progress_counter(&self) -> u64 {
+        self.world.progress_counter()
     }
 
     fn rounds(&self) -> u64 {
@@ -428,6 +452,14 @@ impl SceneRuntime for MechanicalArmRuntime {
 
     fn actual_output(&self) -> Option<&[u8]> {
         Some(&self.world.actual)
+    }
+
+    fn write_semantic_state(&self, out: &mut Vec<u8>) {
+        self.world.write_semantic_state(out);
+    }
+
+    fn progress_counter(&self) -> u64 {
+        self.world.progress_counter()
     }
 
     fn rounds(&self) -> u64 {

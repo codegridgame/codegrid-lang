@@ -194,7 +194,7 @@ fn wide_counters_and_visible_failures_have_exact_wire_shapes() {
 fn page_peak_reservation_counts_owned_observations_and_changes_no_cursor_on_failure() {
     let mut store = SceneFeedbackStore::new(EvaluationMode::Debug, n(10), n(100_000));
     store
-        .stage(vec![draft(SceneEventPayload::InputAppended {
+        .stage(vec![draft(SceneEventPayload::InputUpdated {
             bytes: vec![9, 8, 7],
         })])
         .unwrap()
@@ -228,7 +228,7 @@ fn publication_encoding_is_retained_for_exact_replay() {
     let mut store = SceneFeedbackStore::new(EvaluationMode::Debug, n(10), n(100_000));
     let (batch, work) = store.stage_with_accounting(vec![
         wait(),
-        draft(SceneEventPayload::InputAppended {
+        draft(SceneEventPayload::InputUpdated {
             bytes: vec![0, 255],
         }),
     ]);

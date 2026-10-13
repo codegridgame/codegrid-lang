@@ -84,7 +84,7 @@ Unchanged-value writes still participate in conflict detection; change events
 are emitted only if the committed value actually changes.
 
 NEG accepts `?0`, `?1`, `?2`, ReadCode `*`, WriteCode `=`, and Repeat `x2` to
-`x5` using existing rules. Canonical examples are `?0$!`, `$!*`, `$!=`,
+`x9` using existing rules. Canonical examples are `?0$!`, `$!*`, `$!=`,
 `$!x2`, and `?1$!x3`. Conditions are rechecked on each repeat tick; therefore
 an even count restores the original value only if all repetitions execute.
 Without a prefix, `$!x2` restores 37 after two ticks and `$!x3` produces 219

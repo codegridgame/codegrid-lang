@@ -14,6 +14,7 @@ pub enum EvaluationStatus {
     ResourceLimitExceeded,
     Cancelled,
     Fault(FaultReason),
+    NonTerminating(NonTerminationReason),
 }
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum FaultReason {
@@ -32,6 +33,31 @@ impl FaultReason {
             Self::NumericOverflow => "level.metric_overflow",
             Self::VmFault => "level.vm_fault",
             Self::VmInitialization => "level.vm_initialization_fault",
+        }
+    }
+}
+/// Early non-termination detection outcome for an active case.
+///
+/// Detection ends the evaluation immediately, like `ResourceLimitExceeded`,
+/// without final metrics or rating. The exact state cycle reason is sound;
+/// the no-progress reason is a host-configured heuristic.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum NonTerminationReason {
+    /// An exact semantic state cycle repeats at committed tick boundaries.
+    StateCycle,
+    /// No goal progress occurred for the configured consecutive tick window.
+    NoProgress,
+}
+impl NonTerminationReason {
+    pub fn error_number(&self) -> Option<&'static str> {
+        codegrid_model::error_number("level", self.code())
+    }
+
+    /// Stable outcome identity assigned by the evaluator at detection.
+    pub const fn code(&self) -> &'static str {
+        match self {
+            Self::StateCycle => "level.state_cycle",
+            Self::NoProgress => "level.no_progress",
         }
     }
 }

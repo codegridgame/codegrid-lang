@@ -16,6 +16,8 @@ are forwarded unchanged. English messages are non-normative.
 | `level.vm_fault` | The shared VM reports a fault during level evaluation; result status is Fault and no final metrics or rating are returned. |
 | `level.vm_initialization_fault` | Standard VM initialization fails for an evaluation test; result status is Fault and no final metrics or rating are returned. |
 | `level.resource_limit` | Trusted evaluation tick/work/state/output ceiling prevents completion; no official success. |
+| `level.state_cycle` | An exact semantic case state repeats at committed tick boundaries; non-termination is proven and evaluation ends early without final metrics or rating. |
+| `level.no_progress` | Host-configured heuristic: no goal progress for the configured consecutive committed-tick window; evaluation ends early without final metrics or rating. |
 | `level.cancelled` | Evaluation cancelled; no official success. |
 | `level_api.invalid_profile` | Malformed, duplicate, unknown, zero, or unsupported host numeric/identity data; session not created. |
 | `level_api.unsupported_profile_version` | Unsupported trusted profile version; session not created. |

@@ -249,4 +249,6 @@ pub const ERROR_NUMBERS: &[(&str, &str, &str)] = &[
     ("vm", "GasLimitExceeded", "3011"),
     ("vm", "GasCounterOverflow", "3012"),
     ("vm", "CustomDisabled", "3013"),
+    ("level", "level.state_cycle", "9030"),
+    ("level", "level.no_progress", "9031"),
 ];

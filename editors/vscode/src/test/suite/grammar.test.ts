@@ -89,16 +89,20 @@ suite('TextMate grammar', () => {
     ['.3x3', 'x3', 'storage.modifier.attachment.codegrid'],
     ['?0.9x5', '?0', 'storage.modifier.condition.codegrid'],
     ['?0.9x5', 'x5', 'storage.modifier.attachment.codegrid'],
+    ['?0.9x9', 'x9', 'storage.modifier.attachment.codegrid'],
+    ['+x6', 'x6', 'storage.modifier.attachment.codegrid'],
+    ['-x7', 'x7', 'storage.modifier.attachment.codegrid'],
+    ['.x8', 'x8', 'storage.modifier.attachment.codegrid'],
     [';', ';', 'keyword.control.halt.codegrid'],
     ['// note', '// note', 'comment.line.double-slash.codegrid'],
     ['/* note */', '/*', 'comment.block.codegrid'],
   ];
 
   const INVALID: [string, string][] = [
-    ['.10', '.10'], ['.00', '.00'], ['.3*', '.3*'], ['.3=', '.3='], ['.3x1', '.3x1'], ['.3x6', '.3x6'],
+    ['.10', '.10'], ['.00', '.00'], ['.3*', '.3*'], ['.3=', '.3='], ['.3x1', '.3x1'], ['.3x10', '.3x10'],
     ['@foo', '@foo'], ['@C10', '@C10'], ['@C00', '@C00'], ['@end unknown', 'unknown'], ['@', '@'],
     ['x?', '?'], ['#00', '#00'], ['[10', '[10'], ['$10', '$10'],
-    ['&x0', '&x0'], ['+x0', '+x0'], ['+x1', '+x1'], ['+x6', '+x6'], ['+x2x3', '+x2x3'],
+    ['&x0', '&x0'], ['+x0', '+x0'], ['+x1', '+x1'], ['+x10', '+x10'], ['+x2x3', '+x2x3'],
     ['?x1', '?x1'], ['++', '++'], ['..', '..'], ['__', '__'], [';;', ';;'], [';x2', ';x2'],
     ['+x2x3', '+x2x3'], ['~x', '~x'], ['~v*', '~v*'], ['_x2', '_x2'], ['#vextra', '#vextra'],
     ['@size 0x5', '0x5'], ['@size 00x2', '00x2'], ['@size 2x2x2', '2x2x2'],
@@ -115,7 +119,7 @@ suite('TextMate grammar', () => {
   }
 
   test('does not split malformed cells into valid instruction scopes', () => {
-    for (const line of ['#vextra', '+x6', '+x2x3', ';x2']) {
+    for (const line of ['#vextra', '+x10', '+x2x3', ';x2']) {
       const tokens = tokenize(line);
       assert.ok(tokens.some((token) => token.scopes.includes('invalid.illegal.codegrid')), line);
       assert.ok(!tokens.some((token) => token.scopes.includes('keyword.operator.ifzero.codegrid')), line);

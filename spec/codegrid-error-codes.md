@@ -129,7 +129,7 @@ State effect: IR verification fails; unchecked IR cannot execute.
 | `ir.fold_primary` | A Folded Block contains a forbidden instruction. |
 | `ir.entry_instruction` | An Entry shares its cell with a Primary or Attachment. |
 | `ir.detached_attachment` | A prefix or suffix Attachment has no initial Primary (including an invalid folded prefix coordinate). |
-| `ir.repeat_count` | Repeat count is outside 2 through 5. |
+| `ir.repeat_count` | Repeat count is outside 2 through 9. |
 | `ir.attachment_primary` | A suffix Attachment is attached to a nonencodable Primary; conditional prefixes have independent eligibility. |
 | `ir.repeat_call_return` | Repeat is attached to CALL or RETURN. |
 | `ir.return_scope` | RETURN is outside a Function. |
@@ -483,3 +483,12 @@ The parser includes the rejected source atom in invalid-cell messages and descri
 | `CustomDisabled` | A Custom Primary is actually executed while Custom use is disabled. | none |
 
 These runtime errors roll back the attempted outer Tick and preserve attempted diagnostics; committed Tick does not advance.
+
+## Non-termination detection outcomes (2026-10-13)
+
+| Code | Trigger / meaning |
+| --- | --- |
+| `level.state_cycle` | An exact semantic state cycle repeats at committed tick boundaries so the active case can never make further progress; result status is NonTerminating with reason StateCycle. |
+| `level.no_progress` | No goal progress occurs for the host-configured consecutive committed-tick window; result status is NonTerminating with reason NoProgress. |
+
+The evaluator detects non-termination only while a test or scene case would otherwise continue, and ends the whole evaluation in Debug and Official modes alike. Exact state-cycle detection is enabled only when Custom invocation seeds cannot introduce tick-derived randomness (no Custom boards, or RandomDirection rejected by level rules); otherwise it stays disabled and only no-progress detection and the trusted tick/work ceilings apply. No-progress detection is an optional host heuristic and may end legitimately slow silent programs; hosts configure its window above their longest legitimate silent gap. These outcomes are evaluator policy; VM execution semantics are unchanged.

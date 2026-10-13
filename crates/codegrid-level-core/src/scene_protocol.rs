@@ -166,6 +166,25 @@ impl SceneMachine {
     pub fn actual_output(&self) -> Option<&[u8]> {
         self.runtime.actual_output()
     }
+    /// Deterministic semantic encoding used by exact cycle detection: pending
+    /// framing bytes, the outcome discriminant, and the runtime world state.
+    /// Excludes monotone frame/round/work counters.
+    pub fn semantic_state_bytes(&self) -> Vec<u8> {
+        let mut out = Vec::new();
+        out.extend_from_slice(&(self.pending.len() as u64).to_le_bytes());
+        out.extend_from_slice(&self.pending);
+        out.push(match self.outcome {
+            SceneOutcome::Running => 0,
+            SceneOutcome::Passed => 1,
+            SceneOutcome::Failed(_) => 2,
+        });
+        self.runtime.write_semantic_state(&mut out);
+        out
+    }
+    /// Monotone goal-progress counter of the underlying world.
+    pub fn progress_counter(&self) -> u64 {
+        self.runtime.progress_counter()
+    }
     /// Consume committed outer output once. Never dispatch an incomplete frame.
     pub fn consume(&mut self, value: u8) -> Result<SceneTransition, SceneCounterError> {
         self.consume_inner(value, false)
@@ -264,11 +283,7 @@ impl SceneMachine {
         };
         observation = self.runtime.end_round(observation)?;
         if feedback && self.rounds() > previous_rounds {
-            let snapshot = if self.runtime.kind() == SceneKind::MechanicalArm && self.actors == 1 {
-                Vec::new()
-            } else {
-                observation.clone()
-            };
+            let snapshot = observation.clone();
             self.work += snapshot.len() as u64;
             events.push(SceneProtocolEvent {
                 actor: None,

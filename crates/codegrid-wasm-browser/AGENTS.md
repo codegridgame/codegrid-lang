@@ -28,4 +28,6 @@ Expose the shared runtime contract to browser JavaScript through a thin browser-
 
 ## Validation
 
+- The browser `reposition_thread(instance, thread, x, y, direction)` operation uses decimal string handles/IDs, u32 coordinates and lowercase direction names. It delegates to RuntimeApi and returns a quota-checked Full snapshot. No instruction executes during repositioning.
+
 Run native adapter tests, `wasm32-unknown-unknown` compilation, and actual-browser fixtures for lifecycle, limits, exact serialization, deterministic results, and instance isolation. Verify the generated release module encodes the configured linear-memory maximum. Report unavailable host verification explicitly.

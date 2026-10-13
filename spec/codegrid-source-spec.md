@@ -154,7 +154,7 @@ An Attachment is concatenated directly to a Primary token in the same cell. The 
 | --- | --- |
 | `*` | ReadCode. |
 | `=` | WriteCode. |
-| `x2`, `x3`, `x4`, `x5` | Repeat with the stated count. |
+| `x2`–`x9` | Repeat with the stated count. |
 
 Examples of complete attached cells are `+x3`, `,*`, and `[0=`. An Attachment separated by whitespace from its Primary is detached and invalid. A cell cannot contain more than one suffix Attachment. Entry markers and HALT cannot carry a suffix. Folded Block rows cannot contain suffix Attachments.
 
@@ -169,7 +169,7 @@ ReadCode and WriteCode may be attached to any encodable Primary, defined as a Pr
 ## 7. Contextual placement and name resolution
 
 Immediate output Primaries `.0`–`.9` have no Instruction Code and may carry only
-Repeat suffixes `x2`–`x5`; conditional prefixes are allowed. `.3x3` executes
+Repeat suffixes `x2`–`x9`; conditional prefixes are allowed. `.3x3` executes
 three immediate outputs on separate ticks before moving. Forms such as `.3*`, `.3=`, `.3x1`, `.10`, `.00`, and `.-1`
 are rejected as whole atoms. Ordinary `.` retains its encoding and Attachments.
 

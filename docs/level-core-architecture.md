@@ -143,8 +143,8 @@ not undo that output. No additional output ordering or partial-tick success
 semantics are introduced by the evaluator.
 
 Dynamic scenes keep persistent Rust world state and a continuous VM per case.
-Committed output is consumed in order; observations append to the VM input tail
-without discarding unread bytes. The evaluator and scene apply the transactional
+Committed output is consumed in order; observations replace unread VM input
+with the latest complete snapshot. The evaluator and scene apply the transactional
 and actor-order rules in the [Scene Spec](../spec/codegrid-scene-spec-v1.md) and
 [session design](scene-session-design.md). Goals, action framing, scene
 failures, events, and scene metrics follow the current scene contracts. The

@@ -78,6 +78,15 @@ retry sequences may have different safety work totals although successful
 semantic results match. Exact-ceiling completion needs no further work and can
 pass; a ceiling with unfinished work cannot pass.
 
+Non-termination detection runs at each committed-tick rest point, before the
+tick and work ceilings. An exact repeat of the future-determining case state
+(including the monotone goal-progress counter) proves that no further progress
+is possible and ends the evaluation immediately as `NonTerminating`. Hosts may
+additionally configure a no-progress tick window as a heuristic backstop.
+Both reasons carry no final metrics or rating and remain distinct from
+`ResourceLimitExceeded`; exact detection is disabled when case semantics
+depend on the global tick through custom-invoked random behavior.
+
 ## Deployment policy
 
 [local-v1.json](../fixtures/levels/profiles/local-v1.json) is a named repeatable

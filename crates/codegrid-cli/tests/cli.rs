@@ -1207,6 +1207,37 @@ fn evaluate_response_ceiling_returns_resource_exit_code() {
 }
 
 #[test]
+fn evaluate_reports_nonterminating_before_the_tick_ceiling() {
+    let profile = TempFile::new(
+        "json",
+        include_bytes!("../../../examples/scene-host-v2/profile-local-v2.json"),
+    );
+    let level = TempFile::new(
+        "json",
+        include_bytes!("../../../fixtures/levels-scene/nonterminating-cycle.json"),
+    );
+    let source = TempFile::new(
+        "cg",
+        include_bytes!("../../../fixtures/levels-scene/nonterminating-cycle.cg"),
+    );
+    let output = run_cli(&evaluate_args(
+        level.text_path(),
+        source.text_path(),
+        profile.text_path(),
+    ));
+    assert_eq!(output.status.code(), Some(9));
+    let result = parse_result(&output)["result"].clone();
+    assert_eq!(result["status"], "NonTerminating");
+    assert_eq!(result["failure"]["code"], "level.state_cycle");
+    assert_eq!(result["failure"]["error_number"], "9030");
+    let ticks: u64 = result["partial_metrics"]["ticks"]
+        .as_str()
+        .and_then(|t| t.parse().ok())
+        .expect("ticks metric is a decimal string");
+    assert!(ticks < 100, "cycle detection must stop early: {ticks}");
+}
+
+#[test]
 fn current_scene_api_is_the_default_and_executes_manifest() {
     let root = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../..");
     let profile = root.join("examples/scene-host-v2/profile-local-v2.json");

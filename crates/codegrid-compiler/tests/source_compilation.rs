@@ -30,7 +30,7 @@ fn conditional_prefixes_preserve_references_and_fold_restrictions() {
 fn immediate_outputs_allow_only_repeat_suffixes() {
     compile("~> .0 .1 .2 .3 .4 .5 .6 .7 .8 .9 . ;\n").unwrap();
     for digit in 0..10 {
-        for count in 2..=5 {
+        for count in 2..=9 {
             for prefix in ["", "?0", "?1", "?2"] {
                 let token = format!("{prefix}.{digit}x{count}");
                 let program = compile(&format!("~> {token} ;\n")).unwrap();
@@ -42,7 +42,7 @@ fn immediate_outputs_allow_only_repeat_suffixes() {
         }
     }
     for atom in [
-        ".10", ".00", ".-1", ".９", ".3*", ".3=", ".3x1", ".3x6", ".3x3*", ".3x3x2",
+        ".10", ".00", ".-1", ".９", ".3*", ".3=", ".3x1", ".3x10", ".3x3*", ".3x3x2",
     ] {
         let errors = compile(&format!("~> {atom} ;\n")).unwrap_err();
         assert!(
@@ -91,8 +91,8 @@ fn invalid_cells_identify_the_atom_and_specific_rule_without_masking_prefix_erro
         (".3*", "Immediate output .0 through .9 allows only Repeat"),
         ("?0.3*", "Immediate output .0 through .9 allows only Repeat"),
         (
-            ".3x6",
-            "Repeat count must be a single digit from 2 through 5",
+            ".3x10",
+            "Repeat count must be a single digit from 2 through 9",
         ),
         (".10", "exactly one ASCII digit"),
         ("[0x3", "Repeat is not allowed on Function CALL"),

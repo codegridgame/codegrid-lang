@@ -573,7 +573,10 @@ pub fn load_scene_level_json(
     };
     let definition_units = case_units
         .iter()
-        .try_fold(config_units, |n, units| n.checked_add(*units))
+        .try_fold(
+            config_units + rules.fixed_cells.len() as u64 + rules.instruction_limits.len() as u64,
+            |n, units| n.checked_add(*units),
+        )
         .ok_or_else(|| LevelError::invalid("TestDataSizeExceeded", "$.evaluation.tests"))?;
     Ok(ValidatedSceneLevel {
         level_id: id.into(),

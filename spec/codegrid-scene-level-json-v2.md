@@ -26,7 +26,7 @@ independently specified language IR and runtime contracts.
 Use UTF-8 JSON without a BOM or comments. Reject duplicate keys, unknown fields
 at every object level, omitted required fields, incorrect types, fractional or
 out-of-range numbers, and unsupported versions/enums. There are no implicit
-field defaults except the explicitly specified Robot color default. Null is legal only where explicitly listed. Array order is
+field defaults except the explicitly specified Robot color default and optional empty fixed_cells/instruction_limits. Null is legal only where explicitly listed. Array order is
 semantic; object-key order is not. Boolean is not an integer. Do not truncate
 wide integers or bytes. Preserve exact Unicode IDs without normalization.
 
@@ -253,7 +253,7 @@ Size counts each nonempty source cell, including explicit Entry and each Folded
 Block reference. Folded Block body nonempty cells count once per definition,
 including unused definitions. Function bodies count once, including unused
 functions. Implicit Entry adds no cell. Runtime code changes do not alter Size.
-No fixed-cell exemption exists in the current program contract.
+Fixed initial instructions count normally toward Size; they have no metric exemption.
 
 Each test starts with independent Gas, cold-memory tracking, and stack capacity
 peaks. `gas_used`, `execution_gas`, `memory_gas`, and `stack_gas` are summed over
@@ -266,3 +266,56 @@ Only `gas_used` is selectable for scoring or a soft Gas constraint; breakdown
 metrics are diagnostic result fields, not author-defined score dimensions.
 Failed evaluations have no final metrics or rating. Runtime Gas-limit failure
 remains a structured runtime error and cannot produce a successful score.
+
+## Fixed main-board initial instructions (2026-10-11)
+
+`program_rules.fixed_cells` is optional; omission means no fixed cells. Each
+entry is exactly `{ "x": 0, "y": 0, "instruction": { "main": ",", "prefix": null, "suffix": null } }`.
+Coordinates are zero-based main-board coordinates within main_board bounds,
+with no duplicate positions. Main is a current primary instruction token;
+prefix is null or ?0/?1/?2/?!; suffix is null or a legal current suffix.
+No Function-board positions or explicit Entry tokens are accepted.
+The submitted initial program must contain each exact complete instruction at
+that position, otherwise it is ProgramRejected/FixedCellMismatch. This policy
+only restricts player editing of the initial program: runtime self modification
+can rewrite fixed cells. Existing capability permissions, counts and metrics
+still apply without exemptions. Host editors may seed these cells in drafts.
+
+## Initial instruction inventories (2026-10-11)
+
+Optional `program_rules.instruction_limits` is an object from instruction type
+to unsigned integer maximum (0..4294967295); absent keys are unlimited.
+Example: `{ "DIRECTION": 1, "REGISTER_POINTER": 2 }`. Zero forbids placement.
+This counts the whole submitted initial program: Main, Functions, Custom
+sources, fixed cells and every Folded Block definition once, including unused
+bodies. Explicit Entry is not a direction Primary. Runtime self modification
+is allowed to change quantities; permissions still apply to generated code.
+Excess inventory is ProgramRejected/InstructionCountExceeded with a path to
+the limiting inventory key. Permissions and quantities are independent.
+
+Individual primary and attachment identifiers from the capability vocabulary
+are supported; OUTPUT_IMMEDIATE counts all ten immediate forms separately
+from OUTPUT. Group members are:
+
+| Group | Members |
+| --- | --- |
+| DIRECTION | MOVE_UP, MOVE_DOWN, MOVE_LEFT, MOVE_RIGHT |
+| REGISTER_POINTER | POINTER_LEFT, POINTER_RIGHT |
+| STACK | PUSH, POP_ADD |
+| CODEC | DECODE, ENCODE |
+| MEMORY | MEMORY_LOAD, MEMORY_STORE, PAGE_INCREMENT, PAGE_DECREMENT |
+| PAGE | PAGE_INCREMENT, PAGE_DECREMENT |
+| SHIFT | SHIFT_LEFT, SHIFT_RIGHT |
+| CALL | CALL, RETURN |
+| CUSTOM | CUSTOM, CUSTOM_RETURN |
+| UNARY | CLEAR, ADD, SUB, NEG, SHIFT_LEFT, SHIFT_RIGHT |
+| BINARY | NAND, CMP |
+| SELF_MODIFY | ENCODE, DECODE, READ_CODE, WRITE_CODE |
+| PREFIX_CONDITION | CONDITION_0, CONDITION_1, CONDITION_2, CONDITION_FLAG |
+| CUSTOMIZATION | CALL, RETURN, CUSTOM, CUSTOM_RETURN, FOLDED_BLOCK |
+| SPECIAL | RANDOM_DIRECTION, REPEAT, OUTPUT_IMMEDIATE |
+
+Each matching Primary, prefix or suffix consumes one item. Repeat x2-x9 is one
+placed suffix; runtime repetitions do not consume more inventory. All configured
+limits apply simultaneously, including overlapping individual and group limits.
+The inventory object has at most 64 keys; unknown types are rejected.

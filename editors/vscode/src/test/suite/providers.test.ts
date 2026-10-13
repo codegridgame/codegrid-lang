@@ -44,7 +44,7 @@ suite('Full standalone providers', () => {
 
   test('completion offers only the applicable static attachment spellings', async () => {
     const add = await complete(await openDoc('~> +x'), 0, 5);
-    assert.deepStrictEqual(add.sort(), ['+x2', '+x3', '+x4', '+x5'].sort());
+    assert.deepStrictEqual(add.sort(), ['+x2', '+x3', '+x4', '+x5', '+x6', '+x7', '+x8', '+x9'].sort());
 
     const call = await complete(await openDoc('~> [0'), 0, 5);
     assert.ok(call.includes('[0*'));

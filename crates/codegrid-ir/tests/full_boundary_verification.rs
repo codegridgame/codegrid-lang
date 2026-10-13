@@ -421,7 +421,7 @@ fn rejects_invalid_attachment_placement_and_repeat_counts() {
         .iter()
         .any(|error| error.message.contains("cannot have an Attachment")));
 
-    for invalid_count in [0, 1, 6, u8::MAX] {
+    for invalid_count in [0, 1, 10, u8::MAX] {
         let invalid_repeat = program(board(
             vec![
                 Cell::entry(Direction::Right),
@@ -431,11 +431,11 @@ fn rejects_invalid_attachment_placement_and_repeat_counts() {
             1,
         ));
         assert!(VerifiedProgram::new(invalid_repeat)
-            .expect_err("Repeat counts outside 2 through 5 must be rejected")
+            .expect_err("Repeat counts outside 2 through 9 must be rejected")
             .iter()
             .any(|error| error
                 .message
-                .contains("Repeat count must be from 2 through 5")));
+                .contains("Repeat count must be from 2 through 9")));
     }
 
     let entry_attachment = program(board(

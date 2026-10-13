@@ -46,6 +46,20 @@ pub(crate) fn positive<'de, D: serde::Deserializer<'de>>(d: D) -> Result<u64, D:
         .filter(|n| *n > 0)
         .ok_or_else(|| serde::de::Error::custom("Expected a positive canonical u64 decimal string"))
 }
+/// Absent or null disables the option; a present value stays canonical and positive.
+pub(crate) fn optional_positive<'de, D: serde::Deserializer<'de>>(
+    d: D,
+) -> Result<Option<u64>, D::Error> {
+    match Option::<String>::deserialize(d)? {
+        None => Ok(None),
+        Some(text) => parse_decimal(&text)
+            .filter(|n| *n > 0)
+            .map(Some)
+            .ok_or_else(|| {
+                serde::de::Error::custom("Expected a positive canonical u64 decimal string")
+            }),
+    }
+}
 pub(crate) fn parse_decimal(text: &str) -> Option<u64> {
     if text.is_empty()
         || (text.len() > 1 && text.starts_with('0'))

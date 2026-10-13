@@ -50,3 +50,10 @@ and `configuration.safety.max_gas_per_test` as a decimal string. Metric values
 remain exact decimal strings. Current score fields are `gas_used` and `size`,
 with `max_gas` and `max_size` constraints. Result-only Gas breakdown fields
 are `execution_gas`, `memory_gas`, and `stack_gas`.
+
+The profile may also carry an optional `no_progress_ticks` heuristic ceiling;
+absent or null disables it. Results project it as
+`configuration.safety.no_progress_ticks`. An evaluation ended by proven exact
+state-cycle detection or by that heuristic reports status `"NonTerminating"`
+with a failure object carrying `level.state_cycle`/`level.no_progress`,
+mirroring the fault shape; no final metrics or rating are returned.

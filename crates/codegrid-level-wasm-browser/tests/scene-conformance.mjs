@@ -48,6 +48,10 @@ export function runSceneConformance(request, cases, assert) {
     } else {
       assert(call('scene_feedback', {evaluation_handle: started.handle, after_sequence: '0', max_events: '1'}).error.code === 'level_api.invalid_configuration', fixture.id + ': Official privacy');
     }
+    if (fixture.id === 'mechanical-arm.current-hand') {
+      const snapshots = events.filter(event => event.kind === 'InputUpdated').map(event => event.data.bytes);
+      assert(JSON.stringify(snapshots) === JSON.stringify([[255], [13], [13], [255], [255]]), 'single-arm updates every command');
+    }
     results.push({id: fixture.id, result: response.result, events});
     assert(JSON.stringify(call('evaluation_result', {evaluation: started.handle}).result) === JSON.stringify(response.result), fixture.id + ': stable result');
     for (const [kind, handle] of [['evaluation', started.handle], ['program', program.handle], ['level', level.handle]]) {

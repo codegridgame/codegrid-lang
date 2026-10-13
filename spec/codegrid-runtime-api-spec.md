@@ -1,5 +1,18 @@
 # CodeGrid Runtime API Specification
 
+## Explicit thread repositioning (2026-10-12)
+
+RuntimeApi exposes `reposition_thread(SnapshotRequest, thread_id, Coordinate,
+Direction)` as a host control between synchronous steps. It validates the API
+version and instance and delegates to the VM. Only an existing normal-phase
+thread in a running VM can move, within its current board. The operation
+changes only position/direction and preserves every other state field, code,
+resource and metric. It neither executes nor commits a tick. Rejection is
+atomic and uses `InvalidConfiguration { field: "thread_position" }` after
+version/handle checks. The browser binding exposes the operation and returns
+a Full snapshot; server HTTP/portable dispatch does not expose this control.
+No game, level-selection or scheduling policy belongs to this operation.
+
 **Implemented amendment (2026-10-08):**
 [Status Flag and directionless READ](../docs/status-flag-and-read.md) defines the current F state,
 `?!`, directionless `,`, empty POPADD flag and Level permissions. These rules

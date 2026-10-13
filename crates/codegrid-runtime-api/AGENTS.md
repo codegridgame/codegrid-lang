@@ -27,4 +27,6 @@ keep raw request/response error identities and details independent of locale.
 
 ## Validation
 
+- `reposition_thread` validates the API version and instance, then delegates boundary/thread/coordinate checks to the VM. Rejection uses `InvalidConfiguration` with field `thread_position`, without executing a tick.
+
 Test API version/error distinctions, host limits, handle isolation and release, multiple instances, and parity with the shared conformance fixtures.

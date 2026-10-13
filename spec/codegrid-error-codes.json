@@ -1,5 +1,5 @@
 {
-  "registry_version": 2,
+  "registry_version": 3,
   "compatibility": "Append-only identifiers; existing code meaning and spelling are stable. Message wording is not normative.",
   "entries": [
     {
@@ -482,7 +482,7 @@
     {
       "layer": "ir",
       "code": "ir.repeat_count",
-      "condition": "Repeat count is outside 2 through 5.",
+      "condition": "Repeat count is outside 2 through 9.",
       "surface": "IrError.code; compiler forwards the original IR code into Diagnostic.code with compiler source spans.",
       "state_effect": "IR verification fails; unchecked IR cannot execute.",
       "code_type": "string",
@@ -2237,6 +2237,24 @@
       "details": "none",
       "code_type": "string",
       "error_number": "3013"
+    },
+    {
+      "layer": "level",
+      "code": "level.state_cycle",
+      "condition": "An exact semantic state cycle repeats at committed tick boundaries so the active case can never make further progress.",
+      "surface": "Level outcome and evaluation result presentation; hidden details remain redacted.",
+      "state_effect": "Evaluation ends without final metrics or rating; no official success.",
+      "code_type": "string",
+      "error_number": "9030"
+    },
+    {
+      "layer": "level",
+      "code": "level.no_progress",
+      "condition": "No goal progress occurs for the host-configured consecutive committed-tick window.",
+      "surface": "Level outcome and evaluation result presentation; hidden details remain redacted.",
+      "state_effect": "Evaluation ends without final metrics or rating; no official success.",
+      "code_type": "string",
+      "error_number": "9031"
     }
   ]
 }

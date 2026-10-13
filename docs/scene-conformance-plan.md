@@ -39,14 +39,14 @@ The Rust v2 loader now validates the complete author examples. Native protocol a
 | arm.final-output | Final expected robot output by A; B would act illegally | Stop after A; B is not validated/dispatched; constraints still checked |
 
 Every table precondition, GRAB/DROP matrix entry, input/output conveyor rule,
-single-arm event append, dual-arm snapshot, and map validation rule also needs
+single-arm and dual-arm current-hand snapshots, and map validation rule also needs
 direct positive/negative cases from Scene Spec Section 11.
 
 ## Session invariants
 
 | Case ID | Required evidence |
 | --- | --- |
-| session.tick-append | Output triggers observation; next tick READ sees it; identical under small/large advance slices |
+| session.tick-update | Output triggers observation; next tick READ sees it; identical under small/large advance slices |
 | session.queue-tail | Existing unread [9,8] plus new [2,7] becomes [9,8,2,7] |
 | session.partial-frame | A output alone changes no world; survives Pending; B completes exactly one frame |
 | session.invalid-B | Valid A changes world, illegal B fails; A effect remains, round-end work does not run |
@@ -57,7 +57,7 @@ direct positive/negative cases from Scene Spec Section 11.
 | session.constraint | Goal and constraint breach coincide; ConstraintExceeded, never Passed |
 | session.state | Registers, memory, stacks, mutable code, input, and PRNG persist within case; No per-action VM reconstruction |
 | session.reset | Next case begins after a self-modifying, stateful case; Standard state and original verified code; no queued bytes/frame/world leak |
-| session.capacity | Observation cannot be fully reserved; ResourceLimitExceeded; no partial append or speculative round events |
+| session.capacity | Observation cannot be fully reserved; ResourceLimitExceeded; no partial replacement or speculative round events |
 | session.privacy | Hidden case/inspection and visible permitted observation; No hidden definitions/traces/metrics escape projections |
 
 ## Delivery gates and evidence
@@ -67,7 +67,7 @@ direct positive/negative cases from Scene Spec Section 11.
    loader-accepted fixtures and planned scene IDs from executable capability IDs.
 2. Add focused validation and transition tests in the Rust level layer; use
    shared VM semantics without a TypeScript scene evaluator or parser.
-3. Add the continuous-case loop and input-append tests before registering the
+3. Add the continuous-case loop and input-replacement tests before registering the
    first dynamic scene. Compare step-based and bounded advance execution.
 4. Register scenes individually only after their schema and direct protocol
    cases pass. Extend the existing conformance manifest without changing its
@@ -107,12 +107,12 @@ The Rust `scene_protocol` layer constructs scenes from validated definitions,
 frames dual actor bytes before dispatch, stops at terminal A, and preserves A
 effects when B fails. Private `scene_world` transitions implement Robot and MechanicalArm; static
 comparisons use ExactIO.
-The Rust-only VM `append_input` reserves whole appends and preserves unread data
+The Rust-only VM `replace_input` reserves whole replacements and discards unread data
 and execution metrics.
 
 `cargo test -p codegrid-vm -p codegrid-level-core` passes 57 level core tests
 and 165 VM tests. New evidence includes nine world unit tests, six validated
-protocol integration tests, and two input-append tests, including append after a
+protocol integration tests, and two input-replacement tests, including input mutation after a
 rolled-back work interruption. These are focused transition tests, not proof of
 all acceptance vectors or host parity. Continuous evaluation, bounded scene work,
 feedback projection, host v2 integration, and actual WASM comparisons remain
