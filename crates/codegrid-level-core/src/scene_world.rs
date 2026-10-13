@@ -423,9 +423,22 @@ impl ArmWorld {
         }
         None
     }
-    pub fn complete(&self) -> bool {
-        self.mode == crate::MechanicalArmMode::OutputSequence
-            && self.actual.len() == self.expected.len()
+    pub fn complete(&mut self) -> bool {
+        if self.mode == crate::MechanicalArmMode::FinalLayout {
+            self.work += self
+                .contents
+                .iter()
+                .map(|s| s.len() as u64 + 1)
+                .sum::<u64>();
+            let matched = serialized_layout_matches(&self.contents, &self.expected);
+            if matched {
+                self.work += self.expected.len() as u64;
+                self.actual.clone_from(&self.expected);
+            }
+            matched
+        } else {
+            self.actual.len() == self.expected.len()
+        }
     }
     pub fn halt_complete(&mut self) -> bool {
         if self.mode == crate::MechanicalArmMode::FinalLayout {
@@ -433,6 +446,19 @@ impl ArmWorld {
             self.actual == self.expected
         } else {
             self.complete()
+        }
+    }
+    pub fn mode_is_final_layout(&self) -> bool {
+        self.mode == crate::MechanicalArmMode::FinalLayout
+    }
+    pub fn frame_peak_growth_units(&self, actors: usize) -> u64 {
+        if self.mode == crate::MechanicalArmMode::FinalLayout {
+            self.expected.len() as u64
+        } else {
+            self.expected
+                .len()
+                .saturating_sub(self.actual.len())
+                .min(actors) as u64
         }
     }
     fn layout(&self) -> Vec<u8> {
@@ -599,6 +625,13 @@ impl ArmWorld {
     }
 }
 
+pub(crate) fn serialized_layout_matches(contents: &[Vec<u8>], expected: &[u8]) -> bool {
+    contents
+        .iter()
+        .flat_map(|stack| std::iter::once(stack.len() as u8).chain(stack.iter().copied()))
+        .eq(expected.iter().copied())
+}
+
 #[cfg(test)]
 mod arm_redesign_tests {
     use super::*;
@@ -682,7 +715,7 @@ mod arm_redesign_tests {
             &[],
             &[2, 9, 1, 0, 0, 0, 0, 0],
         );
-        assert!(!arm.complete());
+        assert!(arm.complete());
         assert!(arm.halt_complete());
         arm.hands[0] = Some(0);
         assert!(arm.halt_complete());

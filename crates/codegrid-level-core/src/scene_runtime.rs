@@ -75,6 +75,9 @@ pub(super) trait SceneRuntime: SceneRuntimeClone {
     fn take_initial_input(&mut self) -> Vec<u8>;
     fn initialization_work(&self, actors: usize, initial_input_len: usize) -> u64;
     fn retained_units(&self) -> u64;
+    fn frame_peak_growth_units(&self, _actors: usize) -> u64 {
+        0
+    }
     fn transition_work(&self, actors: usize, observation_is_empty: bool) -> u64;
     fn summary(&self) -> BTreeMap<&'static str, u64>;
     fn expected_output(&self) -> Option<&[u8]>;
@@ -355,6 +358,9 @@ impl MechanicalArmRuntime {
 }
 
 impl SceneRuntime for MechanicalArmRuntime {
+    fn initial_complete(&mut self) -> bool {
+        self.world.mode_is_final_layout() && self.world.complete()
+    }
     fn kind(&self) -> SceneKind {
         SceneKind::MechanicalArm
     }
@@ -464,6 +470,10 @@ impl SceneRuntime for MechanicalArmRuntime {
 
     fn retained_units(&self) -> u64 {
         self.world.retained_units()
+    }
+
+    fn frame_peak_growth_units(&self, actors: usize) -> u64 {
+        self.world.frame_peak_growth_units(actors)
     }
 
     fn transition_work(&self, actors: usize, observation_is_empty: bool) -> u64 {

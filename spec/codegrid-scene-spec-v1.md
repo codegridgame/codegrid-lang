@@ -67,7 +67,7 @@ fail with the logical reason `IncompleteGoal`; a partially collected dual-actor
 frame is also unfinished. ExactIO with empty expected output pass
 only on successful HALT without any output. Complete nonempty ExactIO/OUTPUT_SEQUENCE goals pass
 immediately without requiring HALT or consumption of remaining input. MechanicalArm
-FINAL_LAYOUT compares only on normal VM termination.
+FINAL_LAYOUT compares after each complete valid action round and passes immediately when the target matches; an initially matching layout passes at initialization.
 
 Scene outcome names are logical categories, not new published error codes:
 
@@ -277,8 +277,9 @@ Robot retains its existing ordered dispatch and early-terminal behavior.
 OUTPUT_SEQUENCE requires OUTPUT and a nonempty expected sequence. Prefix
 mismatch/overflow fails; completion passes after the entire valid round.
 Remaining modules are allowed. FINAL_LAYOUT permits only STACK/FLIP and
-compares exact station contents only at normal VM termination, never at a
-resource limit, cancellation, or fault. Serialize stations in numeric order,
+compares exact station contents after each complete valid action round. A matching
+layout passes immediately; an initially matching layout passes at initialization.
+Resource limits, cancellation and faults do not independently trigger success. Serialize stations in numeric order,
 each count followed by bottom-to-top bytes. Hands/directions are excluded.
 Initial/target inventories must match with face bit cleared; a held module
 therefore leaves a target module missing. Each case starts fresh VM/world.
@@ -340,7 +341,7 @@ reopen the accepted gameplay protocol.
 | Shared | Fresh-case isolation including self-modified code; same-case memory persistence; replace unread old snapshots; empty READ; HALT with incomplete frame/goal; failed VM tick consumes no scene output; terminal goal with pending B |
 | ExactIO | First/middle mismatch; final match; unread input; empty expected and HALT; empty expected and output |
 | Robot | All directions; boundary/VOID/door blocking; forward same-height and jump different-height; swap/shared-target/vacated-cell collision; shared patrols; trigger activation and one-round door delay; snapshots |
-| MechanicalArm | All 192 module bytes; capacities and weighted stacks; FIFO input; immediate flips; atomic complete frames; shared no-op conflicts; refreshed hands; exact output sequence; final layouts on normal termination |
+| MechanicalArm | All 192 module bytes; capacities and weighted stacks; FIFO input; immediate flips; atomic complete frames; shared no-op conflicts; refreshed hands; exact output sequence; immediate final-layout success after valid rounds |
 | Hosts | Same definitions, inputs, actions, statuses, errors, metrics, and privacy projections in actual native/browser/server execution before claiming parity |
 
 This document establishes requirements, not implementation or test-pass evidence.

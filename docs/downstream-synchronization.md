@@ -184,3 +184,30 @@ builds; six actual browser arm checks at 1440/375/320px; offline Electron
 execution/persistence. Editor chunk-size warnings remain. No production
 Workerd publication, Steamworks or physical-device acceptance is claimed.
 Steam's independent game-screen rebuild remains outside this scene/editor work.
+
+## 2026-10-14 MechanicalArm scene-state peak accounting
+
+The Level Core initialization bound now includes the serialized target copy
+materialized when a FINAL_LAYOUT already matches at initialization. Completed
+frame peak accounting reserves that whole copy for FINAL_LAYOUT and only the
+remaining OUTPUT_SEQUENCE bytes that the actors can produce in the frame.
+The runtime and preconstruction bound share one layout comparison helper.
+Scene and language contracts are unchanged.
+
+Rebuilt the browser and portable Level WASM artifacts and synchronized the
+editor vendor set and API level-eval copy. Source base:
+`2bd78699985256d3baf66a593021fce631b04892`, `source_dirty=true`; evaluator:
+`codegrid-level-source-sha256:b5be1e478c920fc8518dc59e7fcc94e1866333f57bf027f614968eb46b140f3d`.
+Browser WASM SHA-256: `97e6f02953945a4dbd3c82eb55feb0fad78e6db827ff3116374e254dccb1d59c`;
+portable WASM: `2e425528a05b594a7941cc776522011874e11a0898efd6522ef84728f27bbc39`;
+generated browser JavaScript: `3757c44e2e6da1e583f7e81b7c7e439794d201879960789737431b1ac59629a7`;
+editor-patched JavaScript: `4a012f01b18f50c8f8dc82b485def29ac1ec5aa4c97e33ded6991530d98699b5`.
+The declaration hash remains `fb761259e98e4eb4b87001cd2c561849400f6892119eb9c057d0ef9fd30536a8`.
+
+Formatter, pinned-toolchain check, Level Core/API `cargo check`, the locked
+browser/server WASM release build, wasm-bindgen generation, downstream workspace
+typecheck, and editor/API production builds passed. Regression suites and
+four-host scene comparisons were not run for this correction, so runtime
+verification remains incomplete. Downstream synchronization is incomplete
+until those regression and four-host checks are run. No deployment or
+production-host acceptance is claimed.

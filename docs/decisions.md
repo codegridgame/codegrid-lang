@@ -946,8 +946,9 @@ Dual A/B commands are atomic: preflight shared GRAB/DROP conflicts including
 no-ops, stage A then B, commit only if both succeed. A finishing output cannot
 bypass B. Failed scene rounds do not roll back VM ticks.
 OUTPUT_SEQUENCE passes after a valid complete round matches all expected bytes.
-FINAL_LAYOUT forbids conveyors and compares exact count-prefixed contents only
-at normal termination, excluding hands/directions. Initial/target inventory
+FINAL_LAYOUT forbids conveyors and compares exact count-prefixed contents at
+initialization and each complete valid action round, excluding hands/directions.
+A match passes immediately, without VM termination; both actors finish atomically. Initial/target inventory
 conserves modules with face bit masked; heavy remains below light. Loading FLIP
 contents preserves authored face. No compatibility reader, player-data rewrite,
 or mandatory version bump is introduced.

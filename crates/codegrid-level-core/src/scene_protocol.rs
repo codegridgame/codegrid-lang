@@ -149,7 +149,7 @@ impl SceneMachine {
     }
     pub fn transition_peak_units(&self) -> u64 {
         if self.runtime.kind() == SceneKind::MechanicalArm && self.will_complete_frame() {
-            self.runtime.retained_units()
+            self.runtime.retained_units() + self.runtime.frame_peak_growth_units(self.actors)
         } else {
             0
         }
@@ -494,6 +494,45 @@ mod atomic_arm_tests {
     fn frame(machine: &mut SceneMachine, a: u8, b: u8) -> SceneTransition {
         assert!(!machine.consume_debug(a).unwrap().completed_frame);
         machine.consume_debug(b).unwrap()
+    }
+    #[test]
+    fn matching_final_layout_waits_for_the_whole_valid_dual_frame() {
+        for b in [0, 99] {
+            let mut initial = vec![vec![]; 10];
+            initial[0] = vec![0];
+            let expected = vec![0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+            let mut runtime = MechanicalArmRuntime::new(
+                2,
+                MechanicalArmMode::FinalLayout,
+                &vec![StationType::Stack; 10],
+                &initial,
+                &[],
+                &expected,
+            );
+            let initial_input = runtime.take_initial_input();
+            let mut machine = SceneMachine {
+                runtime: Box::new(runtime),
+                actors: 2,
+                pending: vec![],
+                outcome: SceneOutcome::Running,
+                frames: 0,
+                initial_input,
+                work: 0,
+            };
+            frame(&mut machine, 1, 0);
+            frame(&mut machine, 4, 0);
+            let a = machine.consume_debug(2).unwrap();
+            assert_eq!(a.outcome, SceneOutcome::Running);
+            let completed = machine.consume_debug(b).unwrap();
+            if b == 0 {
+                assert_eq!(completed.outcome, SceneOutcome::Passed);
+                assert_eq!(machine.actual_output(), Some(expected.as_slice()));
+            } else {
+                assert!(matches!(completed.outcome, SceneOutcome::Failed(_)));
+                assert_eq!(machine.rounds(), 2);
+                assert!(completed.events.is_empty());
+            }
+        }
     }
     #[test]
     fn invalid_b_cancels_a_and_publishes_no_effects() {

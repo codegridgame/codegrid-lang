@@ -90,7 +90,7 @@
       {
         "visible": true,
         "initial_station_contents": [
-          [],
+          [0],
           [],
           [],
           [],
@@ -103,7 +103,7 @@
         ],
         "target_station_contents": [
           [],
-          [],
+          [0],
           [],
           [],
           [],

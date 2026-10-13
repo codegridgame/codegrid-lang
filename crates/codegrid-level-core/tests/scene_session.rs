@@ -265,7 +265,7 @@ fn replacement_fits_queue_limit_and_discards_partial_snapshot() {
 }
 
 #[test]
-fn final_layout_compares_on_normal_halt_and_requires_all_modules() {
+fn final_layout_passes_on_matching_round_and_requires_all_modules() {
     let mut v = author("arm");
     v["scene_config"]["mode"] = json!("FINAL_LAYOUT");
     for station in v["scene_config"]["stations"].as_array_mut().unwrap() {
@@ -273,7 +273,7 @@ fn final_layout_compares_on_normal_halt_and_requires_all_modules() {
     }
     v["evaluation"]["tests"][0] = json!({"visible":true,"initial_station_contents":[[0],[],[],[],[],[]],"target_station_contents":[[],[0],[],[],[],[]]});
     let solved = run(
-        session(&v, program(&[".1", ".4", ".2", ";"]), config(), limits()),
+        session(&v, program(&[".1", ".4", ".2"]), config(), limits()),
         1,
     );
     assert_eq!(solved.status, EvaluationStatus::Passed);
@@ -282,4 +282,32 @@ fn final_layout_compares_on_normal_halt_and_requires_all_modules() {
     v["evaluation"]["tests"][0]["target_station_contents"] = json!([[0], [], [], [], [], []]);
     let initial = run(session(&v, program(&[";"]), config(), limits()), 1);
     assert_eq!(initial.status, EvaluationStatus::Passed);
+    assert_eq!(initial.metrics["ticks"], 0);
+}
+
+#[test]
+fn four_module_target_passes_before_the_users_ring_program_repeats() {
+    let mut v = author("arm");
+    v["program_rules"]["main_board"] = json!({"width":3,"height":3});
+    v["scene_config"]["mode"] = json!("FINAL_LAYOUT");
+    for station in v["scene_config"]["stations"].as_array_mut().unwrap() {
+        station["station_type"] = json!("STACK");
+    }
+    v["evaluation"]["tests"][0] = json!({"visible":true,"initial_station_contents":[[0,0,0,0],[],[],[],[],[]],"target_station_contents":[[],[0,0,0,0],[],[],[],[]]});
+    let cells = [">", ".1", "v", ".3", "_", ".4", "^", ".2", "<"]
+        .iter()
+        .map(|token| {
+            if *token == "_" {
+                Cell::empty()
+            } else {
+                Cell::instruction(PrimaryInstruction::from_token(token).unwrap(), None)
+            }
+        })
+        .collect();
+    let p = grid(cells, 3, 3);
+    let small = run(session(&v, p.clone(), config(), limits()), 1);
+    let large = run(session(&v, p, config(), limits()), 1000);
+    assert_eq!(small, large);
+    assert_eq!(small.status, EvaluationStatus::Passed);
+    assert_eq!(small.summary["rounds"], 15);
 }

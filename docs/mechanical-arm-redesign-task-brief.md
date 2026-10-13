@@ -100,9 +100,10 @@ Targets may include a module on FLIP, treated as the stored orientation rather
 than flipping it again during loading. Generate expected_output from target
 contents in Rust; do not accept two independently authoritative target fields.
 Alternatively, if both are stored, reject inconsistent values.
-FINAL_LAYOUT compares only at successful VM termination, including normal
-termination routes defined by the VM; limits, cancellation, and faults do not
-trigger target success. An initially solved layout still requires termination.
+FINAL_LAYOUT compares after initialization and each complete valid action round.
+A matching layout passes immediately without requiring VM termination. Both actors
+must finish a valid atomic round; a transient match during A cannot bypass B.
+Cancellation, resource limits and faults do not independently trigger target success.
 
 ### D5. No-op precedence needs an explicit rule
 
@@ -189,7 +190,7 @@ the downstream root currently records the Steam game screen as being rebuilt.
 | Layout | Six single stations; ten dual stations; exact shared aliases; complete six-direction turn cycle |
 | Actions | Every station/action/hand combination; empty input; occupied FLIP; stack capacity 4; all weight pairs |
 | Rounds | All four shared GRAB/DROP combinations; no-op conflicts; invalid A/B with no partial scene commit; output completion during A cannot skip B; incomplete frame on termination |
-| Modes | Full-byte prefix mismatch/overflow; immediate sequence success; final-layout equality only on normal termination; conservation implies no missing held modules; ignored orientation; shared station serialized once |
+| Modes | Full-byte prefix mismatch/overflow; immediate sequence success; immediate final-layout equality after complete valid rounds; conservation implies no missing held modules; ignored orientation; shared station serialized once |
 | Cases | Different initial states; one program across all cases; fresh VM/world per case; hidden-case details excluded |
 | Validation | Strict field/type/range checks; duplicate/missing IDs; wrong counts/types; overweight targets; mode restrictions; target/output consistency |
 | Resources | Tick/work ceilings; work yields; input/event capacity; checked counters; cancellation; faults; cycle detection; no false PASS |

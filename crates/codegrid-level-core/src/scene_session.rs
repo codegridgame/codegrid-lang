@@ -91,6 +91,7 @@ pub fn scene_definition_units(level: &ValidatedSceneLevel) -> Option<u64> {
 // Bounds include the independent world and its initial observation, without
 // constructing either. Robot start effects can only add one patrol entry and
 // two trigger entries per actor; shared entries make these bounds conservative.
+// An initially matching FinalLayout also materializes expected bytes as output.
 fn initialization_bounds(level: &ValidatedSceneLevel, index: usize) -> Option<(u64, u64, u64)> {
     let case = level.tests().get(index)?;
     if let crate::SceneConfig::Robot { map, actors } = level.config() {
@@ -127,8 +128,24 @@ fn initialization_bounds(level: &ValidatedSceneLevel, index: usize) -> Option<(u
         SceneCaseData::MechanicalArm { .. } => 2,
         SceneCaseData::Robot => return None,
     };
+    let initial_layout_output = match (&case.data, level.config()) {
+        (
+            SceneCaseData::MechanicalArm {
+                initial, expected, ..
+            },
+            crate::SceneConfig::MechanicalArm { mode, .. },
+        ) if *mode == crate::MechanicalArmMode::FinalLayout
+            && crate::scene_world::serialized_layout_matches(initial, expected) =>
+        {
+            expected.len() as u64
+        }
+        _ => 0,
+    };
     Some((
-        units.checked_add(input)?.checked_add(32)?,
+        units
+            .checked_add(input)?
+            .checked_add(32)?
+            .checked_add(initial_layout_output)?,
         units.checked_mul(8)?.checked_add(512)?,
         input,
     ))

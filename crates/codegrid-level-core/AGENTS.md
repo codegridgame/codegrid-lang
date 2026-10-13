@@ -60,7 +60,7 @@ single-arm initial input is [255]. GRAB preserves module state; FLIP DROP toggle
 MechanicalArm stages complete A/B frames atomically, including shared-station
 GRAB/DROP conflict preflight, even for no-ops. Robot retains its existing actor
 dispatch policy. Typed stations own capacities and stack rules. FINAL_LAYOUT
-compares station contents only on normal VM termination; the loader derives
+compares station contents at initialization and after each complete valid round; the loader derives
 target bytes and enforces conservation with face masked. Feedback names input publication InputUpdated. ExactIO remains
 unchanged. Queue limits measure replacement size; cumulative limits charge every
 complete published observation.
