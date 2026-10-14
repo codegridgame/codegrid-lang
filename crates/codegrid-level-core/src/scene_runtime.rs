@@ -285,6 +285,10 @@ impl SceneRuntime for RobotRuntime {
         self.world.retained_units()
     }
 
+    fn frame_peak_growth_units(&self, actors: usize) -> u64 {
+        self.world.frame_peak_growth_units(actors)
+    }
+
     fn transition_work(&self, actors: usize, observation_is_empty: bool) -> u64 {
         self.world.work
             + if observation_is_empty {
@@ -296,8 +300,8 @@ impl SceneRuntime for RobotRuntime {
 
     fn summary(&self) -> BTreeMap<&'static str, u64> {
         let mut result = BTreeMap::new();
-        let (visited, required) = self.world.summary();
-        result.insert("visited_patrol_points", visited);
+        let (repaired, required) = self.world.summary();
+        result.insert("repaired_patrol_points", repaired);
         result.insert("required_patrol_points", required);
         result
     }

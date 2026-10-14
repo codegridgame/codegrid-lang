@@ -17,7 +17,7 @@
   "summary": {
     "frames": "3",
     "rounds": "2",
-    "visited_patrol_points": "1",
+    "repaired_patrol_points": "1",
     "required_patrol_points": "2"
   }
 }

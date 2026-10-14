@@ -241,7 +241,7 @@ fn robot_sparse_map_enforces_ground_colors_object_exclusivity_and_starts() {
 #[test]
 fn robot_map_terrain_and_sparse_color_validation_is_strict() {
     let mut v = example("robot");
-    v["scene_config"]["map"]["terrain"][0] = json!("0x..............");
+    v["scene_config"]["map"]["terrain"][0] = json!("1...............");
     let error = load(&v).unwrap_err();
     assert_eq!(
         (error.reason, error.path.as_str()),

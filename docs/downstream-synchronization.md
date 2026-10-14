@@ -211,3 +211,33 @@ four-host scene comparisons were not run for this correction, so runtime
 verification remains incomplete. Downstream synchronization is incomplete
 until those regression and four-host checks are run. No deployment or
 production-host acceptance is claimed.
+
+
+## 2026-10-14 Robot patrol repair and uniform ground
+
+Robot action byte 2 is now REPAIR. Visiting a patrol point does not mark it
+complete; REPAIR only records the point under the acting robot, and REPAIR
+elsewhere has no effect. The goal passes immediately when every required patrol
+point has been repaired. Robot map terrain now accepts only . for VOID and
+0 for uniform-height ground; movement no longer compares elevations.
+
+Updated Level Core, the Scene specs and decision record, existing focused
+conformance cases, editor authoring/import/export/playtest, strict client
+validation, and the editor/API Level WASM artifact sets. The editor local-byte
+loader patch remains applied. Full language WASM and the separate Steam game
+interpreter are outside this Scene evaluator change.
+
+Source base: f2d371d226369c7976e419310b6eee16c3efaade, source_dirty=true.
+Evaluator: codegrid-level-source-sha256:6c814fd48722d67f82005937cf6903d67933a4780ba72be81003607f430d59d7.
+Browser WASM SHA-256: 1cd39b7f6d367abf5e19cea95f696fce226516a37f006e772eb4918315569d23;
+portable WASM: 200a9a8deddf991af6ff245006a4ba8299a5a58f3dde8a65ecd6cbe343bcff40;
+generated browser JavaScript: 3757c44e2e6da1e583f7e81b7c7e439794d201879960789737431b1ac59629a7;
+patched editor JavaScript: 4a012f01b18f50c8f8dc82b485def29ac1ec5aa4c97e33ded6991530d98699b5.
+
+Formatter, pinned toolchain, Rust Level Core/API test-target compilation,
+locked browser/server WASM release build, binding generation, downstream
+workspace typecheck, editor/API builds, artifact hash checks, and whitespace
+checks passed. Regression suites and native/browser/Node/Wasmtime scene
+comparisons were not run; runtime verification remains incomplete. No
+production Steamworks or deployment acceptance is claimed.
+The downstream API scene-input fixtures now reach the patrol point and issue REPAIR only after consuming the updated snapshot.

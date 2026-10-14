@@ -37,11 +37,19 @@ fn complete_frame_dispatches_in_order_and_terminal_a_ignores_invalid_b() {
     assert!(!first.completed_frame);
     assert_eq!(m.frames(), 0);
     assert_eq!(m.pending_actions(), [1]);
-    let second = m.consume(255).unwrap();
+    let second = m.consume(0).unwrap();
     assert!(second.completed_frame);
-    assert_eq!(second.outcome, SceneOutcome::Passed);
-    assert_eq!((m.frames(), m.rounds()), (1, 0));
-    assert!(second.observation.is_empty());
+    assert_eq!(second.outcome, SceneOutcome::Running);
+    assert_eq!((m.frames(), m.rounds()), (1, 1));
+    assert_eq!(second.observation, [0, 1, 0, 3]);
+    let third = m.consume(2).unwrap();
+    assert!(!third.completed_frame);
+    assert_eq!(third.outcome, SceneOutcome::Running);
+    let fourth = m.consume(255).unwrap();
+    assert!(fourth.completed_frame);
+    assert_eq!(fourth.outcome, SceneOutcome::Passed);
+    assert_eq!((m.frames(), m.rounds()), (2, 1));
+    assert!(fourth.observation.is_empty());
     assert_eq!(m.consume(255).unwrap().outcome, SceneOutcome::Passed);
 }
 #[test]

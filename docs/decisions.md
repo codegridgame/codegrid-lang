@@ -952,3 +952,15 @@ A match passes immediately, without VM termination; both actors finish atomicall
 conserves modules with face bit masked; heavy remains below light. Loading FLIP
 contents preserves authored face. No compatibility reader, player-data rewrite,
 or mandatory version bump is introduced.
+
+## 2026-10-14: Robot patrol points require repair
+
+The user replaces Robot action byte 2 JUMP with REPAIR and removes elevation
+differences. Terrain remains VOID or walkable ground, with every ground cell at
+one height; FORWARD can cross any adjacent walkable, unoccupied cell. Entering a
+patrol point does not complete it. REPAIR while standing on a required patrol
+point marks that point repaired; REPAIR elsewhere has no effect. The repaired
+set is shared by both robots, and the final required repair passes immediately.
+The public scene summary counts repaired patrol points. Current unpublished
+contracts and consumers are updated directly without a legacy reader or a
+mandatory version bump.

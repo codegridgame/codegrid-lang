@@ -89,8 +89,8 @@ pub fn scene_definition_units(level: &ValidatedSceneLevel) -> Option<u64> {
     Some(level.definition_units())
 }
 // Bounds include the independent world and its initial observation, without
-// constructing either. Robot start effects can only add one patrol entry and
-// two trigger entries per actor; shared entries make these bounds conservative.
+// constructing either. Robot starts can add two trigger entries per actor;
+// shared entries make these bounds conservative. Patrols require an action.
 // An initially matching FinalLayout also materializes expected bytes as output.
 fn initialization_bounds(level: &ValidatedSceneLevel, index: usize) -> Option<(u64, u64, u64)> {
     let case = level.tests().get(index)?;
@@ -100,24 +100,20 @@ fn initialization_bounds(level: &ValidatedSceneLevel, index: usize) -> Option<(u
             n.checked_add(u64::from(c.trigger.is_some()))?
                 .checked_add(u64::from(c.door.is_some()))
         })?;
-        let mut patrols = 0u64;
         let mut triggers = 0u64;
         for start in &map.starts {
             let cell = map.cells.get(usize::from(start.position))?;
-            patrols = patrols.checked_add(u64::from(cell.patrol))?;
             triggers = triggers.checked_add(u64::from(cell.trigger.is_some()))?;
         }
         let input = actors.checked_mul(2)?;
         let state = (map.cells.len() as u64)
             .checked_add(objects)?
             .checked_add(actors)?
-            .checked_add(patrols)?
             .checked_add(triggers.checked_mul(2)?)?
             .checked_add(input)?;
         let work = state
             .checked_add(map.cells.len() as u64)?
             .checked_add(actors)?
-            .checked_add(patrols.checked_mul(2)?)?
             .checked_add(triggers.checked_mul(4)?)?
             .checked_add(input)?;
         return Some((state, work, input));

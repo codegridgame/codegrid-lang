@@ -81,10 +81,11 @@ the temporary candidate as a completed world transition or emit its events.
 This resource outcome is not a player scene failure and needs no fabricated
 round rollback event.
 
-Initial Robot completion is checked after structural/static acceptance. Award
-no success if applicable constraints fail, and create no artificial tick/action.
-Successful goals stop actor dispatch immediately; constraints can still prevent
-the final Passed level result. Follow Scene Spec Section 2.4 for terminal order.
+Robot has no initial completion: every required patrol point must be explicitly
+repaired after an actor action begins. Award no success if applicable
+constraints fail. Successful goals stop actor dispatch immediately; constraints
+can still prevent the final Passed level result. Follow Scene Spec Section 2.4
+for terminal order.
 
 ## Determinism and replay
 
@@ -148,7 +149,7 @@ bound before cloning/dispatch and charge measured transition/copy work. No VM
 tick is rerun to obtain more scene work. VM and scene budgets remain independent.
 Initialization reserves world and observation state plus a conservative work
 bound before constructing the candidate. Robot bounds include the map copy,
-map scan, actor start effects, and initial observation; shared definition units
+map scan, trigger activation at actor starts, and initial observation; shared definition units
 remain separate from the mutable world. Insufficient slices perform no world
 initialization, and a bound above the per-call ceiling is a resource failure.
 The session checks queue, cumulative input, scene frame/state/work, VM retained
@@ -157,8 +158,8 @@ Generated instructions use the existing program-rule validator.
 
 Ten case-session integration tests cover continuous READ observations, unread
 queue order, small/large VM slices, pending scene output, discarded input-limit
-candidates, HALT/constraint priority, exact tick/work completion, zero-tick Robot
-goals, scene counters, VM rollback, and cancellation. This is case-level Rust
+candidates, HALT/constraint priority, exact tick/work completion, action-based
+Robot goals, scene counters, VM rollback, and cancellation. This is case-level Rust
 evidence only. Multi-case visible/hidden projection, feedback/event work and
 reservations, API-instance aggregate ownership, host profile conversion, and
 actual native/WASM comparison are still required. The complete Scene Host v2

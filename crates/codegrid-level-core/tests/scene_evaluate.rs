@@ -124,15 +124,15 @@ fn register_input_and_scene_state_reset_for_every_case() {
     v["evaluation"]["tests"] = json!([original.clone(), original.clone(), original]);
     let result = evaluate_scene(
         load(&v),
-        program(&[".1", ".1", ";"]),
+        program(&[".1", ".2", ".1", ".2", ";"]),
         EvaluationMode::Official,
         config(),
         limits(),
     );
     assert_eq!(result.status, EvaluationStatus::Passed);
-    assert_eq!(result.partial_metrics["ticks"], 9);
+    assert_eq!(result.partial_metrics["ticks"], 15);
     for case in &result.visible_cases {
-        assert_eq!(case.summary["frames"], 2);
+        assert_eq!(case.summary["frames"], 4);
     }
 }
 #[test]

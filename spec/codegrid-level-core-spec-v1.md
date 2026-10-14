@@ -1870,78 +1870,13 @@ continuous-session execution contract. Section numbering is retained for links.
 
 ---
 
-## 54. Maintenance Robot Example
+## 54. Superseded Maintenance Robot Example
 
-```json
-{
-  "format_version": 1,
-  "level_id": "official.maintenance.01",
-  "level_version": 1,
-
-  "evaluation_type": "Environment",
-
-  "program_rules": {
-    "allowed_instructions": [
-      "MOVE_UP",
-      "MOVE_DOWN",
-      "MOVE_LEFT",
-      "MOVE_RIGHT",
-      "READ",
-      "OUTPUT"
-    ],
-
-    "allowed_attachments": [],
-
-    "main_board": {
-      "width": 5,
-      "height": 5
-    },
-
-    "function_board": {
-      "width": 5,
-      "height": 5
-    },
-
-    "max_functions": 0,
-    "max_custom": 0,
-    "max_threads": 1,
-    "memory_enabled": false
-  },
-
-  "constraints": {
-    "max_actions": 20
-  },
-
-  "scoring": {
-    "metrics": {
-      "action_count": {
-        "target": 12
-      }
-    }
-  },
-
-  "evaluation": {
-    "scene_type": "MaintenanceRobot",
-
-    "scene_data": {
-      "map": {},
-      "start": {},
-      "targets": []
-    },
-
-    "goals": {
-      "repair_all": true,
-      "reach_exit": true
-    }
-  }
-}
-```
-
-The exact map schema and byte protocols belong in a separate:
-
-```text
-MaintenanceRobot Scene Specification
-```
+The former MaintenanceRobot shape is not supported. Use the current Robot
+author contract and execution rules in the [Scene Specification v1](codegrid-scene-spec-v1.md)
+and [Scene Level JSON format v1](codegrid-scene-level-json-v2.md): movement
+crosses one-height ground, action byte 2 is REPAIR, and every required patrol
+point must receive that action while occupied before the scene passes.
 
 ---
 

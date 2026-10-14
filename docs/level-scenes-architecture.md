@@ -9,12 +9,12 @@ complete protocol/resource coverage remains pending.
 | Product scene | Evaluation family | Correctness | Current delivery |
 | --- | --- | --- | --- |
 | ExactIO | ExactIO | Expected byte sequence, existing halt/constraint/outcome rules | Implemented |
-| Robot | Dynamic scene | All required patrol points visited | API-2 and WASM v2 implemented; current host evidence tracked in synchronization report |
+| Robot | Dynamic scene | All required patrol points repaired | API-2 and WASM v2 implemented; current host evidence tracked in synchronization report |
 | MechanicalArm | Dynamic scene | Exact module output sequence or final station layout | API-2 and WASM v2 implemented; current host evidence tracked in synchronization report |
 
 Terminal is excluded. Robot is the selected identity; MaintenanceRobot in old
-examples is not an alias. Robot's current goal is patrol completion, superseding
-the earlier repair-device concept. The Rust catalog's SceneKind,
+examples is not an alias. Robot's goal requires a REPAIR action at every
+required patrol point. Ground has one height. The Rust catalog's SceneKind,
 EvaluationFamily, SceneStatus, SceneDescriptor, and SELECTED_SCENES express
 native API-2 registration rather than WASM deployment. Existing API-1 hosts
 report only ExactIO and an empty scene_types list; API-2 reports the three scenes

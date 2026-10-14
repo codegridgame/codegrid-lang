@@ -23,11 +23,11 @@ The Rust v2 loader now validates the complete author examples. Native protocol a
 | --- | --- | --- |
 | exact.empty | Empty expected output | Initially Running; silent successful HALT passes; any output fails |
 | robot.position | Position (2,3) | Encoded byte 50 |
-| robot.geometry | At (2,3) facing UP, walkable same-height (2,2), FORWARD | Move to byte 34; left/right turns use modular direction rules |
-| robot.jump | Adjacent cell same height versus different height | JUMP stays versus moves; never skips an intervening cell |
+| robot.geometry | At (2,3) facing UP, walkable ground (2,2), FORWARD | Move to byte 34; left/right turns use modular direction rules |
+| robot.repair | Enter a required patrol point, then REPAIR | Entry alone leaves the goal incomplete; REPAIR completes only the occupied point |
 | robot.swap | A and B attempt to enter each other's current cell | Neither moves |
 | robot.trigger | A enters trigger, B attempts its closed door that round | B is blocked; door opens only at completed round end |
-| robot.initial-goal | All required patrol points occupied at start | Pass after applicable constraints, with zero action rounds/ticks |
+| robot.repair-noop | REPAIR away from a required patrol point | No goal progress; case remains incomplete |
 | arm.initial-state | Grab BLUE robot, hidden DEFECT | Visible state 13 (UNINSPECTED BLUE), not 5 |
 | arm.inspect | DROP that robot on Inspection, complete round, GRAB next round | Ready state 5 (DEFECT BLUE); earlier same-round GRAB cannot obtain it |
 | arm.repair | Repair state 5 | Ready state 1 (NORMAL BLUE) |

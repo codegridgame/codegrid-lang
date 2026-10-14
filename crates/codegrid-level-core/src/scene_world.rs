@@ -12,7 +12,7 @@ pub enum TransitionError {
 pub(crate) struct RobotWorld {
     pub robots: Vec<RobotStart>,
     map: Vec<MapCell>,
-    visited: BTreeSet<u8>,
+    repaired: BTreeSet<u8>,
     triggered: BTreeSet<u8>,
     pending: BTreeSet<u8>,
     pub open_doors: BTreeSet<u8>,
@@ -26,7 +26,7 @@ impl RobotWorld {
         let mut world = Self {
             robots: robots.to_vec(),
             map: map.to_vec(),
-            visited: BTreeSet::new(),
+            repaired: BTreeSet::new(),
             triggered: BTreeSet::new(),
             pending: BTreeSet::new(),
             open_doors: BTreeSet::new(),
@@ -48,12 +48,6 @@ impl RobotWorld {
     fn enter(&mut self, position: u8) {
         self.work += 1;
         let cell = self.map[usize::from(position)];
-        if cell.patrol {
-            self.work += 1;
-            if self.visited.insert(position) {
-                self.work += 1;
-            }
-        }
         if let Some(trigger) = cell.trigger {
             self.work += 2; // Trigger association and triggered-set lookup.
             if self.triggered.insert(trigger.id) {
@@ -63,7 +57,7 @@ impl RobotWorld {
         }
     }
     pub fn complete(&mut self) -> bool {
-        self.visited.len() as u64 == self.required
+        self.repaired.len() as u64 == self.required
     }
     pub fn observation(&self) -> Vec<u8> {
         self.robots
@@ -78,6 +72,17 @@ impl RobotWorld {
         self.work += 1; // Actor inspected.
         match action {
             0 => {}
+            2 => {
+                self.work += 1;
+                let position = self.robots[actor].position;
+                let cell = self.map[usize::from(position)];
+                if cell.patrol {
+                    self.work += 1;
+                    if self.repaired.insert(position) {
+                        self.work += 1;
+                    }
+                }
+            }
             3 => {
                 self.work += 1;
                 self.robots[actor].direction = (self.robots[actor].direction + 3) % 4;
@@ -86,7 +91,7 @@ impl RobotWorld {
                 self.work += 1;
                 self.robots[actor].direction = (self.robots[actor].direction + 1) % 4;
             }
-            1 | 2 => {
+            1 => {
                 let robot = self.robots[actor];
                 let x = i16::from(robot.position % 16);
                 let y = i16::from(robot.position / 16);
@@ -98,7 +103,6 @@ impl RobotWorld {
                 let target = (y * 16 + x) as u8;
                 self.work += 2; // Target and current cell.
                 let cell = self.map[usize::from(target)];
-                let same_height = cell.height == self.map[usize::from(robot.position)].height;
                 if !cell.walkable {
                     return Ok(());
                 }
@@ -113,9 +117,6 @@ impl RobotWorld {
                     if other.position == target {
                         return Ok(());
                     }
-                }
-                if same_height != (action == 1) {
-                    return Ok(());
                 }
                 self.work += 1;
                 self.robots[actor].position = target;
@@ -144,7 +145,6 @@ mod tests {
         let mut map = vec![
             MapCell {
                 color: 0,
-                height: 0,
                 walkable: true,
                 patrol: false,
                 door: None,
@@ -156,10 +156,11 @@ mod tests {
         map
     }
     #[test]
-    fn robot_geometry_jump_turns_and_boundaries() {
+    fn robot_geometry_repair_turns_and_boundaries() {
         let mut cells = map();
+        cells[255].patrol = false;
         cells[34].color = 2;
-        cells[18].height = 1;
+        cells[18].patrol = true;
         let mut world = RobotWorld::new(
             &[RobotStart {
                 position: 50,
@@ -172,12 +173,20 @@ mod tests {
         world.act(0, 1).unwrap();
         assert_eq!(world.robots[0].position, 34);
         world.act(0, 2).unwrap();
+        assert!(!world.complete());
+        world.act(0, 1).unwrap();
+        assert_eq!(world.robots[0].position, 18);
+        assert!(!world.complete());
+        world.act(0, 2).unwrap();
+        assert!(world.complete());
         assert_eq!(world.robots[0].position, 18);
         world.act(0, 3).unwrap();
         assert_eq!(world.robots[0].direction, 3);
         world.act(0, 4).unwrap();
         assert_eq!(world.robots[0].direction, 0);
         world.robots[0].position = 0;
+        world.act(0, 2).unwrap();
+        assert!(world.complete());
         world.act(0, 1).unwrap();
         assert_eq!(world.robots[0].position, 0);
         assert_eq!(world.act(0, 5), Err(TransitionError::InvalidOutput));
@@ -219,7 +228,7 @@ mod tests {
         );
     }
     #[test]
-    fn robot_initial_patrol_and_initial_trigger() {
+    fn robot_initial_repair_and_initial_trigger() {
         let mut cells = map();
         cells[255].trigger = Some(crate::Trigger { id: 1, door_id: 8 });
         cells[0].door = Some(8);
@@ -230,6 +239,8 @@ mod tests {
             }],
             &cells,
         );
+        assert!(!world.complete());
+        world.act(0, 2).unwrap();
         assert!(world.complete());
         assert!(world.open_doors.is_empty());
         world.end_round().unwrap();
@@ -244,13 +255,18 @@ impl RobotWorld {
     pub fn retained_units(&self) -> u64 {
         self.map_units
             + (self.robots.len()
-                + self.visited.len()
+                + self.repaired.len()
                 + self.triggered.len()
                 + self.pending.len()
                 + self.open_doors.len()) as u64
     }
+    pub fn frame_peak_growth_units(&self, actors: usize) -> u64 {
+        self.required
+            .saturating_sub(self.repaired.len() as u64)
+            .min(actors as u64)
+    }
     pub fn summary(&self) -> (u64, u64) {
-        (self.visited.len() as u64, self.required)
+        (self.repaired.len() as u64, self.required)
     }
     /// Deterministic semantic encoding for exact cycle detection. Excludes the
     /// immutable map and the monotone round/work counters.
@@ -261,7 +277,7 @@ impl RobotWorld {
             out.push(robot.direction);
         }
         for set in [
-            &self.visited,
+            &self.repaired,
             &self.triggered,
             &self.pending,
             &self.open_doors,
@@ -270,9 +286,9 @@ impl RobotWorld {
             out.extend(set.iter().copied());
         }
     }
-    /// Monotone goal progress: visited patrol points.
+    /// Monotone goal progress: repaired patrol points.
     pub(crate) fn progress_counter(&self) -> u64 {
-        self.visited.len() as u64
+        self.repaired.len() as u64
     }
 }
 pub(crate) enum ActorSnapshot {

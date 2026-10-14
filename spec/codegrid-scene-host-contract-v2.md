@@ -81,7 +81,8 @@ The v1 behavior and emitted reason values do not change.
 InvalidOutput is scene-specific: an action outside 0–4, floor outside 0–9,
 an invalid Robot or MechanicalArm action. IllegalOperation includes occupied
 GRAB/DROP or a table's unmet preconditions. Neither is a VM runtime error.
-Do not turn blocked Robot movement or specified no-ops into IllegalOperation.
+Do not turn blocked Robot movement, REPAIR away from a required patrol point,
+or other specified no-ops into IllegalOperation.
 OutputMismatch in the logical SceneFailure enum maps to WrongOutput; it does
 not introduce an alias for a new public code.
 
@@ -256,7 +257,7 @@ Summary fields are explicit by scene:
 | Scene | summary fields |
 | --- | --- |
 | ExactIO | {} |
-| Robot | frames, rounds, visited_patrol_points, required_patrol_points |
+| Robot | frames, rounds, repaired_patrol_points, required_patrol_points |
 | MechanicalArm | frames, rounds, matched_output_modules |
 
 All summary counters are canonical u64 strings. Scene rounds are public feedback,

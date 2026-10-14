@@ -7,19 +7,19 @@ use support::*;
 #[test]
 fn continuous_read_observation_and_vm_slices_match() {
     let v = two_point_robot();
-    let p = program(&[",", ",", ".1", ",", ",", ".", ";"]);
+    let p = program(&[",", ",", ".1", ".2", ",", ",", ".", ".2", ";"]);
     let large = run(session(&v, p.clone(), config(), limits()), 1000);
     let small = run(session(&v, p, config(), limits()), 1);
     assert_eq!(large, small);
     assert_eq!(large.status, EvaluationStatus::Passed);
-    assert_eq!(large.summary["frames"], 2);
-    assert_eq!(large.summary["rounds"], 1);
-    assert_eq!(large.metrics["ticks"], 7);
+    assert_eq!(large.summary["frames"], 4);
+    assert_eq!(large.summary["rounds"], 3);
+    assert_eq!(large.metrics["ticks"], 9);
 }
 #[test]
 fn queued_output_waits_for_scene_budget_without_rerunning_vm() {
     let v = author("robot");
-    let mut s = session(&v, program(&[".1", ";"]), config(), limits());
+    let mut s = session(&v, program(&[".1", ".2", ";"]), config(), limits());
     assert_eq!(s.advance(n(1), n(100_000)), SceneCaseProgress::Pending);
     assert_eq!(s.advance(n(1), n(1)), SceneCaseProgress::Pending);
     let work = s.vm_work();
@@ -28,8 +28,8 @@ fn queued_output_waits_for_scene_budget_without_rerunning_vm() {
         panic!("pending committed output")
     };
     assert_eq!(result.status, EvaluationStatus::Passed);
-    assert_eq!(s.vm_work(), work);
-    assert_eq!(result.metrics["ticks"], 2);
+    assert_eq!(s.vm_work(), work + 1);
+    assert_eq!(result.metrics["ticks"], 3);
 }
 #[test]
 fn queue_and_cumulative_input_failures_discard_candidate_round() {
@@ -58,7 +58,10 @@ fn halt_and_constraint_terminal_order() {
     assert!(matches!(result.outcome, Some(SceneOutcome::Failed(_))));
     let mut v = author("robot");
     v["constraints"]["max_ticks"] = json!(1);
-    let result = run(session(&v, program(&[".1", ";"]), config(), limits()), 100);
+    let result = run(
+        session(&v, program(&[".1", ".2", ";"]), config(), limits()),
+        100,
+    );
     assert_eq!(result.status, EvaluationStatus::ConstraintExceeded);
     assert_eq!(result.outcome, Some(SceneOutcome::Passed));
     let v = author("robot");
@@ -71,7 +74,7 @@ fn halt_and_constraint_terminal_order() {
                     Cell::entry(Direction::Right),
                     Cell::instruction(PrimaryInstruction::from_token(".1").unwrap(), None),
                     Cell::entry(Direction::Right),
-                    Cell::instruction(PrimaryInstruction::Halt, None),
+                    Cell::instruction(PrimaryInstruction::from_token(".2").unwrap(), None),
                 ],
                 2,
                 2,
@@ -216,27 +219,32 @@ fn robot_initialization_reserves_world_state_and_work_before_construction() {
 fn completion_at_exact_tick_and_vm_work_ceiling_is_allowed() {
     let v = author("robot");
     let mut c = config();
-    c.safety.per_test_ticks = n(2);
-    c.safety.cumulative_work = n(2);
-    let result = run(session(&v, program(&[".1", ";"]), c, limits()), 1);
+    c.safety.per_test_ticks = n(3);
+    c.safety.cumulative_work = n(3);
+    let result = run(session(&v, program(&[".1", ".2", ";"]), c, limits()), 1);
     assert_eq!(result.status, EvaluationStatus::Passed);
-    assert_eq!(result.metrics["ticks"], 2);
+    assert_eq!(result.metrics["ticks"], 3);
 }
 #[test]
 fn input_update_discards_older_unread_snapshot() {
     let v = two_point_robot();
     // Two READs after the move consume the new [color=0, position=1].
     let result = run(
-        session(&v, program(&[".1", ",", ",", ".", ";"]), config(), limits()),
+        session(
+            &v,
+            program(&[".1", ".2", ",", ",", ".", ".2", ";"]),
+            config(),
+            limits(),
+        ),
         1,
     );
-    assert_eq!(result.summary["frames"], 2);
-    assert_eq!(result.summary["rounds"], 1);
+    assert_eq!(result.summary["frames"], 4);
+    assert_eq!(result.summary["rounds"], 3);
     assert_eq!(result.status, EvaluationStatus::Passed);
-    assert_eq!(result.summary["visited_patrol_points"], 1);
+    assert_eq!(result.summary["repaired_patrol_points"], 2);
 }
 #[test]
-fn static_output_passes_and_robot_halt_without_patrol_visit_fails() {
+fn static_output_passes_and_robot_halt_without_patrol_repair_fails() {
     let v = author("exact");
     let result = run(
         session(&v, program(&[",", ".", ";"]), config(), limits()),
@@ -257,11 +265,16 @@ fn replacement_fits_queue_limit_and_discards_partial_snapshot() {
     let mut l = limits();
     l.max_input_queue_bytes = n(2);
     let result = run(
-        session(&v, program(&[",", ".1", ",", ",", ".", ";"]), config(), l),
+        session(
+            &v,
+            program(&[",", ".1", ".2", ",", ",", ".", ".2", ";"]),
+            config(),
+            l,
+        ),
         1,
     );
     assert_eq!(result.status, EvaluationStatus::Passed);
-    assert_eq!(result.summary["rounds"], 1);
+    assert_eq!(result.summary["rounds"], 3);
 }
 
 #[test]

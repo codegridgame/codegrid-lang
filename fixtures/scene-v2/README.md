@@ -4,7 +4,7 @@ These `format_version: 1` author levels and Full `.cg` programs exercise
 ExactIO, Robot, and MechanicalArm through Level API 2. The API version is
 separate from the author JSON format version. The manifest supplies explicit
 seeds, boundaries, and expected terminal status. MechanicalArm flips and
-outputs an input module; Robot reaches its required patrol. Additional ExactIO
+outputs an input module; Robot repairs its required patrol point. Additional ExactIO
 fixtures cover byte boundaries and a fixed classification mapping. Robot
 configuration lives in `scene_config`; each test contains only `visible`.
 

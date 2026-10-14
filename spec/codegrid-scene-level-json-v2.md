@@ -111,10 +111,11 @@ Existing elevator drafts require recovery in their application and cannot run.
 Config has exactly robot_count (1 or 2) and map. The map has exactly width,
 height, terrain, colors, and objects. Width and height are both 16.
 
-terrain is exactly 16 strings of exactly 16 ASCII characters each. Only `.`,
-`0`, and `1` are accepted: VOID, low ground, and high ground respectively.
+terrain is exactly 16 strings of exactly 16 ASCII characters each. Only `.`
+and `0` are accepted: VOID and ground respectively. All ground is at one height.
 The initial editor canvas is all VOID; authors explicitly draw usable ground.
-VOID cannot be occupied or entered by FORWARD or JUMP. There is no wall type.
+VOID cannot be occupied or entered by FORWARD. There is no wall type or height
+variation.
 Position index is `y * 16 + x`, in 0–255.
 
 colors is a sparse array of exactly `{ "index": 18, "color": 1 }` records.

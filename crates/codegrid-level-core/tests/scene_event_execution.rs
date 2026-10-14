@@ -31,7 +31,7 @@ fn kinds(events: &[Value]) -> Vec<&str> {
 #[test]
 fn robot_events_and_results_are_identical_across_vm_slices() {
     let v = two_point_robot();
-    let tokens = [",", ",", ".1", ",", ",", ".", ";"];
+    let tokens = [",", ",", ".1", ".2", ",", ",", ".", ".2", ";"];
     let mut large = start(&v, &tokens, limits());
     let mut small = start(&v, &tokens, limits());
     assert_eq!(finish(&mut large, 1000), finish(&mut small, 1));
@@ -47,13 +47,21 @@ fn robot_events_and_results_are_identical_across_vm_slices() {
             "RoundCompleted",
             "InputUpdated",
             "ActionApplied",
+            "RoundCompleted",
+            "InputUpdated",
+            "ActionApplied",
+            "RoundCompleted",
+            "InputUpdated",
+            "ActionApplied",
             "CaseEnded"
         ]
     );
     assert_eq!(trace[2]["data"]["effect"]["from_position"], 0);
     assert_eq!(trace[2]["data"]["effect"]["to_position"], 1);
     assert_eq!(trace[3]["data"]["observation"], json!([0, 1]));
-    assert_eq!(trace[5]["data"]["effect"]["to_position"], 2);
+    assert_eq!(trace[5]["data"]["action"], 2);
+    assert_eq!(trace[8]["data"]["effect"]["to_position"], 2);
+    assert_eq!(trace[11]["data"]["action"], 2);
     for (index, event) in trace.iter().enumerate() {
         assert_eq!(event["sequence"], (index + 1).to_string());
     }
@@ -64,16 +72,26 @@ fn terminal_a_ignores_invalid_b_without_round_events() {
     v["scene_config"]["robot_count"] = json!(2);
     set_robot_path(&mut v, 4);
     set_robot_start(&mut v, "B", 3, "left");
-    let mut s = start(&v, &[".1", ".9", ";"], limits());
+    let mut s = start(&v, &[".1", ".0", ".2", ".9", ";"], limits());
     assert_eq!(finish(&mut s, 1).status, EvaluationStatus::Passed);
     let trace = events(&mut s);
     assert_eq!(
         kinds(&trace),
-        ["CaseStarted", "InputUpdated", "ActionApplied", "CaseEnded"]
+        [
+            "CaseStarted",
+            "InputUpdated",
+            "ActionApplied",
+            "ActionApplied",
+            "RoundCompleted",
+            "InputUpdated",
+            "ActionApplied",
+            "CaseEnded"
+        ]
     );
     assert_eq!(trace[2]["actor"], "A");
-    assert_eq!(trace[2]["frame_index"], "1");
-    assert!(trace[3]["data"]["failure"].is_null());
+    assert_eq!(trace[6]["actor"], "A");
+    assert_eq!(trace[6]["frame_index"], "2");
+    assert!(trace[7]["data"]["failure"].is_null());
 }
 #[test]
 fn invalid_b_retains_a_effect_but_no_round_or_observation() {
@@ -208,7 +226,7 @@ fn dual_shared_noop_conflict_publishes_no_partial_actions() {
 }
 
 #[test]
-fn unvisited_patrol_fails_on_halt_without_action_events() {
+fn unrepaired_patrol_fails_on_halt_without_action_events() {
     let v = author("robot");
     let mut s = start(&v, &[";"], limits());
     let result = finish(&mut s, 1);
@@ -225,7 +243,7 @@ fn official_execution_never_constructs_or_exposes_debug_events() {
     l.max_scene_events_per_evaluation = n(1);
     let mut s = start_scene_evaluation(
         load(&v),
-        program(&[".1", ";"]),
+        program(&[".1", ".2", ";"]),
         EvaluationMode::Official,
         config(),
         l,
@@ -253,7 +271,7 @@ fn resource_work_end_is_reserved_and_acknowledgement_frees_event_capacity() {
     assert!(s.scene_work() <= 12_000);
     let mut l = limits();
     l.max_scene_events_per_evaluation = n(6);
-    let mut s = start(&v, &[".0", ".1", ";"], l);
+    let mut s = start(&v, &[".0", ".1", ".2", ";"], l);
     assert_eq!(
         s.advance(n(2), n(100_000)),
         SceneEvaluationProgress::Pending
@@ -263,6 +281,6 @@ fn resource_work_end_is_reserved_and_acknowledgement_frees_event_capacity() {
     assert!(s.scene_feedback(5, n(6)).unwrap().events.is_empty());
     assert_eq!(finish(&mut s, 1000).status, EvaluationStatus::Passed);
     let last = s.scene_feedback(5, n(6)).unwrap();
-    assert_eq!(last.next_sequence, 7);
-    assert_eq!(last.events.len(), 2);
+    assert_eq!(last.next_sequence, 10);
+    assert_eq!(last.events.len(), 5);
 }

@@ -14,8 +14,10 @@ execution conformance.
 | MechanicalArm | [mechanical-arm.json](mechanical-arm.json) | [mechanical-arm-invalid.json](mechanical-arm-invalid.json): invalid module byte 255 |
 
 Robot configuration contains the static map once under `scene_config`; each
-test record contains only `visible`. The map uses 16 terrain rows (`.`/`0`/`1`),
+test record contains only `visible`. The map uses 16 terrain rows (`.`/`0`),
 sparse colors, and sparse mutually exclusive start/patrol/trigger/door objects.
+All walkable cells have the same height. Each required patrol point must be
+explicitly repaired by a robot standing on it.
 Equal trigger/door IDs pair a mechanism. See the Robot section of the author
 specification. MechanicalArm flips module byte 1 to byte 5 and transports it to OUTPUT.
 

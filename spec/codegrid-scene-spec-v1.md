@@ -101,7 +101,7 @@ Robot and MechanicalArm use these action bytes:
 | --- | --- | --- | --- |
 | 0 | WAIT | Preserve position/direction | Preserve hand/orientation |
 | 1 | Scene-specific | FORWARD | GRAB |
-| 2 | Scene-specific | JUMP | DROP |
+| 2 | Scene-specific | REPAIR | DROP |
 | 3 | TURN_LEFT | Turn left | Rotate left by 60 degrees |
 | 4 | TURN_RIGHT | Turn right | Rotate right by 60 degrees |
 
@@ -143,9 +143,9 @@ For every attempted outer tick:
    cancellation semantics and do not invent a VM error.
 
 Check structural acceptance and static constraints before scene initialization.
-Robot starts and patrol points occupy distinct cells, so valid author maps cannot
-complete their patrol goal during initialization. Per-case dynamic counters start
-at zero.
+Robot starts and patrol points occupy distinct cells, so a valid author map
+cannot repair a patrol point during initialization. Per-case dynamic counters
+start at zero.
 
 Reserve/validate input replacement capacity before publishing a successful scene
 transition and observation. Insufficient capacity produces ResourceLimitExceeded,
@@ -185,13 +185,13 @@ The map is exactly 16 by 16. Coordinates are 0–15; encode a position as
 `y * 16 + x`, yielding 0–255. Actor directions are 0 UP, 1 RIGHT, 2 DOWN,
 3 LEFT. x increases right and y increases down: UP=(0,-1),
 RIGHT=(1,0), DOWN=(0,1), LEFT=(-1,0). TURN_LEFT uses `(direction + 3) % 4`;
-TURN_RIGHT uses `(direction + 1) % 4`. Colors are 0 NONE, 1 BLUE, 2 RED;
-height is 0 or 1. Terrain is VOID, low ground, or high ground. The initial
+TURN_RIGHT uses `(direction + 1) % 4`. Colors are 0 NONE, 1 BLUE, 2 RED.
+Terrain is VOID or ground, and every ground cell has the same height. The initial
 16-by-16 author canvas is entirely VOID; only explicitly drawn ground is usable.
 
 Colors are ground attributes, defaulting to NONE when omitted. Starts, patrol
 points, triggers, and doors are mutually exclusive objects; at most one object
-occupies each position. Every object requires low or high ground. Configure one
+occupies each position. Every object requires ground. Configure one
 or two fixed robot starts and directions in the static map; dual starts must
 differ. Starts cannot occupy closed doors or patrol/trigger cells. Configure at
 least one required patrol point. VOID accepts neither color records nor objects.
@@ -199,11 +199,11 @@ least one required patrol point. VOID accepts neither color records nor objects.
 ### 6.2 Actions and collision
 
 FORWARD attempts the adjacent cell in the facing direction. Move only if it is
-passable, unoccupied, and at the same height. JUMP also attempts exactly one
-adjacent cell; move only if it is passable, unoccupied, and at a different height.
-Bounds, VOID, closed doors, occupancy, or an incompatible height make movement
-a no-op, not failure. TURN changes direction only; WAIT changes neither.
-Every completed nonterminal frame advances a round, including blocked moves.
+passable and unoccupied. Bounds, VOID, closed doors, or occupancy make movement
+a no-op, not failure. REPAIR does not move the robot. It marks the current cell's
+required patrol point repaired; elsewhere it has no effect. TURN changes
+direction only; WAIT changes neither. Every completed nonterminal frame advances
+a round, including blocked moves and REPAIR away from a patrol point.
 
 Robots cannot share a position. A acts first. If both target the same empty
 cell, A takes it and B stays. A cannot enter B's occupied position, so a direct
@@ -212,11 +212,12 @@ vacated position.
 
 ### 6.3 Patrols and doors
 
-Entering a required patrol point marks it visited automatically. Both actors
-share the visited set. Starts and patrol objects are mutually exclusive, so
-the revised author format cannot complete patrol at initialization.
-Pass immediately when every required point is visited. No return home, HALT, stopped actor, or mechanism reset is
-required.
+Entering a required patrol point does not complete it. A robot must execute
+REPAIR while occupying that point. Both actors share the repaired-point set;
+repeated REPAIR at one point does not affect other points. Starts and patrol
+objects are mutually exclusive, so no point can be repaired at initialization.
+Pass immediately after REPAIR completes the final required point. No return
+home, HALT, stopped actor, or mechanism reset is required.
 
 Triggers and doors pair by equal integer IDs with a strict one-to-one association:
 each ID has exactly one trigger and one door. Patrol IDs use a separate namespace.
@@ -340,7 +341,7 @@ reopen the accepted gameplay protocol.
 | --- | --- |
 | Shared | Fresh-case isolation including self-modified code; same-case memory persistence; replace unread old snapshots; empty READ; HALT with incomplete frame/goal; failed VM tick consumes no scene output; terminal goal with pending B |
 | ExactIO | First/middle mismatch; final match; unread input; empty expected and HALT; empty expected and output |
-| Robot | All directions; boundary/VOID/door blocking; forward same-height and jump different-height; swap/shared-target/vacated-cell collision; shared patrols; trigger activation and one-round door delay; snapshots |
+| Robot | All directions; boundary/VOID/door blocking; movement across all ground cells; REPAIR only at the current required patrol point; swap/shared-target/vacated-cell collision; shared repaired-point progress; trigger activation and one-round door delay; snapshots |
 | MechanicalArm | All 192 module bytes; capacities and weighted stacks; FIFO input; immediate flips; atomic complete frames; shared no-op conflicts; refreshed hands; exact output sequence; immediate final-layout success after valid rounds |
 | Hosts | Same definitions, inputs, actions, statuses, errors, metrics, and privacy projections in actual native/browser/server execution before claiming parity |
 

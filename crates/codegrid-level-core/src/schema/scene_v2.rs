@@ -39,7 +39,6 @@ pub struct Trigger {
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub struct MapCell {
     pub color: u8,
-    pub height: u8,
     pub walkable: bool,
     pub patrol: bool,
     pub door: Option<u8>,
@@ -274,10 +273,9 @@ fn robot_map(v: &Value, p: &str, actors: u8) -> Result<RobotMap, LevelError> {
             ));
         }
         for symbol in row.bytes() {
-            let (walkable, height) = match symbol {
-                b'.' => (false, 0),
-                b'0' => (true, 0),
-                b'1' => (true, 1),
+            let walkable = match symbol {
+                b'.' => false,
+                b'0' => true,
                 _ => {
                     return Err(LevelError::invalid(
                         "InvalidTerrainCell",
@@ -287,7 +285,6 @@ fn robot_map(v: &Value, p: &str, actors: u8) -> Result<RobotMap, LevelError> {
             };
             cells.push(MapCell {
                 color: 0,
-                height,
                 walkable,
                 patrol: false,
                 door: None,

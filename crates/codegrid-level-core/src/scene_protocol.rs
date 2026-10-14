@@ -148,10 +148,14 @@ impl SceneMachine {
         self.retained_units().checked_mul(8)?.checked_add(64)
     }
     pub fn transition_peak_units(&self) -> u64 {
-        if self.runtime.kind() == SceneKind::MechanicalArm && self.will_complete_frame() {
-            self.runtime.retained_units() + self.runtime.frame_peak_growth_units(self.actors)
-        } else {
-            0
+        if !self.will_complete_frame() {
+            return 0;
+        }
+        let growth = self.runtime.frame_peak_growth_units(self.actors);
+        match self.runtime.kind() {
+            SceneKind::Robot => growth,
+            SceneKind::MechanicalArm => self.runtime.retained_units() + growth,
+            SceneKind::ExactIO => 0,
         }
     }
     pub fn halt_peak_units(&self) -> u64 {
@@ -460,10 +464,11 @@ mod runtime_seam_tests {
     fn cloning_a_staged_scene_runtime_does_not_publish_its_transition() {
         let committed = machine("robot");
         let mut candidate = committed.clone();
-        assert_eq!(candidate.consume(1).unwrap().outcome, SceneOutcome::Passed);
+        assert_eq!(candidate.consume(1).unwrap().outcome, SceneOutcome::Running);
+        assert_eq!(candidate.consume(2).unwrap().outcome, SceneOutcome::Passed);
         assert_eq!(committed.outcome(), &SceneOutcome::Running);
         assert_eq!(committed.rounds(), 0);
-        assert_eq!(candidate.rounds(), 0);
+        assert_eq!(candidate.rounds(), 1);
     }
 }
 

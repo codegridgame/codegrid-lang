@@ -48,7 +48,7 @@ does not yet have a complete direct-vector or production deployment audit.
 | §18 Environment Evaluation | Environment is a distinct evaluation type with persistent scene state and VM-driven decisions. | The Level API v1 loader explicitly rejects Environment; the separate v2 loader accepts the three selected scene protocols. `scene_schema_v2`, `scene_session`, and API `lifecycle_v2` tests cover decoding and execution. |
 | §19 Scene Types | A scene type is an explicit, registered capability; unknown scenes never fall back to ExactIO. | `scenes.rs` and API 2 capability reporting register the three selected scenes; unknown and v1 fallback requests remain rejected. |
 | §20 Environment Data Model | Scene definitions, goals, and persistent runtime state are distinct typed data; validated definitions are immutable. | `schema/scene_v2.rs` validates immutable definitions and `scene_world.rs` owns typed persistent state; loader and execution tests cover all three current scenes. |
-| §21 Environment Goals | Configured goals compose with AND semantics and are evaluated against scene state. | `scene_protocol.rs` and the per-scene worlds implement terminal goals; focused tests cover successful and incomplete goals. Robot starts and patrols are mutually exclusive in validated v1 maps, so initial patrol completion cannot be authored. |
+| §21 Environment Goals | Configured goals compose with AND semantics and are evaluated against scene state. | `scene_protocol.rs` and the per-scene worlds implement terminal goals; focused cases cover successful and incomplete goals. Robot starts and patrols are mutually exclusive, and patrols require explicit REPAIR actions. |
 | §22 Environment Execution Model | A run initializes once, then repeats observe, decide, apply, and persist transitions. | `scene_session.rs` and `scene_evaluate.rs` retain one VM per case and atomically publish scene/input transitions. |
 | §23 Environment VM Reset | A scene run retains standard VM state throughout one test case and resets it before the next case. | `scene_session.rs` owns one VM per case; `scene_evaluate.rs` tests repeated cases and verifies their VM and scene state do not leak. |
 | §24 Observation Protocol | Scene observations are bounded bytes delivered through standard VM input. | `scene_world.rs` encodes observations and `Vm::replace_input` replaces unread input at committed boundaries; queue and input-limit tests cover the path. |
@@ -184,7 +184,7 @@ The API-2 host manifest at `fixtures/scene-v2/conformance-v2.json` contains
 Additional ExactIO cases exercise byte boundaries and classification; Robot
 cases exercise small slices, reactive observations, and terminal constraints.
 Programs are Full `.cg`, compiled by the shared Rust compiler. They exercise
-arm inspection/packing, Robot patrol, wide seeds, and Official feedback exclusion. The existing v1 manifest retains its 41 case IDs unchanged.
+arm inspection/packing, Robot patrol repair, wide seeds, and Official feedback exclusion. The existing v1 manifest retains its 41 case IDs unchanged.
 
 Reproduce both paths with `scripts/test-scene-wasm.ps1`. The native CLI uses
 `--api-version 2`; the browser binds `SceneLevelSession`; portable requests
