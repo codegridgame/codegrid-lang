@@ -569,6 +569,28 @@ mod atomic_arm_tests {
         ));
     }
     #[test]
+    fn processing_table_drop_and_same_frame_grab_keep_shared_conflict_rules() {
+        let mut stations = vec![StationType::Stack; 10];
+        stations[5] = StationType::Increment;
+        let mut initial = vec![vec![]; 10];
+        initial[0] = vec![0x15];
+        let mut machine = dual(stations, initial, vec![0x25]);
+        assert_eq!(machine.initial_input, [255, 255, 0, 6]);
+        frame(&mut machine, 1, 0);
+        let faced_shared_workbench = frame(&mut machine, 3, 4);
+        assert_eq!(faced_shared_workbench.observation, [0x15, 255, 5, 5]);
+        let result = frame(&mut machine, 2, 1);
+        assert!(matches!(
+            result.outcome,
+            SceneOutcome::Failed(SceneFailure::IllegalOperation {
+                operation: IllegalOperationReason::SharedStationConflict,
+                ..
+            })
+        ));
+        assert!(result.events.is_empty());
+        assert_eq!(machine.rounds(), 2);
+    }
+    #[test]
     fn last_output_does_not_hide_b_error_and_rolls_back_a() {
         let mut stations = vec![StationType::Stack; 10];
         stations[1] = StationType::Output;

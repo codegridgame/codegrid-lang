@@ -385,3 +385,52 @@ fn final_layout_checks_capacity_weight_and_conservation() {
     v["evaluation"]["tests"][0]["target_station_contents"][1] = json!([8, 0, 0, 0, 0]);
     assert_eq!(load(&v).unwrap_err().reason, "StationCapacityExceeded");
 }
+
+#[test]
+fn mechanical_arm_number_workbenches_are_configurable_and_transformable() {
+    let mut v = example("mechanical-arm");
+    v["scene_config"]["mode"] = json!("FINAL_LAYOUT");
+    let stations = v["scene_config"]["stations"].as_array_mut().unwrap();
+    for station in stations.iter_mut() {
+        station["station_type"] = json!("STACK");
+    }
+    stations[0]["station_type"] = json!("INCREMENT");
+    stations[1]["station_type"] = json!("DECREMENT");
+    stations[2]["station_type"] = json!("INCREMENT");
+    v["evaluation"]["tests"][0] = json!({
+        "visible": true,
+        "initial_station_contents": [[], [], [], [16, 16], [], []],
+        "target_station_contents": [[], [], [], [], [32, 32], []]
+    });
+    assert!(load(&v).is_ok(), "multiple number workbenches are allowed");
+
+    for kind in ["FLIP", "INCREMENT", "DECREMENT"] {
+        let mut invalid = v.clone();
+        for station in invalid["scene_config"]["stations"].as_array_mut().unwrap() {
+            station["station_type"] = json!("STACK");
+        }
+        invalid["scene_config"]["stations"][0]["station_type"] = json!(kind);
+        invalid["evaluation"]["tests"][0]["initial_station_contents"][0] = json!([0]);
+        assert_eq!(
+            load(&invalid).unwrap_err().reason,
+            "StationCapacityExceeded"
+        );
+    }
+
+    let mut occupied_target = v.clone();
+    for station in occupied_target["scene_config"]["stations"]
+        .as_array_mut()
+        .unwrap()
+    {
+        station["station_type"] = json!("STACK");
+    }
+    occupied_target["scene_config"]["stations"][1]["station_type"] = json!("INCREMENT");
+    occupied_target["evaluation"]["tests"][0]["initial_station_contents"] =
+        json!([[0], [], [], [], [], []]);
+    occupied_target["evaluation"]["tests"][0]["target_station_contents"] =
+        json!([[], [16], [], [], [], []]);
+    assert!(
+        load(&occupied_target).is_ok(),
+        "processor tables can be final targets"
+    );
+}

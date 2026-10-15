@@ -1,5 +1,32 @@
 # MechanicalArm module logistics redesign: task brief
 
+## 2026-10-15 follow-on: number workbenches and station observations
+
+Status: implemented and verified locally under the existing MechanicalArm
+action and round rules.
+
+Add configurable `INCREMENT` and `DECREMENT` stations. On a successful DROP of
+one module into an empty processor, modify only the four-bit number field using
+modulo-16 increment or decrement. The station holds that single processed
+module until GRAB; waiting and GRAB do not process it again, while a later DROP
+processes it once more. The existing arm hand carries one module, so every
+successful DROP processes one module; a DROP into an occupied processor fails
+without a partial state change. FLIP and number-processing stations must be
+empty in initial layouts. No new arm instruction is introduced.
+
+After each completed arm-action round, observations contain all hand bytes
+first and then the current global station IDs for the arms in A/B order.
+Station types are not included. Existing six/ten station positions,
+configuration, action encoding, turn boundaries, and atomic dual-arm
+settlement remain unchanged.
+
+Verification: all 16 values wrap correctly while preserving other module
+fields; Rust tests cover one-time DROP processing, occupied-processor rejection,
+reprocessing after a later DROP, and dual-arm conflict behavior. The 79-case
+native CLI, browser Worker, Node WASM, and Wasmtime comparison passed with
+matching Debug traces. Downstream editor and publication consumers use the
+same built evaluator and updated station IDs.
+
 Status: implementation authorized by the user on 2026-10-13; implemented and verified locally.
 Date: 2026-10-13.
 Input: the user's MechanicalArm scene redesign specification v2.0.

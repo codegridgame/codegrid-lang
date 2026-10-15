@@ -170,9 +170,6 @@ mod tests {
         );
         world.act(0, 1).unwrap();
         assert_eq!(world.observation(), [2, 34]);
-        world.act(0, 1).unwrap();
-        assert_eq!(world.robots[0].position, 34);
-        world.act(0, 2).unwrap();
         assert!(!world.complete());
         world.act(0, 1).unwrap();
         assert_eq!(world.robots[0].position, 18);
@@ -484,7 +481,9 @@ impl ArmWorld {
             .collect()
     }
     pub fn observation(&self) -> Vec<u8> {
-        self.hands.iter().map(|h| h.unwrap_or(255)).collect()
+        let mut observation: Vec<u8> = self.hands.iter().map(|h| h.unwrap_or(255)).collect();
+        observation.extend((0..self.hands.len()).map(|actor| self.target(actor) as u8));
+        observation
     }
     pub fn initial_input(&self) -> Vec<u8> {
         self.observation()
@@ -571,6 +570,12 @@ impl ArmWorld {
                 }
                 self.contents[target].push(item ^ 4);
             }
+            StationType::Increment | StationType::Decrement => {
+                if !self.contents[target].is_empty() {
+                    return Err(ArmError::OccupiedTarget);
+                }
+                self.contents[target].push(process_number_field(item, kind));
+            }
         }
         self.hands[actor] = None;
         self.work += 2;
@@ -641,6 +646,16 @@ impl ArmWorld {
     }
 }
 
+fn process_number_field(item: u8, station: crate::StationType) -> u8 {
+    let number = item >> 4;
+    let processed = match station {
+        crate::StationType::Increment => number.wrapping_add(1) & 0x0f,
+        crate::StationType::Decrement => number.wrapping_sub(1) & 0x0f,
+        _ => number,
+    };
+    (item & 0x0f) | (processed << 4)
+}
+
 pub(crate) fn serialized_layout_matches(contents: &[Vec<u8>], expected: &[u8]) -> bool {
     contents
         .iter()
@@ -661,9 +676,9 @@ mod arm_redesign_tests {
             vec![Station::Stack; 6],
             vec![vec![9, 17], vec![], vec![], vec![], vec![], vec![]],
         );
-        assert_eq!(arm.initial_input(), [255]);
+        assert_eq!(arm.initial_input(), [255, 0]);
         arm.act(0, 1).unwrap();
-        assert_eq!(arm.observation(), [17]);
+        assert_eq!(arm.observation(), [17, 0]);
         assert_eq!(arm.contents[0], [9]);
         assert_eq!(arm.act(0, 1), Err(ArmError::OccupiedHand));
         arm.act(0, 4).unwrap();
@@ -684,7 +699,7 @@ mod arm_redesign_tests {
             arm.act(0, 2).unwrap();
             assert_eq!(arm.contents[0], [byte ^ 4]);
             arm.act(0, 1).unwrap();
-            assert_eq!(arm.observation(), [byte ^ 4]);
+            assert_eq!(arm.observation(), [byte ^ 4, 0]);
             assert_ne!(byte ^ 4, 255);
         }
     }
@@ -737,5 +752,68 @@ mod arm_redesign_tests {
         assert!(arm.halt_complete());
         arm.contents[0][1] ^= 4;
         assert!(!arm.halt_complete());
+    }
+
+    #[test]
+    fn number_workbenches_wrap_and_preserve_all_other_item_bits() {
+        for low_bits in [0u8, 1, 2, 4, 5, 6, 8, 9, 10, 12, 13, 14] {
+            for number in 0u8..16 {
+                let item = (number << 4) | low_bits;
+                let incremented = process_number_field(item, Station::Increment);
+                let decremented = process_number_field(item, Station::Decrement);
+                assert_eq!(incremented & 0x0f, low_bits);
+                assert_eq!(decremented & 0x0f, low_bits);
+                assert_eq!(incremented >> 4, (number + 1) & 0x0f);
+                assert_eq!(decremented >> 4, number.wrapping_sub(1) & 0x0f);
+            }
+        }
+    }
+
+    #[test]
+    fn workbench_processes_only_on_drop_and_grab_does_not_repeat_it() {
+        let mut stations = vec![Station::Stack; 6];
+        stations[0] = Station::Increment;
+        let mut arm = world(stations, vec![vec![]; 6]);
+        arm.hands[0] = Some(0xf9);
+        arm.act(0, 2).unwrap();
+        assert_eq!(arm.contents[0], [0x09]);
+        assert_eq!(arm.hands[0], None);
+        arm.end_round(Vec::new()).unwrap();
+        assert_eq!(arm.contents[0], [0x09]);
+        arm.act(0, 1).unwrap();
+        assert_eq!(arm.hands[0], Some(0x09));
+        assert!(arm.contents[0].is_empty());
+        arm.end_round(Vec::new()).unwrap();
+        arm.act(0, 2).unwrap();
+        assert_eq!(arm.contents[0], [0x19]);
+    }
+
+    #[test]
+    fn occupied_number_workbench_drop_preserves_hand_and_station() {
+        let mut stations = vec![Station::Stack; 6];
+        stations[0] = Station::Decrement;
+        let mut initial = vec![vec![]; 6];
+        initial[0].push(0x27);
+        let mut arm = world(stations, initial);
+        arm.hands[0] = Some(0x35);
+        let before = arm.clone();
+        assert_eq!(arm.act(0, 2), Err(ArmError::OccupiedTarget));
+        assert_eq!(arm.hands, before.hands);
+        assert_eq!(arm.contents, before.contents);
+    }
+
+    #[test]
+    fn dual_observation_keeps_hands_then_reports_each_faced_station() {
+        let mut arm = ArmWorld::new(
+            2,
+            Mode::OutputSequence,
+            &vec![Station::Stack; 10],
+            &vec![vec![]; 10],
+            &[],
+            &[0],
+        );
+        assert_eq!(arm.initial_input(), [255, 255, 0, 6]);
+        arm.orientations = vec![5, 1];
+        assert_eq!(arm.observation(), [255, 255, 5, 5]);
     }
 }

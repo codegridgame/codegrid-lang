@@ -255,3 +255,17 @@ adds final-layout multi-case/sliced runs, shared conflict, heavy-on-light failur
 and final flip targets. Historical host counts above are not acceptance evidence
 for this new contract; current verification is recorded by the task completion
 and downstream synchronization report.
+
+## MechanicalArm number workbench and facing-station acceptance (2026-10-15)
+
+Focused tests now cover wrapping INCREMENT/DECREMENT over all 16 values while
+preserving bits 3..0; processing once on successful DROP; no repeat while a
+module stays on a table or is grabbed; reprocessing after a later DROP;
+occupied-table failure with no partial state change; and rejecting initially
+preplaced FLIP/number-workbench contents. They verify transformed bytes in both
+OUTPUT_SEQUENCE comparison and FINAL_LAYOUT targets, number-field conservation
+when processors are configured, single/dual input layouts (`[255,0]` and
+`[255,255,0,6]` initially), A/B hand-prefix ordering, and shared workbench
+conflicts under existing atomic-frame rules. The complete 79-case scene suite
+and matching Debug traces pass on native CLI, browser Worker, Node WASM, and
+Wasmtime.

@@ -964,3 +964,23 @@ set is shared by both robots, and the final required repair passes immediately.
 The public scene summary counts repaired patrol points. Current unpublished
 contracts and consumers are updated directly without a legacy reader or a
 mandatory version bump.
+
+## 2026-10-15: MechanicalArm number workbenches and facing-station input
+
+Add repeatable INCREMENT (+1) and DECREMENT (-1) station types. Each successful
+DROP into an empty table processes one held module once, wrapping only bits 7..4
+modulo 16 and preserving the other four bits. Processing tables hold one module;
+GRAB does not process, and dropping the module there again processes it again.
+As with FLIP, processing tables must be empty in initial layouts but may contain
+one module in a FINAL_LAYOUT target. Multiple processing stations of either kind
+are allowed. FINAL_LAYOUT inventory comparison preserves color and weight and,
+when any number workbench is configured, ignores face and number fields.
+
+MechanicalArm observations place all hand bytes first, then current global
+station IDs in A/B order; station type is not included. Therefore single-arm
+input is `[hand, station_id]`, while dual-arm input is
+`[A_hand, B_hand, A_station_id, B_station_id]`. Existing action codes and frame
+boundaries remain unchanged. Processing is committed within DROP and adds no
+tick or wait. Current unpublished author, evaluator, editor and host contracts
+are updated directly without a compatibility reader or a mandatory version
+bump.

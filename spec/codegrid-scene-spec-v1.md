@@ -19,9 +19,9 @@ The legacy API/ABI v1 retains its separate ExactIO contract.
 
 For these new scene protocols, this specification supersedes the older
 five-scene selection and its unresolved protocol examples. Robot's objective is
-visiting required patrol points, not repairing devices. The continuous test-case
-VM lifecycle below replaces the earlier proposed fresh-VM-per-decision model
-for these protocols. Existing implemented ExactIO behavior, VM semantics,
+repairing every required patrol point while standing on it. The continuous
+test-case VM lifecycle below replaces the earlier proposed fresh-VM-per-decision
+model for these protocols. Existing implemented ExactIO behavior, VM semantics,
 transaction boundaries, resource outcomes, and hidden-test privacy remain
 defined by their current contracts.
 
@@ -252,38 +252,54 @@ Rust imposes no Color/PackedRobot domain or Item/Batch case-length policy.
 One arm has six stations 0..5. Two arms have ten stations, mapping A directions
 0..5 to [0,1,2,3,4,5] and B to [6,5,4,7,8,9]. Stations 4 and 5 are shared.
 Arms start empty facing 0. Turns add 1 (right) or 5 (left), modulo 6.
-Each station is STACK (capacity four), FLIP (capacity one), INPUT, or OUTPUT.
-At most one each FLIP/INPUT/OUTPUT is allowed. Conveyors store no contents.
+Each station is STACK, FLIP, INPUT, OUTPUT, INCREMENT (+1), or DECREMENT (-1).
+STACK holds four modules. FLIP and each number workbench hold one module after
+the level starts; INPUT and OUTPUT hold no station contents. At most one each
+FLIP/INPUT/OUTPUT is allowed. Any number of INCREMENT or DECREMENT stations may
+be configured.
 
 Module bits 1..0 are color 0/1/2 (3 invalid), bit 2 face, bit 3 weight
 (1 heavy), bits 7..4 number. All 192 valid bytes, including zero, are modules;
-255 exclusively means empty hand. FLIP DROP immediately XORs bit 2. Authored
-initial/target FLIP contents retain their face. Heavy cannot lie above light.
+255 exclusively means empty hand. FLIP DROP immediately XORs bit 2. A successful
+DROP of one held module onto INCREMENT or DECREMENT immediately wraps only the
+number field modulo 16, preserving color, face, and weight. Processing occurs
+once per successful DROP; waiting or GRAB does not process again. Every
+processing station holds one module until it is grabbed. Heavy cannot lie above
+light.
 
 Retain actions 0 WAIT, 1 GRAB, 2 DROP, 3 TURN_LEFT, 4 TURN_RIGHT. GRAB takes
 the top stack module, FLIP module, or INPUT FIFO head. Empty targets and OUTPUT
 GRAB do nothing. Occupied-hand GRAB fails only if a retrievable module exists.
 Empty-hand DROP always does nothing, including INPUT. Held DROP to INPUT,
-full STACK, occupied FLIP, or heavy above light fails. OUTPUT DROP removes and
-compares the entire module byte.
+full STACK, occupied FLIP/number workbench, or heavy above light fails. OUTPUT
+DROP removes and compares the entire module byte.
 
 Dual frames collect A/B before effects, preflight action validity and any pair
 of shared-station GRAB/DROP commands (including no-ops), then stage A before B.
 Both must succeed before committing any scene state or successful feedback.
 A completing output cannot bypass B validation. VM ticks remain committed.
 Every nonterminal completed round replaces unread VM input with current hands,
-A before B. Initial input is [255] or [255,255]. Pending A at halt fails.
+then the current global station ID faced by each arm, all in A-before-B order.
+Thus single-arm input is `[hand, station_id]`; dual-arm input is
+`[A_hand, B_hand, A_station_id, B_station_id]`. Empty hands use 255. Initial
+input contains the same layout, with all hands empty and arms facing station 0
+and station 6 respectively. Station IDs do not encode station types. Pending A
+at halt fails.
 Robot retains its existing ordered dispatch and early-terminal behavior.
 
 OUTPUT_SEQUENCE requires OUTPUT and a nonempty expected sequence. Prefix
 mismatch/overflow fails; completion passes after the entire valid round.
-Remaining modules are allowed. FINAL_LAYOUT permits only STACK/FLIP and
-compares exact station contents after each complete valid action round. A matching
+Remaining modules are allowed. FINAL_LAYOUT permits STACK, FLIP, INCREMENT, and
+DECREMENT, and compares exact station contents after each complete valid action round. A matching
 layout passes immediately; an initially matching layout passes at initialization.
 Resource limits, cancellation and faults do not independently trigger success. Serialize stations in numeric order,
 each count followed by bottom-to-top bytes. Hands/directions are excluded.
-Initial/target inventories must match with face bit cleared; a held module
-therefore leaves a target module missing. Each case starts fresh VM/world.
+Initial/target inventories must match. Without a number workbench, comparison
+clears only the face bit. When a number workbench is configured, comparison
+also clears the number field, because workbenches may transform it. A held
+module therefore leaves a target module missing. FLIP, INCREMENT, and DECREMENT
+stations must be empty in initial contents; they may contain one module in a
+FINAL_LAYOUT target. Each case starts fresh VM/world.
 
 ## 9. Validation and implementation records
 

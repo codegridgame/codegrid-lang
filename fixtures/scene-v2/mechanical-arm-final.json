@@ -14,7 +14,7 @@
       },
       {
         "station_id": 1,
-        "station_type": "STACK"
+        "station_type": "INCREMENT"
       },
       {
         "station_id": 2,
@@ -86,7 +86,7 @@
         "target_station_contents": [
           [],
           [
-            0
+            16
           ],
           [],
           [],
@@ -109,7 +109,7 @@
         "target_station_contents": [
           [],
           [
-            8
+            24
           ],
           [],
           [],

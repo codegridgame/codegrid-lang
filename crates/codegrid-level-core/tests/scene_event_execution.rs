@@ -173,12 +173,12 @@ fn flip_is_immediate_and_failed_input_drop_has_station_location() {
     assert_eq!(
         snapshots,
         vec![
-            json!([255]),
-            json!([1]),
-            json!([1]),
-            json!([255]),
-            json!([5]),
-            json!([5])
+            json!([255, 0]),
+            json!([1, 0]),
+            json!([1, 1]),
+            json!([255, 1]),
+            json!([5, 1]),
+            json!([5, 0])
         ]
     );
     assert!(trace.iter().any(|e| e["kind"] == "RoundCompleted"

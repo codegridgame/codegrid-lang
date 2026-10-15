@@ -137,7 +137,7 @@ reasons where applicable. Add these v2 reason spellings, not new numeric codes:
 | UnsupportedMechanicalArmMode | Mode is neither OUTPUT_SEQUENCE nor FINAL_LAYOUT |
 | InvalidStationCount | Station count does not match arm layout |
 | DuplicateStationId | A global station ID occurs twice |
-| UnsupportedStationType | Type is not STACK, FLIP, INPUT, or OUTPUT |
+| UnsupportedStationType | Type is not STACK, FLIP, INPUT, OUTPUT, INCREMENT, or DECREMENT |
 | DuplicateStationType | More than one FLIP, INPUT, or OUTPUT |
 | MissingOutputStation | OUTPUT_SEQUENCE has no OUTPUT |
 | InvalidFinalLayoutStation | FINAL_LAYOUT contains conveyors |
@@ -147,7 +147,7 @@ reasons where applicable. Add these v2 reason spellings, not new numeric codes:
 | InvalidModuleStack | Heavy module lies above light module |
 | InvalidModuleSequence | Expected module sequence is empty |
 | MissingInputStation | Nonempty input_queue without INPUT |
-| ModuleConservationMismatch | Final target inventory differs after masking face bit |
+| ModuleConservationMismatch | Final target inventory differs after masking face bit and, when a number workbench exists, the number field |
 
 Range violations in numeric indices, IDs, colors, or byte flags retain
 IntegerOutOfRange rather than duplicating those meanings. Invalid direction
@@ -331,8 +331,10 @@ RoundCompleted follows actual round-end publication, then InputUpdated.
 CaseEnded is last for a visible case. A scene-failure event can retain completed
 A effects but emits no RoundCompleted/input update. A resource-discarded draft
 emits no speculative events. Both arm layouts publish current-hand snapshots
-in RoundCompleted, followed by InputUpdated. Dynamic updates discard all unread
-old input, preserving already read register values.
+in RoundCompleted, followed by InputUpdated. MechanicalArm observations serialize
+all hand bytes first, then each arm's currently faced global station ID in A/B
+order; the station ID does not include its type. Dynamic updates discard all
+unread old input, preserving already read register values.
 
 Event publication/reservation is all-or-none per resumable scene draft. For Robot store
 committed actor effects needed on B failure, and reserve their visible event

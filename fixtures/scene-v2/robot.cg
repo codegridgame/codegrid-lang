@@ -1,4 +1,4 @@
 @main
-@size 3x1
-~> .1 ;
+@size 4x1
+~> .1 .2 ;
 @end main

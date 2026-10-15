@@ -468,7 +468,7 @@ impl SceneRuntime for MechanicalArmRuntime {
             + if initial_input_len == 0 {
                 0
             } else {
-                actors as u64
+                actors as u64 * 2
             }
     }
 
@@ -485,7 +485,7 @@ impl SceneRuntime for MechanicalArmRuntime {
             + if observation_is_empty {
                 0
             } else {
-                actors as u64
+                actors as u64 * 2
             }
     }
 

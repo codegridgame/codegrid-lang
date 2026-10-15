@@ -7,6 +7,8 @@ pub enum StationType {
     Flip,
     Input,
     Output,
+    Increment,
+    Decrement,
 }
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum MechanicalArmMode {
@@ -205,6 +207,8 @@ fn config(kind: SceneKind, v: &Value) -> Result<SceneConfig, LevelError> {
                         "FLIP" => StationType::Flip,
                         "INPUT" => StationType::Input,
                         "OUTPUT" => StationType::Output,
+                        "INCREMENT" => StationType::Increment,
+                        "DECREMENT" => StationType::Decrement,
                         _ => {
                             return Err(LevelError::invalid(
                                 "UnsupportedStationType",
@@ -464,6 +468,7 @@ fn station_contents(
     v: &Value,
     p: &str,
     stations: &[StationType],
+    initial: bool,
 ) -> Result<Vec<Vec<u8>>, LevelError> {
     let records = array(v, p)?;
     if records.len() != stations.len() {
@@ -475,7 +480,8 @@ fn station_contents(
         let contents = module_bytes(record, &q)?;
         let capacity = match kind {
             StationType::Stack => 4,
-            StationType::Flip => 1,
+            StationType::Flip | StationType::Increment | StationType::Decrement if initial => 0,
+            StationType::Flip | StationType::Increment | StationType::Decrement => 1,
             _ => 0,
         };
         if contents.len() > capacity {
@@ -522,6 +528,7 @@ fn case(config: &SceneConfig, v: &Value, p: &str) -> Result<SceneCase, LevelErro
                 &m["initial_station_contents"],
                 &format!("{p}.initial_station_contents"),
                 stations,
+                true,
             )?;
             let (input, expected) = match mode {
                 MechanicalArmMode::OutputSequence => {
@@ -547,11 +554,20 @@ fn case(config: &SceneConfig, v: &Value, p: &str) -> Result<SceneCase, LevelErro
                         &m["target_station_contents"],
                         &format!("{p}.target_station_contents"),
                         stations,
+                        false,
                     )?;
                     let inventory = |contents: &[Vec<u8>]| {
                         let mut counts = [0usize; 256];
+                        let transforms_numbers = stations.iter().any(|kind| {
+                            matches!(kind, StationType::Increment | StationType::Decrement)
+                        });
                         for value in contents.iter().flatten() {
-                            counts[usize::from(*value & !4)] += 1;
+                            let key = if transforms_numbers {
+                                *value & 0x0b
+                            } else {
+                                *value & !4
+                            };
+                            counts[usize::from(key)] += 1;
                         }
                         counts
                     };

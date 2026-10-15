@@ -1,4 +1,4 @@
 @main
-@size 8x1
-~> , , .1 , , . ;
+@size 9x1
+~> , , .1 , , .1 .2 ;
 @end main

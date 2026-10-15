@@ -19,7 +19,7 @@ sparse colors, and sparse mutually exclusive start/patrol/trigger/door objects.
 All walkable cells have the same height. Each required patrol point must be
 explicitly repaired by a robot standing on it.
 Equal trigger/door IDs pair a mechanism. See the Robot section of the author
-specification. MechanicalArm flips module byte 1 to byte 5 and transports it to OUTPUT.
+specification. MechanicalArm flips module byte 1 to byte 5 and transports it to OUTPUT; its station config also includes INCREMENT and DECREMENT workbenches.
 
 No program is embedded; program rules and scoring describe example author choices. The examples establish shape and invalid data cases, not solvability, scores, or native/WASM parity. Loader validation and full execution conformance are covered by separate Rust and host tests; these documents alone do not establish either result.
 

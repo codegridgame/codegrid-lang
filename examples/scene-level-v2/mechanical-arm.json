@@ -26,11 +26,11 @@
       },
       {
         "station_id": 4,
-        "station_type": "STACK"
+        "station_type": "INCREMENT"
       },
       {
         "station_id": 5,
-        "station_type": "STACK"
+        "station_type": "DECREMENT"
       }
     ]
   },

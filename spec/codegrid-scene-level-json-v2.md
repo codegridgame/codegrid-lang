@@ -159,9 +159,13 @@ color and object; associated mechanisms must be repaired or removed before expor
 Config has exactly arm_count (1 or 2), mode (OUTPUT_SEQUENCE or FINAL_LAYOUT),
 and stations. Each station record has exactly station_id and station_type.
 Provide every ID exactly once: 0..5 for one arm or 0..9 for two. Record order
-is immaterial. Types are STACK, FLIP, INPUT, OUTPUT. Capacities derive from
-type: STACK=4, FLIP=1, INPUT/OUTPUT=0. At most one each special type is allowed.
-OUTPUT_SEQUENCE requires OUTPUT; FINAL_LAYOUT forbids conveyors.
+is immaterial. Types are STACK, FLIP, INPUT, OUTPUT, INCREMENT, and DECREMENT.
+Capacities derive from type: STACK=4; FLIP, INCREMENT, and DECREMENT hold at
+most one runtime module; INPUT/OUTPUT hold no station contents. Initial contents
+must be empty on FLIP and number workbenches. At most one each FLIP/INPUT/OUTPUT
+is allowed; any number of INCREMENT and DECREMENT stations is allowed.
+OUTPUT_SEQUENCE requires OUTPUT; FINAL_LAYOUT forbids conveyors and permits
+number workbenches as target stations.
 
 OUTPUT_SEQUENCE cases contain exactly visible, initial_station_contents,
 input_queue, expected_output. FINAL_LAYOUT cases contain exactly visible,
@@ -171,10 +175,11 @@ module bytes, empty conveyors, and no heavy module above light. Bytes have
 color 0/1/2 in bits 1..0, face in bit 2, weight in bit 3, number in bits 7..4.
 255 and all color-3 bytes are invalid modules. A nonempty input_queue requires
 INPUT. Expected output must be nonempty; it may consume a subset of modules.
-Final initial/target inventory must match after clearing bit 2. Rust derives
-target count-prefixed bytes; independent expected_output is forbidden.
-Hands/directions start fixed and are not author target fields. Loading FLIP
-contents preserves the authored face. Validation does not prove reachability.
+Final initial/target inventory must match after clearing bit 2. If any number
+workbench is configured, comparison also clears bits 7..4. Rust derives target
+count-prefixed bytes; independent expected_output is forbidden. Hands/directions
+start fixed and are not author target fields. Validation does not prove
+reachability.
 
 ## 8. Validation surfaces and host integration
 

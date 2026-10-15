@@ -999,6 +999,8 @@ Each `scene_type` defines one fixed Observation protocol.
 Individual levels of that type cannot redefine it.
 
 All Robot levels therefore use the same Robot Observation protocol.
+MechanicalArm likewise has one observation layout for all levels; its hand
+bytes and currently faced station IDs are defined by Scene Spec v1, Section 8.
 
 This gives players one stable device interface to learn.
 

@@ -104,14 +104,14 @@ fn robot_initial_input_and_partial_frame_halt() {
 #[test]
 fn arm_input_flip_and_output_sequence() {
     let mut m = machine(&example("arm"));
-    assert_eq!(m.initial_input(), [255]);
-    assert_eq!(m.consume(1).unwrap().observation, [1]);
+    assert_eq!(m.initial_input(), [255, 0]);
+    assert_eq!(m.consume(1).unwrap().observation, [1, 0]);
     m.consume(4).unwrap();
     m.consume(2).unwrap();
-    assert_eq!(m.consume(1).unwrap().observation, [5]);
+    assert_eq!(m.consume(1).unwrap().observation, [5, 1]);
     m.consume(4).unwrap();
     m.consume(2).unwrap();
-    assert_eq!(m.consume(1).unwrap().observation, [5]);
+    assert_eq!(m.consume(1).unwrap().observation, [5, 2]);
     m.consume(4).unwrap();
     let terminal = m.consume(2).unwrap();
     assert_eq!(terminal.outcome, SceneOutcome::Passed);

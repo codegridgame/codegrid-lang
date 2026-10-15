@@ -657,6 +657,24 @@
       "expected_status": "TestFailed"
     },
     {
+      "id": "mechanical-arm.increment-wrap-output",
+      "level": "mechanical-arm-increment.json",
+      "program": "mechanical-arm-increment.cg",
+      "mode": "Debug",
+      "seed": "0",
+      "custom_limit": "1000",
+      "expected_status": "Passed"
+    },
+    {
+      "id": "mechanical-arm.decrement-wrap-output",
+      "level": "mechanical-arm-decrement.json",
+      "program": "mechanical-arm-decrement.cg",
+      "mode": "Debug",
+      "seed": "0",
+      "custom_limit": "1000",
+      "expected_status": "Passed"
+    },
+    {
       "id": "mechanical-arm.final-layout",
       "level": "mechanical-arm-final.json",
       "program": "mechanical-arm-final.cg",

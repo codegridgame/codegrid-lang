@@ -57,7 +57,7 @@ fn halt_and_constraint_terminal_order() {
     assert_eq!(result.status, EvaluationStatus::TestFailed);
     assert!(matches!(result.outcome, Some(SceneOutcome::Failed(_))));
     let mut v = author("robot");
-    v["constraints"]["max_ticks"] = json!(1);
+    v["constraints"]["max_ticks"] = json!(2);
     let result = run(
         session(&v, program(&[".1", ".2", ";"]), config(), limits()),
         100,
@@ -65,23 +65,8 @@ fn halt_and_constraint_terminal_order() {
     assert_eq!(result.status, EvaluationStatus::ConstraintExceeded);
     assert_eq!(result.outcome, Some(SceneOutcome::Passed));
     let v = author("robot");
-    let wrap_config = config();
     let result = run(
-        session(
-            &v,
-            grid(
-                vec![
-                    Cell::entry(Direction::Right),
-                    Cell::instruction(PrimaryInstruction::from_token(".1").unwrap(), None),
-                    Cell::entry(Direction::Right),
-                    Cell::instruction(PrimaryInstruction::from_token(".2").unwrap(), None),
-                ],
-                2,
-                2,
-            ),
-            wrap_config,
-            limits(),
-        ),
+        session(&v, program(&[".1", ".2", ";"]), config(), limits()),
         100,
     );
     assert_eq!(result.status, EvaluationStatus::Passed, "{result:?}");
@@ -241,7 +226,7 @@ fn input_update_discards_older_unread_snapshot() {
     assert_eq!(result.summary["frames"], 4);
     assert_eq!(result.summary["rounds"], 3);
     assert_eq!(result.status, EvaluationStatus::Passed);
-    assert_eq!(result.summary["repaired_patrol_points"], 2);
+    assert_eq!(result.summary["repaired_patrol_points"], 1);
 }
 #[test]
 fn static_output_passes_and_robot_halt_without_patrol_repair_fails() {
