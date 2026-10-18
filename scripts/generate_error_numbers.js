@@ -25,7 +25,7 @@ const outputs = new Map([
     entries.map(e => `  ${JSON.stringify(`${e.layer}:${e.code}`)}: ${JSON.stringify(e.error_number)},`).join('\n') + '\n};\n'],
   ['spec/codegrid-error-numbers.md',
     '# CodeGrid Four-Digit Error Numbers\n\n' +
-    'Generated from [codegrid-error-codes.json](codegrid-error-codes.json). Numbers are stable, unique, append-only four-digit decimal strings. Original identifiers and protocol codes remain compatible.\n\n' +
+    'Generated from [codegrid-error-codes.json](codegrid-error-codes.json). Numbers are unique four-digit decimal strings for presentation; original scoped identifiers and protocol codes remain authoritative.\n\n' +
     '| Number | Layer | Original code | Trigger / meaning |\n| --- | --- | --- | --- |\n' +
     entries.map(e => `| \`${e.error_number}\` | ${e.layer} | \`${e.code}\` | ${e.condition.replace(/\|/g, '\\|')} |`).join('\n') + '\n'],
 ]);

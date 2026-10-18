@@ -1,4 +1,4 @@
-use std::collections::BTreeSet;
+use std::collections::{BTreeMap, BTreeSet};
 
 use num_bigint::BigInt;
 
@@ -7,9 +7,7 @@ use codegrid_model::{AttachmentInstruction, PrimaryInstruction, Slot};
 
 use crate::Coordinate;
 
-pub const GAS_SCHEDULE_VERSION: u32 = 1;
-
-/// A dynamic instruction category used by the Instruction Variety metric.
+/// A dynamic instruction category used by candidate `StepFootprint` counts.
 #[derive(Clone, Copy, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
 pub enum InstructionKind {
     RandomDirection,
@@ -40,39 +38,7 @@ pub enum InstructionKind {
 }
 
 impl InstructionKind {
-    /// Stable public name used when serializing the raw Instruction Variety
-    /// metric across native and WebAssembly hosts.
-    pub const fn name(self) -> &'static str {
-        match self {
-            Self::RandomDirection => "RandomDirection",
-            Self::Compare => "Compare",
-            Self::Condition => "Condition",
-            Self::Read => "Read",
-            Self::Clear => "Clear",
-            Self::Add => "Add",
-            Self::Sub => "Sub",
-            Self::MoveRegisterPointer => "MoveRegisterPointer",
-            Self::Output => "Output",
-            Self::Push => "Push",
-            Self::PopAdd => "PopAdd",
-            Self::Decode => "Decode",
-            Self::Encode => "Encode",
-            Self::Call => "Call",
-            Self::Return => "Return",
-            Self::Neg => "Neg",
-            Self::Nand => "Nand",
-            Self::MemoryLoad => "MemoryLoad",
-            Self::MemoryStore => "MemoryStore",
-            Self::MovePage => "MovePage",
-            Self::Shift => "Shift",
-            Self::ReadCode => "ReadCode",
-            Self::WriteCode => "WriteCode",
-            Self::CustomReturn => "CustomReturn",
-            Self::Halt => "Halt",
-        }
-    }
-
-    /// Returns the metric category for an executed Primary instruction.
+    /// Returns the candidate operation category for an executed Primary.
     /// Direction instructions and structural shells are intentionally excluded.
     pub const fn from_primary(instruction: PrimaryInstruction) -> Option<Self> {
         match instruction {
@@ -106,8 +72,8 @@ impl InstructionKind {
         }
     }
 
-    /// Returns the metric category for an executed Attachment. Repeat is not
-    /// an operation and is excluded from Instruction Variety.
+    /// Returns the candidate operation category for an executed Attachment.
+    /// Repeat is not an operation.
     pub const fn from_attachment(attachment: AttachmentInstruction) -> Option<Self> {
         match attachment {
             AttachmentInstruction::ReadCode => Some(Self::ReadCode),
@@ -120,7 +86,7 @@ impl InstructionKind {
 /// Identifies a static normal-board or Folded Block cell.
 ///
 /// Custom invocation identity is intentionally absent: repeated calls to the
-/// same static Custom definition must deduplicate in Used Cells.
+/// same static Custom definition deduplicate within one candidate footprint.
 #[derive(Clone, Copy, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
 pub struct StaticCellId {
     pub code_grid: CodeGridId,
@@ -129,12 +95,12 @@ pub struct StaticCellId {
     pub position: Coordinate,
 }
 
-/// Identifies one isolated memory instance for Used Memory Addresses.
+/// Identifies one isolated memory instance in a runtime memory location.
 #[derive(Clone, Copy, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
 pub enum MemorySpaceId {
     Outer,
     CustomInvocation {
-        global_tick: u64,
+        transition_id: u64,
         caller_thread_id: u64,
         custom_id: Slot,
     },
@@ -146,331 +112,182 @@ pub struct MemoryLocationId {
     pub address: BigInt,
 }
 
+/// Identifies an isolated memory region without exposing host pricing policy.
+#[derive(Clone, Copy, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
+pub enum MemoryAccessSpace {
+    Outer,
+    CustomInvocation {
+        /// Stable ordinal for the enclosing VM transition, used only to
+        /// distinguish this invocation's isolated memory from other calls.
+        transition_id: u64,
+        caller_thread_id: u64,
+        custom_id: Slot,
+    },
+}
+
+/// Exact memory location observed during one candidate transition.
+#[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
+pub struct MemoryAccessObservation {
+    pub space: MemoryAccessSpace,
+    pub address: BigInt,
+}
+
+impl From<&MemoryLocationId> for MemoryAccessObservation {
+    fn from(location: &MemoryLocationId) -> Self {
+        let space = match location.space {
+            MemorySpaceId::Outer => MemoryAccessSpace::Outer,
+            MemorySpaceId::CustomInvocation {
+                transition_id,
+                caller_thread_id,
+                custom_id,
+            } => MemoryAccessSpace::CustomInvocation {
+                transition_id,
+                caller_thread_id,
+                custom_id,
+            },
+        };
+        Self {
+            space,
+            address: location.address.clone(),
+        }
+    }
+}
+
+/// Candidate high-water marks sampled while evaluating one transition.
+#[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
+pub struct StackPeaks {
+    pub data: u64,
+    pub instruction: u64,
+    pub call: u64,
+}
+
+/// Policy-neutral observations from one prepared VM transition.
+///
+/// Hosts can combine these observations with their own resource prices and
+/// budgets. Repeated operations are counted, while code-cell and memory
+/// identities are deduplicated within this candidate transition.
+#[derive(Clone, Debug, Default, Eq, PartialEq)]
+pub struct StepFootprint {
+    pub operations: BTreeMap<InstructionKind, u64>,
+    pub code_cells: BTreeSet<StaticCellId>,
+    pub memory_accesses: BTreeSet<MemoryAccessObservation>,
+    pub stack_peaks: StackPeaks,
+}
+
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum MetricCounterOverflow {
     OperationCount,
-    GlobalTick,
+    CustomInternalDispatches,
+    CommittedSteps,
     DataStackUsage,
     InstructionStackUsage,
     CallStackUsage,
 }
 
-/// Deterministic raw VM metrics. Ordered sets make snapshots independent of
-/// hash iteration order and suitable for stable host serialization.
+/// Committed-step count plus a temporary candidate-observation collector.
+/// Candidate observations are returned through `StepReport` and discarded
+/// when an attempt is merged into persistent VM state.
 #[derive(Clone, Debug, Default, Eq, PartialEq)]
 pub struct RuntimeMetrics {
-    execution_gas: u64,
-    memory_gas: u64,
-    stack_gas: u64,
-    gas_used: u64,
-    gas_overflow: bool,
-    global_tick: u64,
-    operation_count: u64,
-    used_cells: BTreeSet<StaticCellId>,
-    peak_data_stack_usage: u64,
-    peak_instruction_stack_usage: u64,
-    peak_call_stack_usage: u64,
-    used_memory_addresses: BTreeSet<MemoryLocationId>,
-    instruction_variety: BTreeSet<InstructionKind>,
+    committed_steps: u64,
+    candidate_operations: BTreeMap<InstructionKind, u64>,
+    candidate_code_cells: BTreeSet<StaticCellId>,
+    candidate_memory_accesses: BTreeSet<MemoryAccessObservation>,
+    candidate_stack_peaks: StackPeaks,
 }
 
-/// Compact cumulative raw metrics for per-step host responses.
-///
-/// Unlike [`RuntimeMetrics`], this summary does not retain or expose the full
-/// identities of used cells and memory addresses.
+/// Step count carried by run and snapshot responses.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct RuntimeMetricSummary {
-    execution_gas: u64,
-    memory_gas: u64,
-    stack_gas: u64,
-    gas_used: u64,
-    gas_overflow: bool,
-    global_tick: u64,
-    operation_count: u64,
-    used_cell_count: usize,
-    peak_data_stack_usage: u64,
-    peak_instruction_stack_usage: u64,
-    peak_call_stack_usage: u64,
-    used_memory_address_count: usize,
-    instruction_variety: BTreeSet<InstructionKind>,
+    committed_steps: u64,
 }
 
 impl RuntimeMetricSummary {
-    pub const fn gas_used(&self) -> u64 {
-        self.gas_used
-    }
-    pub const fn execution_gas(&self) -> u64 {
-        self.execution_gas
-    }
-    pub const fn memory_gas(&self) -> u64 {
-        self.memory_gas
-    }
-    pub const fn stack_gas(&self) -> u64 {
-        self.stack_gas
-    }
-    pub const fn gas_schedule_version(&self) -> u32 {
-        GAS_SCHEDULE_VERSION
-    }
-
-    pub const fn global_tick(&self) -> u64 {
-        self.global_tick
-    }
-
-    pub const fn operation_count(&self) -> u64 {
-        self.operation_count
-    }
-
-    pub const fn used_cell_count(&self) -> usize {
-        self.used_cell_count
-    }
-
-    pub const fn peak_data_stack_usage(&self) -> u64 {
-        self.peak_data_stack_usage
-    }
-
-    pub const fn peak_instruction_stack_usage(&self) -> u64 {
-        self.peak_instruction_stack_usage
-    }
-
-    pub const fn peak_call_stack_usage(&self) -> u64 {
-        self.peak_call_stack_usage
-    }
-
-    pub const fn used_memory_address_count(&self) -> usize {
-        self.used_memory_address_count
-    }
-
-    pub fn instruction_variety(&self) -> &BTreeSet<InstructionKind> {
-        &self.instruction_variety
+    pub const fn committed_steps(&self) -> u64 {
+        self.committed_steps
     }
 }
 
 impl RuntimeMetrics {
-    pub(crate) fn begin_tick_attempt(&self) -> Self {
+    pub(crate) fn begin_step_attempt(&self) -> Self {
         Self {
-            execution_gas: self.execution_gas,
-            memory_gas: self.memory_gas,
-            stack_gas: self.stack_gas,
-            gas_used: self.gas_used,
-            gas_overflow: self.gas_overflow,
-            global_tick: self.global_tick,
-            operation_count: self.operation_count,
-            used_cells: BTreeSet::new(),
-            peak_data_stack_usage: self.peak_data_stack_usage,
-            peak_instruction_stack_usage: self.peak_instruction_stack_usage,
-            peak_call_stack_usage: self.peak_call_stack_usage,
-            used_memory_addresses: self.used_memory_addresses.clone(),
-            instruction_variety: BTreeSet::new(),
+            committed_steps: self.committed_steps,
+            candidate_operations: BTreeMap::new(),
+            candidate_code_cells: BTreeSet::new(),
+            candidate_memory_accesses: BTreeSet::new(),
+            candidate_stack_peaks: StackPeaks::default(),
         }
     }
 
-    pub(crate) fn merge_tick_attempt(&mut self, mut attempt: Self) {
-        self.execution_gas = attempt.execution_gas;
-        self.memory_gas = attempt.memory_gas;
-        self.stack_gas = attempt.stack_gas;
-        self.gas_used = attempt.gas_used;
-        self.gas_overflow = attempt.gas_overflow;
-        self.global_tick = attempt.global_tick;
-        self.operation_count = attempt.operation_count;
-        self.peak_data_stack_usage = attempt.peak_data_stack_usage;
-        self.peak_instruction_stack_usage = attempt.peak_instruction_stack_usage;
-        self.peak_call_stack_usage = attempt.peak_call_stack_usage;
-        self.used_cells.append(&mut attempt.used_cells);
-        self.used_memory_addresses
-            .append(&mut attempt.used_memory_addresses);
-        self.instruction_variety
-            .append(&mut attempt.instruction_variety);
+    pub(crate) fn merge_step_attempt(&mut self, attempt: Self) {
+        self.committed_steps = attempt.committed_steps;
     }
 
-    pub const fn gas_used(&self) -> u64 {
-        self.gas_used
-    }
-    pub const fn execution_gas(&self) -> u64 {
-        self.execution_gas
-    }
-    pub const fn memory_gas(&self) -> u64 {
-        self.memory_gas
-    }
-    pub const fn stack_gas(&self) -> u64 {
-        self.stack_gas
-    }
-    pub const fn gas_schedule_version(&self) -> u32 {
-        GAS_SCHEDULE_VERSION
+    pub(crate) fn step_footprint(&self) -> StepFootprint {
+        StepFootprint {
+            operations: self.candidate_operations.clone(),
+            code_cells: self.candidate_code_cells.clone(),
+            memory_accesses: self.candidate_memory_accesses.clone(),
+            stack_peaks: self.candidate_stack_peaks,
+        }
     }
 
-    pub const fn global_tick(&self) -> u64 {
-        self.global_tick
-    }
-
-    pub const fn operation_count(&self) -> u64 {
-        self.operation_count
-    }
-
-    pub fn used_cells(&self) -> &BTreeSet<StaticCellId> {
-        &self.used_cells
-    }
-
-    pub fn used_cell_count(&self) -> usize {
-        self.used_cells.len()
-    }
-
-    pub const fn peak_data_stack_usage(&self) -> u64 {
-        self.peak_data_stack_usage
-    }
-
-    pub const fn peak_instruction_stack_usage(&self) -> u64 {
-        self.peak_instruction_stack_usage
-    }
-
-    pub const fn peak_call_stack_usage(&self) -> u64 {
-        self.peak_call_stack_usage
-    }
-
-    pub fn used_memory_addresses(&self) -> &BTreeSet<MemoryLocationId> {
-        &self.used_memory_addresses
-    }
-
-    pub fn used_memory_address_count(&self) -> usize {
-        self.used_memory_addresses.len()
-    }
-
-    pub fn instruction_variety(&self) -> &BTreeSet<InstructionKind> {
-        &self.instruction_variety
+    pub const fn committed_steps(&self) -> u64 {
+        self.committed_steps
     }
 
     pub fn summary(&self) -> RuntimeMetricSummary {
         RuntimeMetricSummary {
-            execution_gas: self.execution_gas,
-            memory_gas: self.memory_gas,
-            stack_gas: self.stack_gas,
-            gas_used: self.gas_used,
-            gas_overflow: self.gas_overflow,
-            global_tick: self.global_tick,
-            operation_count: self.operation_count,
-            used_cell_count: self.used_cells.len(),
-            peak_data_stack_usage: self.peak_data_stack_usage,
-            peak_instruction_stack_usage: self.peak_instruction_stack_usage,
-            peak_call_stack_usage: self.peak_call_stack_usage,
-            used_memory_address_count: self.used_memory_addresses.len(),
-            instruction_variety: self.instruction_variety.clone(),
+            committed_steps: self.committed_steps,
         }
-    }
-
-    pub(crate) fn charge_execution(&mut self, price: u64) {
-        if let Some(total) = self.execution_gas.checked_add(price) {
-            self.execution_gas = total;
-        } else {
-            self.gas_overflow = true;
-        }
-    }
-
-    /// An unrepresentable attempted total has no numeric Gas result. Retain
-    /// the last completed tick's exact, reconciling breakdown for diagnostics.
-    pub(crate) fn retain_representable_gas(&mut self, prior: &Self) {
-        self.execution_gas = prior.execution_gas;
-        self.memory_gas = prior.memory_gas;
-        self.stack_gas = prior.stack_gas;
-        self.gas_used = prior.gas_used;
-    }
-
-    pub(crate) fn finalize_gas(&mut self) -> Result<(), ()> {
-        let memory = u64::try_from(self.used_memory_addresses.len())
-            .ok()
-            .and_then(|n| n.checked_mul(10));
-        let stack = self
-            .peak_instruction_stack_usage
-            .checked_mul(4)
-            .and_then(|n| {
-                self.peak_call_stack_usage
-                    .checked_mul(16)
-                    .and_then(|c| n.checked_add(c))
-            })
-            .and_then(|n| n.checked_add(self.peak_data_stack_usage));
-        match (memory, stack) {
-            (Some(memory), Some(stack)) if !self.gas_overflow => {
-                if let Some(total) = self
-                    .execution_gas
-                    .checked_add(memory)
-                    .and_then(|n| n.checked_add(stack))
-                {
-                    self.memory_gas = memory;
-                    self.stack_gas = stack;
-                    self.gas_used = total;
-                    return Ok(());
-                }
-            }
-            _ => {}
-        }
-        self.gas_overflow = true;
-        Err(())
     }
 
     pub fn record_operation(&mut self, kind: InstructionKind) -> Result<(), MetricCounterOverflow> {
-        self.charge_execution(match kind {
-            InstructionKind::RandomDirection => 1,
-            InstructionKind::Compare
-            | InstructionKind::Condition
-            | InstructionKind::MoveRegisterPointer
-            | InstructionKind::MovePage
-            | InstructionKind::Shift
-            | InstructionKind::Return
-            | InstructionKind::CustomReturn => 2,
-            InstructionKind::Clear
-            | InstructionKind::Add
-            | InstructionKind::Sub
-            | InstructionKind::Neg
-            | InstructionKind::Nand
-            | InstructionKind::Push
-            | InstructionKind::PopAdd
-            | InstructionKind::Decode
-            | InstructionKind::Encode => 3,
-            InstructionKind::Read
-            | InstructionKind::Output
-            | InstructionKind::MemoryLoad
-            | InstructionKind::ReadCode => 5,
-            InstructionKind::MemoryStore | InstructionKind::WriteCode | InstructionKind::Call => 8,
-            InstructionKind::Halt => 0,
-        });
-        self.instruction_variety.insert(kind);
-        self.operation_count = self
-            .operation_count
+        let count = self.candidate_operations.entry(kind).or_default();
+        *count = count
             .checked_add(1)
             .ok_or(MetricCounterOverflow::OperationCount)?;
         Ok(())
     }
 
-    /// Advances the outer clock after a successful Global Tick commit.
-    pub fn commit_global_tick(&mut self) -> Result<(), MetricCounterOverflow> {
-        self.global_tick = self
-            .global_tick
+    /// Counts one successfully committed outer transition.
+    pub fn commit_step(&mut self) -> Result<(), MetricCounterOverflow> {
+        self.committed_steps = self
+            .committed_steps
             .checked_add(1)
-            .ok_or(MetricCounterOverflow::GlobalTick)?;
+            .ok_or(MetricCounterOverflow::CommittedSteps)?;
         Ok(())
     }
 
     pub fn record_cell(&mut self, cell: StaticCellId) {
-        self.used_cells.insert(cell);
+        self.candidate_code_cells.insert(cell);
     }
 
     pub fn record_memory_access(&mut self, location: MemoryLocationId) {
-        self.used_memory_addresses.insert(location);
+        self.candidate_memory_accesses
+            .insert(MemoryAccessObservation::from(&location));
     }
 
     /// Samples one normative logical instant for the three aggregate stack
     /// high-water marks. Callers are responsible for summing concurrently
     /// resident outer and Custom stacks for that instant.
     pub fn observe_stack_usage(&mut self, data: u64, instruction: u64, call: u64) {
-        self.peak_data_stack_usage = self.peak_data_stack_usage.max(data);
-        self.peak_instruction_stack_usage = self.peak_instruction_stack_usage.max(instruction);
-        self.peak_call_stack_usage = self.peak_call_stack_usage.max(call);
+        self.candidate_stack_peaks.data = self.candidate_stack_peaks.data.max(data);
+        self.candidate_stack_peaks.instruction =
+            self.candidate_stack_peaks.instruction.max(instruction);
+        self.candidate_stack_peaks.call = self.candidate_stack_peaks.call.max(call);
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use super::{InstructionKind, MemoryLocationId, MemorySpaceId, RuntimeMetrics, StaticCellId};
-    use crate::Coordinate;
+    use std::collections::BTreeSet;
 
+    use super::{
+        InstructionKind, MemoryAccessObservation, MemoryAccessSpace, MemoryLocationId,
+        MemorySpaceId, RuntimeMetrics, StaticCellId,
+    };
+    use crate::Coordinate;
     use codegrid_ir::{BoardId, CodeGridId};
     use codegrid_model::{AttachmentInstruction, PrimaryInstruction, Slot};
     use num_bigint::BigInt;
@@ -485,78 +302,102 @@ mod tests {
     }
 
     #[test]
-    fn gas_arithmetic_overflow_does_not_wrap() {
-        let mut metrics = RuntimeMetrics {
-            execution_gas: u64::MAX,
-            ..RuntimeMetrics::default()
-        };
-        metrics.charge_execution(1);
-        assert!(metrics.finalize_gas().is_err());
-        assert_eq!(metrics.execution_gas(), u64::MAX);
-        let mut metrics = RuntimeMetrics::default();
-        metrics.observe_stack_usage(0, 0, u64::MAX);
-        assert!(metrics.finalize_gas().is_err());
-    }
-
-    #[test]
-    fn counts_static_cells_once_and_keeps_custom_definitions_distinct() {
-        let mut metrics = RuntimeMetrics::default();
-        let outer = cell(CodeGridId::Outer, 0);
-        let custom = cell(
-            CodeGridId::Custom(Slot::new(0).expect("zero is a valid ID")),
-            0,
-        );
-
-        metrics.record_cell(outer);
-        metrics.record_cell(outer);
-        metrics.record_cell(custom);
-
-        assert_eq!(metrics.used_cell_count(), 2);
-    }
-
-    #[test]
-    fn counts_each_custom_memory_invocation_as_a_distinct_space() {
-        let custom_id = Slot::new(0).expect("zero is a valid ID");
-        let address = BigInt::from(10);
-        let mut metrics = RuntimeMetrics::default();
-
-        for global_tick in [1, 2] {
-            metrics.record_memory_access(MemoryLocationId {
-                space: MemorySpaceId::CustomInvocation {
-                    global_tick,
-                    caller_thread_id: 3,
-                    custom_id,
-                },
-                address: address.clone(),
-            });
+    fn candidate_footprint_contains_only_current_step_observations() {
+        let mut metrics = RuntimeMetrics::default().begin_step_attempt();
+        let visited = cell(CodeGridId::Outer, 3);
+        let custom_id = Slot::new(2).expect("custom ID is valid");
+        metrics.record_cell(visited);
+        metrics.record_cell(visited);
+        for _ in 0..2 {
+            metrics
+                .record_operation(InstructionKind::Add)
+                .expect("one candidate operation cannot overflow");
         }
-        metrics.record_memory_access(MemoryLocationId {
-            space: MemorySpaceId::Outer,
-            address,
-        });
-
-        assert_eq!(metrics.used_memory_address_count(), 3);
-    }
-
-    #[test]
-    fn operation_count_includes_repeated_executions_but_variety_deduplicates() {
-        let mut metrics = RuntimeMetrics::default();
-        metrics
-            .record_operation(InstructionKind::Add)
-            .expect("test operation count cannot overflow");
-        metrics
-            .record_operation(InstructionKind::Add)
-            .expect("test operation count cannot overflow");
         metrics
             .record_operation(InstructionKind::ReadCode)
-            .expect("test operation count cannot overflow");
+            .expect("one candidate operation cannot overflow");
+        metrics.record_memory_access(MemoryLocationId {
+            space: MemorySpaceId::Outer,
+            address: BigInt::from(10),
+        });
+        metrics.record_memory_access(MemoryLocationId {
+            space: MemorySpaceId::CustomInvocation {
+                transition_id: 4,
+                caller_thread_id: 7,
+                custom_id,
+            },
+            address: BigInt::from(10),
+        });
+        metrics.observe_stack_usage(2, 1, 3);
+        metrics.observe_stack_usage(1, 4, 2);
 
-        assert_eq!(metrics.operation_count(), 3);
-        assert_eq!(metrics.instruction_variety().len(), 2);
+        let footprint = metrics.step_footprint();
+
+        assert_eq!(footprint.operations[&InstructionKind::Add], 2);
+        assert_eq!(footprint.operations[&InstructionKind::ReadCode], 1);
+        assert_eq!(footprint.code_cells, [visited].into_iter().collect());
+        assert_eq!(footprint.memory_accesses.len(), 2);
+        assert_eq!(footprint.stack_peaks.data, 2);
+        assert_eq!(footprint.stack_peaks.instruction, 4);
+        assert_eq!(footprint.stack_peaks.call, 3);
     }
 
     #[test]
-    fn instruction_variety_mapping_covers_the_full_source_inventory() {
+    fn committed_metrics_do_not_retain_candidate_footprints() {
+        let mut metrics = RuntimeMetrics::default();
+        let mut attempt = metrics.begin_step_attempt();
+        attempt
+            .record_operation(InstructionKind::Add)
+            .expect("one candidate operation cannot overflow");
+        attempt.record_cell(cell(CodeGridId::Outer, 4));
+        attempt.observe_stack_usage(2, 3, 1);
+        let footprint = attempt.step_footprint();
+
+        attempt.commit_step().expect("step count cannot overflow");
+        metrics.merge_step_attempt(attempt);
+
+        assert_eq!(metrics.committed_steps(), 1);
+        assert_eq!(metrics.summary().committed_steps(), 1);
+        assert_eq!(footprint.operations[&InstructionKind::Add], 1);
+        assert_eq!(metrics.step_footprint(), Default::default());
+
+        let next_attempt = metrics.begin_step_attempt();
+        assert_eq!(next_attempt.step_footprint(), Default::default());
+    }
+
+    #[test]
+    fn candidate_operation_counter_reports_overflow_without_wrapping() {
+        let mut metrics = RuntimeMetrics::default().begin_step_attempt();
+        metrics
+            .candidate_operations
+            .insert(InstructionKind::Add, u64::MAX);
+
+        assert_eq!(
+            metrics.record_operation(InstructionKind::Add),
+            Err(super::MetricCounterOverflow::OperationCount)
+        );
+        assert_eq!(
+            metrics.candidate_operations[&InstructionKind::Add],
+            u64::MAX
+        );
+    }
+
+    #[test]
+    fn committed_step_counter_reports_overflow_without_wrapping() {
+        let mut metrics = RuntimeMetrics {
+            committed_steps: u64::MAX,
+            ..RuntimeMetrics::default()
+        };
+
+        assert_eq!(
+            metrics.commit_step(),
+            Err(super::MetricCounterOverflow::CommittedSteps)
+        );
+        assert_eq!(metrics.committed_steps(), u64::MAX);
+    }
+
+    #[test]
+    fn instruction_kind_mapping_covers_source_forms() {
         let mut observed = std::collections::BTreeSet::new();
 
         for instruction in PrimaryInstruction::source_forms() {
@@ -594,7 +435,7 @@ mod tests {
             let actual = InstructionKind::from_primary(instruction);
             assert_eq!(
                 actual, expected,
-                "incorrect variety mapping for {instruction:?}"
+                "incorrect instruction mapping for {instruction:?}"
             );
             observed.extend(actual);
         }
@@ -627,107 +468,43 @@ mod tests {
     }
 
     #[test]
-    fn summary_preserves_all_raw_metrics_without_copying_used_identities() {
-        let mut metrics = RuntimeMetrics::default();
-        metrics
-            .record_operation(InstructionKind::Add)
-            .expect("test operation count cannot overflow");
-        metrics.record_cell(cell(CodeGridId::Outer, 4));
-        metrics.record_memory_access(MemoryLocationId {
+    fn memory_footprints_distinguish_outer_and_custom_transition_spaces() {
+        let custom_id = Slot::new(2).expect("custom ID is valid");
+        let outer = MemoryAccessObservation::from(&MemoryLocationId {
             space: MemorySpaceId::Outer,
-            address: BigInt::from(13),
+            address: BigInt::from(10),
         });
-        metrics.observe_stack_usage(2, 3, 1);
-        metrics.commit_global_tick().unwrap();
+        let custom = MemoryAccessObservation::from(&MemoryLocationId {
+            space: MemorySpaceId::CustomInvocation {
+                transition_id: 4,
+                caller_thread_id: 7,
+                custom_id,
+            },
+            address: BigInt::from(10),
+        });
+        let next_custom = MemoryAccessObservation::from(&MemoryLocationId {
+            space: MemorySpaceId::CustomInvocation {
+                transition_id: 5,
+                caller_thread_id: 7,
+                custom_id,
+            },
+            address: BigInt::from(10),
+        });
 
-        let summary = metrics.summary();
-
-        assert_eq!(summary.global_tick(), 1);
-        assert_eq!(summary.operation_count(), 1);
-        assert_eq!(summary.used_cell_count(), 1);
-        assert_eq!(summary.peak_data_stack_usage(), 2);
-        assert_eq!(summary.peak_instruction_stack_usage(), 3);
-        assert_eq!(summary.peak_call_stack_usage(), 1);
-        assert_eq!(summary.used_memory_address_count(), 1);
-        assert_eq!(summary.instruction_variety(), metrics.instruction_variety());
+        assert_eq!(outer.space, MemoryAccessSpace::Outer);
+        assert_ne!(outer, custom);
+        assert_ne!(custom, next_custom);
+        assert_eq!(
+            [outer, custom, next_custom]
+                .into_iter()
+                .collect::<BTreeSet<_>>()
+                .len(),
+            3
+        );
     }
 
     #[test]
-    fn stack_high_water_marks_never_decrease() {
-        let mut metrics = RuntimeMetrics::default();
-        metrics.observe_stack_usage(4, 2, 1);
-        metrics.observe_stack_usage(1, 5, 0);
-
-        assert_eq!(metrics.peak_data_stack_usage(), 4);
-        assert_eq!(metrics.peak_instruction_stack_usage(), 5);
-        assert_eq!(metrics.peak_call_stack_usage(), 1);
-    }
-
-    #[test]
-    fn reports_operation_counter_overflow_instead_of_wrapping_or_saturating() {
-        let mut metrics = RuntimeMetrics {
-            operation_count: u64::MAX,
-            ..RuntimeMetrics::default()
-        };
-
-        assert_eq!(
-            metrics.record_operation(InstructionKind::Add),
-            Err(super::MetricCounterOverflow::OperationCount)
-        );
-        assert_eq!(metrics.operation_count(), u64::MAX);
-        assert!(metrics
-            .instruction_variety()
-            .contains(&InstructionKind::Add));
-    }
-
-    #[test]
-    fn failed_attempts_do_not_advance_global_tick() {
-        let mut metrics = RuntimeMetrics::default();
-
-        assert_eq!(metrics.global_tick(), 0);
-        metrics
-            .record_operation(InstructionKind::Add)
-            .expect("test operation count cannot overflow");
-        assert_eq!(metrics.global_tick(), 0);
-
-        metrics
-            .commit_global_tick()
-            .expect("test global tick cannot overflow");
-        assert_eq!(metrics.global_tick(), 1);
-    }
-
-    #[test]
-    fn reports_global_tick_overflow_without_wrapping() {
-        let mut metrics = RuntimeMetrics {
-            global_tick: u64::MAX,
-            ..RuntimeMetrics::default()
-        };
-
-        assert_eq!(
-            metrics.commit_global_tick(),
-            Err(super::MetricCounterOverflow::GlobalTick)
-        );
-        assert_eq!(metrics.global_tick(), u64::MAX);
-    }
-
-    #[test]
-    fn metric_kinds_exclude_directions_structural_forms_and_repeat() {
-        let zero = Slot::new(0).expect("zero is a valid ID");
-
-        assert_eq!(
-            InstructionKind::from_primary(PrimaryInstruction::Direction(
-                codegrid_model::Direction::Up
-            )),
-            None
-        );
-        assert_eq!(
-            InstructionKind::from_primary(PrimaryInstruction::FoldedBlock(zero)),
-            None
-        );
-        assert_eq!(
-            InstructionKind::from_primary(PrimaryInstruction::Custom(zero)),
-            None
-        );
+    fn repeat_attachment_is_not_counted_as_an_operation() {
         assert_eq!(
             InstructionKind::from_attachment(AttachmentInstruction::Repeat(2)),
             None

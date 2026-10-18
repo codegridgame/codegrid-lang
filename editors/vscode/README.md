@@ -44,24 +44,24 @@ requires a trusted workspace.
 
 - Run writes output bytes and termination information to the Debug Console.
 - Debug stops on entry by default and supports continue, pause, stop, and
-  single-step. Step Over and Step Into both advance one atomic Global Tick
+  single-step. Step Over and Step Into both advance one atomic VM transition
   across every live Outer thread. Step Out continues until the selected
   thread returns to a shallower Function call stack, a breakpoint is reached,
   or the VM terminates or hits a configured limit.
 - Set line breakpoints on grid rows. A line breakpoint binds to its first
   cell. Use an inline/column breakpoint to select another cell on that row.
   Main, Outer Function, and their Folded Block cells support breakpoints.
-  Custom execution completes atomically within its caller's Global Tick;
+  Custom execution completes atomically within its caller's transition;
   internal Custom cells cannot be paused independently and their breakpoints
-  remain unverified. Inspect their committed events in Last Tick Events.
+  remain unverified. Inspect their committed events in Last Step Events.
 - The Call Stack shows Outer threads, their current cell, and Function frames.
 - Variables show registers, selected thread state (including Page, direction,
   pointer, stacks, phase and PRNG state), sparse memory, input/output, metrics,
-  errors and the previous tick's events.
+  errors and the previous transition's events.
 - Watch and Debug Console evaluation accept read-only state paths such as
-  `registers[0]`, `thread.data_stack`, `memory`, or `metrics.global_tick`.
+  `registers[0]`, `thread.data_stack`, `memory`, or `metrics.committed_steps`.
   They do not execute expressions or mutate VM state.
-- Source errors prevent execution. Runtime errors and tick/work limits stop a
+- Source errors prevent execution. Runtime errors and step/work limits stop a
   debug session with state available for inspection. Stop closes the process.
 
 Configure defaults through `codegrid.execution.*` settings or use a launch
@@ -78,16 +78,16 @@ configuration for a particular program:
     "stopOnEntry": true,
     "input": [65],
     "seed": "0",
-    "customLimit": "10000",
-    "maxTicks": "100000",
-    "maxWorkUnits": "1000000"
+    "maxSteps": "100000",
+    "maxWorkUnitsPerStep": "1000000"
   }]
 }
 ```
 
 Seed and limits use canonical decimal strings to preserve the entire `u64`
-range. `maxWorkUnits` bounds each atomic Global Tick; `maxTicks` bounds the
-session. These are local development safeguards, not a production sandbox.
+range. `maxSteps` bounds committed VM transitions in the debug session;
+`maxWorkUnitsPerStep` bounds deterministic work for each transition. These are
+local development safeguards, not a production sandbox.
 Reverse execution, conditional breakpoints, data breakpoints and arbitrary
 expression evaluation are not implemented.
 
@@ -167,7 +167,7 @@ real LSP completion, hover, source symbols, and diagnostic parity with
 `codegrid check`.
 
 With `CODEGRID_CLI_TEST_BIN`, the suite also exercises the actual native
-debug transport: entry and tick stepping, source positions, column breakpoints,
+debug transport: entry and step execution, source positions, column breakpoints,
 Function step-out, Folded Blocks, simultaneous threads, watches and variables,
 input/output, pause/stop, execution ceilings, source errors, and a real VS Code
 debug-session launch. Tests that need the native executable are skipped when

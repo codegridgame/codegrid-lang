@@ -170,7 +170,7 @@ ReadCode and WriteCode may be attached to any encodable Primary, defined as a Pr
 
 Immediate output Primaries `.0`–`.9` have no Instruction Code and may carry only
 Repeat suffixes `x2`–`x9`; conditional prefixes are allowed. `.3x3` executes
-three immediate outputs on separate ticks before moving. Forms such as `.3*`, `.3=`, `.3x1`, `.10`, `.00`, and `.-1`
+three immediate outputs on separate VM transitions before moving. Forms such as `.3*`, `.3=`, `.3x1`, `.10`, `.00`, and `.-1`
 are rejected as whole atoms. Ordinary `.` retains its encoding and Attachments.
 
 Static validation checks each Primary against its owning CodeGrid and Board:
@@ -210,7 +210,7 @@ This contract was reconstructed from the complete instruction and Attachment inv
 
 ## 11. Resolution record and implementation gate
 
-The 2026-10-08 NEG decision is implemented in the shared model/compiler, verified IR, level capability validation, editor metadata, and actual native/browser/Node/Wasmtime fixtures. See [implementation evidence](../docs/function-registers-and-neg.md).
+The 2026-10-08 NEG decision is implemented in the shared model/compiler, verified IR, static validation, editor metadata, and actual native/browser/Node/Wasmtime fixtures. See [implementation evidence](../docs/function-registers-and-neg.md).
 
 The source-language decisions are resolved in the [source decision record](../docs/decisions.md#resolved-source-language-decisions), and the rules in §§1–8 are the normative Full acceptance contract. The implementation gate is covered by focused compiler and IR tests: `compiles_every_resolved_attachment_pair_for_each_encodable_primary`, `verifies_the_complete_full_primary_attachment_compatibility_matrix`, `rejects_invalid_attachment_placement_and_repeat_counts`, `rejects_dimensions_and_total_cells_above_the_portable_source_limit`, `rejects_board_dimensions_and_cell_counts_above_portable_full_bounds`, `size_between_rows_applies_to_the_complete_lexical_scope`, `implicit_main_accepts_qualified_folded_blocks_after_its_grid`, `accepts_named_end_aliases_for_custom_and_function_folded_blocks`, and `rejects_mismatched_custom_and_function_folded_block_end_aliases`. The latter cover explicit Custom Main, outer Function, and Custom Function Folded Blocks with matching local and qualified aliases, plus mismatches. These cases verify implementation coverage; they are not unresolved language decisions.
 

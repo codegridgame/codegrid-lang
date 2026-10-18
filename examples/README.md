@@ -9,15 +9,10 @@ These programs illustrate the intended Full CodeGrid language. The [Full task bo
 
 Review each program against the completed Full source specification before using it as conformance evidence.
 
-## Scene author documents
+## Game examples moved to the Rust Game Runtime
 
-[Scene Level JSON examples](scene-level-v2/README.md) cover the current format-1 author schema for ExactIO, Robot, and MechanicalArm, plus invalid documents. Additional ExactIO documents cover byte boundaries and classification. Execution conformance evidence lives in the fixture manifests and actual-host reports.
+Current scene author and host examples are indexed in the [Rust Game Runtime examples](../../bf-steam-wt/rust/examples/README.md). No active game-example tree remains in this repository.
 
-[Scene host v2 examples](scene-host-v2/README.md) illustrate the trusted profile, Debug feedback request/data, and visible case failure. Fragments and profile examples are clearly distinguished from executable author levels and existing API support.
+## Language conformance fixtures
 
-## Executable scene conformance fixtures
-
-The [scene-v2 fixtures](../fixtures/scene-v2/README.md) pair author definitions
-with compiled Full programs and a cross-host execution manifest. These are
-separate from the document-shape examples above. See [WASM transports v2](../docs/level-wasm-v2.md)
-for commands and the actual-host verification scope.
+Full language conformance evidence is indexed in the [language test fixture guide](../tests/README.md). Game-level and scene fixtures are indexed in the [Rust Game Runtime fixture guide](../../bf-steam-wt/rust/fixtures/README.md); no game fixture copies remain in this repository.

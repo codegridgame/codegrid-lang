@@ -1,19 +1,17 @@
 {
   "schema_version": 1,
   "suite_id": "codegrid-runtime-v1-smoke",
-  "description": "Valid-source fixtures shared by the native CLI, host-neutral runtime API, and browser WASM host.",
+  "description": "Valid Full-language fixtures shared by the native CLI, host-neutral Runtime API, browser WASM host, and Wasmtime server host. They assert language execution only; host work-unit ceilings are configured separately.",
   "cases": [
     {
       "id": "read-and-output-byte",
       "source": "~> , . ;\n",
       "run": {
         "seed": "0",
-        "custom_execution_limit": "100",
-        "max_ticks": "10",
         "input": [
           91
         ],
-        "gas_hard_limit": "100000000"
+        "max_steps": "10"
       },
       "expected": {
         "process_exit_code": 0,
@@ -34,24 +32,8 @@
           0,
           0
         ],
-        "committed_ticks": "4",
-        "operation_count": "3",
-        "used_cell_count": "4",
-        "used_memory_address_count": "0",
-        "peak_data_stack_usage": "0",
-        "peak_instruction_stack_usage": "0",
-        "peak_call_stack_usage": "0",
-        "instruction_variety": [
-          "Read",
-          "Output",
-          "Halt"
-        ],
         "error_codes": [],
-        "gas_used": "10",
-        "execution_gas": "10",
-        "memory_gas": "0",
-        "stack_gas": "0",
-        "gas_schedule_version": 1
+        "committed_steps": "4"
       }
     },
     {
@@ -59,12 +41,10 @@
       "source": "~> , + . ;\n",
       "run": {
         "seed": "0",
-        "custom_execution_limit": "100",
-        "max_ticks": "10",
         "input": [
           255
         ],
-        "gas_hard_limit": "100000000"
+        "max_steps": "10"
       },
       "expected": {
         "process_exit_code": 0,
@@ -85,25 +65,8 @@
           0,
           0
         ],
-        "committed_ticks": "5",
-        "operation_count": "4",
-        "used_cell_count": "5",
-        "used_memory_address_count": "0",
-        "peak_data_stack_usage": "0",
-        "peak_instruction_stack_usage": "0",
-        "peak_call_stack_usage": "0",
-        "instruction_variety": [
-          "Read",
-          "Add",
-          "Output",
-          "Halt"
-        ],
         "error_codes": [],
-        "gas_used": "13",
-        "execution_gas": "13",
-        "memory_gas": "0",
-        "stack_gas": "0",
-        "gas_schedule_version": 1
+        "committed_steps": "5"
       }
     },
     {
@@ -111,10 +74,8 @@
       "source": "~> - . ;\n",
       "run": {
         "seed": "0",
-        "custom_execution_limit": "100",
-        "max_ticks": "10",
         "input": [],
-        "gas_hard_limit": "100000000"
+        "max_steps": "10"
       },
       "expected": {
         "process_exit_code": 0,
@@ -135,24 +96,8 @@
           0,
           0
         ],
-        "committed_ticks": "4",
-        "operation_count": "3",
-        "used_cell_count": "4",
-        "used_memory_address_count": "0",
-        "peak_data_stack_usage": "0",
-        "peak_instruction_stack_usage": "0",
-        "peak_call_stack_usage": "0",
-        "instruction_variety": [
-          "Sub",
-          "Output",
-          "Halt"
-        ],
         "error_codes": [],
-        "gas_used": "8",
-        "execution_gas": "8",
-        "memory_gas": "0",
-        "stack_gas": "0",
-        "gas_schedule_version": 1
+        "committed_steps": "4"
       }
     },
     {
@@ -160,10 +105,8 @@
       "source": "~> , ?!v\n_ _ ;\n",
       "run": {
         "seed": "0",
-        "custom_execution_limit": "100",
-        "max_ticks": "10",
         "input": [],
-        "gas_hard_limit": "100000000"
+        "max_steps": "10"
       },
       "expected": {
         "process_exit_code": 0,
@@ -182,25 +125,9 @@
           0,
           0
         ],
-        "committed_ticks": "4",
-        "operation_count": "3",
-        "used_cell_count": "4",
-        "used_memory_address_count": "0",
-        "peak_data_stack_usage": "0",
-        "peak_instruction_stack_usage": "0",
-        "peak_call_stack_usage": "0",
-        "instruction_variety": [
-          "Condition",
-          "Read",
-          "Halt"
-        ],
         "error_codes": [],
         "thread_direction": "down",
-        "gas_used": "8",
-        "execution_gas": "8",
-        "memory_gas": "0",
-        "stack_gas": "0",
-        "gas_schedule_version": 1
+        "committed_steps": "4"
       }
     },
     {
@@ -208,10 +135,8 @@
       "source": "@size 2x3\n@main\n~> ?0v\n_ .\n_ ;\n@end main\n",
       "run": {
         "seed": "0",
-        "custom_execution_limit": "100",
-        "max_ticks": "10",
         "input": [],
-        "gas_hard_limit": "100000000"
+        "max_steps": "10"
       },
       "expected": {
         "process_exit_code": 0,
@@ -232,25 +157,9 @@
           0,
           0
         ],
-        "committed_ticks": "4",
-        "operation_count": "3",
-        "used_cell_count": "4",
-        "used_memory_address_count": "0",
-        "peak_data_stack_usage": "0",
-        "peak_instruction_stack_usage": "0",
-        "peak_call_stack_usage": "0",
-        "instruction_variety": [
-          "Condition",
-          "Output",
-          "Halt"
-        ],
         "error_codes": [],
         "thread_direction": "down",
-        "gas_used": "8",
-        "execution_gas": "8",
-        "memory_gas": "0",
-        "stack_gas": "0",
-        "gas_schedule_version": 1
+        "committed_steps": "4"
       }
     },
     {
@@ -258,12 +167,10 @@
       "source": "~> , & % . ;\n",
       "run": {
         "seed": "0",
-        "custom_execution_limit": "100",
-        "max_ticks": "10",
         "input": [
           43
         ],
-        "gas_hard_limit": "100000000"
+        "max_steps": "10"
       },
       "expected": {
         "process_exit_code": 0,
@@ -284,26 +191,8 @@
           0,
           0
         ],
-        "committed_ticks": "6",
-        "operation_count": "5",
-        "used_cell_count": "6",
-        "used_memory_address_count": "0",
-        "peak_data_stack_usage": "0",
-        "peak_instruction_stack_usage": "1",
-        "peak_call_stack_usage": "0",
-        "instruction_variety": [
-          "Read",
-          "Output",
-          "Decode",
-          "Encode",
-          "Halt"
-        ],
         "error_codes": [],
-        "gas_used": "20",
-        "execution_gas": "16",
-        "memory_gas": "0",
-        "stack_gas": "4",
-        "gas_schedule_version": 1
+        "committed_steps": "6"
       }
     },
     {
@@ -311,12 +200,10 @@
       "source": "~> , & % . ;\n",
       "run": {
         "seed": "0",
-        "custom_execution_limit": "100",
-        "max_ticks": "10",
         "input": [
           32
         ],
-        "gas_hard_limit": "100000000"
+        "max_steps": "10"
       },
       "expected": {
         "process_exit_code": 0,
@@ -337,26 +224,8 @@
           0,
           0
         ],
-        "committed_ticks": "6",
-        "operation_count": "5",
-        "used_cell_count": "6",
-        "used_memory_address_count": "0",
-        "peak_data_stack_usage": "0",
-        "peak_instruction_stack_usage": "1",
-        "peak_call_stack_usage": "0",
-        "instruction_variety": [
-          "Read",
-          "Output",
-          "Decode",
-          "Encode",
-          "Halt"
-        ],
         "error_codes": [],
-        "gas_used": "20",
-        "execution_gas": "16",
-        "memory_gas": "0",
-        "stack_gas": "4",
-        "gas_schedule_version": 1
+        "committed_steps": "6"
       }
     },
     {
@@ -364,12 +233,10 @@
       "source": "~> , ! . ;\n",
       "run": {
         "seed": "0",
-        "custom_execution_limit": "100",
-        "max_ticks": "10",
         "input": [
           37
         ],
-        "gas_hard_limit": "100000000"
+        "max_steps": "10"
       },
       "expected": {
         "process_exit_code": 0,
@@ -390,25 +257,8 @@
           0,
           0
         ],
-        "committed_ticks": "5",
-        "operation_count": "4",
-        "used_cell_count": "5",
-        "used_memory_address_count": "0",
-        "peak_data_stack_usage": "0",
-        "peak_instruction_stack_usage": "0",
-        "peak_call_stack_usage": "0",
-        "instruction_variety": [
-          "Read",
-          "Clear",
-          "Output",
-          "Halt"
-        ],
         "error_codes": [],
-        "gas_used": "13",
-        "execution_gas": "13",
-        "memory_gas": "0",
-        "stack_gas": "0",
-        "gas_schedule_version": 1
+        "committed_steps": "5"
       }
     },
     {
@@ -416,13 +266,11 @@
       "source": "~> , ( , $& . ;\n",
       "run": {
         "seed": "0",
-        "custom_execution_limit": "100",
-        "max_ticks": "10",
         "input": [
           170,
           15
         ],
-        "gas_hard_limit": "100000000"
+        "max_steps": "10"
       },
       "expected": {
         "process_exit_code": 0,
@@ -443,26 +291,8 @@
           0,
           0
         ],
-        "committed_ticks": "7",
-        "operation_count": "6",
-        "used_cell_count": "7",
-        "used_memory_address_count": "0",
-        "peak_data_stack_usage": "1",
-        "peak_instruction_stack_usage": "0",
-        "peak_call_stack_usage": "0",
-        "instruction_variety": [
-          "Read",
-          "Output",
-          "Push",
-          "Nand",
-          "Halt"
-        ],
         "error_codes": [],
-        "gas_used": "22",
-        "execution_gas": "21",
-        "memory_gas": "0",
-        "stack_gas": "1",
-        "gas_schedule_version": 1
+        "committed_steps": "7"
       }
     },
     {
@@ -470,13 +300,11 @@
       "source": "~> , $< . , $> . ;\n",
       "run": {
         "seed": "0",
-        "custom_execution_limit": "100",
-        "max_ticks": "10",
         "input": [
           129,
           129
         ],
-        "gas_hard_limit": "100000000"
+        "max_steps": "10"
       },
       "expected": {
         "process_exit_code": 0,
@@ -498,25 +326,8 @@
           0,
           0
         ],
-        "committed_ticks": "8",
-        "operation_count": "7",
-        "used_cell_count": "8",
-        "used_memory_address_count": "0",
-        "peak_data_stack_usage": "0",
-        "peak_instruction_stack_usage": "0",
-        "peak_call_stack_usage": "0",
-        "instruction_variety": [
-          "Read",
-          "Output",
-          "Shift",
-          "Halt"
-        ],
         "error_codes": [],
-        "gas_used": "24",
-        "execution_gas": "24",
-        "memory_gas": "0",
-        "stack_gas": "0",
-        "gas_schedule_version": 1
+        "committed_steps": "8"
       }
     },
     {
@@ -524,10 +335,8 @@
       "source": "~> { + } + ;\n",
       "run": {
         "seed": "0",
-        "custom_execution_limit": "100",
-        "max_ticks": "10",
         "input": [],
-        "gas_hard_limit": "100000000"
+        "max_steps": "10"
       },
       "expected": {
         "process_exit_code": 0,
@@ -546,24 +355,8 @@
           0,
           1
         ],
-        "committed_ticks": "6",
-        "operation_count": "5",
-        "used_cell_count": "6",
-        "used_memory_address_count": "0",
-        "peak_data_stack_usage": "0",
-        "peak_instruction_stack_usage": "0",
-        "peak_call_stack_usage": "0",
-        "instruction_variety": [
-          "Add",
-          "MoveRegisterPointer",
-          "Halt"
-        ],
         "error_codes": [],
-        "gas_used": "10",
-        "execution_gas": "10",
-        "memory_gas": "0",
-        "stack_gas": "0",
-        "gas_schedule_version": 1
+        "committed_steps": "6"
       }
     },
     {
@@ -571,14 +364,12 @@
       "source": "~> <\n",
       "run": {
         "seed": "0",
-        "custom_execution_limit": "100",
-        "max_ticks": "4",
         "input": [],
-        "gas_hard_limit": "100000000"
+        "max_steps": "4"
       },
       "expected": {
         "process_exit_code": 6,
-        "status": "tick_limit_reached",
+        "status": "step_limit_reached",
         "vm_status": "running",
         "output": [],
         "registers": [
@@ -593,20 +384,8 @@
           0,
           0
         ],
-        "committed_ticks": "4",
-        "operation_count": "0",
-        "used_cell_count": "2",
-        "used_memory_address_count": "0",
-        "peak_data_stack_usage": "0",
-        "peak_instruction_stack_usage": "0",
-        "peak_call_stack_usage": "0",
-        "instruction_variety": [],
         "error_codes": [],
-        "gas_used": "2",
-        "execution_gas": "2",
-        "memory_gas": "0",
-        "stack_gas": "0",
-        "gas_schedule_version": 1
+        "committed_steps": "4"
       }
     },
     {
@@ -614,14 +393,12 @@
       "source": "~> +\n",
       "run": {
         "seed": "0",
-        "custom_execution_limit": "100",
-        "max_ticks": "10",
         "input": [],
-        "gas_hard_limit": "100000000"
+        "max_steps": "10"
       },
       "expected": {
         "process_exit_code": 6,
-        "status": "tick_limit_reached",
+        "status": "step_limit_reached",
         "vm_status": "running",
         "output": [],
         "registers": [
@@ -636,33 +413,17 @@
           0,
           0
         ],
-        "committed_ticks": "10",
-        "operation_count": "5",
-        "used_cell_count": "2",
-        "used_memory_address_count": "0",
-        "peak_data_stack_usage": "0",
-        "peak_instruction_stack_usage": "0",
-        "peak_call_stack_usage": "0",
-        "instruction_variety": [
-          "Add"
-        ],
         "error_codes": [],
-        "gas_used": "15",
-        "execution_gas": "15",
-        "memory_gas": "0",
-        "stack_gas": "0",
-        "gas_schedule_version": 1
+        "committed_steps": "10"
       }
     },
     {
-      "id": "repeat-runs-primary-across-ticks",
+      "id": "repeat-runs-primary-across-transitions",
       "source": "~> +x2 ;\n",
       "run": {
         "seed": "0",
-        "custom_execution_limit": "100",
-        "max_ticks": "10",
         "input": [],
-        "gas_hard_limit": "100000000"
+        "max_steps": "10"
       },
       "expected": {
         "process_exit_code": 0,
@@ -681,34 +442,17 @@
           0,
           0
         ],
-        "committed_ticks": "4",
-        "operation_count": "3",
-        "used_cell_count": "3",
-        "used_memory_address_count": "0",
-        "peak_data_stack_usage": "0",
-        "peak_instruction_stack_usage": "0",
-        "peak_call_stack_usage": "0",
-        "instruction_variety": [
-          "Add",
-          "Halt"
-        ],
         "error_codes": [],
-        "gas_used": "6",
-        "execution_gas": "6",
-        "memory_gas": "0",
-        "stack_gas": "0",
-        "gas_schedule_version": 1
+        "committed_steps": "4"
       }
     },
     {
-      "id": "repeat-x5-executes-once-per-tick",
+      "id": "repeat-x5-executes-once-per-transition",
       "source": "~> +x5 . ;\n",
       "run": {
         "seed": "0",
-        "custom_execution_limit": "100",
-        "max_ticks": "10",
         "input": [],
-        "gas_hard_limit": "100000000"
+        "max_steps": "10"
       },
       "expected": {
         "process_exit_code": 0,
@@ -729,35 +473,17 @@
           0,
           0
         ],
-        "committed_ticks": "8",
-        "operation_count": "7",
-        "used_cell_count": "4",
-        "used_memory_address_count": "0",
-        "peak_data_stack_usage": "0",
-        "peak_instruction_stack_usage": "0",
-        "peak_call_stack_usage": "0",
-        "instruction_variety": [
-          "Add",
-          "Output",
-          "Halt"
-        ],
         "error_codes": [],
-        "gas_used": "20",
-        "execution_gas": "20",
-        "memory_gas": "0",
-        "stack_gas": "0",
-        "gas_schedule_version": 1
+        "committed_steps": "8"
       }
     },
     {
-      "id": "repeat-x9-executes-once-per-tick",
+      "id": "repeat-x9-executes-once-per-transition",
       "source": "~> +x9 . ;\n",
       "run": {
         "seed": "0",
-        "custom_execution_limit": "100",
-        "max_ticks": "20",
         "input": [],
-        "gas_hard_limit": "100000000"
+        "max_steps": "20"
       },
       "expected": {
         "process_exit_code": 0,
@@ -778,24 +504,8 @@
           0,
           0
         ],
-        "committed_ticks": "12",
-        "operation_count": "11",
-        "used_cell_count": "4",
-        "used_memory_address_count": "0",
-        "peak_data_stack_usage": "0",
-        "peak_instruction_stack_usage": "0",
-        "peak_call_stack_usage": "0",
-        "instruction_variety": [
-          "Add",
-          "Output",
-          "Halt"
-        ],
         "error_codes": [],
-        "gas_used": "32",
-        "execution_gas": "32",
-        "memory_gas": "0",
-        "stack_gas": "0",
-        "gas_schedule_version": 1
+        "committed_steps": "12"
       }
     },
     {
@@ -803,14 +513,12 @@
       "source": "~> ,x3 . ;\n",
       "run": {
         "seed": "0",
-        "custom_execution_limit": "100",
-        "max_ticks": "10",
         "input": [
           4,
           5,
           6
         ],
-        "gas_hard_limit": "100000000"
+        "max_steps": "10"
       },
       "expected": {
         "process_exit_code": 0,
@@ -831,35 +539,17 @@
           0,
           0
         ],
-        "committed_ticks": "6",
-        "operation_count": "5",
-        "used_cell_count": "4",
-        "used_memory_address_count": "0",
-        "peak_data_stack_usage": "0",
-        "peak_instruction_stack_usage": "0",
-        "peak_call_stack_usage": "0",
-        "instruction_variety": [
-          "Read",
-          "Output",
-          "Halt"
-        ],
         "error_codes": [],
-        "gas_used": "20",
-        "execution_gas": "20",
-        "memory_gas": "0",
-        "stack_gas": "0",
-        "gas_schedule_version": 1
+        "committed_steps": "6"
       }
     },
     {
-      "id": "fold-entry-and-resume-ticks",
+      "id": "fold-entry-and-resume-transitions",
       "source": "@main\n~> $0 . ;\n@end main\n@main.M0\n+ > _ ^\n@end M0\n",
       "run": {
         "seed": "0",
-        "custom_execution_limit": "100",
-        "max_ticks": "10",
         "input": [],
-        "gas_hard_limit": "100000000"
+        "max_steps": "10"
       },
       "expected": {
         "process_exit_code": 0,
@@ -880,24 +570,8 @@
           0,
           0
         ],
-        "committed_ticks": "8",
-        "operation_count": "3",
-        "used_cell_count": "8",
-        "used_memory_address_count": "0",
-        "peak_data_stack_usage": "0",
-        "peak_instruction_stack_usage": "0",
-        "peak_call_stack_usage": "0",
-        "instruction_variety": [
-          "Add",
-          "Output",
-          "Halt"
-        ],
         "error_codes": [],
-        "gas_used": "12",
-        "execution_gas": "12",
-        "memory_gas": "0",
-        "stack_gas": "0",
-        "gas_schedule_version": 1
+        "committed_steps": "8"
       }
     },
     {
@@ -905,10 +579,8 @@
       "source": "@main\n~> $0 $0 . ;\n@end main\n@main.M0\n+ > ^ _ _\n@end M0\n",
       "run": {
         "seed": "0",
-        "custom_execution_limit": "100",
-        "max_ticks": "20",
         "input": [],
-        "gas_hard_limit": "100000000"
+        "max_steps": "20"
       },
       "expected": {
         "process_exit_code": 0,
@@ -929,24 +601,8 @@
           0,
           0
         ],
-        "committed_ticks": "11",
-        "operation_count": "4",
-        "used_cell_count": "8",
-        "used_memory_address_count": "0",
-        "peak_data_stack_usage": "0",
-        "peak_instruction_stack_usage": "0",
-        "peak_call_stack_usage": "0",
-        "instruction_variety": [
-          "Add",
-          "Output",
-          "Halt"
-        ],
         "error_codes": [],
-        "gas_used": "19",
-        "execution_gas": "19",
-        "memory_gas": "0",
-        "stack_gas": "0",
-        "gas_schedule_version": 1
+        "committed_steps": "11"
       }
     },
     {
@@ -954,10 +610,8 @@
       "source": "@main\n~> [0 ; [0 ~<\n@end main\n@main.F0\n~> > ]\n@end F0\n",
       "run": {
         "seed": "0",
-        "custom_execution_limit": "100",
-        "max_ticks": "20",
         "input": [],
-        "gas_hard_limit": "100000000"
+        "max_steps": "20"
       },
       "expected": {
         "process_exit_code": 0,
@@ -975,18 +629,6 @@
           0,
           0,
           0
-        ],
-        "committed_ticks": "7",
-        "operation_count": "6",
-        "used_cell_count": "8",
-        "used_memory_address_count": "0",
-        "peak_data_stack_usage": "0",
-        "peak_instruction_stack_usage": "0",
-        "peak_call_stack_usage": "2",
-        "instruction_variety": [
-          "Call",
-          "Return",
-          "Halt"
         ],
         "error_codes": [],
         "thread_call_stack_sizes": [
@@ -1011,11 +653,7 @@
             "direction": "left"
           }
         ],
-        "gas_used": "54",
-        "execution_gas": "22",
-        "memory_gas": "0",
-        "stack_gas": "32",
-        "gas_schedule_version": 1
+        "committed_steps": "7"
       }
     },
     {
@@ -1023,10 +661,8 @@
       "source": "@main\n~> $0 ) . ;\n@end main\n@main.M0\n+ ( ^ _ _\n@end M0\n",
       "run": {
         "seed": "0",
-        "custom_execution_limit": "100",
-        "max_ticks": "10",
         "input": [],
-        "gas_hard_limit": "100000000"
+        "max_steps": "10"
       },
       "expected": {
         "process_exit_code": 0,
@@ -1047,26 +683,8 @@
           0,
           0
         ],
-        "committed_ticks": "8",
-        "operation_count": "5",
-        "used_cell_count": "8",
-        "used_memory_address_count": "0",
-        "peak_data_stack_usage": "1",
-        "peak_instruction_stack_usage": "0",
-        "peak_call_stack_usage": "0",
-        "instruction_variety": [
-          "Add",
-          "Output",
-          "Push",
-          "PopAdd",
-          "Halt"
-        ],
         "error_codes": [],
-        "gas_used": "18",
-        "execution_gas": "17",
-        "memory_gas": "0",
-        "stack_gas": "1",
-        "gas_schedule_version": 1
+        "committed_steps": "8"
       }
     },
     {
@@ -1074,10 +692,8 @@
       "source": "@main\n~> + $0 ;\n@end main\n@main.M0\n?0^ - > _\n@end M0\n",
       "run": {
         "seed": "0",
-        "custom_execution_limit": "100",
-        "max_ticks": "10",
         "input": [],
-        "gas_hard_limit": "100000000"
+        "max_steps": "10"
       },
       "expected": {
         "process_exit_code": 0,
@@ -1096,25 +712,8 @@
           0,
           0
         ],
-        "committed_ticks": "9",
-        "operation_count": "5",
-        "used_cell_count": "8",
-        "used_memory_address_count": "0",
-        "peak_data_stack_usage": "0",
-        "peak_instruction_stack_usage": "0",
-        "peak_call_stack_usage": "0",
-        "instruction_variety": [
-          "Condition",
-          "Add",
-          "Sub",
-          "Halt"
-        ],
         "error_codes": [],
-        "gas_used": "14",
-        "execution_gas": "14",
-        "memory_gas": "0",
-        "stack_gas": "0",
-        "gas_schedule_version": 1
+        "committed_steps": "9"
       }
     },
     {
@@ -1122,10 +721,8 @@
       "source": "@main\n~> $0 ;\n@end main\n@main.M0\n< _ ?0^\n@end M0\n",
       "run": {
         "seed": "0",
-        "custom_execution_limit": "100",
-        "max_ticks": "10",
         "input": [],
-        "gas_hard_limit": "100000000"
+        "max_steps": "10"
       },
       "expected": {
         "process_exit_code": 0,
@@ -1144,23 +741,8 @@
           0,
           0
         ],
-        "committed_ticks": "5",
-        "operation_count": "2",
-        "used_cell_count": "5",
-        "used_memory_address_count": "0",
-        "peak_data_stack_usage": "0",
-        "peak_instruction_stack_usage": "0",
-        "peak_call_stack_usage": "0",
-        "instruction_variety": [
-          "Condition",
-          "Halt"
-        ],
         "error_codes": [],
-        "gas_used": "6",
-        "execution_gas": "6",
-        "memory_gas": "0",
-        "stack_gas": "0",
-        "gas_schedule_version": 1
+        "committed_steps": "5"
       }
     },
     {
@@ -1168,14 +750,12 @@
       "source": "@main\n~> $0\n@end main\n@main.M0\n^ _\n@end M0\n",
       "run": {
         "seed": "0",
-        "custom_execution_limit": "100",
-        "max_ticks": "10",
         "input": [],
-        "gas_hard_limit": "100000000"
+        "max_steps": "10"
       },
       "expected": {
         "process_exit_code": 6,
-        "status": "tick_limit_reached",
+        "status": "step_limit_reached",
         "vm_status": "running",
         "output": [],
         "registers": [
@@ -1190,20 +770,8 @@
           0,
           0
         ],
-        "committed_ticks": "10",
-        "operation_count": "0",
-        "used_cell_count": "3",
-        "used_memory_address_count": "0",
-        "peak_data_stack_usage": "0",
-        "peak_instruction_stack_usage": "0",
-        "peak_call_stack_usage": "0",
-        "instruction_variety": [],
         "error_codes": [],
-        "gas_used": "9",
-        "execution_gas": "9",
-        "memory_gas": "0",
-        "stack_gas": "0",
-        "gas_schedule_version": 1
+        "committed_steps": "10"
       }
     },
     {
@@ -1211,10 +779,8 @@
       "source": "@main\n~> $0 $0 . ;\n@end main\n@main.M0 + > ^ _ _\n",
       "run": {
         "seed": "0",
-        "custom_execution_limit": "100",
-        "max_ticks": "20",
         "input": [],
-        "gas_hard_limit": "100000000"
+        "max_steps": "20"
       },
       "expected": {
         "process_exit_code": 0,
@@ -1235,24 +801,8 @@
           0,
           0
         ],
-        "committed_ticks": "11",
-        "operation_count": "4",
-        "used_cell_count": "8",
-        "used_memory_address_count": "0",
-        "peak_data_stack_usage": "0",
-        "peak_instruction_stack_usage": "0",
-        "peak_call_stack_usage": "0",
-        "instruction_variety": [
-          "Add",
-          "Output",
-          "Halt"
-        ],
         "error_codes": [],
-        "gas_used": "19",
-        "execution_gas": "19",
-        "memory_gas": "0",
-        "stack_gas": "0",
-        "gas_schedule_version": 1
+        "committed_steps": "11"
       }
     },
     {
@@ -1260,15 +810,13 @@
       "source": "@main\n~> #0 ;\n@end\n@C0\n~> #]\n@end\n",
       "run": {
         "seed": "0",
-        "custom_execution_limit": "100",
-        "max_ticks": "10",
         "input": [],
-        "gas_hard_limit": "100000000"
+        "max_steps": "10"
       },
       "expected": {
-        "process_exit_code": 5,
-        "status": "error",
-        "vm_status": "error",
+        "process_exit_code": 0,
+        "status": "halted",
+        "vm_status": "halted",
         "output": [],
         "registers": [
           0,
@@ -1282,22 +830,8 @@
           0,
           0
         ],
-        "committed_ticks": "1",
-        "operation_count": "0",
-        "used_cell_count": "2",
-        "used_memory_address_count": "0",
-        "peak_data_stack_usage": "0",
-        "peak_instruction_stack_usage": "0",
-        "peak_call_stack_usage": "0",
-        "instruction_variety": [],
-        "error_codes": [
-          "CustomDisabled"
-        ],
-        "gas_used": "0",
-        "execution_gas": "0",
-        "memory_gas": "0",
-        "stack_gas": "0",
-        "gas_schedule_version": 1
+        "error_codes": [],
+        "committed_steps": "3"
       }
     },
     {
@@ -1305,15 +839,13 @@
       "source": "@main\n~> $0 ;\n@end main\n@main.M0 #0 ; _\n@C0\n~> v\n_ #]\n@end C0\n",
       "run": {
         "seed": "0",
-        "custom_execution_limit": "100",
-        "max_ticks": "10",
         "input": [],
-        "gas_hard_limit": "100000000"
+        "max_steps": "10"
       },
       "expected": {
-        "process_exit_code": 5,
-        "status": "error",
-        "vm_status": "error",
+        "process_exit_code": 0,
+        "status": "halted",
+        "vm_status": "halted",
         "output": [],
         "registers": [
           0,
@@ -1327,22 +859,8 @@
           0,
           0
         ],
-        "committed_ticks": "1",
-        "operation_count": "0",
-        "used_cell_count": "3",
-        "used_memory_address_count": "0",
-        "peak_data_stack_usage": "0",
-        "peak_instruction_stack_usage": "0",
-        "peak_call_stack_usage": "0",
-        "instruction_variety": [],
-        "error_codes": [
-          "CustomDisabled"
-        ],
-        "gas_used": "2",
-        "execution_gas": "2",
-        "memory_gas": "0",
-        "stack_gas": "0",
-        "gas_schedule_version": 1
+        "error_codes": [],
+        "committed_steps": "3"
       }
     },
     {
@@ -1350,10 +868,8 @@
       "source": "@main\n~> [0* % . ;\n@end main\n@main.F0\n~> ]\n@end main.F0\n",
       "run": {
         "seed": "0",
-        "custom_execution_limit": "100",
-        "max_ticks": "10",
         "input": [],
-        "gas_hard_limit": "100000000"
+        "max_steps": "10"
       },
       "expected": {
         "process_exit_code": 0,
@@ -1374,27 +890,8 @@
           0,
           0
         ],
-        "committed_ticks": "8",
-        "operation_count": "6",
-        "used_cell_count": "7",
-        "used_memory_address_count": "0",
-        "peak_data_stack_usage": "0",
-        "peak_instruction_stack_usage": "1",
-        "peak_call_stack_usage": "1",
-        "instruction_variety": [
-          "Output",
-          "Encode",
-          "Call",
-          "Return",
-          "ReadCode",
-          "Halt"
-        ],
         "error_codes": [],
-        "gas_used": "43",
-        "execution_gas": "23",
-        "memory_gas": "0",
-        "stack_gas": "20",
-        "gas_schedule_version": 1
+        "committed_steps": "8"
       }
     },
     {
@@ -1402,10 +899,8 @@
       "source": "@main\n~> +* [0= ;\n@end main\n@main.F0\n~> ]\n@end main.F0\n",
       "run": {
         "seed": "0",
-        "custom_execution_limit": "100",
-        "max_ticks": "10",
         "input": [],
-        "gas_hard_limit": "100000000"
+        "max_steps": "10"
       },
       "expected": {
         "process_exit_code": 0,
@@ -1423,21 +918,6 @@
           0,
           0,
           0
-        ],
-        "committed_ticks": "7",
-        "operation_count": "6",
-        "used_cell_count": "6",
-        "used_memory_address_count": "0",
-        "peak_data_stack_usage": "0",
-        "peak_instruction_stack_usage": "1",
-        "peak_call_stack_usage": "1",
-        "instruction_variety": [
-          "Add",
-          "Call",
-          "Return",
-          "ReadCode",
-          "WriteCode",
-          "Halt"
         ],
         "error_codes": [],
         "runtime_main_primary_tokens": [
@@ -1452,11 +932,7 @@
           "=",
           null
         ],
-        "gas_used": "46",
-        "execution_gas": "26",
-        "memory_gas": "0",
-        "stack_gas": "20",
-        "gas_schedule_version": 1
+        "committed_steps": "7"
       }
     },
     {
@@ -1464,10 +940,8 @@
       "source": "@main\n~> +* [0= ;\n@end main\n@main.F0\n~> ]* +\n@end F0\n",
       "run": {
         "seed": "0",
-        "custom_execution_limit": "100",
-        "max_ticks": "10",
         "input": [],
-        "gas_hard_limit": "100000000"
+        "max_steps": "10"
       },
       "expected": {
         "process_exit_code": 0,
@@ -1485,21 +959,6 @@
           0,
           0,
           0
-        ],
-        "committed_ticks": "7",
-        "operation_count": "6",
-        "used_cell_count": "6",
-        "used_memory_address_count": "0",
-        "peak_data_stack_usage": "0",
-        "peak_instruction_stack_usage": "1",
-        "peak_call_stack_usage": "1",
-        "instruction_variety": [
-          "Add",
-          "Call",
-          "Return",
-          "ReadCode",
-          "WriteCode",
-          "Halt"
         ],
         "error_codes": [],
         "runtime_main_primary_tokens": [
@@ -1517,11 +976,7 @@
         "thread_instruction_stack_sizes": [
           0
         ],
-        "gas_used": "46",
-        "execution_gas": "26",
-        "memory_gas": "0",
-        "stack_gas": "20",
-        "gas_schedule_version": 1
+        "committed_steps": "7"
       }
     },
     {
@@ -1529,10 +984,8 @@
       "source": "@main\n~> +* [0 ;\n@end main\n@main.F0\n~> ]= +\n@end F0\n",
       "run": {
         "seed": "0",
-        "custom_execution_limit": "100",
-        "max_ticks": "10",
         "input": [],
-        "gas_hard_limit": "100000000"
+        "max_steps": "10"
       },
       "expected": {
         "process_exit_code": 0,
@@ -1550,20 +1003,6 @@
           0,
           0,
           0
-        ],
-        "committed_ticks": "7",
-        "operation_count": "5",
-        "used_cell_count": "6",
-        "used_memory_address_count": "0",
-        "peak_data_stack_usage": "0",
-        "peak_instruction_stack_usage": "1",
-        "peak_call_stack_usage": "1",
-        "instruction_variety": [
-          "Add",
-          "Call",
-          "Return",
-          "ReadCode",
-          "Halt"
         ],
         "error_codes": [],
         "runtime_main_primary_tokens": [
@@ -1581,11 +1020,7 @@
         "thread_instruction_stack_sizes": [
           1
         ],
-        "gas_used": "38",
-        "execution_gas": "18",
-        "memory_gas": "0",
-        "stack_gas": "20",
-        "gas_schedule_version": 1
+        "committed_steps": "7"
       }
     },
     {
@@ -1593,14 +1028,12 @@
       "source": "@main\n~> [0\n@end\n@main.F0\n~> [0 _ ]\n@end F0\n",
       "run": {
         "seed": "0",
-        "custom_execution_limit": "100",
-        "max_ticks": "10",
         "input": [],
-        "gas_hard_limit": "100000000"
+        "max_steps": "10"
       },
       "expected": {
         "process_exit_code": 6,
-        "status": "tick_limit_reached",
+        "status": "step_limit_reached",
         "vm_status": "running",
         "output": [],
         "registers": [
@@ -1615,22 +1048,8 @@
           0,
           0
         ],
-        "committed_ticks": "10",
-        "operation_count": "5",
-        "used_cell_count": "4",
-        "used_memory_address_count": "0",
-        "peak_data_stack_usage": "0",
-        "peak_instruction_stack_usage": "0",
-        "peak_call_stack_usage": "1",
-        "instruction_variety": [
-          "Call"
-        ],
         "error_codes": [],
-        "gas_used": "56",
-        "execution_gas": "40",
-        "memory_gas": "0",
-        "stack_gas": "16",
-        "gas_schedule_version": 1
+        "committed_steps": "10"
       }
     },
     {
@@ -1638,12 +1057,10 @@
       "source": "~> , ( $) $( . ;\n",
       "run": {
         "seed": "0",
-        "custom_execution_limit": "100",
-        "max_ticks": "10",
         "input": [
           91
         ],
-        "gas_hard_limit": "100000000"
+        "max_steps": "10"
       },
       "expected": {
         "process_exit_code": 0,
@@ -1664,21 +1081,6 @@
           0,
           0
         ],
-        "committed_ticks": "7",
-        "operation_count": "6",
-        "used_cell_count": "7",
-        "used_memory_address_count": "1",
-        "peak_data_stack_usage": "1",
-        "peak_instruction_stack_usage": "0",
-        "peak_call_stack_usage": "0",
-        "instruction_variety": [
-          "Read",
-          "Output",
-          "Push",
-          "MemoryLoad",
-          "MemoryStore",
-          "Halt"
-        ],
         "error_codes": [],
         "memory": [
           {
@@ -1686,11 +1088,7 @@
             "value": 91
           }
         ],
-        "gas_used": "37",
-        "execution_gas": "26",
-        "memory_gas": "10",
-        "stack_gas": "1",
-        "gas_schedule_version": 1
+        "committed_steps": "7"
       }
     },
     {
@@ -1698,8 +1096,6 @@
       "source": "~> ;\n",
       "run": {
         "seed": "0",
-        "custom_execution_limit": "100",
-        "max_ticks": "10",
         "input": [],
         "initial_memory": [
           {
@@ -1707,7 +1103,7 @@
             "value": 203
           }
         ],
-        "gas_hard_limit": "100000000"
+        "max_steps": "10"
       },
       "expected": {
         "process_exit_code": 0,
@@ -1726,16 +1122,6 @@
           0,
           0
         ],
-        "committed_ticks": "2",
-        "operation_count": "1",
-        "used_cell_count": "2",
-        "used_memory_address_count": "0",
-        "peak_data_stack_usage": "0",
-        "peak_instruction_stack_usage": "0",
-        "peak_call_stack_usage": "0",
-        "instruction_variety": [
-          "Halt"
-        ],
         "error_codes": [],
         "memory": [
           {
@@ -1743,11 +1129,7 @@
             "value": 203
           }
         ],
-        "gas_used": "0",
-        "execution_gas": "0",
-        "memory_gas": "0",
-        "stack_gas": "0",
-        "gas_schedule_version": 1
+        "committed_steps": "2"
       }
     },
     {
@@ -1755,12 +1137,10 @@
       "source": "@main\n~> , & >= ;\n@end main\n",
       "run": {
         "seed": "0",
-        "custom_execution_limit": "100",
-        "max_ticks": "10",
         "input": [
           43
         ],
-        "gas_hard_limit": "100000000"
+        "max_steps": "10"
       },
       "expected": {
         "process_exit_code": 0,
@@ -1779,19 +1159,6 @@
           0,
           0
         ],
-        "committed_ticks": "5",
-        "operation_count": "4",
-        "used_cell_count": "5",
-        "used_memory_address_count": "0",
-        "peak_data_stack_usage": "0",
-        "peak_instruction_stack_usage": "1",
-        "peak_call_stack_usage": "0",
-        "instruction_variety": [
-          "Read",
-          "Decode",
-          "WriteCode",
-          "Halt"
-        ],
         "error_codes": [],
         "runtime_main_primary_tokens": [
           null,
@@ -1807,11 +1174,7 @@
           "=",
           null
         ],
-        "gas_used": "21",
-        "execution_gas": "17",
-        "memory_gas": "0",
-        "stack_gas": "4",
-        "gas_schedule_version": 1
+        "committed_steps": "5"
       }
     },
     {
@@ -1819,14 +1182,12 @@
       "source": "~> ??\n",
       "run": {
         "seed": "0",
-        "custom_execution_limit": "100",
-        "max_ticks": "2",
         "input": [],
-        "gas_hard_limit": "100000000"
+        "max_steps": "2"
       },
       "expected": {
         "process_exit_code": 6,
-        "status": "tick_limit_reached",
+        "status": "step_limit_reached",
         "vm_status": "running",
         "output": [],
         "registers": [
@@ -1841,24 +1202,10 @@
           0,
           0
         ],
-        "committed_ticks": "2",
-        "operation_count": "1",
-        "used_cell_count": "2",
-        "used_memory_address_count": "0",
-        "peak_data_stack_usage": "0",
-        "peak_instruction_stack_usage": "0",
-        "peak_call_stack_usage": "0",
-        "instruction_variety": [
-          "RandomDirection"
-        ],
         "error_codes": [],
         "thread_direction": "down",
         "thread_random_state": "5989369519616587245",
-        "gas_used": "1",
-        "execution_gas": "1",
-        "memory_gas": "0",
-        "stack_gas": "0",
-        "gas_schedule_version": 1
+        "committed_steps": "2"
       }
     },
     {
@@ -1866,14 +1213,12 @@
       "source": "@size 2x2\n@main\n~> ??\n~> ??\n@end main\n",
       "run": {
         "seed": "9007199254740993",
-        "custom_execution_limit": "100",
-        "max_ticks": "2",
         "input": [],
-        "gas_hard_limit": "100000000"
+        "max_steps": "2"
       },
       "expected": {
         "process_exit_code": 6,
-        "status": "tick_limit_reached",
+        "status": "step_limit_reached",
         "vm_status": "running",
         "output": [],
         "registers": [
@@ -1888,35 +1233,19 @@
           0,
           0
         ],
-        "committed_ticks": "2",
-        "operation_count": "2",
-        "used_cell_count": "4",
-        "used_memory_address_count": "0",
-        "peak_data_stack_usage": "0",
-        "peak_instruction_stack_usage": "0",
-        "peak_call_stack_usage": "0",
-        "instruction_variety": [
-          "RandomDirection"
-        ],
         "error_codes": [],
         "thread_direction": "down",
         "thread_random_state": "3674316803529091317",
-        "gas_used": "2",
-        "execution_gas": "2",
-        "memory_gas": "0",
-        "stack_gas": "0",
-        "gas_schedule_version": 1
+        "committed_steps": "2"
       }
     },
     {
-      "id": "halt-does-not-skip-other-threads-current-tick",
+      "id": "halt-does-not-skip-other-threads-current-transition",
       "source": "@main\n~> ; ~> _\n@end main\n",
       "run": {
         "seed": "0",
-        "custom_execution_limit": "100",
-        "max_ticks": "10",
         "input": [],
-        "gas_hard_limit": "100000000"
+        "max_steps": "10"
       },
       "expected": {
         "process_exit_code": 0,
@@ -1935,38 +1264,22 @@
           0,
           0
         ],
-        "committed_ticks": "2",
-        "operation_count": "1",
-        "used_cell_count": "4",
-        "used_memory_address_count": "0",
-        "peak_data_stack_usage": "0",
-        "peak_instruction_stack_usage": "0",
-        "peak_call_stack_usage": "0",
-        "instruction_variety": [
-          "Halt"
-        ],
         "error_codes": [],
-        "gas_used": "0",
-        "execution_gas": "0",
-        "memory_gas": "0",
-        "stack_gas": "0",
-        "gas_schedule_version": 1
+        "committed_steps": "2"
       }
     },
     {
-      "id": "custom-halt-does-not-skip-other-threads-current-tick",
+      "id": "custom-halt-does-not-skip-other-threads-current-transition",
       "source": "@main\n~> #0 ~> _\n@end main\n@C0\n~> ;\n@end C0\n",
       "run": {
         "seed": "0",
-        "custom_execution_limit": "100",
-        "max_ticks": "10",
         "input": [],
-        "gas_hard_limit": "100000000"
+        "max_steps": "10"
       },
       "expected": {
-        "process_exit_code": 5,
-        "status": "error",
-        "vm_status": "error",
+        "process_exit_code": 0,
+        "status": "halted",
+        "vm_status": "halted",
         "output": [],
         "registers": [
           0,
@@ -1980,38 +1293,22 @@
           0,
           0
         ],
-        "committed_ticks": "1",
-        "operation_count": "0",
-        "used_cell_count": "4",
-        "used_memory_address_count": "0",
-        "peak_data_stack_usage": "0",
-        "peak_instruction_stack_usage": "0",
-        "peak_call_stack_usage": "0",
-        "instruction_variety": [],
-        "error_codes": [
-          "CustomDisabled"
-        ],
-        "gas_used": "0",
-        "execution_gas": "0",
-        "memory_gas": "0",
-        "stack_gas": "0",
-        "gas_schedule_version": 1
+        "error_codes": [],
+        "committed_steps": "2"
       }
     },
     {
-      "id": "custom-halt-prioritizes-over-same-tick-custom-return",
+      "id": "custom-halt-prioritizes-over-same-transition-custom-return",
       "source": "@main\n~> #0 ;\n@end main\n@C0\n~> #]\n; ~<\n@end C0\n",
       "run": {
         "seed": "0",
-        "custom_execution_limit": "10",
-        "max_ticks": "10",
         "input": [],
-        "gas_hard_limit": "100000000"
+        "max_steps": "10"
       },
       "expected": {
-        "process_exit_code": 5,
-        "status": "error",
-        "vm_status": "error",
+        "process_exit_code": 0,
+        "status": "halted",
+        "vm_status": "halted",
         "output": [],
         "registers": [
           0,
@@ -2025,22 +1322,8 @@
           0,
           0
         ],
-        "committed_ticks": "1",
-        "operation_count": "0",
-        "used_cell_count": "2",
-        "used_memory_address_count": "0",
-        "peak_data_stack_usage": "0",
-        "peak_instruction_stack_usage": "0",
-        "peak_call_stack_usage": "0",
-        "instruction_variety": [],
-        "error_codes": [
-          "CustomDisabled"
-        ],
-        "gas_used": "0",
-        "execution_gas": "0",
-        "memory_gas": "0",
-        "stack_gas": "0",
-        "gas_schedule_version": 1
+        "error_codes": [],
+        "committed_steps": "2"
       }
     },
     {
@@ -2048,16 +1331,17 @@
       "source": "@main\n~> #0 ) . #0 ) . ;\n@end main\n@C0\n~> +* -= . #]\n@end C0\n",
       "run": {
         "seed": "0",
-        "custom_execution_limit": "10",
-        "max_ticks": "10",
         "input": [],
-        "gas_hard_limit": "100000000"
+        "max_steps": "10"
       },
       "expected": {
-        "process_exit_code": 5,
-        "status": "error",
-        "vm_status": "error",
-        "output": [],
+        "process_exit_code": 0,
+        "status": "halted",
+        "vm_status": "halted",
+        "output": [
+          0,
+          0
+        ],
         "registers": [
           0,
           0,
@@ -2070,22 +1354,8 @@
           0,
           0
         ],
-        "committed_ticks": "1",
-        "operation_count": "0",
-        "used_cell_count": "2",
-        "used_memory_address_count": "0",
-        "peak_data_stack_usage": "0",
-        "peak_instruction_stack_usage": "0",
-        "peak_call_stack_usage": "0",
-        "instruction_variety": [],
-        "error_codes": [
-          "CustomDisabled"
-        ],
-        "gas_used": "0",
-        "execution_gas": "0",
-        "memory_gas": "0",
-        "stack_gas": "0",
-        "gas_schedule_version": 1
+        "error_codes": [],
+        "committed_steps": "8"
       }
     },
     {
@@ -2093,10 +1363,8 @@
       "source": "~> ( ) _\n~> ( ) _\n~> _ ( _\n",
       "run": {
         "seed": "0",
-        "custom_execution_limit": "100",
-        "max_ticks": "10",
         "input": [],
-        "gas_hard_limit": "100000000"
+        "max_steps": "10"
       },
       "expected": {
         "process_exit_code": 5,
@@ -2115,28 +1383,13 @@
           0,
           0
         ],
-        "committed_ticks": "2",
-        "operation_count": "5",
-        "used_cell_count": "9",
-        "used_memory_address_count": "0",
-        "peak_data_stack_usage": "3",
-        "peak_instruction_stack_usage": "0",
-        "peak_call_stack_usage": "0",
-        "instruction_variety": [
-          "Push",
-          "PopAdd"
-        ],
         "error_codes": [
           "ConcurrentWriteConflict"
         ],
-        "error_global_ticks": [
+        "committed_steps": "2",
+        "error_transition_ids": [
           "3"
-        ],
-        "gas_used": "18",
-        "execution_gas": "15",
-        "memory_gas": "0",
-        "stack_gas": "3",
-        "gas_schedule_version": 1
+        ]
       }
     },
     {
@@ -2144,14 +1397,12 @@
       "source": "@main\n_ ~<\n~^ _\n@end main\n",
       "run": {
         "seed": "0",
-        "custom_execution_limit": "100",
-        "max_ticks": "10",
         "input": [],
-        "gas_hard_limit": "100000000"
+        "max_steps": "10"
       },
       "expected": {
         "process_exit_code": 6,
-        "status": "tick_limit_reached",
+        "status": "step_limit_reached",
         "vm_status": "running",
         "output": [],
         "registers": [
@@ -2166,20 +1417,8 @@
           0,
           0
         ],
-        "committed_ticks": "10",
-        "operation_count": "0",
-        "used_cell_count": "3",
-        "used_memory_address_count": "0",
-        "peak_data_stack_usage": "0",
-        "peak_instruction_stack_usage": "0",
-        "peak_call_stack_usage": "0",
-        "instruction_variety": [],
         "error_codes": [],
-        "gas_used": "0",
-        "execution_gas": "0",
-        "memory_gas": "0",
-        "stack_gas": "0",
-        "gas_schedule_version": 1
+        "committed_steps": "10"
       }
     },
     {
@@ -2187,14 +1426,12 @@
       "source": "@main\n~> [0 ~> >\n@end main\n@main.F0\n~> _ _ _\n@end F0\n",
       "run": {
         "seed": "0",
-        "custom_execution_limit": "100",
-        "max_ticks": "10",
         "input": [],
-        "gas_hard_limit": "100000000"
+        "max_steps": "10"
       },
       "expected": {
         "process_exit_code": 6,
-        "status": "tick_limit_reached",
+        "status": "step_limit_reached",
         "vm_status": "running",
         "output": [],
         "registers": [
@@ -2209,37 +1446,21 @@
           0,
           0
         ],
-        "committed_ticks": "10",
-        "operation_count": "2",
-        "used_cell_count": "8",
-        "used_memory_address_count": "0",
-        "peak_data_stack_usage": "0",
-        "peak_instruction_stack_usage": "0",
-        "peak_call_stack_usage": "2",
-        "instruction_variety": [
-          "Call"
-        ],
         "error_codes": [],
         "thread_call_stack_sizes": [
           1,
           1
         ],
-        "gas_used": "49",
-        "execution_gas": "17",
-        "memory_gas": "0",
-        "stack_gas": "32",
-        "gas_schedule_version": 1
+        "committed_steps": "10"
       }
     },
     {
-      "id": "same-tick-register-conflict-at-wrapping-edge",
+      "id": "same-transition-register-conflict-at-wrapping-edge",
       "source": "@main\n~> + ~> +\n@end main\n",
       "run": {
         "seed": "0",
-        "custom_execution_limit": "100",
-        "max_ticks": "10",
         "input": [],
-        "gas_hard_limit": "100000000"
+        "max_steps": "10"
       },
       "expected": {
         "process_exit_code": 5,
@@ -2258,24 +1479,10 @@
           0,
           0
         ],
-        "committed_ticks": "1",
-        "operation_count": "2",
-        "used_cell_count": "4",
-        "used_memory_address_count": "0",
-        "peak_data_stack_usage": "0",
-        "peak_instruction_stack_usage": "0",
-        "peak_call_stack_usage": "0",
-        "instruction_variety": [
-          "Add"
-        ],
         "error_codes": [
           "ConcurrentWriteConflict"
         ],
-        "gas_used": "6",
-        "execution_gas": "6",
-        "memory_gas": "0",
-        "stack_gas": "0",
-        "gas_schedule_version": 1
+        "committed_steps": "1"
       }
     },
     {
@@ -2283,10 +1490,8 @@
       "source": "~> ; _ _\n_ _ ; ~<\n",
       "run": {
         "seed": "0",
-        "custom_execution_limit": "100",
-        "max_ticks": "10",
         "input": [],
-        "gas_hard_limit": "100000000"
+        "max_steps": "10"
       },
       "expected": {
         "process_exit_code": 0,
@@ -2304,16 +1509,6 @@
           0,
           0,
           0
-        ],
-        "committed_ticks": "2",
-        "operation_count": "2",
-        "used_cell_count": "4",
-        "used_memory_address_count": "0",
-        "peak_data_stack_usage": "0",
-        "peak_instruction_stack_usage": "0",
-        "peak_call_stack_usage": "0",
-        "instruction_variety": [
-          "Halt"
         ],
         "error_codes": [],
         "threads": [
@@ -2334,25 +1529,19 @@
             "direction": "left"
           }
         ],
-        "gas_used": "0",
-        "execution_gas": "0",
-        "memory_gas": "0",
-        "stack_gas": "0",
-        "gas_schedule_version": 1
+        "committed_steps": "2"
       }
     },
     {
-      "id": "simultaneous-nonempty-reads-roll-back-the-global-tick",
+      "id": "simultaneous-nonempty-reads-roll-back-the-outer-transition",
       "source": "@main\n~> ,\n~> ,\n@end main\n",
       "run": {
         "seed": "0",
-        "custom_execution_limit": "100",
-        "max_ticks": "10",
         "input": [
           42,
           84
         ],
-        "gas_hard_limit": "100000000"
+        "max_steps": "10"
       },
       "expected": {
         "process_exit_code": 5,
@@ -2371,21 +1560,8 @@
           0,
           0
         ],
-        "committed_ticks": "1",
-        "operation_count": "2",
-        "used_cell_count": "4",
-        "used_memory_address_count": "0",
-        "peak_data_stack_usage": "0",
-        "peak_instruction_stack_usage": "0",
-        "peak_call_stack_usage": "0",
-        "instruction_variety": [
-          "Read"
-        ],
         "error_codes": [
           "ConcurrentInputConflict"
-        ],
-        "error_global_ticks": [
-          "2"
         ],
         "error_thread_id_groups": [
           [
@@ -2397,11 +1573,10 @@
           42,
           84
         ],
-        "gas_used": "10",
-        "execution_gas": "10",
-        "memory_gas": "0",
-        "stack_gas": "0",
-        "gas_schedule_version": 1
+        "committed_steps": "1",
+        "error_transition_ids": [
+          "2"
+        ]
       }
     },
     {
@@ -2409,10 +1584,8 @@
       "source": "@main\n~> ( $)\n~> ( $)\n@end main\n",
       "run": {
         "seed": "0",
-        "custom_execution_limit": "100",
-        "max_ticks": "10",
         "input": [],
-        "gas_hard_limit": "100000000"
+        "max_steps": "10"
       },
       "expected": {
         "process_exit_code": 5,
@@ -2431,22 +1604,8 @@
           0,
           0
         ],
-        "committed_ticks": "2",
-        "operation_count": "4",
-        "used_cell_count": "6",
-        "used_memory_address_count": "1",
-        "peak_data_stack_usage": "2",
-        "peak_instruction_stack_usage": "0",
-        "peak_call_stack_usage": "0",
-        "instruction_variety": [
-          "Push",
-          "MemoryStore"
-        ],
         "error_codes": [
           "ConcurrentMemoryWriteConflict"
-        ],
-        "error_global_ticks": [
-          "3"
         ],
         "error_thread_id_groups": [
           [
@@ -2459,11 +1618,10 @@
           1
         ],
         "memory": [],
-        "gas_used": "34",
-        "execution_gas": "22",
-        "memory_gas": "10",
-        "stack_gas": "2",
-        "gas_schedule_version": 1
+        "committed_steps": "2",
+        "error_transition_ids": [
+          "3"
+        ]
       }
     },
     {
@@ -2471,10 +1629,8 @@
       "source": "@main\n~> .\n~> .\n@end main\n",
       "run": {
         "seed": "0",
-        "custom_execution_limit": "100",
-        "max_ticks": "10",
         "input": [],
-        "gas_hard_limit": "100000000"
+        "max_steps": "10"
       },
       "expected": {
         "process_exit_code": 5,
@@ -2493,21 +1649,8 @@
           0,
           0
         ],
-        "committed_ticks": "1",
-        "operation_count": "2",
-        "used_cell_count": "4",
-        "used_memory_address_count": "0",
-        "peak_data_stack_usage": "0",
-        "peak_instruction_stack_usage": "0",
-        "peak_call_stack_usage": "0",
-        "instruction_variety": [
-          "Output"
-        ],
         "error_codes": [
           "ConcurrentOutputConflict"
-        ],
-        "error_global_ticks": [
-          "2"
         ],
         "error_thread_id_groups": [
           [
@@ -2515,27 +1658,24 @@
             "1"
           ]
         ],
-        "gas_used": "10",
-        "execution_gas": "10",
-        "memory_gas": "0",
-        "stack_gas": "0",
-        "gas_schedule_version": 1
+        "committed_steps": "1",
+        "error_transition_ids": [
+          "2"
+        ]
       }
     },
     {
-      "id": "custom-return-on-the-final-permitted-internal-tick-succeeds",
+      "id": "custom-return-on-the-final-permitted-internal-transition-succeeds",
       "source": "@main\n~> #0 ;\n@end main\n@C0\n~> _ #]\n@end C0\n",
       "run": {
         "seed": "0",
-        "custom_execution_limit": "3",
-        "max_ticks": "10",
         "input": [],
-        "gas_hard_limit": "100000000"
+        "max_steps": "10"
       },
       "expected": {
-        "process_exit_code": 5,
-        "status": "error",
-        "vm_status": "error",
+        "process_exit_code": 0,
+        "status": "halted",
+        "vm_status": "halted",
         "output": [],
         "registers": [
           0,
@@ -2549,38 +1689,22 @@
           0,
           0
         ],
-        "committed_ticks": "1",
-        "operation_count": "0",
-        "used_cell_count": "2",
-        "used_memory_address_count": "0",
-        "peak_data_stack_usage": "0",
-        "peak_instruction_stack_usage": "0",
-        "peak_call_stack_usage": "0",
-        "instruction_variety": [],
-        "error_codes": [
-          "CustomDisabled"
-        ],
-        "gas_used": "0",
-        "execution_gas": "0",
-        "memory_gas": "0",
-        "stack_gas": "0",
-        "gas_schedule_version": 1
+        "error_codes": [],
+        "committed_steps": "3"
       }
     },
     {
-      "id": "custom-halt-on-final-permitted-tick-does-not-move-caller",
+      "id": "custom-halt-on-final-permitted-transition-does-not-move-caller",
       "source": "@main\n~> #0\n@end main\n@C0\n~> ;\n@end C0\n",
       "run": {
         "seed": "0",
-        "custom_execution_limit": "2",
-        "max_ticks": "10",
         "input": [],
-        "gas_hard_limit": "100000000"
+        "max_steps": "10"
       },
       "expected": {
-        "process_exit_code": 5,
-        "status": "error",
-        "vm_status": "error",
+        "process_exit_code": 0,
+        "status": "halted",
+        "vm_status": "halted",
         "output": [],
         "registers": [
           0,
@@ -2594,17 +1718,7 @@
           0,
           0
         ],
-        "committed_ticks": "1",
-        "operation_count": "0",
-        "used_cell_count": "2",
-        "used_memory_address_count": "0",
-        "peak_data_stack_usage": "0",
-        "peak_instruction_stack_usage": "0",
-        "peak_call_stack_usage": "0",
-        "instruction_variety": [],
-        "error_codes": [
-          "CustomDisabled"
-        ],
+        "error_codes": [],
         "threads": [
           {
             "id": "0",
@@ -2615,11 +1729,7 @@
             "direction": "right"
           }
         ],
-        "gas_used": "0",
-        "execution_gas": "0",
-        "memory_gas": "0",
-        "stack_gas": "0",
-        "gas_schedule_version": 1
+        "committed_steps": "2"
       }
     },
     {
@@ -2627,15 +1737,13 @@
       "source": "@size 3x2\n@main\n~> #0 ;\n~> #1 ;\n@end main\n@C0\n@size 4x1\n~> ( . #]\n@end C0\n@C1\n@size 5x1\n~> + + ( #]\n@end C1\n",
       "run": {
         "seed": "0",
-        "custom_execution_limit": "100",
-        "max_ticks": "10",
         "input": [],
-        "gas_hard_limit": "100000000"
+        "max_steps": "10"
       },
       "expected": {
-        "process_exit_code": 5,
-        "status": "error",
-        "vm_status": "error",
+        "process_exit_code": 0,
+        "status": "halted",
+        "vm_status": "halted",
         "output": [],
         "registers": [
           0,
@@ -2649,26 +1757,16 @@
           0,
           0
         ],
-        "committed_ticks": "1",
-        "operation_count": "0",
-        "used_cell_count": "4",
-        "used_memory_address_count": "0",
-        "peak_data_stack_usage": "0",
-        "peak_instruction_stack_usage": "0",
-        "peak_call_stack_usage": "0",
-        "instruction_variety": [],
-        "error_codes": [
-          "CustomDisabled"
-        ],
+        "error_codes": [],
         "thread_data_stack_sizes": [
-          0,
+          1,
           0
         ],
         "threads": [
           {
             "id": "0",
             "position": {
-              "x": 1,
+              "x": 2,
               "y": 0
             },
             "direction": "right"
@@ -2676,32 +1774,26 @@
           {
             "id": "1",
             "position": {
-              "x": 1,
+              "x": 2,
               "y": 1
             },
             "direction": "right"
           }
         ],
-        "gas_used": "0",
-        "execution_gas": "0",
-        "memory_gas": "0",
-        "stack_gas": "0",
-        "gas_schedule_version": 1
+        "committed_steps": "3"
       }
     },
     {
-      "id": "same-tick-register-reader-observes-old-value-while-add-commits",
+      "id": "same-transition-register-reader-observes-old-value-while-add-commits",
       "source": "@size 3x2\n@main\n~> ?0v _\n~> + _\n@end main\n",
       "run": {
         "seed": "0",
-        "custom_execution_limit": "100",
-        "max_ticks": "2",
         "input": [],
-        "gas_hard_limit": "100000000"
+        "max_steps": "2"
       },
       "expected": {
         "process_exit_code": 6,
-        "status": "tick_limit_reached",
+        "status": "step_limit_reached",
         "vm_status": "running",
         "output": [],
         "registers": [
@@ -2715,17 +1807,6 @@
           0,
           0,
           0
-        ],
-        "committed_ticks": "2",
-        "operation_count": "2",
-        "used_cell_count": "4",
-        "used_memory_address_count": "0",
-        "peak_data_stack_usage": "0",
-        "peak_instruction_stack_usage": "0",
-        "peak_call_stack_usage": "0",
-        "instruction_variety": [
-          "Condition",
-          "Add"
         ],
         "error_codes": [],
         "thread_data_stack_sizes": [
@@ -2750,11 +1831,7 @@
             "direction": "right"
           }
         ],
-        "gas_used": "6",
-        "execution_gas": "6",
-        "memory_gas": "0",
-        "stack_gas": "0",
-        "gas_schedule_version": 1
+        "committed_steps": "2"
       }
     },
     {
@@ -2762,12 +1839,10 @@
       "source": "@size 9x1\n@main\n~> , & _ (= _ & _ ~<\n@end main\n",
       "run": {
         "seed": "0",
-        "custom_execution_limit": "100",
-        "max_ticks": "10",
         "input": [
           43
         ],
-        "gas_hard_limit": "100000000"
+        "max_steps": "10"
       },
       "expected": {
         "process_exit_code": 5,
@@ -2786,24 +1861,8 @@
           0,
           0
         ],
-        "committed_ticks": "4",
-        "operation_count": "7",
-        "used_cell_count": "9",
-        "used_memory_address_count": "0",
-        "peak_data_stack_usage": "2",
-        "peak_instruction_stack_usage": "2",
-        "peak_call_stack_usage": "0",
-        "instruction_variety": [
-          "Read",
-          "Push",
-          "Decode",
-          "WriteCode"
-        ],
         "error_codes": [
           "ConcurrentCodeWriteConflict"
-        ],
-        "error_global_ticks": [
-          "5"
         ],
         "error_thread_id_groups": [
           [
@@ -2860,69 +1919,10 @@
           null,
           null
         ],
-        "gas_used": "43",
-        "execution_gas": "33",
-        "memory_gas": "0",
-        "stack_gas": "10",
-        "gas_schedule_version": 1
-      }
-    },
-    {
-      "id": "custom-limit-exceeded-rolls-back-outer-tick",
-      "source": "@main\n~> #0 ;\n@end main\n@C0\n@size 4x1\n~> + + #]\n@end C0\n",
-      "run": {
-        "seed": "0",
-        "custom_execution_limit": "3",
-        "max_ticks": "10",
-        "input": [],
-        "gas_hard_limit": "100000000"
-      },
-      "expected": {
-        "process_exit_code": 5,
-        "status": "error",
-        "vm_status": "error",
-        "output": [],
-        "registers": [
-          0,
-          0,
-          0,
-          0,
-          0,
-          0,
-          0,
-          0,
-          0,
-          0
-        ],
-        "committed_ticks": "1",
-        "operation_count": "0",
-        "used_cell_count": "2",
-        "used_memory_address_count": "0",
-        "peak_data_stack_usage": "0",
-        "peak_instruction_stack_usage": "0",
-        "peak_call_stack_usage": "0",
-        "instruction_variety": [],
-        "error_codes": [
-          "CustomDisabled"
-        ],
-        "error_global_ticks": [
-          "2"
-        ],
-        "threads": [
-          {
-            "id": "0",
-            "position": {
-              "x": 1,
-              "y": 0
-            },
-            "direction": "right"
-          }
-        ],
-        "gas_used": "0",
-        "execution_gas": "0",
-        "memory_gas": "0",
-        "stack_gas": "0",
-        "gas_schedule_version": 1
+        "committed_steps": "4",
+        "error_transition_ids": [
+          "5"
+        ]
       }
     },
     {
@@ -2930,10 +1930,8 @@
       "source": "@main\n~> #0 ;\n@end main\n@C0\n@size 3x2\n~> . _\n~> . _\n@end C0\n",
       "run": {
         "seed": "0",
-        "custom_execution_limit": "100",
-        "max_ticks": "10",
         "input": [],
-        "gas_hard_limit": "100000000"
+        "max_steps": "10"
       },
       "expected": {
         "process_exit_code": 5,
@@ -2952,19 +1950,8 @@
           0,
           0
         ],
-        "committed_ticks": "1",
-        "operation_count": "0",
-        "used_cell_count": "2",
-        "used_memory_address_count": "0",
-        "peak_data_stack_usage": "0",
-        "peak_instruction_stack_usage": "0",
-        "peak_call_stack_usage": "0",
-        "instruction_variety": [],
         "error_codes": [
-          "CustomDisabled"
-        ],
-        "error_global_ticks": [
-          "2"
+          "ConcurrentCallerStackWriteConflict"
         ],
         "thread_data_stack_sizes": [
           0
@@ -2979,11 +1966,10 @@
             "direction": "right"
           }
         ],
-        "gas_used": "0",
-        "execution_gas": "0",
-        "memory_gas": "0",
-        "stack_gas": "0",
-        "gas_schedule_version": 1
+        "committed_steps": "1",
+        "error_transition_ids": [
+          "2"
+        ]
       }
     },
     {
@@ -2991,10 +1977,8 @@
       "source": "@main\n~> ( #0 ;\n@end main\n@C0\n@size 3x2\n~> , _\n~> , _\n@end C0\n",
       "run": {
         "seed": "0",
-        "custom_execution_limit": "100",
-        "max_ticks": "10",
         "input": [],
-        "gas_hard_limit": "100000000"
+        "max_steps": "10"
       },
       "expected": {
         "process_exit_code": 5,
@@ -3013,21 +1997,8 @@
           0,
           0
         ],
-        "committed_ticks": "2",
-        "operation_count": "1",
-        "used_cell_count": "3",
-        "used_memory_address_count": "0",
-        "peak_data_stack_usage": "1",
-        "peak_instruction_stack_usage": "0",
-        "peak_call_stack_usage": "0",
-        "instruction_variety": [
-          "Push"
-        ],
         "error_codes": [
-          "CustomDisabled"
-        ],
-        "error_global_ticks": [
-          "3"
+          "ConcurrentCallerStackReadConflict"
         ],
         "thread_data_stack_sizes": [
           1
@@ -3042,11 +2013,10 @@
             "direction": "right"
           }
         ],
-        "gas_used": "4",
-        "execution_gas": "3",
-        "memory_gas": "0",
-        "stack_gas": "1",
-        "gas_schedule_version": 1
+        "committed_steps": "2",
+        "error_transition_ids": [
+          "3"
+        ]
       }
     },
     {
@@ -3054,10 +2024,8 @@
       "source": "@main\n~> ( #0 ;\n@end main\n@C0\n@size 3x2\n~> , _\n~> . _\n@end C0\n",
       "run": {
         "seed": "0",
-        "custom_execution_limit": "100",
-        "max_ticks": "10",
         "input": [],
-        "gas_hard_limit": "100000000"
+        "max_steps": "10"
       },
       "expected": {
         "process_exit_code": 5,
@@ -3076,21 +2044,8 @@
           0,
           0
         ],
-        "committed_ticks": "2",
-        "operation_count": "1",
-        "used_cell_count": "3",
-        "used_memory_address_count": "0",
-        "peak_data_stack_usage": "1",
-        "peak_instruction_stack_usage": "0",
-        "peak_call_stack_usage": "0",
-        "instruction_variety": [
-          "Push"
-        ],
         "error_codes": [
-          "CustomDisabled"
-        ],
-        "error_global_ticks": [
-          "3"
+          "ConcurrentCallerStackReadWriteConflict"
         ],
         "thread_data_stack_sizes": [
           1
@@ -3105,11 +2060,10 @@
             "direction": "right"
           }
         ],
-        "gas_used": "4",
-        "execution_gas": "3",
-        "memory_gas": "0",
-        "stack_gas": "1",
-        "gas_schedule_version": 1
+        "committed_steps": "2",
+        "error_transition_ids": [
+          "3"
+        ]
       }
     },
     {
@@ -3117,15 +2071,13 @@
       "source": "@main\n~> #0 ;\n@end main\n@C0\n@size 3x3\n~> , #]\n~> , #]\n~> . #]\n@end C0\n",
       "run": {
         "seed": "0",
-        "custom_execution_limit": "100",
-        "max_ticks": "10",
         "input": [],
-        "gas_hard_limit": "100000000"
+        "max_steps": "10"
       },
       "expected": {
-        "process_exit_code": 5,
-        "status": "error",
-        "vm_status": "error",
+        "process_exit_code": 0,
+        "status": "halted",
+        "vm_status": "halted",
         "output": [],
         "registers": [
           0,
@@ -3139,35 +2091,21 @@
           0,
           0
         ],
-        "committed_ticks": "1",
-        "operation_count": "0",
-        "used_cell_count": "2",
-        "used_memory_address_count": "0",
-        "peak_data_stack_usage": "0",
-        "peak_instruction_stack_usage": "0",
-        "peak_call_stack_usage": "0",
-        "instruction_variety": [],
-        "error_codes": [
-          "CustomDisabled"
-        ],
+        "error_codes": [],
         "thread_data_stack_sizes": [
-          0
+          1
         ],
         "threads": [
           {
             "id": "0",
             "position": {
-              "x": 1,
+              "x": 2,
               "y": 0
             },
             "direction": "right"
           }
         ],
-        "gas_used": "0",
-        "execution_gas": "0",
-        "memory_gas": "0",
-        "stack_gas": "0",
-        "gas_schedule_version": 1
+        "committed_steps": "3"
       }
     },
     {
@@ -3175,15 +2113,13 @@
       "source": "@main\n~> #0 ;\n@end main\n@C0\n@size 2x1\n~> +\n@end C0\n",
       "run": {
         "seed": "0",
-        "custom_execution_limit": "2",
-        "max_ticks": "10",
         "input": [],
-        "gas_hard_limit": "100000000"
+        "max_steps": "10"
       },
       "expected": {
-        "process_exit_code": 5,
-        "status": "error",
-        "vm_status": "error",
+        "process_exit_code": 7,
+        "status": "work_limit_reached",
+        "vm_status": "running",
         "output": [],
         "registers": [
           0,
@@ -3197,17 +2133,7 @@
           0,
           0
         ],
-        "committed_ticks": "1",
-        "operation_count": "0",
-        "used_cell_count": "2",
-        "used_memory_address_count": "0",
-        "peak_data_stack_usage": "0",
-        "peak_instruction_stack_usage": "0",
-        "peak_call_stack_usage": "0",
-        "instruction_variety": [],
-        "error_codes": [
-          "CustomDisabled"
-        ],
+        "error_codes": [],
         "threads": [
           {
             "id": "0",
@@ -3218,11 +2144,7 @@
             "direction": "right"
           }
         ],
-        "gas_used": "0",
-        "execution_gas": "0",
-        "memory_gas": "0",
-        "stack_gas": "0",
-        "gas_schedule_version": 1
+        "committed_steps": "1"
       }
     },
     {
@@ -3230,15 +2152,13 @@
       "source": "@size 3x2\n@main\n~> #0 ;\n~> #0 ;\n@end main\n@C0\n@size 5x1\n~> ( $) $( #]\n@end C0\n",
       "run": {
         "seed": "0",
-        "custom_execution_limit": "100",
-        "max_ticks": "10",
         "input": [],
-        "gas_hard_limit": "100000000"
+        "max_steps": "10"
       },
       "expected": {
-        "process_exit_code": 5,
-        "status": "error",
-        "vm_status": "error",
+        "process_exit_code": 0,
+        "status": "halted",
+        "vm_status": "halted",
         "output": [],
         "registers": [
           0,
@@ -3252,82 +2172,7 @@
           0,
           0
         ],
-        "committed_ticks": "1",
-        "operation_count": "0",
-        "used_cell_count": "4",
-        "used_memory_address_count": "0",
-        "peak_data_stack_usage": "0",
-        "peak_instruction_stack_usage": "0",
-        "peak_call_stack_usage": "0",
-        "instruction_variety": [],
-        "error_codes": [
-          "CustomDisabled"
-        ],
-        "threads": [
-          {
-            "id": "0",
-            "position": {
-              "x": 1,
-              "y": 0
-            },
-            "direction": "right"
-          },
-          {
-            "id": "1",
-            "position": {
-              "x": 1,
-              "y": 1
-            },
-            "direction": "right"
-          }
-        ],
-        "gas_used": "0",
-        "execution_gas": "0",
-        "memory_gas": "0",
-        "stack_gas": "0",
-        "gas_schedule_version": 1
-      }
-    },
-    {
-      "id": "simultaneous-custom-stack-peaks-align-all-stack-types",
-      "source": "@main\n@size 8x1\n~> ( #0 _ _ #1 ( ~<\n@end main\n@C0\n@size 3x1\n~> . #]\n@end C0\n@C1\n@size 37x1\n~> + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + & ( [0 #]\n@F0\n@size 2x1\n~> ]\n@end F0\n@end C1\n",
-      "run": {
-        "seed": "0",
-        "custom_execution_limit": "100",
-        "max_ticks": "3",
-        "input": [],
-        "gas_hard_limit": "100000000"
-      },
-      "expected": {
-        "process_exit_code": 5,
-        "status": "error",
-        "vm_status": "error",
-        "output": [],
-        "registers": [
-          0,
-          0,
-          0,
-          0,
-          0,
-          0,
-          0,
-          0,
-          0,
-          0
-        ],
-        "committed_ticks": "2",
-        "operation_count": "2",
-        "used_cell_count": "6",
-        "used_memory_address_count": "0",
-        "peak_data_stack_usage": "2",
-        "peak_instruction_stack_usage": "0",
-        "peak_call_stack_usage": "0",
-        "instruction_variety": [
-          "Push"
-        ],
-        "error_codes": [
-          "CustomDisabled"
-        ],
+        "error_codes": [],
         "threads": [
           {
             "id": "0",
@@ -3340,17 +2185,60 @@
           {
             "id": "1",
             "position": {
-              "x": 5,
+              "x": 2,
+              "y": 1
+            },
+            "direction": "right"
+          }
+        ],
+        "committed_steps": "3"
+      }
+    },
+    {
+      "id": "simultaneous-custom-stack-peaks-align-all-stack-types",
+      "source": "@main\n@size 8x1\n~> ( #0 _ _ #1 ( ~<\n@end main\n@C0\n@size 3x1\n~> . #]\n@end C0\n@C1\n@size 37x1\n~> + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + & ( [0 #]\n@F0\n@size 2x1\n~> ]\n@end F0\n@end C1\n",
+      "run": {
+        "seed": "0",
+        "input": [],
+        "max_steps": "3"
+      },
+      "expected": {
+        "process_exit_code": 6,
+        "status": "step_limit_reached",
+        "vm_status": "running",
+        "output": [],
+        "registers": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "error_codes": [],
+        "threads": [
+          {
+            "id": "0",
+            "position": {
+              "x": 3,
+              "y": 0
+            },
+            "direction": "right"
+          },
+          {
+            "id": "1",
+            "position": {
+              "x": 4,
               "y": 0
             },
             "direction": "left"
           }
         ],
-        "gas_used": "8",
-        "execution_gas": "6",
-        "memory_gas": "0",
-        "stack_gas": "2",
-        "gas_schedule_version": 1
+        "committed_steps": "3"
       }
     },
     {
@@ -3358,12 +2246,10 @@
       "source": "@main\n@size 4x2\n~> ; _ _\n~> , ~> ,\n@end main\n",
       "run": {
         "seed": "0",
-        "custom_execution_limit": "100",
-        "max_ticks": "10",
         "input": [
           65
         ],
-        "gas_hard_limit": "100000000"
+        "max_steps": "10"
       },
       "expected": {
         "process_exit_code": 5,
@@ -3382,22 +2268,8 @@
           0,
           0
         ],
-        "committed_ticks": "1",
-        "operation_count": "3",
-        "used_cell_count": "6",
-        "used_memory_address_count": "0",
-        "peak_data_stack_usage": "0",
-        "peak_instruction_stack_usage": "0",
-        "peak_call_stack_usage": "0",
-        "instruction_variety": [
-          "Read",
-          "Halt"
-        ],
         "error_codes": [
           "ConcurrentInputConflict"
-        ],
-        "error_global_ticks": [
-          "2"
         ],
         "error_thread_id_groups": [
           [
@@ -3408,11 +2280,10 @@
         "remaining_input": [
           65
         ],
-        "gas_used": "10",
-        "execution_gas": "10",
-        "memory_gas": "0",
-        "stack_gas": "0",
-        "gas_schedule_version": 1
+        "committed_steps": "1",
+        "error_transition_ids": [
+          "2"
+        ]
       }
     },
     {
@@ -3420,10 +2291,8 @@
       "source": "@main\n@size 5x1\n~> + + [0 ;\n@F0\n@size 5x2\n~> ?0v - [1 ]\n_ ] _ _ _\n@end F0\n@F1\n@size 5x2\n~> ?0v - [0 ]\n_ ] _ _ _\n@end F1\n@end main\n",
       "run": {
         "seed": "0",
-        "custom_execution_limit": "100",
-        "max_ticks": "100",
         "input": [],
-        "gas_hard_limit": "100000000"
+        "max_steps": "100"
       },
       "expected": {
         "process_exit_code": 0,
@@ -3442,27 +2311,8 @@
           0,
           0
         ],
-        "committed_ticks": "21",
-        "operation_count": "14",
-        "used_cell_count": "16",
-        "used_memory_address_count": "0",
-        "peak_data_stack_usage": "0",
-        "peak_instruction_stack_usage": "0",
-        "peak_call_stack_usage": "3",
-        "instruction_variety": [
-          "Condition",
-          "Add",
-          "Sub",
-          "Call",
-          "Return",
-          "Halt"
-        ],
         "error_codes": [],
-        "gas_used": "97",
-        "execution_gas": "49",
-        "memory_gas": "0",
-        "stack_gas": "48",
-        "gas_schedule_version": 1
+        "committed_steps": "21"
       }
     },
     {
@@ -3470,13 +2320,11 @@
       "source": "~> , ( } , ?= . ;\n",
       "run": {
         "seed": "0",
-        "custom_execution_limit": "100",
-        "max_ticks": "100",
         "input": [
           7,
           7
         ],
-        "gas_hard_limit": "100000000"
+        "max_steps": "100"
       },
       "expected": {
         "process_exit_code": 0,
@@ -3497,28 +2345,9 @@
           0,
           0
         ],
-        "committed_ticks": "8",
-        "operation_count": "7",
-        "used_cell_count": "8",
-        "used_memory_address_count": "0",
-        "peak_data_stack_usage": "1",
-        "peak_instruction_stack_usage": "0",
-        "peak_call_stack_usage": "0",
-        "instruction_variety": [
-          "Compare",
-          "Read",
-          "MoveRegisterPointer",
-          "Output",
-          "Push",
-          "Halt"
-        ],
         "remaining_input": [],
         "error_codes": [],
-        "gas_used": "23",
-        "execution_gas": "22",
-        "memory_gas": "0",
-        "stack_gas": "1",
-        "gas_schedule_version": 1
+        "committed_steps": "8"
       }
     },
     {
@@ -3526,13 +2355,11 @@
       "source": "~> , ( } , ?= . ;\n",
       "run": {
         "seed": "0",
-        "custom_execution_limit": "100",
-        "max_ticks": "100",
         "input": [
           255,
           0
         ],
-        "gas_hard_limit": "100000000"
+        "max_steps": "100"
       },
       "expected": {
         "process_exit_code": 0,
@@ -3553,28 +2380,9 @@
           0,
           0
         ],
-        "committed_ticks": "8",
-        "operation_count": "7",
-        "used_cell_count": "8",
-        "used_memory_address_count": "0",
-        "peak_data_stack_usage": "1",
-        "peak_instruction_stack_usage": "0",
-        "peak_call_stack_usage": "0",
-        "instruction_variety": [
-          "Compare",
-          "Read",
-          "MoveRegisterPointer",
-          "Output",
-          "Push",
-          "Halt"
-        ],
         "remaining_input": [],
         "error_codes": [],
-        "gas_used": "23",
-        "execution_gas": "22",
-        "memory_gas": "0",
-        "stack_gas": "1",
-        "gas_schedule_version": 1
+        "committed_steps": "8"
       }
     },
     {
@@ -3582,13 +2390,11 @@
       "source": "~> , ( } , ?= . ;\n",
       "run": {
         "seed": "0",
-        "custom_execution_limit": "100",
-        "max_ticks": "100",
         "input": [
           0,
           255
         ],
-        "gas_hard_limit": "100000000"
+        "max_steps": "100"
       },
       "expected": {
         "process_exit_code": 0,
@@ -3609,28 +2415,9 @@
           0,
           0
         ],
-        "committed_ticks": "8",
-        "operation_count": "7",
-        "used_cell_count": "8",
-        "used_memory_address_count": "0",
-        "peak_data_stack_usage": "1",
-        "peak_instruction_stack_usage": "0",
-        "peak_call_stack_usage": "0",
-        "instruction_variety": [
-          "Compare",
-          "Read",
-          "MoveRegisterPointer",
-          "Output",
-          "Push",
-          "Halt"
-        ],
         "remaining_input": [],
         "error_codes": [],
-        "gas_used": "23",
-        "execution_gas": "22",
-        "memory_gas": "0",
-        "stack_gas": "1",
-        "gas_schedule_version": 1
+        "committed_steps": "8"
       }
     },
     {
@@ -3638,12 +2425,10 @@
       "source": "~> , ?= . ;\n",
       "run": {
         "seed": "0",
-        "custom_execution_limit": "100",
-        "max_ticks": "100",
         "input": [
           9
         ],
-        "gas_hard_limit": "100000000"
+        "max_steps": "100"
       },
       "expected": {
         "process_exit_code": 0,
@@ -3664,26 +2449,9 @@
           0,
           0
         ],
-        "committed_ticks": "5",
-        "operation_count": "4",
-        "used_cell_count": "5",
-        "used_memory_address_count": "0",
-        "peak_data_stack_usage": "0",
-        "peak_instruction_stack_usage": "0",
-        "peak_call_stack_usage": "0",
-        "instruction_variety": [
-          "Compare",
-          "Read",
-          "Output",
-          "Halt"
-        ],
         "remaining_input": [],
         "error_codes": [],
-        "gas_used": "12",
-        "execution_gas": "12",
-        "memory_gas": "0",
-        "stack_gas": "0",
-        "gas_schedule_version": 1
+        "committed_steps": "5"
       }
     },
     {
@@ -3691,13 +2459,11 @@
       "source": "~> , ( , ?=x3 . ;\n",
       "run": {
         "seed": "0",
-        "custom_execution_limit": "100",
-        "max_ticks": "100",
         "input": [
           2,
           5
         ],
-        "gas_hard_limit": "100000000"
+        "max_steps": "100"
       },
       "expected": {
         "process_exit_code": 0,
@@ -3718,27 +2484,9 @@
           0,
           0
         ],
-        "committed_ticks": "9",
-        "operation_count": "8",
-        "used_cell_count": "7",
-        "used_memory_address_count": "0",
-        "peak_data_stack_usage": "1",
-        "peak_instruction_stack_usage": "0",
-        "peak_call_stack_usage": "0",
-        "instruction_variety": [
-          "Compare",
-          "Read",
-          "Output",
-          "Push",
-          "Halt"
-        ],
         "remaining_input": [],
         "error_codes": [],
-        "gas_used": "25",
-        "execution_gas": "24",
-        "memory_gas": "0",
-        "stack_gas": "1",
-        "gas_schedule_version": 1
+        "committed_steps": "9"
       }
     },
     {
@@ -3746,12 +2494,10 @@
       "source": "~> ?1, ?1. ?1?? ?1; ?1+* ?0.3 ;\n",
       "run": {
         "seed": "0",
-        "custom_execution_limit": "100",
-        "max_ticks": "100",
         "input": [
           9
         ],
-        "gas_hard_limit": "100000000"
+        "max_steps": "100"
       },
       "expected": {
         "process_exit_code": 0,
@@ -3772,27 +2518,11 @@
           0,
           0
         ],
-        "committed_ticks": "8",
-        "operation_count": "8",
-        "used_cell_count": "8",
-        "used_memory_address_count": "0",
-        "peak_data_stack_usage": "0",
-        "peak_instruction_stack_usage": "0",
-        "peak_call_stack_usage": "0",
-        "instruction_variety": [
-          "Condition",
-          "Output",
-          "Halt"
-        ],
         "remaining_input": [
           9
         ],
         "error_codes": [],
-        "gas_used": "17",
-        "execution_gas": "17",
-        "memory_gas": "0",
-        "stack_gas": "0",
-        "gas_schedule_version": 1
+        "committed_steps": "8"
       }
     },
     {
@@ -3800,10 +2530,8 @@
       "source": "~> + ?1+x3 ?2} ?0. ;\n",
       "run": {
         "seed": "0",
-        "custom_execution_limit": "100",
-        "max_ticks": "100",
         "input": [],
-        "gas_hard_limit": "100000000"
+        "max_steps": "100"
       },
       "expected": {
         "process_exit_code": 0,
@@ -3824,27 +2552,9 @@
           0,
           0
         ],
-        "committed_ticks": "7",
-        "operation_count": "9",
-        "used_cell_count": "6",
-        "used_memory_address_count": "0",
-        "peak_data_stack_usage": "0",
-        "peak_instruction_stack_usage": "0",
-        "peak_call_stack_usage": "0",
-        "instruction_variety": [
-          "Condition",
-          "Add",
-          "MoveRegisterPointer",
-          "Output",
-          "Halt"
-        ],
         "remaining_input": [],
         "error_codes": [],
-        "gas_used": "21",
-        "execution_gas": "21",
-        "memory_gas": "0",
-        "stack_gas": "0",
-        "gas_schedule_version": 1
+        "committed_steps": "7"
       }
     },
     {
@@ -3852,10 +2562,8 @@
       "source": "@main\n~> ?0[0* % . ;\n@F0\n~> + ]\n@end F0\n@end main\n",
       "run": {
         "seed": "0",
-        "custom_execution_limit": "100",
-        "max_ticks": "100",
         "input": [],
-        "gas_hard_limit": "100000000"
+        "max_steps": "100"
       },
       "expected": {
         "process_exit_code": 0,
@@ -3876,30 +2584,9 @@
           0,
           0
         ],
-        "committed_ticks": "9",
-        "operation_count": "8",
-        "used_cell_count": "8",
-        "used_memory_address_count": "0",
-        "peak_data_stack_usage": "0",
-        "peak_instruction_stack_usage": "1",
-        "peak_call_stack_usage": "1",
-        "instruction_variety": [
-          "Condition",
-          "Add",
-          "Output",
-          "Encode",
-          "Call",
-          "Return",
-          "ReadCode",
-          "Halt"
-        ],
         "remaining_input": [],
         "error_codes": [],
-        "gas_used": "48",
-        "execution_gas": "28",
-        "memory_gas": "0",
-        "stack_gas": "20",
-        "gas_schedule_version": 1
+        "committed_steps": "9"
       }
     },
     {
@@ -3907,10 +2594,8 @@
       "source": "@main\n~> $0 ;\n@M0 ?1+ ?0.3 ^\n@end main\n",
       "run": {
         "seed": "0",
-        "custom_execution_limit": "100",
-        "max_ticks": "100",
         "input": [],
-        "gas_hard_limit": "100000000"
+        "max_steps": "100"
       },
       "expected": {
         "process_exit_code": 0,
@@ -3931,25 +2616,9 @@
           0,
           0
         ],
-        "committed_ticks": "6",
-        "operation_count": "4",
-        "used_cell_count": "6",
-        "used_memory_address_count": "0",
-        "peak_data_stack_usage": "0",
-        "peak_instruction_stack_usage": "0",
-        "peak_call_stack_usage": "0",
-        "instruction_variety": [
-          "Condition",
-          "Output",
-          "Halt"
-        ],
         "remaining_input": [],
         "error_codes": [],
-        "gas_used": "12",
-        "execution_gas": "12",
-        "memory_gas": "0",
-        "stack_gas": "0",
-        "gas_schedule_version": 1
+        "committed_steps": "6"
       }
     },
     {
@@ -3957,18 +2626,18 @@
       "source": "@main\n~> + ( #0 ) . ;\n@end main\n@C0\n~> + ?= . #]\n@end C0\n",
       "run": {
         "seed": "0",
-        "custom_execution_limit": "100",
-        "max_ticks": "100",
         "input": [],
-        "gas_hard_limit": "100000000"
+        "max_steps": "100"
       },
       "expected": {
-        "process_exit_code": 5,
-        "status": "error",
-        "vm_status": "error",
-        "output": [],
+        "process_exit_code": 0,
+        "status": "halted",
+        "vm_status": "halted",
+        "output": [
+          2
+        ],
         "registers": [
-          1,
+          2,
           0,
           0,
           0,
@@ -3979,26 +2648,9 @@
           0,
           0
         ],
-        "committed_ticks": "3",
-        "operation_count": "2",
-        "used_cell_count": "4",
-        "used_memory_address_count": "0",
-        "peak_data_stack_usage": "1",
-        "peak_instruction_stack_usage": "0",
-        "peak_call_stack_usage": "0",
-        "instruction_variety": [
-          "Add",
-          "Push"
-        ],
         "remaining_input": [],
-        "error_codes": [
-          "CustomDisabled"
-        ],
-        "gas_used": "7",
-        "execution_gas": "6",
-        "memory_gas": "0",
-        "stack_gas": "1",
-        "gas_schedule_version": 1
+        "error_codes": [],
+        "committed_steps": "7"
       }
     },
     {
@@ -4006,12 +2658,10 @@
       "source": "~> , & % . ;\n",
       "run": {
         "seed": "0",
-        "custom_execution_limit": "100",
-        "max_ticks": "100",
         "input": [
           63
         ],
-        "gas_hard_limit": "100000000"
+        "max_steps": "100"
       },
       "expected": {
         "process_exit_code": 0,
@@ -4032,27 +2682,9 @@
           0,
           0
         ],
-        "committed_ticks": "6",
-        "operation_count": "5",
-        "used_cell_count": "6",
-        "used_memory_address_count": "0",
-        "peak_data_stack_usage": "0",
-        "peak_instruction_stack_usage": "0",
-        "peak_call_stack_usage": "0",
-        "instruction_variety": [
-          "Read",
-          "Output",
-          "Decode",
-          "Encode",
-          "Halt"
-        ],
         "remaining_input": [],
         "error_codes": [],
-        "gas_used": "16",
-        "execution_gas": "16",
-        "memory_gas": "0",
-        "stack_gas": "0",
-        "gas_schedule_version": 1
+        "committed_steps": "6"
       }
     },
     {
@@ -4060,12 +2692,10 @@
       "source": "~> , & % . ;\n",
       "run": {
         "seed": "0",
-        "custom_execution_limit": "100",
-        "max_ticks": "100",
         "input": [
           126
         ],
-        "gas_hard_limit": "100000000"
+        "max_steps": "100"
       },
       "expected": {
         "process_exit_code": 0,
@@ -4086,38 +2716,18 @@
           0,
           0
         ],
-        "committed_ticks": "6",
-        "operation_count": "5",
-        "used_cell_count": "6",
-        "used_memory_address_count": "0",
-        "peak_data_stack_usage": "0",
-        "peak_instruction_stack_usage": "1",
-        "peak_call_stack_usage": "0",
-        "instruction_variety": [
-          "Read",
-          "Output",
-          "Decode",
-          "Encode",
-          "Halt"
-        ],
         "remaining_input": [],
         "error_codes": [],
-        "gas_used": "20",
-        "execution_gas": "16",
-        "memory_gas": "0",
-        "stack_gas": "4",
-        "gas_schedule_version": 1
+        "committed_steps": "6"
       }
     },
     {
-      "id": "immediate-output-repeat-three-ticks",
+      "id": "immediate-output-repeat-three-transitions",
       "source": "~> .3x3 ;\n",
       "run": {
         "seed": "0",
-        "custom_execution_limit": "100",
-        "max_ticks": "10",
         "input": [],
-        "gas_hard_limit": "100000000"
+        "max_steps": "10"
       },
       "expected": {
         "process_exit_code": 0,
@@ -4140,23 +2750,8 @@
           0,
           0
         ],
-        "committed_ticks": "5",
-        "operation_count": "4",
-        "used_cell_count": "3",
-        "used_memory_address_count": "0",
-        "peak_data_stack_usage": "0",
-        "peak_instruction_stack_usage": "0",
-        "peak_call_stack_usage": "0",
-        "instruction_variety": [
-          "Output",
-          "Halt"
-        ],
         "error_codes": [],
-        "gas_used": "15",
-        "execution_gas": "15",
-        "memory_gas": "0",
-        "stack_gas": "0",
-        "gas_schedule_version": 1
+        "committed_steps": "5"
       }
     },
     {
@@ -4164,13 +2759,11 @@
       "source": "~> , $! . , & % . ;\n",
       "run": {
         "seed": "0",
-        "custom_execution_limit": "100",
-        "max_ticks": "20",
         "input": [
           5,
           69
         ],
-        "gas_hard_limit": "100000000"
+        "max_steps": "20"
       },
       "expected": {
         "process_exit_code": 0,
@@ -4192,41 +2785,20 @@
           0,
           0
         ],
-        "committed_ticks": "9",
-        "operation_count": "8",
-        "used_cell_count": "9",
-        "used_memory_address_count": "0",
-        "peak_data_stack_usage": "0",
-        "peak_instruction_stack_usage": "1",
-        "peak_call_stack_usage": "0",
-        "instruction_variety": [
-          "Read",
-          "Output",
-          "Decode",
-          "Encode",
-          "Neg",
-          "Halt"
-        ],
         "remaining_input": [],
         "error_codes": [],
-        "gas_used": "33",
-        "execution_gas": "29",
-        "memory_gas": "0",
-        "stack_gas": "4",
-        "gas_schedule_version": 1
+        "committed_steps": "9"
       }
     },
     {
-      "id": "neg-repeat-three-ticks",
+      "id": "neg-repeat-three-transitions",
       "source": "~> , $!x3 . ;\n",
       "run": {
         "seed": "0",
-        "custom_execution_limit": "100",
-        "max_ticks": "20",
         "input": [
           37
         ],
-        "gas_hard_limit": "100000000"
+        "max_steps": "20"
       },
       "expected": {
         "process_exit_code": 0,
@@ -4247,26 +2819,9 @@
           0,
           0
         ],
-        "committed_ticks": "7",
-        "operation_count": "6",
-        "used_cell_count": "5",
-        "used_memory_address_count": "0",
-        "peak_data_stack_usage": "0",
-        "peak_instruction_stack_usage": "0",
-        "peak_call_stack_usage": "0",
-        "instruction_variety": [
-          "Read",
-          "Output",
-          "Neg",
-          "Halt"
-        ],
         "remaining_input": [],
         "error_codes": [],
-        "gas_used": "19",
-        "execution_gas": "19",
-        "memory_gas": "0",
-        "stack_gas": "0",
-        "gas_schedule_version": 1
+        "committed_steps": "7"
       }
     },
     {
@@ -4274,12 +2829,10 @@
       "source": "@main\n~> , [0 . ;\n@F0\n~> $! . ( } ]\n@end F0\n@end main\n",
       "run": {
         "seed": "0",
-        "custom_execution_limit": "100",
-        "max_ticks": "30",
         "input": [
           5
         ],
-        "gas_hard_limit": "100000000"
+        "max_steps": "30"
       },
       "expected": {
         "process_exit_code": 0,
@@ -4301,30 +2854,9 @@
           0,
           0
         ],
-        "committed_ticks": "12",
-        "operation_count": "9",
-        "used_cell_count": "11",
-        "used_memory_address_count": "0",
-        "peak_data_stack_usage": "1",
-        "peak_instruction_stack_usage": "0",
-        "peak_call_stack_usage": "1",
-        "instruction_variety": [
-          "Read",
-          "MoveRegisterPointer",
-          "Output",
-          "Push",
-          "Call",
-          "Return",
-          "Neg",
-          "Halt"
-        ],
         "remaining_input": [],
         "error_codes": [],
-        "gas_used": "50",
-        "execution_gas": "33",
-        "memory_gas": "0",
-        "stack_gas": "17",
-        "gas_schedule_version": 1
+        "committed_steps": "12"
       }
     },
     {
@@ -4332,20 +2864,20 @@
       "source": "@main\n~> , ( #0 ! ) . ;\n@end main\n@C0\n~> [0 #]\n@F0\n~> , $! . ]\n@end F0\n@end C0\n",
       "run": {
         "seed": "0",
-        "custom_execution_limit": "100",
-        "max_ticks": "30",
         "input": [
           5
         ],
-        "gas_hard_limit": "100000000"
+        "max_steps": "30"
       },
       "expected": {
-        "process_exit_code": 5,
-        "status": "error",
-        "vm_status": "error",
-        "output": [],
+        "process_exit_code": 0,
+        "status": "halted",
+        "vm_status": "halted",
+        "output": [
+          251
+        ],
         "registers": [
-          5,
+          251,
           0,
           0,
           0,
@@ -4356,26 +2888,9 @@
           0,
           0
         ],
-        "committed_ticks": "3",
-        "operation_count": "2",
-        "used_cell_count": "4",
-        "used_memory_address_count": "0",
-        "peak_data_stack_usage": "1",
-        "peak_instruction_stack_usage": "0",
-        "peak_call_stack_usage": "0",
-        "instruction_variety": [
-          "Read",
-          "Push"
-        ],
         "remaining_input": [],
-        "error_codes": [
-          "CustomDisabled"
-        ],
-        "gas_used": "9",
-        "execution_gas": "8",
-        "memory_gas": "0",
-        "stack_gas": "1",
-        "gas_schedule_version": 1
+        "error_codes": [],
+        "committed_steps": "8"
       }
     },
     {
@@ -4383,16 +2898,14 @@
       "source": "@main\n~> , [0 . ;\n@F0\n~> $! ]\n@end F0\n@end main\n",
       "run": {
         "seed": "0",
-        "custom_execution_limit": "100",
-        "max_ticks": "4",
         "input": [
           5
         ],
-        "gas_hard_limit": "100000000"
+        "max_steps": "4"
       },
       "expected": {
         "process_exit_code": 6,
-        "status": "tick_limit_reached",
+        "status": "step_limit_reached",
         "vm_status": "running",
         "output": [],
         "registers": [
@@ -4407,24 +2920,9 @@
           0,
           0
         ],
-        "committed_ticks": "4",
-        "operation_count": "2",
-        "used_cell_count": "4",
-        "used_memory_address_count": "0",
-        "peak_data_stack_usage": "0",
-        "peak_instruction_stack_usage": "0",
-        "peak_call_stack_usage": "1",
-        "instruction_variety": [
-          "Read",
-          "Call"
-        ],
         "remaining_input": [],
         "error_codes": [],
-        "gas_used": "29",
-        "execution_gas": "13",
-        "memory_gas": "0",
-        "stack_gas": "16",
-        "gas_schedule_version": 1
+        "committed_steps": "4"
       }
     },
     {
@@ -4432,12 +2930,10 @@
       "source": "~> , ?!.9 , ?!.1 ?!.2 ;\n",
       "run": {
         "seed": "0",
-        "custom_execution_limit": "100",
-        "max_ticks": "100",
         "input": [
           173
         ],
-        "gas_hard_limit": "100000000"
+        "max_steps": "100"
       },
       "expected": {
         "process_exit_code": 0,
@@ -4459,25 +2955,8 @@
           0,
           0
         ],
-        "committed_ticks": "7",
         "error_codes": [],
-        "operation_count": "8",
-        "used_cell_count": "7",
-        "used_memory_address_count": "0",
-        "peak_data_stack_usage": "0",
-        "peak_instruction_stack_usage": "0",
-        "peak_call_stack_usage": "0",
-        "instruction_variety": [
-          "Condition",
-          "Read",
-          "Output",
-          "Halt"
-        ],
-        "gas_used": "26",
-        "execution_gas": "26",
-        "memory_gas": "0",
-        "stack_gas": "0",
-        "gas_schedule_version": 1
+        "committed_steps": "7"
       }
     },
     {
@@ -4485,12 +2964,10 @@
       "source": "~> , + ?!.1 ;\n",
       "run": {
         "seed": "0",
-        "custom_execution_limit": "100",
-        "max_ticks": "100",
         "input": [
           255
         ],
-        "gas_hard_limit": "100000000"
+        "max_steps": "100"
       },
       "expected": {
         "process_exit_code": 0,
@@ -4511,26 +2988,8 @@
           0,
           0
         ],
-        "committed_ticks": "5",
         "error_codes": [],
-        "operation_count": "5",
-        "used_cell_count": "5",
-        "used_memory_address_count": "0",
-        "peak_data_stack_usage": "0",
-        "peak_instruction_stack_usage": "0",
-        "peak_call_stack_usage": "0",
-        "instruction_variety": [
-          "Condition",
-          "Read",
-          "Add",
-          "Output",
-          "Halt"
-        ],
-        "gas_used": "15",
-        "execution_gas": "15",
-        "memory_gas": "0",
-        "stack_gas": "0",
-        "gas_schedule_version": 1
+        "committed_steps": "5"
       }
     },
     {
@@ -4538,10 +2997,8 @@
       "source": "~> - ?!.1 ;\n",
       "run": {
         "seed": "0",
-        "custom_execution_limit": "100",
-        "max_ticks": "100",
         "input": [],
-        "gas_hard_limit": "100000000"
+        "max_steps": "100"
       },
       "expected": {
         "process_exit_code": 0,
@@ -4562,25 +3019,8 @@
           0,
           0
         ],
-        "committed_ticks": "4",
         "error_codes": [],
-        "operation_count": "4",
-        "used_cell_count": "4",
-        "used_memory_address_count": "0",
-        "peak_data_stack_usage": "0",
-        "peak_instruction_stack_usage": "0",
-        "peak_call_stack_usage": "0",
-        "instruction_variety": [
-          "Condition",
-          "Sub",
-          "Output",
-          "Halt"
-        ],
-        "gas_used": "10",
-        "execution_gas": "10",
-        "memory_gas": "0",
-        "stack_gas": "0",
-        "gas_schedule_version": 1
+        "committed_steps": "4"
       }
     },
     {
@@ -4588,10 +3028,8 @@
       "source": "~> ) ?!.1 ;\n",
       "run": {
         "seed": "0",
-        "custom_execution_limit": "100",
-        "max_ticks": "100",
         "input": [],
-        "gas_hard_limit": "100000000"
+        "max_steps": "100"
       },
       "expected": {
         "process_exit_code": 0,
@@ -4612,25 +3050,8 @@
           0,
           0
         ],
-        "committed_ticks": "4",
         "error_codes": [],
-        "operation_count": "4",
-        "used_cell_count": "4",
-        "used_memory_address_count": "0",
-        "peak_data_stack_usage": "0",
-        "peak_instruction_stack_usage": "0",
-        "peak_call_stack_usage": "0",
-        "instruction_variety": [
-          "Condition",
-          "Output",
-          "PopAdd",
-          "Halt"
-        ],
-        "gas_used": "10",
-        "execution_gas": "10",
-        "memory_gas": "0",
-        "stack_gas": "0",
-        "gas_schedule_version": 1
+        "committed_steps": "4"
       }
     },
     {
@@ -4638,12 +3059,10 @@
       "source": "~> , ( ) ?!.1 ;\n",
       "run": {
         "seed": "0",
-        "custom_execution_limit": "100",
-        "max_ticks": "100",
         "input": [
           128
         ],
-        "gas_hard_limit": "100000000"
+        "max_steps": "100"
       },
       "expected": {
         "process_exit_code": 0,
@@ -4664,27 +3083,8 @@
           0,
           0
         ],
-        "committed_ticks": "6",
         "error_codes": [],
-        "operation_count": "6",
-        "used_cell_count": "6",
-        "used_memory_address_count": "0",
-        "peak_data_stack_usage": "1",
-        "peak_instruction_stack_usage": "0",
-        "peak_call_stack_usage": "0",
-        "instruction_variety": [
-          "Condition",
-          "Read",
-          "Output",
-          "Push",
-          "PopAdd",
-          "Halt"
-        ],
-        "gas_used": "19",
-        "execution_gas": "18",
-        "memory_gas": "0",
-        "stack_gas": "1",
-        "gas_schedule_version": 1
+        "committed_steps": "6"
       }
     },
     {
@@ -4692,12 +3092,10 @@
       "source": "~> , $< ?!.1 ;\n",
       "run": {
         "seed": "0",
-        "custom_execution_limit": "100",
-        "max_ticks": "100",
         "input": [
           128
         ],
-        "gas_hard_limit": "100000000"
+        "max_steps": "100"
       },
       "expected": {
         "process_exit_code": 0,
@@ -4718,26 +3116,8 @@
           0,
           0
         ],
-        "committed_ticks": "5",
         "error_codes": [],
-        "operation_count": "5",
-        "used_cell_count": "5",
-        "used_memory_address_count": "0",
-        "peak_data_stack_usage": "0",
-        "peak_instruction_stack_usage": "0",
-        "peak_call_stack_usage": "0",
-        "instruction_variety": [
-          "Condition",
-          "Read",
-          "Output",
-          "Shift",
-          "Halt"
-        ],
-        "gas_used": "14",
-        "execution_gas": "14",
-        "memory_gas": "0",
-        "stack_gas": "0",
-        "gas_schedule_version": 1
+        "committed_steps": "5"
       }
     },
     {
@@ -4745,12 +3125,10 @@
       "source": "~> , $> ?!.1 ;\n",
       "run": {
         "seed": "0",
-        "custom_execution_limit": "100",
-        "max_ticks": "100",
         "input": [
           1
         ],
-        "gas_hard_limit": "100000000"
+        "max_steps": "100"
       },
       "expected": {
         "process_exit_code": 0,
@@ -4771,26 +3149,8 @@
           0,
           0
         ],
-        "committed_ticks": "5",
         "error_codes": [],
-        "operation_count": "5",
-        "used_cell_count": "5",
-        "used_memory_address_count": "0",
-        "peak_data_stack_usage": "0",
-        "peak_instruction_stack_usage": "0",
-        "peak_call_stack_usage": "0",
-        "instruction_variety": [
-          "Condition",
-          "Read",
-          "Output",
-          "Shift",
-          "Halt"
-        ],
-        "gas_used": "14",
-        "execution_gas": "14",
-        "memory_gas": "0",
-        "stack_gas": "0",
-        "gas_schedule_version": 1
+        "committed_steps": "5"
       }
     },
     {
@@ -4798,10 +3158,8 @@
       "source": "~> { ?!} ?!.1 ;\n",
       "run": {
         "seed": "0",
-        "custom_execution_limit": "100",
-        "max_ticks": "100",
         "input": [],
-        "gas_hard_limit": "100000000"
+        "max_steps": "100"
       },
       "expected": {
         "process_exit_code": 0,
@@ -4822,25 +3180,8 @@
           0,
           0
         ],
-        "committed_ticks": "5",
         "error_codes": [],
-        "operation_count": "6",
-        "used_cell_count": "5",
-        "used_memory_address_count": "0",
-        "peak_data_stack_usage": "0",
-        "peak_instruction_stack_usage": "0",
-        "peak_call_stack_usage": "0",
-        "instruction_variety": [
-          "Condition",
-          "MoveRegisterPointer",
-          "Output",
-          "Halt"
-        ],
-        "gas_used": "13",
-        "execution_gas": "13",
-        "memory_gas": "0",
-        "stack_gas": "0",
-        "gas_schedule_version": 1
+        "committed_steps": "5"
       }
     },
     {
@@ -4848,10 +3189,8 @@
       "source": "~> ) $& $! ?= ! ?!.1 ;\n",
       "run": {
         "seed": "0",
-        "custom_execution_limit": "100",
-        "max_ticks": "100",
         "input": [],
-        "gas_hard_limit": "100000000"
+        "max_steps": "100"
       },
       "expected": {
         "process_exit_code": 0,
@@ -4872,29 +3211,8 @@
           0,
           0
         ],
-        "committed_ticks": "8",
         "error_codes": [],
-        "operation_count": "8",
-        "used_cell_count": "8",
-        "used_memory_address_count": "0",
-        "peak_data_stack_usage": "0",
-        "peak_instruction_stack_usage": "0",
-        "peak_call_stack_usage": "0",
-        "instruction_variety": [
-          "Compare",
-          "Condition",
-          "Clear",
-          "Output",
-          "PopAdd",
-          "Neg",
-          "Nand",
-          "Halt"
-        ],
-        "gas_used": "21",
-        "execution_gas": "21",
-        "memory_gas": "0",
-        "stack_gas": "0",
-        "gas_schedule_version": 1
+        "committed_steps": "8"
       }
     },
     {
@@ -4902,10 +3220,8 @@
       "source": "~> ) ?!+x5 ?!.1 . ;\n",
       "run": {
         "seed": "0",
-        "custom_execution_limit": "100",
-        "max_ticks": "100",
         "input": [],
-        "gas_hard_limit": "100000000"
+        "max_steps": "100"
       },
       "expected": {
         "process_exit_code": 0,
@@ -4926,26 +3242,8 @@
           0,
           0
         ],
-        "committed_ticks": "7",
         "error_codes": [],
-        "operation_count": "7",
-        "used_cell_count": "6",
-        "used_memory_address_count": "0",
-        "peak_data_stack_usage": "0",
-        "peak_instruction_stack_usage": "0",
-        "peak_call_stack_usage": "0",
-        "instruction_variety": [
-          "Condition",
-          "Add",
-          "Output",
-          "PopAdd",
-          "Halt"
-        ],
-        "gas_used": "17",
-        "execution_gas": "17",
-        "memory_gas": "0",
-        "stack_gas": "0",
-        "gas_schedule_version": 1
+        "committed_steps": "7"
       }
     },
     {
@@ -4953,10 +3251,8 @@
       "source": "@main\n~> ) [0 ?!.1 ;\n@F0\n~> ?!.3 + ] _\n@end F0\n@end main\n",
       "run": {
         "seed": "0",
-        "custom_execution_limit": "100",
-        "max_ticks": "100",
         "input": [],
-        "gas_hard_limit": "100000000"
+        "max_steps": "100"
       },
       "expected": {
         "process_exit_code": 0,
@@ -4978,28 +3274,8 @@
           0,
           0
         ],
-        "committed_ticks": "10",
         "error_codes": [],
-        "operation_count": "9",
-        "used_cell_count": "9",
-        "used_memory_address_count": "0",
-        "peak_data_stack_usage": "0",
-        "peak_instruction_stack_usage": "0",
-        "peak_call_stack_usage": "1",
-        "instruction_variety": [
-          "Condition",
-          "Add",
-          "Output",
-          "PopAdd",
-          "Call",
-          "Return",
-          "Halt"
-        ],
-        "gas_used": "46",
-        "execution_gas": "30",
-        "memory_gas": "0",
-        "stack_gas": "16",
-        "gas_schedule_version": 1
+        "committed_steps": "10"
       }
     },
     {
@@ -5007,16 +3283,16 @@
       "source": "@main\n~> ) #0 ?!.2 ;\n@end main\n@C0\n~> ?!.4 , ?!.9 #]\n@end C0\n",
       "run": {
         "seed": "0",
-        "custom_execution_limit": "100",
-        "max_ticks": "100",
         "input": [],
-        "gas_hard_limit": "100000000"
+        "max_steps": "100"
       },
       "expected": {
-        "process_exit_code": 5,
-        "status": "error",
-        "vm_status": "error",
-        "output": [],
+        "process_exit_code": 0,
+        "status": "halted",
+        "vm_status": "halted",
+        "output": [
+          2
+        ],
         "registers": [
           0,
           0,
@@ -5029,24 +3305,8 @@
           0,
           0
         ],
-        "committed_ticks": "2",
-        "error_codes": [
-          "CustomDisabled"
-        ],
-        "operation_count": "1",
-        "used_cell_count": "3",
-        "used_memory_address_count": "0",
-        "peak_data_stack_usage": "0",
-        "peak_instruction_stack_usage": "0",
-        "peak_call_stack_usage": "0",
-        "instruction_variety": [
-          "PopAdd"
-        ],
-        "gas_used": "3",
-        "execution_gas": "3",
-        "memory_gas": "0",
-        "stack_gas": "0",
-        "gas_schedule_version": 1
+        "error_codes": [],
+        "committed_steps": "5"
       }
     },
     {
@@ -5054,10 +3314,8 @@
       "source": "@main\n~> $0 ?!.1 ;\n@M0 ) ?!.3 ^ _\n@end main\n",
       "run": {
         "seed": "0",
-        "custom_execution_limit": "100",
-        "max_ticks": "100",
         "input": [],
-        "gas_hard_limit": "100000000"
+        "max_steps": "100"
       },
       "expected": {
         "process_exit_code": 0,
@@ -5079,25 +3337,8 @@
           0,
           0
         ],
-        "committed_ticks": "7",
         "error_codes": [],
-        "operation_count": "6",
-        "used_cell_count": "7",
-        "used_memory_address_count": "0",
-        "peak_data_stack_usage": "0",
-        "peak_instruction_stack_usage": "0",
-        "peak_call_stack_usage": "0",
-        "instruction_variety": [
-          "Condition",
-          "Output",
-          "PopAdd",
-          "Halt"
-        ],
-        "gas_used": "20",
-        "execution_gas": "20",
-        "memory_gas": "0",
-        "stack_gas": "0",
-        "gas_schedule_version": 1
+        "committed_steps": "7"
       }
     },
     {
@@ -5105,10 +3346,8 @@
       "source": "_ .3 ;\n",
       "run": {
         "seed": "0",
-        "custom_execution_limit": "100",
-        "max_ticks": "10",
         "input": [],
-        "gas_hard_limit": "100000000"
+        "max_steps": "10"
       },
       "expected": {
         "process_exit_code": 0,
@@ -5129,23 +3368,8 @@
           0,
           0
         ],
-        "committed_ticks": "3",
-        "operation_count": "2",
-        "used_cell_count": "3",
-        "used_memory_address_count": "0",
-        "peak_data_stack_usage": "0",
-        "peak_instruction_stack_usage": "0",
-        "peak_call_stack_usage": "0",
-        "instruction_variety": [
-          "Output",
-          "Halt"
-        ],
         "error_codes": [],
-        "gas_used": "5",
-        "execution_gas": "5",
-        "memory_gas": "0",
-        "stack_gas": "0",
-        "gas_schedule_version": 1
+        "committed_steps": "3"
       }
     },
     {
@@ -5153,10 +3377,8 @@
       "source": ".4 ;\n",
       "run": {
         "seed": "0",
-        "custom_execution_limit": "100",
-        "max_ticks": "10",
         "input": [],
-        "gas_hard_limit": "100000000"
+        "max_steps": "10"
       },
       "expected": {
         "process_exit_code": 0,
@@ -5177,23 +3399,8 @@
           0,
           0
         ],
-        "committed_ticks": "2",
-        "operation_count": "2",
-        "used_cell_count": "2",
-        "used_memory_address_count": "0",
-        "peak_data_stack_usage": "0",
-        "peak_instruction_stack_usage": "0",
-        "peak_call_stack_usage": "0",
-        "instruction_variety": [
-          "Output",
-          "Halt"
-        ],
         "error_codes": [],
-        "gas_used": "5",
-        "execution_gas": "5",
-        "memory_gas": "0",
-        "stack_gas": "0",
-        "gas_schedule_version": 1
+        "committed_steps": "2"
       }
     },
     {
@@ -5201,10 +3408,8 @@
       "source": "@main\n[0 ;\n@end main\n@main.F0\n.7 ]\n@end F0\n",
       "run": {
         "seed": "0",
-        "custom_execution_limit": "100",
-        "max_ticks": "10",
         "input": [],
-        "gas_hard_limit": "100000000"
+        "max_steps": "10"
       },
       "expected": {
         "process_exit_code": 0,
@@ -5225,25 +3430,8 @@
           0,
           0
         ],
-        "committed_ticks": "5",
-        "operation_count": "4",
-        "used_cell_count": "4",
-        "used_memory_address_count": "0",
-        "peak_data_stack_usage": "0",
-        "peak_instruction_stack_usage": "0",
-        "peak_call_stack_usage": "1",
-        "instruction_variety": [
-          "Output",
-          "Call",
-          "Return",
-          "Halt"
-        ],
         "error_codes": [],
-        "gas_used": "31",
-        "execution_gas": "15",
-        "memory_gas": "0",
-        "stack_gas": "16",
-        "gas_schedule_version": 1
+        "committed_steps": "5"
       }
     },
     {
@@ -5251,15 +3439,13 @@
       "source": "@main\n#0 ;\n@end main\n@C0\n.8 #]\n@end C0\n",
       "run": {
         "seed": "0",
-        "custom_execution_limit": "100",
-        "max_ticks": "10",
         "input": [],
-        "gas_hard_limit": "100000000"
+        "max_steps": "10"
       },
       "expected": {
-        "process_exit_code": 5,
-        "status": "error",
-        "vm_status": "error",
+        "process_exit_code": 0,
+        "status": "halted",
+        "vm_status": "halted",
         "output": [],
         "registers": [
           0,
@@ -5273,22 +3459,8 @@
           0,
           0
         ],
-        "committed_ticks": "0",
-        "operation_count": "0",
-        "used_cell_count": "1",
-        "used_memory_address_count": "0",
-        "peak_data_stack_usage": "0",
-        "peak_instruction_stack_usage": "0",
-        "peak_call_stack_usage": "0",
-        "instruction_variety": [],
-        "error_codes": [
-          "CustomDisabled"
-        ],
-        "gas_used": "0",
-        "execution_gas": "0",
-        "memory_gas": "0",
-        "stack_gas": "0",
-        "gas_schedule_version": 1
+        "error_codes": [],
+        "committed_steps": "2"
       }
     },
     {
@@ -5296,15 +3468,13 @@
       "source": "@main\n#0 ;\n@end main\n@C0\n[0 #]\n@end C0\n@C0.F0\n.6 ]\n@end F0\n",
       "run": {
         "seed": "0",
-        "custom_execution_limit": "100",
-        "max_ticks": "10",
         "input": [],
-        "gas_hard_limit": "100000000"
+        "max_steps": "10"
       },
       "expected": {
-        "process_exit_code": 5,
-        "status": "error",
-        "vm_status": "error",
+        "process_exit_code": 0,
+        "status": "halted",
+        "vm_status": "halted",
         "output": [],
         "registers": [
           0,
@@ -5318,22 +3488,8 @@
           0,
           0
         ],
-        "committed_ticks": "0",
-        "operation_count": "0",
-        "used_cell_count": "1",
-        "used_memory_address_count": "0",
-        "peak_data_stack_usage": "0",
-        "peak_instruction_stack_usage": "0",
-        "peak_call_stack_usage": "0",
-        "instruction_variety": [],
-        "error_codes": [
-          "CustomDisabled"
-        ],
-        "gas_used": "0",
-        "execution_gas": "0",
-        "memory_gas": "0",
-        "stack_gas": "0",
-        "gas_schedule_version": 1
+        "error_codes": [],
+        "committed_steps": "2"
       }
     },
     {
@@ -5341,10 +3497,8 @@
       "source": "~^ _\n; _\n",
       "run": {
         "seed": "0",
-        "custom_execution_limit": "100",
-        "max_ticks": "10",
         "input": [],
-        "gas_hard_limit": "100000000"
+        "max_steps": "10"
       },
       "expected": {
         "process_exit_code": 0,
@@ -5363,22 +3517,8 @@
           0,
           0
         ],
-        "committed_ticks": "2",
-        "operation_count": "1",
-        "used_cell_count": "2",
-        "used_memory_address_count": "0",
-        "peak_data_stack_usage": "0",
-        "peak_instruction_stack_usage": "0",
-        "peak_call_stack_usage": "0",
-        "instruction_variety": [
-          "Halt"
-        ],
         "error_codes": [],
-        "gas_used": "0",
-        "execution_gas": "0",
-        "memory_gas": "0",
-        "stack_gas": "0",
-        "gas_schedule_version": 1
+        "committed_steps": "2"
       }
     },
     {
@@ -5386,10 +3526,8 @@
       "source": "; _\n~v _\n",
       "run": {
         "seed": "0",
-        "custom_execution_limit": "100",
-        "max_ticks": "10",
         "input": [],
-        "gas_hard_limit": "100000000"
+        "max_steps": "10"
       },
       "expected": {
         "process_exit_code": 0,
@@ -5408,22 +3546,8 @@
           0,
           0
         ],
-        "committed_ticks": "2",
-        "operation_count": "1",
-        "used_cell_count": "2",
-        "used_memory_address_count": "0",
-        "peak_data_stack_usage": "0",
-        "peak_instruction_stack_usage": "0",
-        "peak_call_stack_usage": "0",
-        "instruction_variety": [
-          "Halt"
-        ],
         "error_codes": [],
-        "gas_used": "0",
-        "execution_gas": "0",
-        "memory_gas": "0",
-        "stack_gas": "0",
-        "gas_schedule_version": 1
+        "committed_steps": "2"
       }
     },
     {
@@ -5431,10 +3555,8 @@
       "source": "~< ;\n",
       "run": {
         "seed": "0",
-        "custom_execution_limit": "100",
-        "max_ticks": "10",
         "input": [],
-        "gas_hard_limit": "100000000"
+        "max_steps": "10"
       },
       "expected": {
         "process_exit_code": 0,
@@ -5453,22 +3575,8 @@
           0,
           0
         ],
-        "committed_ticks": "2",
-        "operation_count": "1",
-        "used_cell_count": "2",
-        "used_memory_address_count": "0",
-        "peak_data_stack_usage": "0",
-        "peak_instruction_stack_usage": "0",
-        "peak_call_stack_usage": "0",
-        "instruction_variety": [
-          "Halt"
-        ],
         "error_codes": [],
-        "gas_used": "0",
-        "execution_gas": "0",
-        "memory_gas": "0",
-        "stack_gas": "0",
-        "gas_schedule_version": 1
+        "committed_steps": "2"
       }
     },
     {
@@ -5476,10 +3584,8 @@
       "source": "; ~>\n",
       "run": {
         "seed": "0",
-        "custom_execution_limit": "100",
-        "max_ticks": "10",
         "input": [],
-        "gas_hard_limit": "100000000"
+        "max_steps": "10"
       },
       "expected": {
         "process_exit_code": 0,
@@ -5498,22 +3604,8 @@
           0,
           0
         ],
-        "committed_ticks": "2",
-        "operation_count": "1",
-        "used_cell_count": "2",
-        "used_memory_address_count": "0",
-        "peak_data_stack_usage": "0",
-        "peak_instruction_stack_usage": "0",
-        "peak_call_stack_usage": "0",
-        "instruction_variety": [
-          "Halt"
-        ],
         "error_codes": [],
-        "gas_used": "0",
-        "execution_gas": "0",
-        "memory_gas": "0",
-        "stack_gas": "0",
-        "gas_schedule_version": 1
+        "committed_steps": "2"
       }
     },
     {
@@ -5521,14 +3613,12 @@
       "source": "_\n",
       "run": {
         "seed": "0",
-        "custom_execution_limit": "100",
-        "max_ticks": "10",
         "input": [],
-        "gas_hard_limit": "100000000"
+        "max_steps": "10"
       },
       "expected": {
         "process_exit_code": 6,
-        "status": "tick_limit_reached",
+        "status": "step_limit_reached",
         "vm_status": "running",
         "output": [],
         "registers": [
@@ -5543,128 +3633,17 @@
           0,
           0
         ],
-        "committed_ticks": "10",
-        "operation_count": "0",
-        "used_cell_count": "1",
-        "used_memory_address_count": "0",
-        "peak_data_stack_usage": "0",
-        "peak_instruction_stack_usage": "0",
-        "peak_call_stack_usage": "0",
-        "instruction_variety": [],
         "error_codes": [],
-        "gas_used": "0",
-        "execution_gas": "0",
-        "memory_gas": "0",
-        "stack_gas": "0",
-        "gas_schedule_version": 1
+        "committed_steps": "10"
       }
     },
     {
-      "id": "gas-exact-limit-commits",
-      "source": "+ . ;\n",
-      "run": {
-        "seed": "0",
-        "custom_execution_limit": "100",
-        "max_ticks": "10",
-        "input": [],
-        "gas_hard_limit": "8"
-      },
-      "expected": {
-        "process_exit_code": 0,
-        "status": "halted",
-        "vm_status": "halted",
-        "output": [
-          1
-        ],
-        "registers": [
-          1,
-          0,
-          0,
-          0,
-          0,
-          0,
-          0,
-          0,
-          0,
-          0
-        ],
-        "committed_ticks": "3",
-        "error_codes": [],
-        "operation_count": "3",
-        "used_cell_count": "3",
-        "used_memory_address_count": "0",
-        "peak_data_stack_usage": "0",
-        "peak_instruction_stack_usage": "0",
-        "peak_call_stack_usage": "0",
-        "instruction_variety": [
-          "Add",
-          "Output",
-          "Halt"
-        ],
-        "gas_used": "8",
-        "execution_gas": "8",
-        "memory_gas": "0",
-        "stack_gas": "0",
-        "gas_schedule_version": 1
-      }
-    },
-    {
-      "id": "gas-excess-rolls-back-output",
-      "source": "+ . ;\n",
-      "run": {
-        "seed": "0",
-        "custom_execution_limit": "100",
-        "max_ticks": "10",
-        "input": [],
-        "gas_hard_limit": "7"
-      },
-      "expected": {
-        "process_exit_code": 5,
-        "status": "error",
-        "vm_status": "error",
-        "output": [],
-        "registers": [
-          1,
-          0,
-          0,
-          0,
-          0,
-          0,
-          0,
-          0,
-          0,
-          0
-        ],
-        "committed_ticks": "1",
-        "error_codes": [
-          "GasLimitExceeded"
-        ],
-        "operation_count": "2",
-        "used_cell_count": "2",
-        "used_memory_address_count": "0",
-        "peak_data_stack_usage": "0",
-        "peak_instruction_stack_usage": "0",
-        "peak_call_stack_usage": "0",
-        "instruction_variety": [
-          "Add",
-          "Output"
-        ],
-        "gas_used": "8",
-        "execution_gas": "8",
-        "memory_gas": "0",
-        "stack_gas": "0",
-        "gas_schedule_version": 1
-      }
-    },
-    {
-      "id": "gas-shared-address-warm-and-empty-store",
+      "id": "shared-memory-address-and-empty-store",
       "source": "$( $( $) $) $) ;\n",
       "run": {
         "seed": "0",
-        "custom_execution_limit": "100",
-        "max_ticks": "10",
         "input": [],
-        "gas_hard_limit": "100000000"
+        "max_steps": "10"
       },
       "expected": {
         "process_exit_code": 0,
@@ -5683,24 +3662,8 @@
           0,
           0
         ],
-        "committed_ticks": "6",
         "error_codes": [],
-        "operation_count": "6",
-        "used_cell_count": "6",
-        "used_memory_address_count": "1",
-        "peak_data_stack_usage": "2",
-        "peak_instruction_stack_usage": "0",
-        "peak_call_stack_usage": "0",
-        "instruction_variety": [
-          "MemoryLoad",
-          "MemoryStore",
-          "Halt"
-        ],
-        "gas_used": "46",
-        "execution_gas": "34",
-        "memory_gas": "10",
-        "stack_gas": "2",
-        "gas_schedule_version": 1
+        "committed_steps": "6"
       }
     }
   ]

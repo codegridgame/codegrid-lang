@@ -40,7 +40,7 @@
         const invalidInteger = createRuntime(wasmBindings.BrowserRuntime, { maxSourceBytes: -1 });
         assert(invalidInteger.error, "negative integer resource limits must be rejected by the binding");
 
-        const invalidWideInteger = createRuntime(wasmBindings.BrowserRuntime, { maxRunTicksPerCall: "1".repeat(21) });
+        const invalidWideInteger = createRuntime(wasmBindings.BrowserRuntime, { maxRunStepsPerCall: "1".repeat(21) });
         assert(invalidWideInteger.error, "oversized decimal u64 limits must be rejected before conversion");
 
         const response = await fetch("/tests/fixtures/conformance-v1.json");
@@ -70,9 +70,9 @@
             1_048_576,
             1_048_576,
             1_048_576,
-            overrides.maxRunTicksPerCall ?? "10000",
+            overrides.maxRunStepsPerCall ?? "10000",
             "10000",
-            "1000000",
+            "10000",
           );
         } catch (error) {
           return { error };

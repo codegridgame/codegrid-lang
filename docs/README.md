@@ -1,56 +1,36 @@
 # Documentation Index
 
-- [Gas, Size and Custom implementation](gas-size-implementation.md): current
-  Rust contract, downstream synchronization and verification limits.
-- [Residual-contract audit](gas-size-residual-audit.md): remaining historical
-  references and corrections after implementation.
-- [Error code specification](../spec/codegrid-error-codes.md) and [machine-readable registry](../spec/codegrid-error-codes.json): stable identifiers, triggers, return surfaces and compatibility.
-
 ## Full language specifications
 
 - [CodeGrid source specification](../spec/codegrid-source-spec.md): normative Full `.cg` syntax and static acceptance.
 - [CodeGrid VM specification](../spec/codegrid-vm-spec.md): normative Full execution, errors, snapshots, metrics, and determinism.
-- [CodeGrid Runtime API specification](../spec/codegrid-runtime-api-spec.md): normative Full v3 lifecycle, request/response, resource-limit, and error contract.
+- [CodeGrid Runtime API specification](runtime-api-spec.md): normative Full v4 lifecycle, request/response, generic step/work-unit limits, and language error contract.
 - [AI contribution rules](../AGENTS.md): project language, dependency direction, prohibited shortcuts, and verification requirements.
-- [Mandatory downstream synchronization](downstream-synchronization.md): required impact review and same-task updates to `C:/source/bf-steam-wt` after upstream changes, including generated artifacts and verification.
+- [Mandatory downstream synchronization](downstream-synchronization.md): required impact review and same-task updates to `C:/source/bf-steam-wt` after language changes.
+- [Shared error code specification](../spec/codegrid-error-codes.md) and [machine-readable registry](../spec/codegrid-error-codes.json): language identities and their generated language consumers. Game error identities are maintained by the Rust Game Runtime.
 
-## Scene protocols
+## Game-domain documentation moved to the game repository
 
-- [Scene Specification v1](../spec/codegrid-scene-spec-v1.md): ExactIO, Robot, and MechanicalArm protocols, byte encodings, rounds, state transitions, validation, goals, and implementation gaps.
+The current authority for levels, scenes, game metrics and scoring, host evaluation, and game fixtures is the [Rust Game Runtime documentation index](../../bf-steam-wt/rust/docs/README.md), its [specifications](../../bf-steam-wt/rust/spec/README.md), [examples](../../bf-steam-wt/rust/examples/README.md), and [fixtures](../../bf-steam-wt/rust/fixtures/README.md).
 
-- [Continuous scene session design](scene-session-design.md): accepted VM lifetime, tick-boundary input/output interleaving, actor effects, resource accounting, and integration gates.
-- [Scene conformance plan](scene-conformance-plan.md): concrete protocol vectors, lifecycle invariants, and delivery evidence requirements.
+Former active `level-*`, `scene-*`, and game-specific `gas-*` content has moved to the Rust Game Runtime. Lang maintains no Gas/Size policy or history documents. Game scene examples and level/scene fixtures also live in the Rust Game Runtime, with no active game example or fixture trees remaining here.
 
-- [Scene Level JSON format v1](../spec/codegrid-scene-level-json-v2.md): strict author schema, scene records, metrics, replay, and [complete examples](../examples/scene-level-v2/README.md). The filename retains its earlier v2 name; the current loader and fixtures use v1.
+Raw instruction and VM transition semantics remain owned by the language specifications. Runtime API v4 exposes committed steps and generic host work-unit protections; game tick/Gas/Size policy, case aggregation, scene rules, game error identities, and result judgment belong to the Rust Game Runtime. Historical game decisions and application verification formerly mixed into Lang records are archived in the [Game Runtime history index](../../bf-steam-wt/doc/codegrid-lang-history/README.md).
 
-- [Scene documentation audit](scene-document-audit.md): source provenance, example-by-example review, corrections, and verification limits.
+## Language implementation and conformance
 
-- [Custom Scene architecture](custom-scenes-architecture.md): future package, evaluator, cooperative host-call, sandbox, identity, and migration boundaries. This is an architecture target; the current API v2 supports only its registered official scenes.
-
-- [Scene Host Contract v2](../spec/codegrid-scene-host-contract-v2.md): fixed error reasons, trusted profile fields, result variants, Debug events/cursors, versions, and [host examples](../examples/scene-host-v2/README.md).
-
-- [Native Scene Level API v2](level-api-v2.md) and [Scene WASM transports v2](level-wasm-v2.md): explicit versions, CLI use, retained feedback, and actual-host evidence.
-
-## Local development task book
-
-- [Level Core v1 specification](../spec/codegrid-level-core-spec-v1.md) and [Level Core architecture](level-core-architecture.md): shared Rust level validation/evaluation, built-in scene execution, and WASM integration boundaries for Web, Steam, and backend hosts.
-- [ExactIO implementation contract](../spec/codegrid-level-exactio-contract-v1.md): decided first-phase schema, capabilities, metrics, seeds, execution limits, and failure priorities.
-- [Rust level evaluation task book](../tasks/level-core-exactio-v1.md): ExactIO implementation, Environment extension design, native CLI evaluation, WASM delivery, and actual-host parity acceptance.
-- [Level Host API v1](level-api-v1.md), [WASM transports v1](level-wasm-v1.md), and [safety accounting](level-safety-accounting.md): versioned integration and trusted local profiles.
-- [Environment extension design](level-environment-extension.md): historical reset-based Rust design sketch, superseded by the current continuous scene-session design.
-- [Scene architecture](level-scenes-architecture.md): authoring presentations, current Rust catalog limits, shared engines, and delivery sequence.
-- [Level implementation traceability](level-traceability.md): normative rules, test coverage, reproducible host comparisons, and remaining integration dependencies.
-- [Level build provenance](level-build-provenance.md): pinned local toolchain, exact evaluator source identity, and artifact/toolchain reports.
-- [Level host integration readiness](level-host-integration-readiness.md): candidate Steam/backend workspace, existing ABI boundaries, and required actual-host acceptance.
-
-- [Full language task book](../tasks/spec-completion.md): local implementation and verification scope derived from the source, VM, and Runtime API specifications.
-- [Conditional prefix migration manual](conditional-prefix-migration.md): approved `?0`/`?1`/`?2`, `??`, and non-consuming CMP `?=` design, implementation sequence, and acceptance matrix.
-- [Native CLI](cli.md): decided local Full `check`/`run` contract, including arguments, JSON schema, and exit codes.
-- [Architecture](architecture.md): crate dependencies, shared semantic core, and host boundaries.
-- [Implementation roadmap](roadmap.md): local Full delivery status and acceptance gates.
+- [Full language task book](../tasks/spec-completion.md): implementation and verification scope derived from the source, VM, and Runtime API specifications.
+- [Conditional prefix migration manual](conditional-prefix-migration.md): approved conditional-prefix, random-direction, and CMP design.
+- [Native CLI](cli.md): local Full `check`/`run`/`debug` contract, arguments, JSON schema, and exit codes.
+- [Architecture](architecture.md): language crate dependencies and host boundaries.
+- [Implementation roadmap](roadmap.md): Full language delivery status and acceptance gates.
 - [IR design](ir.md): Full executable representation and verified-program boundary.
 - [Testing strategy](testing.md): Full source, VM, editor, CLI, and host acceptance.
-- [Examples status](../examples/README.md): identifies Full feature examples and cases awaiting review.
-- [Decision log](decisions.md): Full language decisions and open questions.
+- [Examples status](../examples/README.md): language examples and cases awaiting review.
+- [Decision log](decisions.md): dated language and VM decisions; current contracts remain the specifications.
 
-The shared Full conformance suite and reviewed historical source/VM cases provide current acceptance evidence. See the [test fixture guide](../tests/README.md).
+The shared Full conformance suite and reviewed historical source/VM cases provide current language acceptance evidence. See the [test fixture guide](../tests/README.md).
+
+## Game history and current synchronization
+
+The [Game Runtime documentation index](../../bf-steam-wt/rust/docs/README.md) and its specs are the current authority for game behavior. The [history index](../../bf-steam-wt/doc/codegrid-lang-history/README.md) holds dated game decisions and verification reports formerly mixed into Lang documentation. The [downstream synchronization guide](downstream-synchronization.md) records the current ownership boundary, workflow, and immutable-revision reproducibility limit.

@@ -5,7 +5,7 @@ use codegrid_model::{Direction, InstructionStackItem, Value};
 
 use crate::{Coordinate, SplitMix64};
 
-/// The explicit per-thread execution phase carried across ticks.
+/// The explicit per-thread execution phase carried across committed transitions.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub(super) enum ExecutionPhase {
     Normal,

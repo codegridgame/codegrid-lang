@@ -166,7 +166,6 @@ mod tests {
             assert_eq!(vm.step().status, VmStatus::Running);
             assert_eq!(vm.snapshot().registers[0], u8::from(adds));
             assert_eq!(vm.step().status, VmStatus::Halted);
-            assert_eq!(vm.snapshot().metrics.operation_count(), 1 + u64::from(adds));
         }
     }
 
@@ -186,7 +185,6 @@ mod tests {
         assert_eq!(vm.step().status, VmStatus::Running);
         assert_eq!(vm.step().status, VmStatus::Running); // Function Resume moves past CALL.
         assert_eq!(vm.step().status, VmStatus::Halted);
-        assert_eq!(vm.snapshot().metrics.operation_count(), 4);
     }
 
     #[test]
@@ -199,44 +197,19 @@ mod tests {
         let mut vm = Vm::new(program, [], config()).unwrap();
         assert_eq!(vm.step().status, VmStatus::Running);
         assert_eq!(vm.step().status, VmStatus::Halted);
-        assert_eq!(vm.snapshot().metrics.operation_count(), 2);
     }
 
     #[test]
-    fn default_configuration_rejects_custom_even_in_verified_ir() {
+    fn default_configuration_executes_custom_in_verified_ir() {
         use codegrid_model::{PrimaryInstruction, Slot};
         let program = verified_with_custom(
             vec![Cell::instruction(PrimaryInstruction::Custom(Slot::new(0).unwrap()), None), Cell::instruction(PrimaryInstruction::Halt, None)],
             vec![Cell::instruction(PrimaryInstruction::CustomReturn, None)],
         );
-        let mut vm = Vm::new(program, [], VmConfig::new(0, NonZeroU64::MIN)).unwrap();
-        let before = vm.snapshot();
-        let result = vm.step();
-        assert_eq!(result.status, VmStatus::Error);
-        assert_eq!(result.errors[0].kind(), &crate::RuntimeErrorKind::CustomDisabled);
-        assert_eq!(result.metrics.gas_used(), 0);
-        assert_eq!(vm.snapshot().threads, before.threads);
-        assert_eq!(vm.committed_ticks(), 0);
-    }
-
-    #[test]
-    fn gas_counter_overflow_rolls_back_and_retains_exact_prior_breakdown() {
-        use codegrid_model::PrimaryInstruction;
-        let program = verified_cells(vec![Cell::instruction(PrimaryInstruction::Add, None)], 1);
-        let mut vm = Vm::new(program, [], VmConfig::new(0, NonZeroU64::MIN)
-            .with_gas_hard_limit(NonZeroU64::new(u64::MAX).unwrap())).unwrap();
-        vm.metrics.charge_execution(u64::MAX - 2);
-        vm.metrics.finalize_gas().unwrap();
-        let before = vm.snapshot();
-        let result = vm.step();
-        assert_eq!(result.errors[0].kind(), &crate::RuntimeErrorKind::GasCounterOverflow);
-        assert_eq!(result.metrics.gas_used(), u64::MAX - 2);
-        assert_eq!(result.metrics.execution_gas(), u64::MAX - 2);
-        assert_eq!(result.metrics.memory_gas(), 0);
-        assert_eq!(result.metrics.stack_gas(), 0);
-        assert_eq!(vm.snapshot().threads, before.threads);
-        assert_eq!(vm.snapshot().registers, before.registers);
-        assert_eq!(vm.committed_ticks(), 0);
+        let mut vm = Vm::new(program, [], VmConfig::new(0)).unwrap();
+        assert_eq!(vm.step().status, VmStatus::Running);
+        assert_eq!(vm.step().status, VmStatus::Halted);
+        assert!(vm.snapshot().errors.is_empty());
     }
 
     #[test]
@@ -251,21 +224,49 @@ mod tests {
                 vec![first, Cell::instruction(PrimaryInstruction::Halt, None)],
                 vec![Cell::instruction(PrimaryInstruction::CustomReturn, None)],
             );
-            let mut vm = Vm::new(program, [], VmConfig::new(0, NonZeroU64::MIN)).unwrap();
+            let mut vm = Vm::new(program, [], VmConfig::new(0)).unwrap();
             assert_eq!(vm.run(5), crate::RunOutcome::Halted);
             assert!(vm.step().errors.is_empty());
         }
     }
 
+    #[test]
+    fn execution_location_update_changes_only_a_running_normal_thread_location() {
+        let mut vm = Vm::new(
+            verified_grid(vec![Cell::entry(Direction::Right), Cell::empty(), Cell::empty(), Cell::empty()], 2, 2),
+            [],
+            config(),
+        )
+        .unwrap();
+        let before = vm.snapshot();
+        let location = Coordinate { x: 1, y: 1 };
+
+        assert!(!vm.set_thread_execution_location(
+            99,
+            location,
+            Direction::Down,
+        ));
+        assert!(!vm.set_thread_execution_location(
+            0,
+            Coordinate { x: 2, y: 1 },
+            Direction::Down,
+        ));
+        assert_eq!(vm.snapshot(), before);
+
+        assert!(vm.set_thread_execution_location(0, location, Direction::Down));
+        let mut expected = before;
+        expected.threads[0].position = location;
+        expected.threads[0].direction = Direction::Down;
+        assert_eq!(vm.snapshot(), expected);
+    }
+
     fn config() -> VmConfig {
         VmConfig::new(
-            0,
-            NonZeroU64::new(100).expect("limit is positive"),
-        ).with_custom_execution_for_test()
+            0)
     }
 
     #[test]
-    fn work_limit_rolls_back_outer_tick_and_normative_metrics() {
+    fn work_limit_rolls_back_outer_step_and_preserves_committed_state() {
         let mut vm = Vm::new(
             verified(&[Direction::Right, Direction::Right]),
             [],
@@ -279,16 +280,17 @@ mod tests {
             .expect_err("the second outer thread exceeds the one-unit ceiling");
 
         assert_eq!(error.maximum_work_units, 1);
+        assert_eq!(error.custom_internal_dispatches, 0);
         assert_eq!(vm.snapshot(), before);
         assert_eq!(vm.status(), VmStatus::Running);
         let accepted = vm
             .step_with_work_limit(NonZeroU64::new(2).expect("larger limit is positive"))
-            .expect("the same tick must remain retryable with a sufficient ceiling");
-        assert_eq!(accepted.committed_ticks, 1);
+            .expect("the same step must remain retryable with a sufficient ceiling");
+        assert_eq!(accepted.committed_steps, 1);
     }
 
     #[test]
-    fn work_limit_covers_nested_custom_dispatch_and_rolls_back_the_global_tick() {
+    fn work_limit_covers_nested_custom_dispatch_and_rolls_back_the_committed_steps() {
         use codegrid_model::PrimaryInstruction;
 
         let custom = codegrid_model::Slot::new(0).expect("zero is a valid Custom ID");
@@ -313,11 +315,14 @@ mod tests {
             .expect_err("the Custom thread dispatch shares the outer work ceiling");
 
         assert_eq!(error.maximum_work_units, 1);
+        assert_eq!(error.custom_internal_dispatches, 0);
         assert_eq!(vm.snapshot(), before_invocation);
         let accepted = vm
-            .step_with_work_limit(NonZeroU64::new(8).expect("larger limit is positive"))
+            .prepare_step_with_work_limit(NonZeroU64::new(8).expect("larger limit is positive"))
             .expect("the Custom call must remain retryable with a sufficient ceiling");
-        assert_eq!(accepted.committed_ticks, 2);
+        assert_eq!(accepted.report().work_units, 4);
+        assert_eq!(accepted.report().custom_internal_dispatches, 3);
+        assert_eq!(accepted.commit().committed_steps, 2);
     }
 
     #[test]
@@ -348,26 +353,25 @@ mod tests {
 
         assert_eq!(returned.status, VmStatus::Running);
         assert_eq!(vm.snapshot().threads[0].position.x, 2);
-        let custom_ticks = returned
+        let custom_steps = returned
             .events
             .iter()
             .filter_map(|event| match event {
                 crate::VmEvent::CellReached {
                     scope:
                         crate::ExecutionScope::Custom {
-                            internal_tick, ..
+                            internal_step, ..
                         },
                     ..
-                } => Some(*internal_tick),
+                } => Some(*internal_step),
                 _ => None,
             })
             .collect::<std::collections::BTreeSet<_>>();
-        assert_eq!(custom_ticks, std::collections::BTreeSet::from([1, 2, 3]));
-        assert_eq!(vm.snapshot().metrics.operation_count(), 2);
+        assert_eq!(custom_steps, std::collections::BTreeSet::from([1, 2, 3]));
     }
 
     #[test]
-    fn custom_threads_returning_on_the_same_tick_complete_together() {
+    fn custom_threads_returning_on_the_same_step_complete_together() {
         use codegrid_model::PrimaryInstruction;
 
         let custom_id = codegrid_model::Slot::new(0).expect("zero is a valid Custom ID");
@@ -400,7 +404,7 @@ mod tests {
                 crate::VmEvent::CellReached {
                     scope:
                         crate::ExecutionScope::Custom {
-                            internal_tick: 2,
+                            internal_step: 2,
                             ..
                         },
                     thread_id,
@@ -417,12 +421,12 @@ mod tests {
         assert_eq!(returned.status, VmStatus::Running);
         assert_eq!(returns, vec![(0, Coordinate { x: 1, y: 0 }), (1, Coordinate { x: 6, y: 0 })]);
         assert_eq!(vm.snapshot().threads[0].position.x, 2);
-        assert_eq!(vm.snapshot().committed_ticks, 2);
+        assert_eq!(vm.snapshot().committed_steps, 2);
         assert_eq!(vm.step().status, VmStatus::Halted);
     }
 
     #[test]
-    fn bounded_run_keeps_prior_commits_but_rolls_back_the_exhausted_tick() {
+    fn bounded_run_keeps_prior_commits_but_rolls_back_the_exhausted_step() {
         let mut vm = Vm::new(
             verified(&[Direction::Right]),
             [],
@@ -432,12 +436,11 @@ mod tests {
 
         let error = vm
             .run_with_work_limit(3, NonZeroU64::new(1).expect("limit is positive"))
-            .expect_err("the second tick exceeds the shared run-slice ceiling");
+            .expect_err("the second step exceeds the shared run-slice ceiling");
 
         assert_eq!(error.maximum_work_units, 1);
         assert_eq!(vm.status(), VmStatus::Running);
-        assert_eq!(vm.committed_ticks(), 1);
-        assert_eq!(vm.snapshot().metrics.operation_count(), 0);
+        assert_eq!(vm.committed_steps(), 1);
     }
 
     #[test]
@@ -464,8 +467,7 @@ mod tests {
         assert_eq!(result.work_limit_exceeded.unwrap().maximum_work_units, 2);
         assert_eq!(result.newly_emitted_output, vec![0]);
         assert_eq!(result.events.len(), 4);
-        assert_eq!(vm.committed_ticks(), 2);
-        assert_eq!(vm.snapshot().metrics.operation_count(), 1);
+        assert_eq!(vm.committed_steps(), 2);
         assert_eq!(vm.status(), VmStatus::Running);
     }
 
@@ -475,15 +477,13 @@ mod tests {
             verified(&[Direction::Right, Direction::Down, Direction::Left]),
             [8, 9],
             VmConfig::new(
-                0,
-                NonZeroU64::new(100).expect("limit is positive"),
-            ).with_custom_execution_for_test(),
+                0),
         )
         .expect("entry count fits in u64");
         let snapshot = vm.snapshot();
 
         assert_eq!(vm.status(), VmStatus::Running);
-        assert_eq!(snapshot.committed_ticks, 0);
+        assert_eq!(snapshot.committed_steps, 0);
         assert_eq!(snapshot.input, vec![8, 9]);
         assert_eq!(snapshot.registers, [0; 10]);
         assert_eq!(snapshot.threads.len(), 3);
@@ -546,7 +546,7 @@ mod tests {
         assert_eq!(snapshot.threads[0].id, 0);
         assert_eq!(snapshot.threads[0].position, Coordinate { x: 2, y: 0 });
         assert_eq!(snapshot.threads[0].direction, Direction::Left);
-        assert_eq!(snapshot.committed_ticks, 4);
+        assert_eq!(snapshot.committed_steps, 4);
     }
 
     #[test]
@@ -560,9 +560,7 @@ mod tests {
             std::iter::empty::<u8>(),
             initial_memory,
             VmConfig::new(
-                1,
-                NonZeroU64::new(1).expect("limit is positive"),
-            ).with_custom_execution_for_test(),
+                1),
         )
         .expect("entry count fits in u64");
 
@@ -573,7 +571,7 @@ mod tests {
     }
 
     #[test]
-    fn step_executes_one_cell_per_tick_and_halt_commits_its_tick() {
+    fn step_executes_one_cell_per_step_and_halt_commits_its_step() {
         use crate::VmEvent;
         use codegrid_model::PrimaryInstruction;
 
@@ -604,7 +602,7 @@ mod tests {
                 && after.position.x == 1
         ));
         assert_eq!(vm.snapshot().threads[0].position.x, 1);
-        assert_eq!(vm.snapshot().committed_ticks, 1);
+        assert_eq!(vm.snapshot().committed_steps, 1);
 
         let second = vm.step();
         assert_eq!(second.status, VmStatus::Running);
@@ -632,12 +630,11 @@ mod tests {
         assert_eq!(vm.snapshot().threads[0].position.x, 2);
 
         assert_eq!(vm.step().status, VmStatus::Halted);
-        assert_eq!(vm.snapshot().committed_ticks, 3);
-        assert_eq!(vm.snapshot().metrics.operation_count(), 2);
+        assert_eq!(vm.snapshot().committed_steps, 3);
     }
 
     #[test]
-    fn multiple_halt_requests_in_one_global_tick_do_not_conflict() {
+    fn multiple_halt_requests_in_one_committed_steps_do_not_conflict() {
         use codegrid_model::PrimaryInstruction;
 
         let program = verified_cells(
@@ -657,8 +654,7 @@ mod tests {
 
         assert_eq!(halted.status, VmStatus::Halted);
         assert!(halted.errors.is_empty());
-        assert_eq!(halted.committed_ticks, 2);
-        assert_eq!(vm.snapshot().metrics.operation_count(), 2);
+        assert_eq!(halted.committed_steps, 2);
         let halt_cells = halted
             .events
             .iter()
@@ -704,7 +700,7 @@ mod tests {
 
         assert_eq!(halted.status, VmStatus::Halted);
         assert!(halted.errors.is_empty());
-        assert_eq!(halted.committed_ticks, 3);
+        assert_eq!(halted.committed_steps, 3);
         assert_eq!(vm.snapshot().threads[0].data_stack, vec![0, 1]);
         assert_eq!(vm.snapshot().threads[1].position.x, 3);
     }
@@ -737,15 +733,13 @@ mod tests {
 
         assert_eq!(halted.status, VmStatus::Halted);
         assert!(halted.errors.is_empty());
-        assert_eq!(snapshot.committed_ticks, 2);
+        assert_eq!(snapshot.committed_steps, 2);
         assert_eq!(snapshot.threads[0].position.x, 1);
         assert_eq!(snapshot.threads[0].data_stack, vec![7, 1]);
-        assert_eq!(snapshot.metrics.operation_count(), 3);
-        assert_eq!(snapshot.metrics.peak_data_stack_usage(), 2);
     }
 
     #[test]
-    fn halt_does_not_skip_other_threads_current_tick_evaluation() {
+    fn halt_does_not_skip_other_threads_current_step_evaluation() {
         use codegrid_model::PrimaryInstruction;
 
         let program = verified_cells(
@@ -765,7 +759,7 @@ mod tests {
 
         assert_eq!(failed.status, VmStatus::Halted);
         assert!(failed.errors.is_empty());
-        assert_eq!(failed.committed_ticks, 2);
+        assert_eq!(failed.committed_steps, 2);
         assert_eq!(vm.snapshot().status, VmStatus::Halted);
 
         let custom_id = codegrid_model::Slot::new(0).expect("zero is a valid Custom ID");
@@ -781,19 +775,16 @@ mod tests {
                 codegrid_ir::Cell::instruction(PrimaryInstruction::Halt, None),
             ],
         );
-        let custom_limit = VmConfig::new(
-            0,
-            NonZeroU64::new(2).expect("limit is positive"),
-        ).with_custom_execution_for_test();
+        let custom_config = VmConfig::new(0);
         let mut custom_vm =
-            Vm::new(custom_halt_program, [], custom_limit).expect("two initial threads fit in u64");
+            Vm::new(custom_halt_program, [], custom_config).expect("two initial threads fit in u64");
 
         assert_eq!(custom_vm.step().status, VmStatus::Running);
         let custom_failed = custom_vm.step();
 
         assert_eq!(custom_failed.status, VmStatus::Halted);
         assert!(custom_failed.errors.is_empty());
-        assert_eq!(custom_failed.committed_ticks, 2);
+        assert_eq!(custom_failed.committed_steps, 2);
     }
 
     #[test]
@@ -831,7 +822,7 @@ mod tests {
     }
 
     #[test]
-    fn custom_halt_takes_priority_over_same_tick_custom_return() {
+    fn custom_halt_takes_priority_over_same_step_custom_return() {
         use codegrid_model::PrimaryInstruction;
 
         let custom_id = codegrid_model::Slot::new(0).expect("zero is a valid Custom ID");
@@ -875,9 +866,7 @@ mod tests {
             program,
             [],
             VmConfig::new(
-                0,
-                NonZeroU64::new(10).expect("limit is positive"),
-            ).with_custom_execution_for_test(),
+                0),
         )
         .expect("one outer initial thread fits in u64");
 
@@ -885,17 +874,17 @@ mod tests {
         let halted = vm.step();
         assert_eq!(halted.status, VmStatus::Halted);
         assert!(halted.errors.is_empty());
-        assert_eq!(halted.committed_ticks, 2);
+        assert_eq!(halted.committed_steps, 2);
         assert_eq!(vm.snapshot().threads[0].position.x, 1);
 
-        let internal_tick_two_cells = halted
+        let internal_step_two_cells = halted
             .events
             .iter()
             .filter_map(|event| match event {
                 crate::VmEvent::CellReached {
                     scope:
                         crate::ExecutionScope::Custom {
-                            internal_tick: 2, ..
+                            internal_step: 2, ..
                         },
                     cell,
                     ..
@@ -903,11 +892,11 @@ mod tests {
                 _ => None,
             })
             .collect::<Vec<_>>();
-        assert_eq!(internal_tick_two_cells, vec![(1, 0), (0, 1)]);
+        assert_eq!(internal_step_two_cells, vec![(1, 0), (0, 1)]);
     }
 
     #[test]
-    fn custom_internal_error_takes_priority_over_a_same_tick_halt_request() {
+    fn custom_internal_error_takes_priority_over_a_same_step_halt_request() {
         use codegrid_model::PrimaryInstruction;
 
         let custom_id = codegrid_model::Slot::new(0).expect("zero is a valid Custom ID");
@@ -961,11 +950,11 @@ mod tests {
                     == crate::ExecutionScope::Custom {
                         caller_thread_id: 0,
                         custom_id,
-                        internal_tick: 2,
+                        internal_step: 2,
                     }
         }));
         assert_eq!(vm.snapshot().status, VmStatus::Error);
-        assert_eq!(vm.snapshot().committed_ticks, 1);
+        assert_eq!(vm.snapshot().committed_steps, 1);
         assert!(failed.events.is_empty());
     }
 
@@ -1052,12 +1041,6 @@ mod tests {
         assert_eq!(vm.step().status, VmStatus::Running);
         let store = vm.step();
         assert_eq!(store.status, VmStatus::Running);
-        assert_eq!(store.metrics.operation_count(), 1);
-        assert_eq!(store.metrics.used_memory_address_count(), 0);
-        assert!(store
-            .metrics
-            .instruction_variety()
-            .contains(&crate::InstructionKind::MemoryStore));
         let snapshot = vm.snapshot();
         assert_eq!(snapshot.memory.allocated_cells(), 0);
         assert!(snapshot.threads[0].data_stack.is_empty());
@@ -1065,9 +1048,8 @@ mod tests {
     }
 
     #[test]
-    fn wrapped_tick_retains_accessed_memory_address_metric() {
+    fn wrapped_step_commits_memory_read_and_preserves_thread_state() {
         use codegrid_model::PrimaryInstruction;
-        use num_bigint::BigInt;
 
         let program = verified_cells(
             vec![
@@ -1085,18 +1067,9 @@ mod tests {
         assert!(failed.errors.is_empty());
 
         let snapshot = vm.snapshot();
-        assert_eq!(snapshot.committed_ticks, 2);
+        assert_eq!(snapshot.committed_steps, 2);
         assert_eq!(snapshot.threads[0].position, Coordinate { x: 0, y: 0 });
         assert_eq!(snapshot.threads[0].data_stack, vec![0]);
-        assert_eq!(snapshot.metrics.operation_count(), 1);
-        assert_eq!(snapshot.metrics.used_memory_address_count(), 1);
-        assert!(snapshot
-            .metrics
-            .used_memory_addresses()
-            .contains(&crate::MemoryLocationId {
-                space: crate::MemorySpaceId::Outer,
-                address: BigInt::from(0u8),
-            }));
     }
 
     #[test]
@@ -1138,7 +1111,6 @@ mod tests {
         assert!(returned.threads[0].data_stack.is_empty());
         assert_eq!(returned.memory.read(&BigInt::from(0)), 42);
         assert_eq!(returned.memory.read(&BigInt::from(-256)), 42);
-        assert_eq!(returned.metrics.used_memory_address_count(), 2);
         assert_eq!(vm.step().status, VmStatus::Halted);
 
         let large_program = verified_cells(
@@ -1164,7 +1136,6 @@ mod tests {
             BigInt::from(1u8) << 256usize
         );
         assert_eq!(large_snapshot.memory.read(&expected_address), 91);
-        assert_eq!(large_snapshot.metrics.used_memory_address_count(), 1);
     }
 
     #[test]
@@ -1202,7 +1173,7 @@ mod tests {
     }
 
     #[test]
-    fn wrapped_move_commits_instruction_effects_and_metrics() {
+    fn wrapped_move_commits_instruction_effects() {
         use codegrid_model::PrimaryInstruction;
 
         let program = verified_cells(
@@ -1220,24 +1191,12 @@ mod tests {
         let snapshot = vm.snapshot();
 
         assert_eq!(result.status, VmStatus::Running);
-        assert_eq!(result.attempted_tick, 2);
-        assert_eq!(result.committed_ticks, 2);
-        assert_eq!(result.metrics.global_tick(), 2);
-        assert_eq!(result.metrics.operation_count(), 1);
-        assert_eq!(result.metrics.used_cell_count(), 2);
-        assert!(result
-            .metrics
-            .instruction_variety()
-            .contains(&crate::InstructionKind::Add));
+        assert_eq!(result.attempted_transition_id, 2);
+        assert_eq!(result.committed_steps, 2);
+        assert_eq!(result.metrics.committed_steps(), 2);
         assert!(result.errors.is_empty());
         assert_eq!(snapshot.registers[0], 1);
-        assert_eq!(snapshot.committed_ticks, 2);
-        assert_eq!(snapshot.metrics.operation_count(), 1);
-        assert_eq!(snapshot.metrics.used_cell_count(), 2);
-        assert!(snapshot
-            .metrics
-            .instruction_variety()
-            .contains(&crate::InstructionKind::Add));
+        assert_eq!(snapshot.committed_steps, 2);
     }
 
     #[test]
@@ -1270,11 +1229,11 @@ mod tests {
         );
         assert!(failed.events.is_empty());
         assert_eq!(vm.snapshot().registers[0], 0);
-        assert_eq!(vm.snapshot().committed_ticks, 1);
+        assert_eq!(vm.snapshot().committed_steps, 1);
     }
 
     #[test]
-    fn wrapped_tick_commits_call_frame_and_preserves_peak_usage() {
+    fn wrapped_step_commits_call_frame_and_preserves_peak_usage() {
         use codegrid_model::PrimaryInstruction;
 
         let function_id = codegrid_model::Slot::new(0).expect("zero is a valid function ID");
@@ -1314,11 +1273,10 @@ mod tests {
         assert_eq!(failed.status, VmStatus::Running);
         assert!(failed.errors.is_empty());
         let snapshot = vm.snapshot();
-        assert_eq!(snapshot.committed_ticks, 2);
+        assert_eq!(snapshot.committed_steps, 2);
         assert_eq!(snapshot.threads[0].board, codegrid_ir::BoardId::Function(function_id));
         assert_eq!(snapshot.threads[0].position, Coordinate { x: 0, y: 0 });
         assert_eq!(snapshot.threads[0].call_stack.len(), 1);
-        assert_eq!(snapshot.metrics.peak_call_stack_usage(), 1);
     }
 
     #[test]
@@ -1341,8 +1299,7 @@ mod tests {
         let snapshot = vm.snapshot();
         assert_eq!(result.status, VmStatus::Error);
         assert_eq!(snapshot.registers[0], 0);
-        assert_eq!(snapshot.committed_ticks, 1);
-        assert_eq!(snapshot.metrics.operation_count(), 2);
+        assert_eq!(snapshot.committed_steps, 1);
         assert_eq!(result.errors.len(), 1);
         let crate::RuntimeErrorKind::ConcurrentWriteConflict { thread_ids, .. } =
             result.errors[0].kind()
@@ -1353,7 +1310,7 @@ mod tests {
     }
 
     #[test]
-    fn rejected_pop_add_effects_do_not_reduce_failed_tick_stack_peak() {
+    fn rejected_pop_add_effects_do_not_reduce_failed_step_stack_peak() {
         use codegrid_model::PrimaryInstruction;
 
         let program = verified_grid(
@@ -1379,7 +1336,6 @@ mod tests {
 
         assert_eq!(vm.step().status, VmStatus::Running);
         assert_eq!(vm.step().status, VmStatus::Running);
-        assert_eq!(vm.snapshot().metrics.peak_data_stack_usage(), 2);
         let failed = vm.step();
 
         assert_eq!(failed.status, VmStatus::Error);
@@ -1388,15 +1344,14 @@ mod tests {
             .iter()
             .any(|error| error.code() == "ConcurrentWriteConflict"));
         let snapshot = vm.snapshot();
-        assert_eq!(snapshot.committed_ticks, 2);
+        assert_eq!(snapshot.committed_steps, 2);
         assert_eq!(snapshot.threads[0].data_stack, vec![0]);
         assert_eq!(snapshot.threads[1].data_stack, vec![0]);
         assert!(snapshot.threads[2].data_stack.is_empty());
-        assert_eq!(snapshot.metrics.peak_data_stack_usage(), 3);
     }
 
     #[test]
-    fn rejected_encode_effects_do_not_reduce_failed_tick_instruction_stack_peak() {
+    fn rejected_encode_effects_do_not_reduce_failed_step_instruction_stack_peak() {
         use codegrid_model::{AttachmentInstruction, PrimaryInstruction};
 
         let program = verified_grid(
@@ -1437,11 +1392,10 @@ mod tests {
         assert_eq!(snapshot.threads[0].instruction_stack, vec![encoded_add]);
         assert_eq!(snapshot.threads[1].instruction_stack, vec![encoded_add]);
         assert!(snapshot.threads[2].instruction_stack.is_empty());
-        assert_eq!(snapshot.metrics.peak_instruction_stack_usage(), 3);
     }
 
     #[test]
-    fn register_reads_observe_tick_start_values_when_a_sibling_writes() {
+    fn register_reads_observe_step_start_values_when_a_sibling_writes() {
         use codegrid_model::PrimaryInstruction;
 
         let program = verified_grid(
@@ -1500,7 +1454,7 @@ mod tests {
         assert!(failed.events.is_empty());
         assert_eq!(vm.snapshot().registers[0], 0);
         assert_eq!(vm.snapshot().input.iter().copied().collect::<Vec<_>>(), [9]);
-        assert_eq!(vm.snapshot().committed_ticks, 1);
+        assert_eq!(vm.snapshot().committed_steps, 1);
     }
 
     #[test]
@@ -1539,7 +1493,7 @@ mod tests {
         );
         assert!(failed.events.is_empty());
         assert_eq!(vm.snapshot().threads[0].data_stack, vec![1]);
-        assert_eq!(vm.snapshot().committed_ticks, 3);
+        assert_eq!(vm.snapshot().committed_steps, 3);
     }
 
     #[test]
@@ -1575,7 +1529,7 @@ mod tests {
     }
 
     #[test]
-    fn memory_reads_observe_tick_start_values_when_a_sibling_writes() {
+    fn memory_reads_observe_step_start_values_when_a_sibling_writes() {
         use codegrid_model::PrimaryInstruction;
 
         let program = verified_grid(
@@ -1608,7 +1562,7 @@ mod tests {
     }
 
     #[test]
-    fn memory_store_is_read_back_by_a_load_on_the_next_tick() {
+    fn memory_store_is_read_back_by_a_load_on_the_next_step() {
         use codegrid_model::PrimaryInstruction;
 
         let program = verified_cells(
@@ -1638,7 +1592,7 @@ mod tests {
     }
 
     #[test]
-    fn equal_memory_writes_conflict_and_roll_back_the_entire_tick() {
+    fn equal_memory_writes_conflict_and_roll_back_the_entire_step() {
         use codegrid_model::PrimaryInstruction;
 
         let program = verified_grid(
@@ -1675,8 +1629,7 @@ mod tests {
         assert_eq!(snapshot.threads[0].data_stack, vec![9]);
         assert_eq!(snapshot.threads[1].data_stack, vec![9]);
         assert!(snapshot.threads[2].data_stack.is_empty());
-        assert_eq!(snapshot.metrics.peak_data_stack_usage(), 3);
-        assert_eq!(snapshot.committed_ticks, 1);
+        assert_eq!(snapshot.committed_steps, 1);
     }
 
     #[test]
@@ -1728,8 +1681,7 @@ mod tests {
         );
         assert_eq!(snapshot.threads[0].instruction_stack, vec![encoded_add]);
         assert_eq!(snapshot.threads[1].instruction_stack, vec![encoded_add]);
-        assert_eq!(snapshot.metrics.peak_instruction_stack_usage(), 3);
-        assert_eq!(snapshot.committed_ticks, 1);
+        assert_eq!(snapshot.committed_steps, 1);
     }
 
     #[test]
@@ -1771,11 +1723,11 @@ mod tests {
         );
         assert_eq!(snapshot.threads[0].instruction_stack, vec![encoded_add]);
         assert_eq!(snapshot.threads[1].instruction_stack, vec![encoded_add]);
-        assert_eq!(snapshot.committed_ticks, 1);
+        assert_eq!(snapshot.committed_steps, 1);
     }
 
     #[test]
-    fn custom_limit_failure_rolls_back_outer_wrapping_in_the_same_tick() {
+    fn work_limited_prepare_rolls_back_infinite_custom_and_outer_sibling() {
         use codegrid_ir::{Program, ScopedProgram};
         use codegrid_model::PrimaryInstruction;
 
@@ -1816,27 +1768,24 @@ mod tests {
             .expect("two initial threads fit in u64");
 
         assert_eq!(vm.step().status, VmStatus::Running);
-        let step = vm.step();
-        let snapshot = vm.snapshot();
+        let before = vm.snapshot();
+        let work_limit = NonZeroU64::new(16).expect("limit is positive");
 
-        assert_eq!(step.status, VmStatus::Error);
-        assert_eq!(step.errors.len(), 1);
-        assert!(step.errors.iter().any(|error| {
-            error.code() == "CustomExecutionLimitExceeded"
-                && error.scope()
-                    == crate::ExecutionScope::Custom {
-                        caller_thread_id: 0,
-                        custom_id,
-                        internal_tick: 100,
-                    }
-        }));
-        assert_eq!(snapshot.committed_ticks, 1);
-        assert_eq!(snapshot.threads[0].position, Coordinate { x: 1, y: 0 });
-        assert_eq!(snapshot.threads[1].position, Coordinate { x: 1, y: 1 });
+        let exceeded = vm
+            .prepare_step_with_work_limit(work_limit)
+            .err()
+            .expect("the nonterminating Custom must exhaust the host work ceiling");
+
+        assert_eq!(exceeded.maximum_work_units, 16);
+        assert_eq!(exceeded.custom_internal_dispatches, 15);
+        assert_eq!(vm.snapshot(), before);
+        assert_eq!(vm.snapshot().committed_steps, 1);
+        assert_eq!(vm.snapshot().threads[0].position, Coordinate { x: 1, y: 0 });
+        assert_eq!(vm.snapshot().threads[1].position, Coordinate { x: 1, y: 1 });
     }
 
     #[test]
-    fn repeated_random_direction_advances_the_thread_stream_once_per_tick() {
+    fn repeated_random_direction_advances_the_thread_stream_once_per_step() {
         use codegrid_model::{AttachmentInstruction, PrimaryInstruction};
 
         let program = verified_cells(
@@ -1878,7 +1827,6 @@ mod tests {
 
         let snapshot = vm.snapshot();
         assert_eq!(snapshot.threads[0].random_state, expected_rng.state());
-        assert_eq!(snapshot.metrics.operation_count(), 3);
         let expected_final_x = match expected_draws[2].0 {
             Direction::Right => 2,
             Direction::Left => 0,
@@ -1923,15 +1871,10 @@ mod tests {
         assert!(step.errors.is_empty());
         assert_ne!(snapshot.threads[0].random_state, initial_state);
         assert_eq!(snapshot.threads[0].position, Coordinate { x: 1, y: 0 });
-        assert_eq!(snapshot.metrics.operation_count(), 1);
-        assert!(snapshot
-            .metrics
-            .instruction_variety()
-            .contains(&crate::InstructionKind::RandomDirection));
     }
 
     #[test]
-    fn repeat_attachment_reexecutes_primary_across_ticks() {
+    fn repeat_attachment_reexecutes_primary_across_steps() {
         use codegrid_model::{AttachmentInstruction, PrimaryInstruction};
 
         let program = verified_cells(
@@ -1956,11 +1899,10 @@ mod tests {
         assert_eq!(vm.snapshot().registers[0], 2);
         assert_eq!(vm.snapshot().threads[0].position.x, 2);
         assert_eq!(vm.step().status, VmStatus::Halted);
-        assert_eq!(vm.snapshot().metrics.operation_count(), 3);
     }
 
     #[test]
-    fn folded_block_enters_immediately_and_uses_a_resume_tick() {
+    fn folded_block_enters_immediately_and_uses_a_resume_step() {
         use codegrid_ir::FoldedBlock;
         use codegrid_model::PrimaryInstruction;
 
@@ -2013,9 +1955,7 @@ mod tests {
         assert_eq!(vm.step().status, VmStatus::Running);
         assert_eq!(vm.snapshot().threads[0].position.x, 2);
         assert_eq!(vm.step().status, VmStatus::Halted);
-        assert_eq!(vm.snapshot().metrics.global_tick(), 4);
-        assert_eq!(vm.snapshot().metrics.operation_count(), 1);
-        assert_eq!(vm.snapshot().metrics.used_cell_count(), 4);
+        assert_eq!(vm.snapshot().metrics.committed_steps(), 4);
     }
 
     #[test]
@@ -2085,7 +2025,7 @@ mod tests {
             crate::VmEvent::CellReached {
                 scope: crate::ExecutionScope::Custom {
                     custom_id: id,
-                    internal_tick: 3,
+                    internal_step: 3,
                     ..
                 },
                 cell,
@@ -2157,7 +2097,6 @@ mod tests {
         assert_eq!(snapshot.threads[0].register_pointer, 1);
         assert_eq!(snapshot.threads[0].page, BigInt::from(1));
         assert_eq!(snapshot.memory.read(&BigInt::from(273)), 42);
-        assert_eq!(snapshot.metrics.used_memory_address_count(), 1);
     }
 
     #[test]
@@ -2373,14 +2312,10 @@ mod tests {
         assert_eq!(snapshot.threads[0].board, codegrid_ir::BoardId::Main);
         assert_eq!(snapshot.threads[0].position, Coordinate { x: 2, y: 0 });
         assert_eq!(snapshot.threads[0].random_state, expected_rng.state());
-        assert!(snapshot
-            .metrics
-            .instruction_variety()
-            .contains(&crate::InstructionKind::RandomDirection));
     }
 
     #[test]
-    fn calls_consume_a_tick_and_return_uses_a_separate_resume_tick() {
+    fn calls_consume_a_step_and_return_uses_a_separate_resume_step() {
         use codegrid_model::{AttachmentInstruction, PrimaryInstruction};
 
         let function = Board {
@@ -2421,10 +2356,10 @@ mod tests {
             .expect("one initial thread fits in u64");
 
         let mut invocation_events = Vec::new();
-        for tick in 1..=4 {
+        for step in 1..=4 {
             let result = vm.step();
             assert_eq!(result.status, VmStatus::Running);
-            if tick == 4 {
+            if step == 4 {
                 invocation_events = result.events;
             }
         }
@@ -2464,9 +2399,7 @@ mod tests {
             Some(PrimaryInstruction::Call(function_id))
         );
         assert_eq!(vm.step().status, VmStatus::Halted);
-        assert_eq!(vm.snapshot().metrics.global_tick(), 6);
-        assert_eq!(vm.snapshot().metrics.operation_count(), 4);
-        assert_eq!(vm.snapshot().metrics.peak_call_stack_usage(), 1);
+        assert_eq!(vm.snapshot().metrics.committed_steps(), 6);
     }
 
     #[test]
@@ -2641,11 +2574,6 @@ mod tests {
             snapshot.runtime_program.functions[&function_id].cells[1].primary,
             Some(PrimaryInstruction::Return)
         );
-        assert_eq!(snapshot.metrics.operation_count(), 3);
-        assert!(!snapshot
-            .metrics
-            .instruction_variety()
-            .contains(&crate::InstructionKind::WriteCode));
     }
 
     #[test]
@@ -2760,7 +2688,6 @@ mod tests {
         assert_eq!(vm.step().status, VmStatus::Running);
         assert_eq!(vm.snapshot().threads[0].position, Coordinate { x: 2, y: 0 });
         assert_eq!(vm.step().status, VmStatus::Halted);
-        assert_eq!(vm.snapshot().metrics.peak_call_stack_usage(), 1);
     }
 
     #[test]
@@ -2845,12 +2772,11 @@ mod tests {
         assert_eq!(resumed.threads[1].position, Coordinate { x: 4, y: 0 });
         assert_eq!(resumed.threads[0].board, codegrid_ir::BoardId::Main);
         assert_eq!(resumed.threads[1].board, codegrid_ir::BoardId::Main);
-        assert_eq!(resumed.metrics.peak_call_stack_usage(), 2);
 
         let halted = vm.step();
         assert_eq!(halted.status, VmStatus::Halted);
         assert!(halted.errors.is_empty());
-        assert_eq!(vm.snapshot().committed_ticks, 6);
+        assert_eq!(vm.snapshot().committed_steps, 6);
     }
 
     #[test]
@@ -3131,15 +3057,14 @@ mod tests {
         let mut vm = Vm::new(program, [], config())
             .expect("one initial thread fits in u64");
 
-        assert_eq!(vm.run(40), crate::RunOutcome::TickLimitReached);
+        assert_eq!(vm.run(40), crate::RunOutcome::StepLimitReached);
         let snapshot = vm.snapshot();
-        assert_eq!(snapshot.committed_ticks, 40);
+        assert_eq!(snapshot.committed_steps, 40);
         assert_eq!(snapshot.threads[0].call_stack.len(), 1);
-        assert_eq!(snapshot.metrics.peak_call_stack_usage(), 1);
     }
 
     #[test]
-    fn custom_function_self_tail_calls_reuse_the_current_call_frame() {
+    fn work_limited_custom_tail_call_is_bounded_and_atomic() {
         use codegrid_ir::{CodeGridId, Program, ScopedProgram};
         use codegrid_model::PrimaryInstruction;
 
@@ -3200,26 +3125,24 @@ mod tests {
             program,
             [],
             VmConfig::new(
-                0,
-                NonZeroU64::new(12).expect("Custom limit is positive"),
-            ).with_custom_execution_for_test(),
+                0),
         )
         .expect("one outer initial thread fits in u64");
 
         assert_eq!(vm.step().status, VmStatus::Running);
-        let failed = vm.step();
+        let before = vm.snapshot();
+        let (result, work_units) = vm.step_with_work_accounting(
+            NonZeroU64::new(24).expect("limit is positive"),
+        );
 
-        assert_eq!(failed.status, VmStatus::Error);
-        assert!(failed
-            .errors
-            .iter()
-            .any(|error| error.code() == "CustomExecutionLimitExceeded"));
-        assert_eq!(vm.snapshot().committed_ticks, 1);
-        assert_eq!(vm.snapshot().metrics.peak_call_stack_usage(), 1);
+        assert!(result.is_err());
+        assert_eq!(work_units, 24);
+        assert_eq!(vm.snapshot(), before);
+        assert_eq!(vm.snapshot().committed_steps, 1);
     }
 
     #[test]
-    fn outer_read_consumes_one_byte_and_output_is_returned_as_a_tick_delta() {
+    fn outer_read_consumes_one_byte_and_output_is_returned_as_a_step_delta() {
         use codegrid_model::PrimaryInstruction;
 
         let program = verified_cells(
@@ -3245,7 +3168,7 @@ mod tests {
     }
 
     #[test]
-    fn concurrent_outer_outputs_conflict_and_roll_back_the_global_tick() {
+    fn concurrent_outer_outputs_conflict_and_roll_back_the_committed_steps() {
         use codegrid_model::PrimaryInstruction;
 
         let program = verified_cells(
@@ -3265,7 +3188,7 @@ mod tests {
         assert_eq!(failed.status, VmStatus::Error);
         assert!(failed.events.is_empty());
         assert!(failed.newly_emitted_output.is_empty());
-        assert_eq!(failed.committed_ticks, 1);
+        assert_eq!(failed.committed_steps, 1);
         assert!(failed.errors.iter().any(|error| {
             error.code() == "ConcurrentOutputConflict"
                 && error.scope() == crate::ExecutionScope::Outer
@@ -3276,7 +3199,7 @@ mod tests {
                 )
         }));
         assert!(vm.snapshot().output.is_empty());
-        assert_eq!(vm.snapshot().committed_ticks, 1);
+        assert_eq!(vm.snapshot().committed_steps, 1);
     }
 
     #[test]
@@ -3307,7 +3230,7 @@ mod tests {
         let returned = vm.snapshot();
         assert!(returned.threads[0].data_stack.is_empty());
         assert_eq!(returned.registers[0], 1);
-        assert_eq!(returned.committed_ticks, 4);
+        assert_eq!(returned.committed_steps, 4);
         assert_eq!(vm.step().status, VmStatus::Halted);
         assert_eq!(vm.step().status, VmStatus::Halted);
     }
@@ -3336,23 +3259,23 @@ mod tests {
             .expect("one initial thread fits in u64");
 
         let mut invocation = None;
-        for outer_tick in 1..=4 {
+        for outer_step in 1..=4 {
             let result = vm.step();
             assert_eq!(result.status, VmStatus::Running);
-            if outer_tick == 4 {
+            if outer_step == 4 {
                 invocation = Some(result);
             }
         }
-        let invocation = invocation.expect("Custom invocation tick was captured");
+        let invocation = invocation.expect("Custom invocation step was captured");
         let internal_visits = invocation
             .events
             .iter()
             .filter_map(|event| match event {
                 crate::VmEvent::CellReached {
-                    scope: crate::ExecutionScope::Custom { internal_tick, .. },
+                    scope: crate::ExecutionScope::Custom { internal_step, .. },
                     cell,
                     ..
-                } => Some((*internal_tick, cell.position.x)),
+                } => Some((*internal_step, cell.position.x)),
                 _ => None,
             })
             .collect::<Vec<_>>();
@@ -3361,7 +3284,7 @@ mod tests {
             .events
             .iter()
             .rposition(|event| matches!(event, crate::VmEvent::CellReached { .. }))
-            .expect("the tick visits at least one cell");
+            .expect("the step visits at least one cell");
         let internal_register_event = invocation
             .events
             .iter()
@@ -3371,7 +3294,7 @@ mod tests {
                     crate::VmEvent::RegisterChanged {
                         scope: crate::ExecutionScope::Custom {
                             caller_thread_id: 0,
-                            internal_tick: 2,
+                            internal_step: 2,
                             ..
                         },
                         register: 0,
@@ -3383,12 +3306,11 @@ mod tests {
             .expect("Custom register change is observable");
         assert!(internal_register_event > last_cell_event);
         assert_eq!(vm.snapshot().threads[0].data_stack, vec![1, 1]);
-        assert_eq!(vm.snapshot().metrics.peak_data_stack_usage(), 2);
         assert_eq!(vm.step().status, VmStatus::Halted);
     }
 
     #[test]
-    fn simultaneous_custom_state_events_are_ordered_by_aligned_internal_tick() {
+    fn simultaneous_custom_state_events_are_ordered_by_aligned_internal_step() {
         use codegrid_model::PrimaryInstruction;
 
         let custom_id = codegrid_model::Slot::new(0).expect("zero is a valid Custom ID");
@@ -3421,13 +3343,13 @@ mod tests {
                     scope:
                         crate::ExecutionScope::Custom {
                             caller_thread_id,
-                            internal_tick,
+                            internal_step,
                             ..
                         },
                     old,
                     new,
                     ..
-                } => Some((*internal_tick, *caller_thread_id, *old, *new)),
+                } => Some((*internal_step, *caller_thread_id, *old, *new)),
                 _ => None,
             })
             .collect::<Vec<_>>();
@@ -3488,7 +3410,7 @@ mod tests {
     }
 
     #[test]
-    fn failed_custom_tick_counts_staged_caller_stack_output_but_rolls_it_back() {
+    fn work_limited_custom_output_rolls_back_staged_caller_stack_effects() {
         use codegrid_model::PrimaryInstruction;
 
         let custom_id = codegrid_model::Slot::new(0).expect("zero is a valid Custom ID");
@@ -3517,17 +3439,13 @@ mod tests {
         assert_eq!(nand.status, VmStatus::Running);
         assert_eq!(vm.snapshot().threads[0].position, Coordinate { x: 3, y: 0 });
         assert_eq!(vm.snapshot().threads[0].direction, Direction::Right);
-        let failed = vm.step();
-        assert_eq!(failed.status, VmStatus::Error);
-        assert!(failed
-            .errors
-            .iter()
-            .any(|error| error.code() == "CustomExecutionLimitExceeded"));
+        let before = vm.snapshot();
+        let work_limit = NonZeroU64::new(3).expect("limit is positive");
 
-        let snapshot = vm.snapshot();
-        assert_eq!(snapshot.threads[0].data_stack, vec![1]);
-        assert_eq!(snapshot.committed_ticks, 3);
-        assert_eq!(snapshot.metrics.peak_data_stack_usage(), 51);
+        assert!(vm.step_with_work_limit(work_limit).is_err());
+        assert_eq!(vm.snapshot(), before);
+        assert_eq!(vm.snapshot().threads[0].data_stack, vec![1]);
+        assert_eq!(vm.snapshot().committed_steps, 3);
     }
 
     #[test]
@@ -3547,9 +3465,7 @@ mod tests {
             ],
         );
         let limit_two = VmConfig::new(
-            0,
-            NonZeroU64::new(2).expect("limit is positive"),
-        ).with_custom_execution_for_test();
+            0);
         let mut returning_vm =
             Vm::new(returning, [], limit_two).expect("one outer initial thread fits in u64");
         assert_eq!(returning_vm.step().status, VmStatus::Running);
@@ -3559,7 +3475,7 @@ mod tests {
             event,
             crate::VmEvent::CellReached {
                 scope: crate::ExecutionScope::Custom {
-                    internal_tick: 2,
+                    internal_step: 2,
                     ..
                 },
                 cell,
@@ -3610,7 +3526,7 @@ mod tests {
             .errors
             .iter()
             .any(|error| error.code() == "ConcurrentInputConflict"));
-        assert_eq!(competing_vm.snapshot().committed_ticks, 1);
+        assert_eq!(competing_vm.snapshot().committed_steps, 1);
     }
 
     #[test]
@@ -3678,7 +3594,7 @@ mod tests {
             event,
             crate::VmEvent::ThreadChanged {
                 scope: crate::ExecutionScope::Custom {
-                    internal_tick: 3,
+                    internal_step: 3,
                     ..
                 },
                 before,
@@ -3688,7 +3604,6 @@ mod tests {
                 && after.status_flag == 1
                 && after.position == Coordinate { x: 3, y: 0 }
         )));
-        assert_eq!(vm.snapshot().metrics.operation_count(), 4);
     }
 
     #[test]
@@ -3726,12 +3641,12 @@ mod tests {
         assert!(matches!(
             failed.errors[0].scope(),
             crate::ExecutionScope::Custom {
-                internal_tick: 2,
+                internal_step: 2,
                 ..
             }
         ));
         assert_eq!(vm.snapshot().threads[0].data_stack, vec![1]);
-        assert_eq!(vm.snapshot().committed_ticks, 3);
+        assert_eq!(vm.snapshot().committed_steps, 3);
     }
 
     #[test]
@@ -3768,7 +3683,7 @@ mod tests {
                     == crate::ExecutionScope::Custom {
                         caller_thread_id: 0,
                         custom_id,
-                        internal_tick: 2,
+                        internal_step: 2,
                     }
                 && matches!(
                     error.kind(),
@@ -3778,7 +3693,7 @@ mod tests {
                 )
         }));
         assert_eq!(vm.snapshot().threads[0].data_stack, vec![1]);
-        assert_eq!(vm.snapshot().committed_ticks, 3);
+        assert_eq!(vm.snapshot().committed_steps, 3);
     }
 
     #[test]
@@ -3811,7 +3726,7 @@ mod tests {
         assert_eq!(failed.status, VmStatus::Error);
         assert_eq!(failed.errors[0].code(), "ConcurrentCallerStackReadConflict");
         assert_eq!(vm.snapshot().threads[0].data_stack, vec![1]);
-        assert_eq!(vm.snapshot().committed_ticks, 3);
+        assert_eq!(vm.snapshot().committed_steps, 3);
     }
 
     #[test]
@@ -3841,12 +3756,11 @@ mod tests {
         for _ in 0..4 {
             assert_eq!(vm.step().status, VmStatus::Running);
         }
-        assert_eq!(vm.snapshot().metrics.peak_data_stack_usage(), 3);
         assert_eq!(vm.step().status, VmStatus::Halted);
     }
 
     #[test]
-    fn failed_custom_tick_preserves_transient_internal_stack_peak() {
+    fn work_limit_rolls_back_custom_stack_growth_from_an_infinite_loop() {
         use codegrid_model::PrimaryInstruction;
 
         let custom_id = codegrid_model::Slot::new(0).expect("zero is a valid Custom ID");
@@ -3864,23 +3778,51 @@ mod tests {
             .expect("one outer initial thread fits in u64");
 
         assert_eq!(vm.step().status, VmStatus::Running);
-        let failed = vm.step();
-        assert_eq!(failed.status, VmStatus::Error);
-        assert_eq!(failed.errors[0].code(), "CustomExecutionLimitExceeded");
-        assert!(matches!(
-            failed.errors[0].scope(),
-            crate::ExecutionScope::Custom {
-                caller_thread_id: 0,
-                custom_id: id,
-                internal_tick: 100,
-            } if id == custom_id
-        ));
+        let before = vm.snapshot();
+        let (result, work_units) = vm.step_with_work_accounting(
+            NonZeroU64::new(4).expect("limit is positive"),
+        );
 
-        let snapshot = vm.snapshot();
-        assert_eq!(snapshot.committed_ticks, 1);
-        assert_eq!(snapshot.threads[0].position, Coordinate { x: 1, y: 0 });
-        assert!(snapshot.threads[0].data_stack.is_empty());
-        assert_eq!(snapshot.metrics.peak_data_stack_usage(), 50);
+        let exceeded = result.expect_err("the Custom loop consumes its bounded share");
+        assert_eq!(work_units, 4);
+        assert_eq!(exceeded.maximum_work_units, 4);
+        assert_eq!(exceeded.custom_internal_dispatches, 3);
+        assert_eq!(vm.snapshot(), before);
+        assert_eq!(vm.snapshot().committed_steps, 1);
+        assert!(vm.snapshot().threads[0].data_stack.is_empty());
+    }
+
+    #[test]
+    fn work_limited_custom_cycle_bounds_alternating_stack_history_and_counts_exactly() {
+        use codegrid_model::PrimaryInstruction;
+
+        let custom_id = codegrid_model::Slot::new(0).expect("zero is a valid Custom ID");
+        let program = verified_with_custom(
+            vec![
+                Cell::entry(Direction::Right),
+                Cell::instruction(PrimaryInstruction::Custom(custom_id), None),
+            ],
+            vec![
+                Cell::entry(Direction::Right),
+                Cell::instruction(PrimaryInstruction::Push, None),
+                Cell::empty(),
+                Cell::instruction(PrimaryInstruction::PopAdd, None),
+            ],
+        );
+        let mut vm = Vm::new(program, [], config())
+            .expect("one outer initial thread fits in u64");
+
+        assert_eq!(vm.step().status, VmStatus::Running);
+        let before = vm.snapshot();
+        let maximum_work_units = NonZeroU64::new(1_000_000).expect("limit is positive");
+        let (result, work_units) = vm.step_with_work_accounting(maximum_work_units);
+
+        let exceeded = result.expect_err("the repeating Custom call never returns");
+        assert_eq!(work_units, maximum_work_units.get());
+        assert_eq!(exceeded.maximum_work_units, maximum_work_units.get());
+        assert_eq!(exceeded.custom_internal_dispatches, maximum_work_units.get() - 1);
+        assert_eq!(vm.snapshot(), before);
+        assert_eq!(vm.committed_steps(), 1);
     }
 
     #[test]
@@ -3964,11 +3906,10 @@ mod tests {
         assert_eq!(step.status, VmStatus::Running, "errors: {:?}", step.errors);
         assert_eq!(snapshot.threads[0].data_stack, Vec::<u8>::new());
         assert_eq!(snapshot.threads[1].data_stack, vec![0, 0]);
-        assert_eq!(snapshot.metrics.used_memory_address_count(), 2);
     }
 
     #[test]
-    fn custom_repeat_runs_on_internal_ticks_and_obeys_the_execution_budget() {
+    fn custom_repeat_is_charged_to_the_generic_work_budget() {
         use codegrid_model::{AttachmentInstruction, PrimaryInstruction};
 
         let custom_id = codegrid_model::Slot::new(0).expect("zero is a valid Custom ID");
@@ -3987,28 +3928,22 @@ mod tests {
                 Cell::instruction(PrimaryInstruction::CustomReturn, None),
             ],
         );
-        let config_with_limit = |limit| {
-            VmConfig::new(
-                0,
-                NonZeroU64::new(limit).expect("test limits are positive"),
-            ).with_custom_execution_for_test()
-        };
-
-        let mut succeeds_on_last_attempt =
-            Vm::new(program.clone(), [], config_with_limit(5)).expect("valid VM");
-        assert_eq!(succeeds_on_last_attempt.step().status, VmStatus::Running);
-        let success = succeeds_on_last_attempt.step();
+        let mut succeeds_on_last_dispatch = Vm::new(program.clone(), [], config())
+            .expect("valid VM");
+        assert_eq!(succeeds_on_last_dispatch.step().status, VmStatus::Running);
+        let success = succeeds_on_last_dispatch
+            .step_with_work_limit(NonZeroU64::new(6).expect("limit is positive"))
+            .expect("the final required dispatch fits exactly");
         assert_eq!(success.status, VmStatus::Running);
-        assert_eq!(success.metrics.operation_count(), 4);
-        assert_eq!(success.committed_ticks, 2);
+        assert_eq!(success.committed_steps, 2);
 
-        let mut limit_exhaustion = Vm::new(program, [], config_with_limit(4)).expect("valid VM");
+        let mut limit_exhaustion = Vm::new(program, [], config()).expect("valid VM");
         assert_eq!(limit_exhaustion.step().status, VmStatus::Running);
-        let failure = limit_exhaustion.step();
-        assert_eq!(failure.status, VmStatus::Error);
-        assert_eq!(failure.errors[0].code(), "CustomExecutionLimitExceeded");
-        assert_eq!(failure.metrics.operation_count(), 3);
-        assert_eq!(failure.committed_ticks, 1);
+        let before = limit_exhaustion.snapshot();
+        assert!(limit_exhaustion
+            .step_with_work_limit(NonZeroU64::new(5).expect("limit is positive"))
+            .is_err());
+        assert_eq!(limit_exhaustion.snapshot(), before);
     }
 
     #[test]
@@ -4035,11 +3970,10 @@ mod tests {
 
         assert_eq!(vm.step().status, VmStatus::Running);
         assert_eq!(vm.step().status, VmStatus::Running);
-        assert_eq!(vm.snapshot().metrics.peak_data_stack_usage(), 2);
     }
 
     #[test]
-    fn concurrent_custom_stack_peaks_align_across_different_completion_ticks() {
+    fn concurrent_custom_stack_peaks_align_across_different_completion_steps() {
         use codegrid_ir::{Board, CustomDefinition, Program, ScopedProgram, VerifiedProgram};
         use codegrid_model::PrimaryInstruction;
 
@@ -4126,10 +4060,6 @@ mod tests {
         assert_eq!(vm.step().status, VmStatus::Running);
         assert_eq!(vm.step().status, VmStatus::Running);
 
-        let metrics = vm.snapshot().metrics;
-        assert_eq!(metrics.peak_data_stack_usage(), 4);
-        assert_eq!(metrics.peak_instruction_stack_usage(), 1);
-        assert_eq!(metrics.peak_call_stack_usage(), 1);
     }
 
     #[test]
@@ -4158,11 +4088,10 @@ mod tests {
         assert_eq!(vm.step().status, VmStatus::Running);
 
         assert_eq!(vm.snapshot().threads[0].data_stack, vec![99]);
-        assert_eq!(vm.snapshot().metrics.peak_data_stack_usage(), 2);
     }
 
     #[test]
-    fn custom_execution_limit_rolls_back_the_caller_stack_transaction() {
+    fn work_limit_rolls_back_a_custom_caller_stack_transaction() {
         use codegrid_model::PrimaryInstruction;
 
         let custom_id = codegrid_model::Slot::new(0).expect("zero is a valid Custom ID");
@@ -4183,29 +4112,24 @@ mod tests {
             program,
             [],
             VmConfig::new(
-                0,
-                NonZeroU64::new(2).expect("limit is positive"),
-            ).with_custom_execution_for_test(),
+                0),
         )
         .expect("one initial thread fits in u64");
 
         for _ in 0..3 {
             assert_eq!(vm.step().status, VmStatus::Running);
         }
-        let failed = vm.step();
-        assert_eq!(failed.status, VmStatus::Error);
-        assert_eq!(failed.errors[0].code(), "CustomExecutionLimitExceeded");
-        assert!(matches!(
-            failed.errors[0].scope(),
-            crate::ExecutionScope::Custom {
-                caller_thread_id: 0,
-                custom_id: id,
-                internal_tick: 2,
-            } if id == custom_id
-        ));
+        let before = vm.snapshot();
+        let exceeded = vm
+            .prepare_step_with_work_limit(NonZeroU64::new(3).expect("limit is positive"))
+            .err()
+            .expect("the return dispatch is beyond the work ceiling");
+
+        assert_eq!(exceeded.maximum_work_units, 3);
+        assert_eq!(vm.snapshot(), before);
         let rolled_back = vm.snapshot();
         assert_eq!(rolled_back.threads[0].data_stack, vec![1]);
-        assert_eq!(rolled_back.committed_ticks, 3);
+        assert_eq!(rolled_back.committed_steps, 3);
     }
 
     #[test]
@@ -4249,7 +4173,6 @@ mod tests {
         assert_eq!(rewritten.runtime_program.main.cells[2].primary, None);
         assert!(rewritten.threads[0].instruction_stack.is_empty());
         assert_eq!(vm.step().status, VmStatus::Halted);
-        assert_eq!(vm.snapshot().metrics.operation_count(), 4);
     }
 
     #[test]
@@ -4293,7 +4216,6 @@ mod tests {
 
         assert_eq!(vm.step().status, VmStatus::Running);
         assert_eq!(vm.snapshot().threads[0].position, Coordinate { x: 2, y: 0 });
-        let operations_before_revisit = vm.snapshot().metrics.operation_count();
         let revisit = vm.step();
         assert_eq!(revisit.status, VmStatus::Running);
         assert!(!revisit
@@ -4302,10 +4224,6 @@ mod tests {
             .any(|event| matches!(event, crate::VmEvent::CodeChanged { .. })));
 
         let snapshot = vm.snapshot();
-        assert_eq!(
-            snapshot.metrics.operation_count(),
-            operations_before_revisit + 1
-        );
         assert_eq!(snapshot.runtime_program.main.cells[2].primary, None);
         assert_eq!(
             snapshot.runtime_program.main.cells[2].attachment,
@@ -4353,7 +4271,6 @@ mod tests {
             snapshot.runtime_program.main.cells[1].primary,
             Some(PrimaryInstruction::Sub)
         );
-        assert_eq!(snapshot.metrics.operation_count(), 4);
     }
 
     #[test]
@@ -4454,10 +4371,6 @@ mod tests {
         let snapshot = vm.snapshot();
         assert_eq!(snapshot.registers[0], u8::MAX);
         assert_eq!(snapshot.output, vec![u8::MAX]);
-        assert!(snapshot
-            .metrics
-            .instruction_variety()
-            .contains(&crate::InstructionKind::Sub));
     }
 
     #[test]
@@ -4485,10 +4398,6 @@ mod tests {
         let snapshot = vm.snapshot();
         assert_eq!(snapshot.registers[0], 0);
         assert_eq!(snapshot.output, vec![0]);
-        assert!(snapshot
-            .metrics
-            .instruction_variety()
-            .contains(&crate::InstructionKind::Add));
     }
 
     #[test]
@@ -4518,10 +4427,6 @@ mod tests {
 
         let snapshot = vm.snapshot();
         assert_eq!(snapshot.output, vec![0]);
-        assert!(snapshot
-            .metrics
-            .instruction_variety()
-            .contains(&crate::InstructionKind::Clear));
     }
 
     #[test]
@@ -4545,7 +4450,7 @@ mod tests {
 
         for _ in 0..7 {
             let result = vm.step();
-            if result.committed_ticks < 7 {
+            if result.committed_steps < 7 {
                 assert_eq!(result.status, VmStatus::Running);
             } else {
                 assert_eq!(result.status, VmStatus::Halted);
@@ -4555,11 +4460,6 @@ mod tests {
         let snapshot = vm.snapshot();
         assert_eq!(snapshot.output, vec![0xF5]);
         assert!(snapshot.threads[0].data_stack.is_empty());
-        assert_eq!(snapshot.metrics.peak_data_stack_usage(), 1);
-        assert!(snapshot
-            .metrics
-            .instruction_variety()
-            .contains(&crate::InstructionKind::Nand));
     }
 
     #[test]
@@ -4586,15 +4486,6 @@ mod tests {
         assert!(vm.snapshot().threads[0].data_stack.is_empty());
         assert_eq!(vm.step().status, VmStatus::Halted);
 
-        let metrics = vm.snapshot().metrics;
-        assert_eq!(metrics.operation_count(), 3);
-        assert!(metrics
-            .instruction_variety()
-            .contains(&crate::InstructionKind::PopAdd));
-        assert!(metrics
-            .instruction_variety()
-            .contains(&crate::InstructionKind::Nand));
-        assert_eq!(metrics.peak_data_stack_usage(), 0);
     }
 
     #[test]
@@ -4622,8 +4513,6 @@ mod tests {
         assert!(vm.snapshot().threads[0].data_stack.is_empty());
         assert_eq!(vm.snapshot().threads[0].position.x, 3);
         assert_eq!(vm.step().status, VmStatus::Halted);
-        assert_eq!(vm.snapshot().metrics.operation_count(), 3);
-        assert_eq!(vm.snapshot().metrics.peak_data_stack_usage(), 1);
     }
 
     #[test]
@@ -4654,11 +4543,6 @@ mod tests {
         assert_eq!(snapshot.status, VmStatus::Halted);
         assert_eq!(snapshot.output, vec![0x02, 0x40]);
         assert_eq!(snapshot.registers[0], 0x40);
-        assert_eq!(snapshot.metrics.operation_count(), 7);
-        assert!(snapshot
-            .metrics
-            .instruction_variety()
-            .contains(&crate::InstructionKind::Shift));
     }
 
     #[test]
@@ -4719,7 +4603,6 @@ mod tests {
         assert_eq!(snapshot.threads[0].status_flag, 1);
         assert_eq!(snapshot.threads[0].direction, Direction::Right);
         assert_eq!(snapshot.threads[0].position, Coordinate { x: 3, y: 0 });
-        assert_eq!(snapshot.metrics.operation_count(), 2);
     }
 
     #[test]
@@ -4754,8 +4637,8 @@ mod tests {
         let failed = vm.step();
 
         assert_eq!(failed.status, VmStatus::Error);
-        assert_eq!(failed.attempted_tick, 4);
-        assert_eq!(failed.committed_ticks, 3);
+        assert_eq!(failed.attempted_transition_id, 4);
+        assert_eq!(failed.committed_steps, 3);
         assert_eq!(failed.errors.len(), 1);
         assert_eq!(failed.errors[0].code(), "ReturnWithoutCall");
         assert!(matches!(
@@ -4768,11 +4651,6 @@ mod tests {
         ));
         let snapshot = vm.snapshot();
         assert_eq!(snapshot.threads[0].position, Coordinate { x: 1, y: 0 });
-        assert_eq!(snapshot.metrics.operation_count(), 3);
-        assert!(snapshot
-            .metrics
-            .instruction_variety()
-            .contains(&crate::InstructionKind::Return));
     }
 
     #[test]
@@ -4811,18 +4689,7 @@ mod tests {
         let snapshot = vm.snapshot();
         assert_eq!(snapshot.registers[0], encoded_add.code());
         assert_eq!(snapshot.threads[0].instruction_stack, vec![encoded_add]);
-        assert_eq!(snapshot.committed_ticks, 3);
-        assert_eq!(snapshot.metrics.operation_count(), 2);
-        assert_eq!(snapshot.metrics.used_cell_count(), 3);
-        assert_eq!(snapshot.metrics.peak_instruction_stack_usage(), 1);
-        assert!(snapshot
-            .metrics
-            .instruction_variety()
-            .contains(&crate::InstructionKind::Encode));
-        assert!(snapshot
-            .metrics
-            .instruction_variety()
-            .contains(&crate::InstructionKind::Decode));
+        assert_eq!(snapshot.committed_steps, 3);
     }
 
     #[test]
@@ -4853,18 +4720,7 @@ mod tests {
         let snapshot = vm.snapshot();
         assert_eq!(snapshot.registers[0], 32);
         assert!(snapshot.threads[0].instruction_stack.is_empty());
-        assert_eq!(snapshot.committed_ticks, 3);
-        assert_eq!(snapshot.metrics.operation_count(), 2);
-        assert_eq!(snapshot.metrics.used_cell_count(), 3);
-        assert_eq!(snapshot.metrics.peak_instruction_stack_usage(), 1);
-        assert!(snapshot
-            .metrics
-            .instruction_variety()
-            .contains(&crate::InstructionKind::Decode));
-        assert!(snapshot
-            .metrics
-            .instruction_variety()
-            .contains(&crate::InstructionKind::Encode));
+        assert_eq!(snapshot.committed_steps, 3);
     }
 
     #[test]
@@ -4894,13 +4750,6 @@ mod tests {
         let snapshot = vm.snapshot();
         assert_eq!(snapshot.registers[0], 35);
         assert!(snapshot.threads[0].instruction_stack.is_empty());
-        assert_eq!(snapshot.metrics.operation_count(), 1);
-        assert_eq!(snapshot.metrics.used_cell_count(), 2);
-        assert_eq!(snapshot.metrics.peak_instruction_stack_usage(), 0);
-        assert!(snapshot
-            .metrics
-            .instruction_variety()
-            .contains(&crate::InstructionKind::Decode));
     }
 
     #[test]
@@ -4930,17 +4779,10 @@ mod tests {
         let snapshot = vm.snapshot();
         assert_eq!(snapshot.registers[0], 0xC7);
         assert!(snapshot.threads[0].instruction_stack.is_empty());
-        assert_eq!(snapshot.metrics.operation_count(), 1);
-        assert_eq!(snapshot.metrics.used_cell_count(), 2);
-        assert_eq!(snapshot.metrics.peak_instruction_stack_usage(), 0);
-        assert!(snapshot
-            .metrics
-            .instruction_variety()
-            .contains(&crate::InstructionKind::Encode));
     }
 
     #[test]
-    fn read_code_pushes_the_tick_start_primary_onto_an_empty_stack() {
+    fn read_code_pushes_the_step_start_primary_onto_an_empty_stack() {
         use codegrid_model::{AttachmentInstruction, InstructionStackItem, PrimaryInstruction};
 
         let program = verified_cells(
@@ -4978,13 +4820,6 @@ mod tests {
             vec![InstructionStackItem::from_primary(PrimaryInstruction::Add)
                 .expect("ADD has a valid instruction code")]
         );
-        assert_eq!(snapshot.metrics.operation_count(), 2);
-        assert_eq!(snapshot.metrics.used_cell_count(), 2);
-        assert_eq!(snapshot.metrics.peak_instruction_stack_usage(), 1);
-        assert!(snapshot
-            .metrics
-            .instruction_variety()
-            .contains(&crate::InstructionKind::ReadCode));
     }
 
     #[test]
@@ -5020,17 +4855,10 @@ mod tests {
             Some(PrimaryInstruction::Add)
         );
         assert!(snapshot.threads[0].instruction_stack.is_empty());
-        assert_eq!(snapshot.metrics.operation_count(), 2);
-        assert_eq!(snapshot.metrics.used_cell_count(), 2);
-        assert_eq!(snapshot.metrics.peak_instruction_stack_usage(), 0);
-        assert!(snapshot
-            .metrics
-            .instruction_variety()
-            .contains(&crate::InstructionKind::WriteCode));
     }
 
     #[test]
-    fn failed_repeat_tick_rolls_back_progress_and_shared_output() {
+    fn failed_repeat_step_rolls_back_progress_and_shared_output() {
         use codegrid_model::{AttachmentInstruction, PrimaryInstruction};
 
         let program = verified_cells(
@@ -5069,7 +4897,7 @@ mod tests {
 
         let snapshot = vm.snapshot();
         assert_eq!(snapshot.output, vec![0]);
-        assert_eq!(snapshot.committed_ticks, 2);
+        assert_eq!(snapshot.committed_steps, 2);
         assert_eq!(snapshot.threads[0].position, Coordinate { x: 1, y: 0 });
         assert_eq!(
             snapshot.threads[0].phase,
@@ -5079,12 +4907,6 @@ mod tests {
             }
         );
         assert_eq!(snapshot.threads[1].position, Coordinate { x: 1, y: 0 });
-        assert_eq!(snapshot.metrics.operation_count(), 3);
-        assert_eq!(snapshot.metrics.used_cell_count(), 4);
-        assert!(snapshot
-            .metrics
-            .instruction_variety()
-            .contains(&crate::InstructionKind::Output));
     }
 
     #[test]
@@ -5183,13 +5005,7 @@ mod tests {
         assert_eq!(snapshot.threads[0].direction, Direction::Right);
         assert_eq!(snapshot.threads[1].position, Coordinate { x: 2, y: 2 });
         assert_eq!(snapshot.threads[1].direction, Direction::Left);
-        assert_eq!(snapshot.committed_ticks, 4);
-        assert_eq!(snapshot.metrics.operation_count(), 2);
-        assert_eq!(snapshot.metrics.used_cell_count(), 6);
-        assert!(snapshot
-            .metrics
-            .instruction_variety()
-            .contains(&crate::InstructionKind::Add));
+        assert_eq!(snapshot.committed_steps, 4);
     }
 
     #[test]
@@ -5283,23 +5099,7 @@ mod tests {
         assert_eq!(snapshot.registers, [0; 10]);
         assert_eq!(snapshot.threads[0].position, Coordinate { x: 2, y: 0 });
         assert_eq!(snapshot.threads[1].position, Coordinate { x: 5, y: 0 });
-        assert_eq!(snapshot.committed_ticks, 2);
-        assert_eq!(snapshot.metrics.operation_count(), 6);
-        assert_eq!(snapshot.metrics.used_cell_count(), 10);
-        assert_eq!(snapshot.metrics.peak_data_stack_usage(), 2);
-        assert_eq!(snapshot.metrics.peak_instruction_stack_usage(), 0);
-        assert!(snapshot
-            .metrics
-            .instruction_variety()
-            .contains(&crate::InstructionKind::Add));
-        assert!(snapshot
-            .metrics
-            .instruction_variety()
-            .contains(&crate::InstructionKind::Output));
-        assert!(snapshot
-            .metrics
-            .instruction_variety()
-            .contains(&crate::InstructionKind::CustomReturn));
+        assert_eq!(snapshot.committed_steps, 2);
     }
 
     #[test]
@@ -5378,14 +5178,6 @@ mod tests {
                     snapshot.runtime_program.main.cells[1].primary,
                     Some(PrimaryInstruction::Call(function_id))
                 );
-                assert!(!snapshot
-                    .metrics
-                    .instruction_variety()
-                    .contains(&crate::InstructionKind::ReadCode));
-                assert!(!snapshot
-                    .metrics
-                    .instruction_variety()
-                    .contains(&crate::InstructionKind::WriteCode));
                 assert!(!outcome
                     .events
                     .iter()
@@ -5395,7 +5187,7 @@ mod tests {
     }
 
     #[test]
-    fn successful_tick_emits_a_complete_ordered_outer_and_custom_event_golden() {
+    fn successful_step_emits_a_complete_ordered_outer_and_custom_event_golden() {
         use codegrid_model::{AttachmentInstruction, PrimaryInstruction};
 
         let custom_id = codegrid_model::Slot::new(0).expect("zero is a valid Custom ID");
@@ -5528,28 +5320,28 @@ mod tests {
             actual,
             vec![
                 "cell:Outer:thread0:Outer:Main:1:0".to_owned(),
-                "cell:Custom { caller_thread_id: 0, custom_id: Slot(0), internal_tick: 1 }:thread0:Custom(Slot(0)):Main:0:0".to_owned(),
-                "cell:Custom { caller_thread_id: 0, custom_id: Slot(0), internal_tick: 2 }:thread0:Custom(Slot(0)):Main:1:0".to_owned(),
-                "cell:Custom { caller_thread_id: 0, custom_id: Slot(0), internal_tick: 3 }:thread0:Custom(Slot(0)):Main:2:0".to_owned(),
-                "cell:Custom { caller_thread_id: 0, custom_id: Slot(0), internal_tick: 4 }:thread0:Custom(Slot(0)):Main:3:0".to_owned(),
-                "cell:Custom { caller_thread_id: 0, custom_id: Slot(0), internal_tick: 5 }:thread0:Custom(Slot(0)):Main:4:0".to_owned(),
+                "cell:Custom { caller_thread_id: 0, custom_id: Slot(0), internal_step: 1 }:thread0:Custom(Slot(0)):Main:0:0".to_owned(),
+                "cell:Custom { caller_thread_id: 0, custom_id: Slot(0), internal_step: 2 }:thread0:Custom(Slot(0)):Main:1:0".to_owned(),
+                "cell:Custom { caller_thread_id: 0, custom_id: Slot(0), internal_step: 3 }:thread0:Custom(Slot(0)):Main:2:0".to_owned(),
+                "cell:Custom { caller_thread_id: 0, custom_id: Slot(0), internal_step: 4 }:thread0:Custom(Slot(0)):Main:3:0".to_owned(),
+                "cell:Custom { caller_thread_id: 0, custom_id: Slot(0), internal_step: 5 }:thread0:Custom(Slot(0)):Main:4:0".to_owned(),
                 "cell:Outer:thread1:Outer:Main:4:0".to_owned(),
                 "cell:Outer:thread2:Outer:Main:9:0".to_owned(),
-                "thread:Custom { caller_thread_id: 0, custom_id: Slot(0), internal_tick: 1 }:0:Main@0:0:Normal:[]->Main@1:0:Normal:[]".to_owned(),
+                "thread:Custom { caller_thread_id: 0, custom_id: Slot(0), internal_step: 1 }:0:Main@0:0:Normal:[]->Main@1:0:Normal:[]".to_owned(),
                 format!(
-                    "register:Custom {{ caller_thread_id: 0, custom_id: Slot(0), internal_tick: 2 }}:0:0->{}",
+                    "register:Custom {{ caller_thread_id: 0, custom_id: Slot(0), internal_step: 2 }}:0:0->{}",
                     encoded_direction
                 ),
-                "thread:Custom { caller_thread_id: 0, custom_id: Slot(0), internal_tick: 2 }:0:Main@1:0:Normal:[]->Main@2:0:Normal:[]".to_owned(),
-                "thread:Custom { caller_thread_id: 0, custom_id: Slot(0), internal_tick: 3 }:0:Main@2:0:Normal:[]->Main@3:0:Normal:[]".to_owned(),
+                "thread:Custom { caller_thread_id: 0, custom_id: Slot(0), internal_step: 2 }:0:Main@1:0:Normal:[]->Main@2:0:Normal:[]".to_owned(),
+                "thread:Custom { caller_thread_id: 0, custom_id: Slot(0), internal_step: 3 }:0:Main@2:0:Normal:[]->Main@3:0:Normal:[]".to_owned(),
                 format!(
-                    "register:Custom {{ caller_thread_id: 0, custom_id: Slot(0), internal_tick: 4 }}:0:{}->{}",
+                    "register:Custom {{ caller_thread_id: 0, custom_id: Slot(0), internal_step: 4 }}:0:{}->{}",
                     encoded_direction,
                     encoded_direction.wrapping_add(1)
                 ),
-                "code:Custom { caller_thread_id: 0, custom_id: Slot(0), internal_tick: 4 }:Custom(Slot(0)):Main:3:0:Some(Add)->Some(Direction(Down))".to_owned(),
-                "thread:Custom { caller_thread_id: 0, custom_id: Slot(0), internal_tick: 4 }:0:Main@3:0:Normal:[]->Main@4:0:Normal:[]".to_owned(),
-                "thread:Custom { caller_thread_id: 0, custom_id: Slot(0), internal_tick: 5 }:0:Main@4:0:Normal:[]->Main@4:0:Terminated:[]".to_owned(),
+                "code:Custom { caller_thread_id: 0, custom_id: Slot(0), internal_step: 4 }:Custom(Slot(0)):Main:3:0:Some(Add)->Some(Direction(Down))".to_owned(),
+                "thread:Custom { caller_thread_id: 0, custom_id: Slot(0), internal_step: 4 }:0:Main@3:0:Normal:[]->Main@4:0:Normal:[]".to_owned(),
+                "thread:Custom { caller_thread_id: 0, custom_id: Slot(0), internal_step: 5 }:0:Main@4:0:Normal:[]->Main@4:0:Terminated:[]".to_owned(),
                 "input:Outer:thread1:17".to_owned(),
                 "register:Outer:0:0->17".to_owned(),
                 "memory:Outer:Outer:0:0->42".to_owned(),
@@ -5564,7 +5356,7 @@ mod tests {
     }
 
     #[test]
-    fn failed_aligned_custom_tick_preserves_integrated_stack_high_water_formula() {
+    fn failed_aligned_custom_step_reports_footprint_and_rolls_back_state() {
         use codegrid_ir::{CustomDefinition, Program, ScopedProgram};
         use codegrid_model::{AttachmentInstruction, InstructionStackItem, PrimaryInstruction};
 
@@ -5660,21 +5452,20 @@ mod tests {
 
         assert_eq!(vm.step().status, VmStatus::Running);
         let before_failure = vm.snapshot();
-        assert_eq!(before_failure.metrics.peak_data_stack_usage(), 3);
-        assert_eq!(before_failure.metrics.peak_instruction_stack_usage(), 0);
-        assert_eq!(before_failure.metrics.peak_call_stack_usage(), 0);
 
-        let failed = vm.step();
-        assert_eq!(failed.status, VmStatus::Error);
-        assert_eq!(failed.committed_ticks, 1);
-        assert!(failed.events.is_empty());
+        let pending = vm.prepare_step();
+        assert_eq!(pending.report().candidate_status, VmStatus::Error);
+        let failed = pending.abort();
+        assert_eq!(failed.candidate_status, VmStatus::Error);
+        assert!(failed.footprint.stack_peaks.data > 0);
+        assert!(failed.work_units > 0);
         assert!(failed.errors.iter().any(|error| {
             error.code() == "ConcurrentCallerStackWriteConflict"
                 && error.scope()
                     == crate::ExecutionScope::Custom {
                         caller_thread_id: 2,
                         custom_id,
-                        internal_tick: 8,
+                        internal_step: 8,
                     }
                 && matches!(
                     error.kind(),
@@ -5696,7 +5487,7 @@ mod tests {
         }));
 
         let after_failure = vm.snapshot();
-        assert_eq!(after_failure.committed_ticks, before_failure.committed_ticks);
+        assert_eq!(after_failure.committed_steps, before_failure.committed_steps);
         assert_eq!(after_failure.registers, before_failure.registers);
         assert_eq!(after_failure.memory, before_failure.memory);
         assert_eq!(after_failure.input, before_failure.input);
@@ -5704,14 +5495,8 @@ mod tests {
         assert_eq!(after_failure.runtime_program, before_failure.runtime_program);
         assert_eq!(after_failure.threads, before_failure.threads);
 
-        // Outer sample: baseline data 3 keeps the PopAdd's staged pop from
-        // lowering the peak; the staged Outer PUSH raises it to 4. Instruction
-        // and call growth are each 1. At Custom internal tick 8,
-        // replace the caller's baseline depth 1 with its two staged output
-        // pushes, then add both Custom threads' local stack depths (2 each).
-        assert_eq!(after_failure.metrics.peak_data_stack_usage(), 7);
-        assert_eq!(after_failure.metrics.peak_instruction_stack_usage(), 3);
-        assert_eq!(after_failure.metrics.peak_call_stack_usage(), 3);
-        assert_eq!(after_failure.metrics.global_tick(), 1);
+        // The report observes work and stack usage from the rejected candidate,
+        // while committed state and its step count remain unchanged.
+        assert_eq!(after_failure.metrics.committed_steps(), 1);
     }
 }

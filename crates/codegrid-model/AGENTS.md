@@ -9,7 +9,7 @@ Own generated error translation data and pure explicit-locale lookup helpers.
 `resources/codegrid-error-messages.json` is the single authored translation catalog.
 Do not discover host locales or replace structured diagnostic details here.
 The JSON error registry defines these identities; this module does not detect
-host errors or implement transport, editor, or level policy.
+host errors or implement transport or editor policy.
 
 ## Allowed dependency and call direction
 

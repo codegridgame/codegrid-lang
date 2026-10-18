@@ -16,7 +16,7 @@ export function runtimePath(context: vscode.ExtensionContext): string {
   return process.platform === 'win32' ? 'codegrid.exe' : 'codegrid';
 }
 
-/** A DAP presentation adapter over the native VM's atomic global ticks. */
+/** A DAP presentation adapter over the native VM's atomic transitions. */
 export class CodeGridDebugAdapter implements vscode.DebugAdapter {
   private readonly emitter = new vscode.EventEmitter<any>();
   readonly onDidSendMessage = this.emitter.event;
@@ -90,7 +90,7 @@ export class CodeGridDebugAdapter implements vscode.DebugAdapter {
             { name: vscode.l10n.t('Memory'), variablesReference: this.reference(this.snapshot.memory || []), expensive: false },
             { name: vscode.l10n.t('Input / Output'), variablesReference: this.reference({ remaining_input: this.snapshot.remaining_input, output: this.snapshot.output }), expensive: false },
             { name: vscode.l10n.t('Metrics'), variablesReference: this.reference(this.snapshot.metrics || {}), expensive: false },
-            { name: vscode.l10n.t('Last Tick Events'), variablesReference: this.reference(this.lastEvents), expensive: false },
+            { name: vscode.l10n.t('Last Step Events'), variablesReference: this.reference(this.lastEvents), expensive: false },
             { name: vscode.l10n.t('Errors'), variablesReference: this.reference({ messages: this.snapshot.status === 'error' ? presentRuntimeErrors(this.snapshot).map(({ code, message }) => `${errorLabel(code)} ${message}`) : [], errors: this.snapshot.errors, fault: this.snapshot.fault }), expensive: false },
           ] }); return;
         }
@@ -104,7 +104,7 @@ export class CodeGridDebugAdapter implements vscode.DebugAdapter {
           const thread = this.frameThreads.get(args.frameId) || this.liveThreads()[0];
           const data = { ...this.snapshot, registers: thread?.private_registers ?? this.snapshot.registers, thread, events: this.lastEvents };
           const expression = String(args.expression).trim();
-          if (!/^[A-Za-z_][\w]*(?:(?:\.[A-Za-z_][\w]*)|(?:\[\d+\]))*$/.test(expression)) throw new CodedError('editor.invalid_expression', 'Use a state path such as registers[0], thread.data_stack or metrics.global_tick.');
+          if (!/^[A-Za-z_][\w]*(?:(?:\.[A-Za-z_][\w]*)|(?:\[\d+\]))*$/.test(expression)) throw new CodedError('editor.invalid_expression', 'Use a state path such as registers[0], thread.data_stack or metrics.committed_steps.');
           const keys = expression.replace(/\[(\d+)\]/g, '.$1').split('.');
           let value: any = data;
           for (const key of keys) {
@@ -143,7 +143,7 @@ export class CodeGridDebugAdapter implements vscode.DebugAdapter {
     const input = args.input ?? [];
     if (!Array.isArray(input) || !input.every((value: unknown) => typeof value === 'number' && Number.isInteger(value) && value >= 0 && value <= 255)) throw new CodedError('editor.invalid_input', 'input must be an array of byte integers (0..255).');
     this.runtime = new NativeRuntime(args.runtimePath || runtimePath(this.context), (text) => this.output(text, 'stderr'));
-    const loaded = await this.runtime.request({ command: 'launch', source: this.sourceText, input, seed: args.seed ?? '0', custom_limit: args.customLimit ?? '10000', max_ticks: args.maxTicks ?? '100000', max_work_units: args.maxWorkUnits ?? '1000000' });
+    const loaded = await this.runtime.request({ command: 'launch', source: this.sourceText, input, seed: args.seed ?? '0', max_steps: args.maxSteps ?? '100000', max_work_units_per_step: args.maxWorkUnitsPerStep ?? '1000000' });
     if (loaded.diagnostics) {
       const bytes = Buffer.from(this.sourceText, 'utf8');
       for (const diagnostic of loaded.diagnostics) {
@@ -157,7 +157,7 @@ export class CodeGridDebugAdapter implements vscode.DebugAdapter {
     this.locations = loaded.locations!;
     this.resolveBreakpoints();
     for (const breakpoint of this.breakpoints) this.event('breakpoint', { reason: 'changed', breakpoint: this.breakpointView(breakpoint) });
-    this.output(vscode.l10n.t('CodeGrid: each step executes one atomic Global Tick across all live threads. Custom execution is included in that tick.') + '\n');
+    this.output(vscode.l10n.t('CodeGrid: each step executes one atomic transition across all live threads. Custom execution is included in that transition.') + '\n');
   }
 
   private beginIfReady(): void {
@@ -198,7 +198,7 @@ export class CodeGridDebugAdapter implements vscode.DebugAdapter {
           else this.stop('exception', { description, text: description, code: issues[0].code, codes: issues.map((issue) => issue.code) });
           return;
         }
-        if (this.snapshot.status === 'halted') { this.output(vscode.l10n.t('Program halted after {0} Global Ticks.', this.snapshot.committed_ticks) + '\n'); this.event('exited', { exitCode: 0 }); this.finish(); return; }
+        if (this.snapshot.status === 'halted') { this.output(vscode.l10n.t('Program halted after {0} steps.', this.snapshot.committed_steps) + '\n'); this.event('exited', { exitCode: 0 }); this.finish(); return; }
         if (single || (caller && !this.liveThreads().some((thread) => thread.id === caller.id && thread.call_stack.length >= caller.depth))) { this.stop('step'); return; }
       }
       if (!this.closed) this.stop('pause');
@@ -256,7 +256,7 @@ export class CodeGridDebugAdapter implements vscode.DebugAdapter {
     for (const bp of this.breakpoints) bp.location = this.locations.filter((location) => this.isOuterCell(location) && location.line === bp.line).sort((a, b) => a.column - b.column).find((location) => !bp.column || location.endColumn > bp.column);
   }
   private breakpointView(bp: Breakpoint): any {
-    return { id: bp.id, verified: !!bp.location, line: bp.location?.line || bp.line, column: bp.location?.column || bp.column, source: { path: this.sourcePath }, ...(bp.location ? {} : { message: vscode.l10n.t('Select a Main/Function/Folded Block cell. Custom runs atomically inside its caller tick.') }) };
+    return { id: bp.id, verified: !!bp.location, line: bp.location?.line || bp.line, column: bp.location?.column || bp.column, source: { path: this.sourcePath }, ...(bp.location ? {} : { message: vscode.l10n.t('Select a Main/Function/Folded Block cell. Custom runs atomically inside its caller transition.') }) };
   }
   private hitBreakpoint(): { breakpoint: Breakpoint; threadId: number } | undefined {
     for (const thread of this.liveThreads().filter((item) => item.phase.kind !== 'terminated')) {
@@ -292,7 +292,7 @@ export function registerExecution(context: vscode.ExtensionContext): vscode.Disp
     if (!document || document.languageId !== 'codegrid') { void vscode.window.showErrorMessage(`${errorLabel('editor.no_codegrid_file')} ${vscode.l10n.t('[editor.no_codegrid_file] Open a CodeGrid (.cg) file first.')}`); return false; }
     if (document.isUntitled && !await document.save()) return false;
     const defaults = vscode.workspace.getConfiguration('codegrid.execution');
-    return vscode.debug.startDebugging(vscode.workspace.getWorkspaceFolder(document.uri), { type: 'codegrid', request: 'launch', name: noDebug ? vscode.l10n.t('Run CodeGrid') : vscode.l10n.t('Debug CodeGrid'), program: document.uri.fsPath, noDebug, stopOnEntry: !noDebug, input: defaults.get('input', []), seed: defaults.get('seed', '0'), customLimit: defaults.get('customLimit', '10000'), maxTicks: defaults.get('maxTicks', '100000'), maxWorkUnits: defaults.get('maxWorkUnits', '1000000'), internalConsoleOptions: 'openOnSessionStart' }, { noDebug });
+    return vscode.debug.startDebugging(vscode.workspace.getWorkspaceFolder(document.uri), { type: 'codegrid', request: 'launch', name: noDebug ? vscode.l10n.t('Run CodeGrid') : vscode.l10n.t('Debug CodeGrid'), program: document.uri.fsPath, noDebug, stopOnEntry: !noDebug, input: defaults.get('input', []), seed: defaults.get('seed', '0'), maxSteps: defaults.get('maxSteps', '100000'), maxWorkUnitsPerStep: defaults.get('maxWorkUnitsPerStep', '1000000'), internalConsoleOptions: 'openOnSessionStart' }, { noDebug });
   };
   return [
     vscode.commands.registerCommand('codegrid.run', (uri?: vscode.Uri) => start(true, uri).catch((error) => { const failure = codedError(error); void vscode.window.showErrorMessage(`${errorLabel(failure.code)} ${failure.message}`); return false; })),

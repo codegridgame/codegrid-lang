@@ -14,19 +14,28 @@ keep raw request/response error identities and details independent of locale.
 - Offer both owned snapshots for detached responses and borrowed snapshot/program views for read-only checks and streaming projections that must not clone retained VM state or program IR.
 - Report work-limited single-step requests as a distinct host error; report bounded-run interruption with a distinct yield reason and the post-interruption snapshot.
 
+The `json` module owns exact transport-neutral Full projections shared by browser
+and server hosts. It serializes read-only views and never performs VM transitions.
+Runtime API v4 exposes committed-step counts, attempted-transition identity,
+and generic work-unit accounting, without cumulative resource statistics.
+Candidate-local Custom dispatch counts remain available only through the Rust
+VM's prepared-step report and do not belong in Runtime API response snapshots.
+Runtime configuration contains only language-runtime settings such as the
+deterministic seed; game accounting and execution policy belong to game hosts.
+
 ## Prohibited
 
-- Do not remove compiler diagnostic codes or change `ApiError::code()` identifiers without updating the error contract and compatibility decision.
+- Keep `ApiError::code()` identifiers aligned with `docs/runtime-api-spec.md`.
 
 - Do not add browser, JavaScript, WASI/server-runtime, LSP, filesystem, or process dependencies.
 - Do not implement source parsing, source validation, an instruction inventory, IR lowering, VM transitions, or runtime semantics; delegate them to compiler and VM APIs.
 - Do not let process-global mutable state or host scheduling/randomness affect results.
 - Do not represent opaque handles as durable cross-process identifiers or accept client-asserted validation/results as authoritative.
-- Do not silently truncate wide integers, byte input, diagnostics, ordered events, or metric counters.
+- Do not silently truncate wide integers, byte input, diagnostics, ordered events, committed-step counts, or candidate-footprint counters.
 - Do not claim these request-time limits bound cumulative VM memory, stacks, output, or snapshot/JSON size; production hosts must add and verify those budgets before executing untrusted programs.
 
 ## Validation
 
-- `reposition_thread` validates the API version and instance, then delegates boundary/thread/coordinate checks to the VM. Rejection uses `InvalidConfiguration` with field `thread_position`, without executing a tick.
-
-Test API version/error distinctions, host limits, handle isolation and release, multiple instances, and parity with the shared conformance fixtures.
+Test API version/error distinctions, generic step and work-unit limits, handle
+isolation and release, multiple instances, and parity with shared conformance
+fixtures. Runtime API has no game selection or thread-reposition operation.

@@ -13,17 +13,17 @@ Test each behavior at the layer that owns it, then verify the public host bounda
 
 ## VM
 
-- Cover all instructions and Attachments, input/output, registers, pointers, stacks, Page, memory, seeded randomness, Repeat, self-modification, calls, returns, Resume ticks, Folded Blocks, and Custom execution.
-- Exercise same-tick concurrency, tick-start reads, deterministic conflict detection, errors competing with HALT, atomic commit/rollback, caller-stack transactions, fresh Custom isolation, and Custom execution limits.
-- Verify tail recursion reuses the required frame, Folded Block re-entry/resume rules, deterministic thread/invocation seed derivation, complete snapshots, raw metric sampling, and failed-work metrics.
+- Cover all instructions and Attachments, input/output, registers, pointers, stacks, Page, memory, seeded randomness, Repeat, self-modification, calls, returns, Resume transitions, Folded Blocks, and Custom execution.
+- Exercise same-transition concurrency, transition-start reads, deterministic conflict detection, errors competing with HALT, atomic commit/rollback, caller-stack transactions, and fresh Custom isolation.
+- Verify tail recursion reuses the required frame, Folded Block re-entry/resume rules, deterministic thread/invocation seed derivation, complete snapshots, candidate `StepFootprint` observations, and committed-step behavior on failed work.
 - Compare bounded `run` with repeated `step` and rerun identical inputs/seeds to prove deterministic results.
 
 ## Local hosts
 
-- Native CLI: source diagnostics, all execution settings, input conversion, initial memory, full result serialization, exit codes, runtime errors, and tick limits.
+- Native CLI: source diagnostics, all execution settings, input conversion, initial memory, full result serialization, exit codes, runtime errors, and step limits.
 - LSP and VS Code: source lifecycle, full token/structure support, diagnostics, UTF-16 positions, formatting, completion, Hover, and symbol navigation over shared compiler data.
 - Runtime API and adapters: version checks, exact wide integers, handle ownership/release, instance isolation, requests and response limits, and complete lifecycle behavior.
-- Run one reviewed Full fixture set through the native CLI, an actual browser-WASM host, and an actual server-WASM host. Compare status, thread snapshots, registers/stacks/Page/memory, input/output, ticks, errors, events, and metrics.
+- Run one reviewed Full fixture set through the native CLI, an actual browser-WASM host, and an actual server-WASM host. Compare status, thread snapshots, registers/stacks/Page/memory, input/output, committed steps, errors, and events. Candidate `StepFootprint` is verified through its Rust transaction API, not host JSON fixtures.
 
 ## Completion evidence
 

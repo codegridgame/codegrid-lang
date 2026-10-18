@@ -32,12 +32,7 @@ fn machine(main: Board, functions: Vec<Board>, input: &[u8]) -> Vm {
         customs: BTreeMap::new(),
     })
     .unwrap();
-    Vm::new(
-        program,
-        input.iter().copied(),
-        VmConfig::new(0, NonZeroU64::new(100).unwrap()),
-    )
-    .unwrap()
+    Vm::new(program, input.iter().copied(), VmConfig::new(0)).unwrap()
 }
 
 #[test]
@@ -172,7 +167,7 @@ fn self_tail_call_keeps_current_private_values_and_original_caller() {
         vec![board(&["~>", "-", "[0", "]"])],
         &[5],
     );
-    assert_eq!(vm.run(12), RunOutcome::TickLimitReached);
+    assert_eq!(vm.run(12), RunOutcome::StepLimitReached);
     let state = vm.snapshot();
     assert_eq!(state.registers[0], 5);
     assert_eq!(state.threads[0].private_registers.unwrap()[0], 2);

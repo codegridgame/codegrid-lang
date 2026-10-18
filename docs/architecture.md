@@ -2,9 +2,16 @@
 
 ## Delivery sequence
 
-The local delivery target is the Full language over one shared compiler and VM, surfaced through `codegrid check`, `codegrid run`, the Rust LSP, VS Code, Runtime API, and browser/server WASM adapters. Existing host implementations cover only part of the Full language and must be revalidated against the expanded contracts.
+The local delivery target is the Full language over one shared compiler and VM, surfaced through `codegrid check`, `codegrid run`, `codegrid debug`, the Rust LSP, VS Code, Runtime API, and browser/server WASM adapters. Existing host implementations cover only part of the Full language and must be revalidated against the expanded contracts.
 
-The game repository owns game UI, level content, story, Steam integration, and telemetry. This repository owns the language and its host adapters. The Rust level evaluation layer owns logical level validation, ExactIO, constraints, and scoring above the language core; see the [Level Core architecture](level-core-architecture.md). Web, Steam, and backend hosts invoke that layer through WASM. Game code must not add a second source parser, validator, instruction table, interpreter, or level evaluator.
+The game repository owns game UI, levels, scenes, scoring, host evaluation, Steam integration, and telemetry. This repository owns the Full language, its compiler/VM, and language host adapters. Game evaluation and scene behavior are owned by the [Rust Game Runtime](../../bf-steam-wt/rust/docs/README.md); game hosts must not add a second source parser, validator, instruction table, or interpreter.
+
+The VM's deterministic committed-step transitions and generic work-unit
+ceiling remain language execution mechanisms. Runtime API and host JSON expose
+committed steps and neutral yield reasons only. Candidate-local `StepFootprint`
+observations are available through the Rust prepared-step API for a host to
+apply its own policy; cumulative operation, code-cell, memory-address, stack,
+Game resource accounting, counters, and scoring belong to the Rust Game Runtime.
 
 ## Workspace layers
 
@@ -20,19 +27,15 @@ codegrid/
     codegrid-hir/                Resolved source-level representation
     codegrid-ir/                 Versioned executable representation and verifier
     codegrid-compiler/           Source validation and lowering to verified IR
-    codegrid-vm/                 Deterministic tick engine and snapshots
+    codegrid-vm/                 Deterministic transition engine and snapshots
     codegrid-cli/                Native check/run commands and host I/O
     codegrid-lsp/                Static editor-language services
     codegrid-runtime-api/         Versioned host requests and instance lifecycle
     codegrid-wasm-browser/        Browser ABI adapter
     codegrid-wasm-server/         Server ABI adapter
-    codegrid-level-core/          Logical ExactIO policy above the language core
-    codegrid-level-api/           Shared versioned level host operations
-    codegrid-level-wasm-browser/  Browser Level binding v1
-    codegrid-level-wasm-server/   Portable Level ABI v1
   editors/vscode/                TypeScript editor client without language semantics
   tests/                         Shared fixtures
-  examples/                      Full language and migration programs
+  examples/                      Full language programs
 ```
 
 ## Dependency direction
@@ -65,16 +68,6 @@ graph TD
   runtime_api --> vm
   browser[codegrid-wasm-browser] --> runtime_api
   server[codegrid-wasm-server] --> runtime_api
-  level_core[codegrid-level-core] --> ir
-  level_core --> model
-  level_core --> vm
-  level_api[codegrid-level-api] --> level_core
-  level_api --> compiler
-  level_api --> ir
-  level_api --> model
-  cli --> level_api
-  level_browser[codegrid-level-wasm-browser] --> level_api
-  level_server[codegrid-level-wasm-server] --> level_api
 ```
 
 Required constraints:
@@ -122,7 +115,7 @@ Do not infer source language support from an IR, Runtime API, or ABI version. Ne
 
 ## CLI boundary
 
-`codegrid-cli` owns file access, argument parsing, input conversion, process exit codes, terminal diagnostics, and JSON serialization. It calls the shared compiler for `check` and `run`, then passes the resulting verified program and explicit run data to the shared VM. Full execution configuration includes input, seed, Custom execution limit, initial memory, and bounded outer ticks. Exact option spellings and result schema belong in the Full [CLI contract](cli.md).
+`codegrid-cli` owns file access, argument parsing, input conversion, process exit codes, terminal diagnostics, and JSON serialization. It calls the shared compiler for Full `check`, `run`, and `debug`, then passes verified programs and explicit run data to the shared VM. Full execution configuration includes input, seed, generic step and work-unit ceilings, and initial memory. Exact option spellings and result schema belong in the Full [CLI contract](cli.md). Game level evaluation has no CLI command in this repository; its current authority is the Rust Game Runtime.
 
 Native CLI acceptance is separate from WASM portability and parity. A successful native CLI gate proves only the documented native behavior.
 

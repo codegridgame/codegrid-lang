@@ -1,21 +1,19 @@
 use std::collections::BTreeMap;
 use std::ffi::OsString;
-use std::io::Read;
 use std::num::NonZeroU64;
 use std::path::PathBuf;
 
 use codegrid_compiler::compile;
 use codegrid_ir::{Board, BoardId, CodeGridId, ScopedProgram};
-use codegrid_level_api::{LevelApiV2, SafetyProfileV2};
 use codegrid_model::error_number;
 use codegrid_model::{
     AttachmentInstruction, Direction, InstructionStackItem, PrimaryInstruction, Slot,
 };
 use codegrid_syntax::{Diagnostic, LineIndex, Severity};
 use codegrid_vm::{
-    ExecutionScope, InstructionKind, MemoryAddress, MemoryLocationId, MemorySpaceId,
-    MetricCounterOverflow, RuntimeError, RuntimeErrorKind, RuntimeMetrics, StaticCellId,
-    ThreadPhaseSnapshot, ThreadSnapshot, Vm, VmConfig, VmEvent, VmFault, VmSnapshot, VmStatus,
+    ExecutionScope, MemoryAddress, MemoryLocationId, MemorySpaceId, MetricCounterOverflow,
+    RuntimeError, RuntimeErrorKind, RuntimeMetrics, StaticCellId, ThreadPhaseSnapshot,
+    ThreadSnapshot, Vm, VmConfig, VmEvent, VmFault, VmSnapshot, VmStatus,
 };
 use serde::Deserialize;
 use serde_json::{json, Value as JsonValue};
@@ -27,59 +25,27 @@ const EXIT_INVALID_ARGUMENTS: i32 = 2;
 const EXIT_IO_ERROR: i32 = 3;
 const EXIT_STATIC_ERROR: i32 = 4;
 const EXIT_RUNTIME_ERROR: i32 = 5;
-const EXIT_TICK_LIMIT: i32 = 6;
+const EXIT_STEP_LIMIT: i32 = 6;
 const EXIT_WORK_LIMIT: i32 = 7;
 const EXIT_VM_FAULT: i32 = 8;
-const EXIT_EVALUATION_FAILED: i32 = 9;
-const EXIT_LEVEL_REJECTED: i32 = 10;
-const EXIT_RESOURCE_LIMIT: i32 = 11;
-const MAX_PROFILE_FILE_BYTES: usize = 65_536;
 const USAGE: &str = concat!(
     "Usage:\n",
     "  codegrid check <program.cg>\n",
     "  codegrid debug --stdio\n",
     "  codegrid run <program.cg> --seed <u64>\n",
-    "    --custom-limit <positive-u64> --max-ticks <positive-u64> [--gas-hard-limit <positive-u64>]\n",
+    "    --max-steps <positive-u64>\n",
     "    --max-work-units <positive-u64>\n",
     "    [--input <byte,byte,...> | --input-file <json-file>]\n",
     "    [--initial-memory-file <json-file>]\n",
-    "  codegrid evaluate <level.json> <program.cg>\n",
-    "    --mode <debug|official> --seed <u64>\n",
-    "    --custom-limit <positive-u64> --limits-file <trusted-profile.json>\n",
-    "    [--format <json|human>] [--api-version <2>]\n",
 );
 
 struct RunOptions {
-    gas_hard_limit: NonZeroU64,
     source_path: PathBuf,
     input: InputSource,
     initial_memory_file: Option<PathBuf>,
     seed: u64,
-    custom_limit: NonZeroU64,
-    max_ticks: NonZeroU64,
+    max_steps: NonZeroU64,
     max_work_units: NonZeroU64,
-}
-
-struct EvaluateOptions {
-    level_path: PathBuf,
-    source_path: PathBuf,
-    mode: EvaluationModeArg,
-    seed: u64,
-    custom_limit: NonZeroU64,
-    limits_path: PathBuf,
-    format: OutputFormat,
-}
-
-#[derive(Clone, Copy)]
-enum EvaluationModeArg {
-    Debug,
-    Official,
-}
-
-#[derive(Clone, Copy)]
-enum OutputFormat {
-    Json,
-    Human,
 }
 
 enum InputSource {
@@ -100,18 +66,10 @@ enum InputFileError {
     HostData(String),
 }
 
-enum EvaluationFileError {
-    Io(std::io::Error),
-    TooLarge { limit: u64, actual: usize },
-    InvalidUtf8(std::string::FromUtf8Error),
-    BomNotAllowed,
-}
-
 enum Command {
     Debug,
     Check(PathBuf),
     Run(RunOptions),
-    Evaluate(EvaluateOptions),
     Help,
 }
 
@@ -142,14 +100,13 @@ fn run(arguments: Vec<OsString>) -> i32 {
         }
         Command::Check(path) => check_file(&path),
         Command::Run(options) => run_file(options),
-        Command::Evaluate(options) => evaluate_files(options),
     }
 }
 
 fn parse_arguments(arguments: Vec<OsString>) -> Result<Command, String> {
     let mut arguments = arguments.into_iter();
     let Some(command) = arguments.next() else {
-        return Err("expected a subcommand: check, run, evaluate or debug".to_owned());
+        return Err("expected a subcommand: check, run or debug".to_owned());
     };
     let command = command
         .to_str()
@@ -177,7 +134,6 @@ fn parse_arguments(arguments: Vec<OsString>) -> Result<Command, String> {
             Ok(Command::Check(PathBuf::from(path)))
         }
         "run" => parse_run_arguments(&mut arguments),
-        "evaluate" => parse_evaluate_arguments(&mut arguments),
         _ => Err(format!("unknown subcommand: {command}")),
     }
 }
@@ -190,9 +146,7 @@ fn parse_run_arguments(arguments: &mut impl Iterator<Item = OsString>) -> Result
     let mut input_file = None;
     let mut initial_memory_file = None;
     let mut seed = None;
-    let mut custom_limit = None;
-    let mut max_ticks = None;
-    let mut gas_hard_limit = None;
+    let mut max_steps = None;
     let mut max_work_units = None;
 
     while let Some(argument) = arguments.next() {
@@ -227,23 +181,11 @@ fn parse_run_arguments(arguments: &mut impl Iterator<Item = OsString>) -> Result
                 }
                 seed = Some(parse_unsigned_option(arguments, option)?);
             }
-            "--custom-limit" => {
-                if custom_limit.is_some() {
-                    return Err("--custom-limit may be specified only once".to_owned());
+            "--max-steps" => {
+                if max_steps.is_some() {
+                    return Err("--max-steps may be specified only once".to_owned());
                 }
-                custom_limit = Some(parse_positive_option(arguments, option)?);
-            }
-            "--gas-hard-limit" => {
-                if gas_hard_limit.is_some() {
-                    return Err("--gas-hard-limit may be specified only once".to_owned());
-                }
-                gas_hard_limit = Some(parse_positive_option(arguments, option)?);
-            }
-            "--max-ticks" => {
-                if max_ticks.is_some() {
-                    return Err("--max-ticks may be specified only once".to_owned());
-                }
-                max_ticks = Some(parse_positive_option(arguments, option)?);
+                max_steps = Some(parse_positive_option(arguments, option)?);
             }
             "--max-work-units" => {
                 if max_work_units.is_some() {
@@ -264,99 +206,12 @@ fn parse_run_arguments(arguments: &mut impl Iterator<Item = OsString>) -> Result
         None => InputSource::Bytes(input.unwrap_or_default()),
     };
     Ok(Command::Run(RunOptions {
-        gas_hard_limit: gas_hard_limit
-            .unwrap_or(NonZeroU64::new(codegrid_vm::DEFAULT_GAS_HARD_LIMIT).unwrap()),
         source_path: PathBuf::from(source_path),
         input,
         initial_memory_file,
         seed: seed.ok_or_else(|| "run requires --seed".to_owned())?,
-        custom_limit: custom_limit.ok_or_else(|| "run requires --custom-limit".to_owned())?,
-        max_ticks: max_ticks.ok_or_else(|| "run requires --max-ticks".to_owned())?,
+        max_steps: max_steps.ok_or_else(|| "run requires --max-steps".to_owned())?,
         max_work_units: max_work_units.ok_or_else(|| "run requires --max-work-units".to_owned())?,
-    }))
-}
-
-fn parse_evaluate_arguments(
-    arguments: &mut impl Iterator<Item = OsString>,
-) -> Result<Command, String> {
-    let Some(level_path) = arguments.next() else {
-        return Err("evaluate requires a level JSON file path".to_owned());
-    };
-    let Some(source_path) = arguments.next() else {
-        return Err("evaluate requires a source file path after the level path".to_owned());
-    };
-    let mut mode = None;
-    let mut seed = None;
-    let mut custom_limit = None;
-    let mut limits_path = None;
-    let mut format = None;
-    let mut api_version = None;
-
-    while let Some(argument) = arguments.next() {
-        let option = argument
-            .to_str()
-            .ok_or_else(|| "option names must be valid UTF-8".to_owned())?;
-        match option {
-            "--mode" => {
-                if mode.is_some() {
-                    return Err("--mode may be specified only once".to_owned());
-                }
-                mode = Some(match option_value_text(arguments, option)?.as_str() {
-                    "debug" => EvaluationModeArg::Debug,
-                    "official" => EvaluationModeArg::Official,
-                    _ => return Err("--mode must be debug or official".to_owned()),
-                });
-            }
-            "--seed" => {
-                if seed.is_some() {
-                    return Err("--seed may be specified only once".to_owned());
-                }
-                seed = Some(parse_unsigned_option(arguments, option)?);
-            }
-            "--custom-limit" => {
-                if custom_limit.is_some() {
-                    return Err("--custom-limit may be specified only once".to_owned());
-                }
-                custom_limit = Some(parse_positive_option(arguments, option)?);
-            }
-            "--limits-file" => {
-                if limits_path.is_some() {
-                    return Err("--limits-file may be specified only once".to_owned());
-                }
-                limits_path = Some(PathBuf::from(next_option_value(arguments, option)?));
-            }
-            "--format" => {
-                if format.is_some() {
-                    return Err("--format may be specified only once".to_owned());
-                }
-                format = Some(match option_value_text(arguments, option)?.as_str() {
-                    "json" => OutputFormat::Json,
-                    "human" => OutputFormat::Human,
-                    _ => return Err("--format must be json or human".to_owned()),
-                });
-            }
-            "--api-version" => {
-                if api_version.is_some() {
-                    return Err("--api-version may be specified only once".to_owned());
-                }
-                api_version = Some(match option_value_text(arguments, option)?.as_str() {
-                    "2" => 2,
-                    _ => return Err("--api-version must be 2".to_owned()),
-                });
-            }
-            "--help" | "-h" => return Ok(Command::Help),
-            _ => return Err(format!("unknown evaluate option: {option}")),
-        }
-    }
-
-    Ok(Command::Evaluate(EvaluateOptions {
-        level_path: PathBuf::from(level_path),
-        source_path: PathBuf::from(source_path),
-        mode: mode.ok_or_else(|| "evaluate requires --mode".to_owned())?,
-        seed: seed.ok_or_else(|| "evaluate requires --seed".to_owned())?,
-        custom_limit: custom_limit.ok_or_else(|| "evaluate requires --custom-limit".to_owned())?,
-        limits_path: limits_path.ok_or_else(|| "evaluate requires --limits-file".to_owned())?,
-        format: format.unwrap_or(OutputFormat::Json),
     }))
 }
 
@@ -586,8 +441,7 @@ fn run_file(options: RunOptions) -> i32 {
             return EXIT_STATIC_ERROR;
         }
     };
-    let config = VmConfig::new(options.seed, options.custom_limit)
-        .with_gas_hard_limit(options.gas_hard_limit);
+    let config = VmConfig::new(options.seed);
     let mut vm = match Vm::with_initial_memory(program, input, initial_memory, config) {
         Ok(vm) => vm,
         Err(error) => {
@@ -596,7 +450,7 @@ fn run_file(options: RunOptions) -> i32 {
         }
     };
     let run_result =
-        vm.run_with_work_limit_detailed(options.max_ticks.get(), options.max_work_units);
+        vm.run_with_work_limit_detailed(options.max_steps.get(), options.max_work_units);
     let snapshot = vm.snapshot();
     let (status, yield_reason, exit_code) = match run_result.outcome {
         codegrid_vm::RunOutcome::Halted => ("halted", JsonValue::Null, EXIT_SUCCESS),
@@ -604,16 +458,14 @@ fn run_file(options: RunOptions) -> i32 {
             ("vm_fault", JsonValue::Null, EXIT_VM_FAULT)
         }
         codegrid_vm::RunOutcome::Error => ("runtime_error", JsonValue::Null, EXIT_RUNTIME_ERROR),
-        codegrid_vm::RunOutcome::TickLimitReached => {
-            ("yielded", json!("tick_slice_exhausted"), EXIT_TICK_LIMIT)
+        codegrid_vm::RunOutcome::StepLimitReached => {
+            ("step_limit_reached", JsonValue::Null, EXIT_STEP_LIMIT)
         }
-        codegrid_vm::RunOutcome::WorkLimitReached => (
-            "yielded",
-            json!("work_unit_budget_exhausted"),
-            EXIT_WORK_LIMIT,
-        ),
-        codegrid_vm::RunOutcome::InvalidTickLimit => {
-            eprintln!("error: [{error_number}] [cli.invalid_tick_limit] max tick limit must be greater than zero", error_number = codegrid_model::error_number("cli", "cli.invalid_tick_limit").expect("Registered process error"));
+        codegrid_vm::RunOutcome::WorkLimitReached => {
+            ("work_limit_reached", JsonValue::Null, EXIT_WORK_LIMIT)
+        }
+        codegrid_vm::RunOutcome::InvalidStepLimit => {
+            eprintln!("error: [{error_number}] [cli.invalid_arguments] max step limit must be greater than zero", error_number = codegrid_model::error_number("cli", "cli.invalid_arguments").expect("Registered process error"));
             return EXIT_INVALID_ARGUMENTS;
         }
     };
@@ -638,352 +490,6 @@ fn run_file(options: RunOptions) -> i32 {
     exit_code
 }
 
-fn evaluate_files(options: EvaluateOptions) -> i32 {
-    let profile_text = match read_limited_utf8_file(
-        &options.limits_path,
-        MAX_PROFILE_FILE_BYTES as u64,
-    ) {
-        Ok(text) => text,
-        Err(EvaluationFileError::Io(error)) => {
-            eprintln!(
-                "error: [{error_number}] [cli.limits_io] cannot read trusted safety profile '{}': {error}",
-                options.limits_path.display(), error_number = codegrid_model::error_number("cli", "cli.limits_io").expect("Registered process error"));
-            return EXIT_IO_ERROR;
-        }
-        Err(EvaluationFileError::TooLarge { limit, actual }) => {
-            eprintln!("error: [{error_number}] [cli.profile_too_large] trusted safety profile contains at least {actual} bytes; the CLI limit is {limit} bytes", error_number = codegrid_model::error_number("cli", "cli.profile_too_large").expect("Registered process error"));
-            return EXIT_INVALID_ARGUMENTS;
-        }
-        Err(EvaluationFileError::InvalidUtf8(error)) => {
-            eprintln!(
-                "error: [cli.profile_utf8] trusted safety profile '{}' is not UTF-8: {error}",
-                options.limits_path.display()
-            );
-            return EXIT_INVALID_ARGUMENTS;
-        }
-        Err(EvaluationFileError::BomNotAllowed) => {
-            eprintln!("error: [{error_number}] [cli.profile_bom] trusted safety profile '{}' must not start with a UTF-8 BOM", options.limits_path.display(), error_number = codegrid_model::error_number("cli", "cli.profile_bom").expect("Registered process error"));
-            return EXIT_INVALID_ARGUMENTS;
-        }
-    };
-    let profile = match SafetyProfileV2::from_json(&profile_text) {
-        Ok(profile) => profile,
-        Err(error) => {
-            eprintln!(
-                "error: [{}] [{}] invalid trusted safety profile '{}': {}",
-                error_number("level", error.code).expect("Registered level API error"),
-                error.code,
-                options.limits_path.display(),
-                error.message
-            );
-            return EXIT_INVALID_ARGUMENTS;
-        }
-    };
-    let (max_level_bytes, max_source_bytes, work_budget) = (
-        profile.max_level_bytes,
-        profile.max_source_bytes,
-        profile.max_work_per_call,
-    );
-    let level_text = match read_limited_utf8_file(&options.level_path, max_level_bytes) {
-        Ok(text) => text,
-        Err(error) => return report_evaluation_file_error(&options.level_path, "level", error),
-    };
-    let source_text = match read_limited_utf8_file(&options.source_path, max_source_bytes) {
-        Ok(text) => text,
-        Err(error) => return report_evaluation_file_error(&options.source_path, "source", error),
-    };
-
-    let mut api = match LevelApiV2::new(profile) {
-        Ok(api) => api,
-        Err(error) => {
-            eprintln!(
-                "error: [{}] [{}] cannot initialize level evaluator: {}",
-                error_number("level", error.code).expect("Registered level API error"),
-                error.code,
-                error.message
-            );
-            return EXIT_INVALID_ARGUMENTS;
-        }
-    };
-    let mut handles: Vec<(&'static str, String)> = Vec::new();
-    let evaluation = (|| -> Result<(JsonValue, i32), String> {
-        let response =
-            level_api_request(&mut api, "load_level", json!({ "level_json": level_text }))?;
-        match response_status(&response) {
-            Some("level_rejected") => return Ok((response, EXIT_LEVEL_REJECTED)),
-            Some("error") => return Ok((response.clone(), level_api_error_exit(&response))),
-            Some("ok") => {}
-            other => return Err(format!("unexpected load_level response status: {other:?}")),
-        }
-        let level_handle = response_handle(&response)?;
-        handles.push(("level", level_handle.clone()));
-
-        let response = level_api_request(
-            &mut api,
-            "compile_program",
-            json!({ "source": source_text }),
-        )?;
-        match response_status(&response) {
-            Some("source_rejected") => return Ok((response, EXIT_STATIC_ERROR)),
-            Some("error") => return Ok((response.clone(), level_api_error_exit(&response))),
-            Some("ok") => {}
-            other => {
-                return Err(format!(
-                    "unexpected compile_program response status: {other:?}"
-                ))
-            }
-        }
-        let program_handle = response_handle(&response)?;
-        handles.push(("program", program_handle.clone()));
-
-        let response = level_api_request(
-            &mut api,
-            "start_evaluation",
-            json!({
-                "level": level_handle,
-                "program": program_handle,
-                "mode": match options.mode { EvaluationModeArg::Debug => "Debug", EvaluationModeArg::Official => "Official" },
-
-                "shuffle_seed": options.seed.to_string(),
-                "custom_execution_limit": options.custom_limit.get().to_string(),
-            }),
-        )?;
-        match response_status(&response) {
-            Some("source_rejected") => return Ok((response, EXIT_STATIC_ERROR)),
-            Some("level_rejected") => return Ok((response, EXIT_LEVEL_REJECTED)),
-            Some("error") => return Ok((response.clone(), level_api_error_exit(&response))),
-            Some("ok") => {}
-            other => {
-                return Err(format!(
-                    "unexpected start_evaluation response status: {other:?}"
-                ))
-            }
-        }
-        let evaluation_handle = response_handle(&response)?;
-        handles.push(("evaluation", evaluation_handle.clone()));
-
-        loop {
-            let response = level_api_request(
-                &mut api,
-                "advance_evaluation",
-                json!({
-                    "evaluation": evaluation_handle,
-                    "work_budget": work_budget.to_string(),
-                }),
-            )?;
-            match response_status(&response) {
-                Some("pending") => continue,
-                Some("result") => {
-                    let exit_code = evaluation_result_exit(&response);
-                    return Ok((response, exit_code));
-                }
-                Some("level_rejected") => return Ok((response, EXIT_LEVEL_REJECTED)),
-                Some("source_rejected") => return Ok((response, EXIT_STATIC_ERROR)),
-                Some("error") => return Ok((response.clone(), level_api_error_exit(&response))),
-                other => {
-                    return Err(format!(
-                        "unexpected advance_evaluation response status: {other:?}"
-                    ))
-                }
-            }
-        }
-    })();
-
-    for (kind, handle) in handles.into_iter().rev() {
-        let _ = level_api_request(
-            &mut api,
-            "release",
-            json!({ "kind": kind, "handle": handle }),
-        );
-    }
-    let _ = level_api_request(&mut api, "shutdown", json!({}));
-
-    match evaluation {
-        Ok((response, exit_code)) => {
-            match options.format {
-                OutputFormat::Json => match serde_json::to_string_pretty(&response) {
-                    Ok(serialized) => println!("{serialized}"),
-                    Err(error) => {
-                        eprintln!("error: [{error_number}] [cli.serialization_failed] failed to serialize level evaluation result: {error}", error_number = codegrid_model::error_number("cli", "cli.serialization_failed").expect("Registered process error"));
-                        return EXIT_VM_FAULT;
-                    }
-                },
-                OutputFormat::Human => print_evaluation_human(&response),
-            }
-            exit_code
-        }
-        Err(message) => {
-            eprintln!(
-                "error: [{error_number}] [cli.level_api_protocol] {message}",
-                error_number = codegrid_model::error_number("cli", "cli.level_api_protocol")
-                    .expect("Registered process error")
-            );
-            EXIT_VM_FAULT
-        }
-    }
-}
-
-fn read_limited_utf8_file(path: &PathBuf, limit: u64) -> Result<String, EvaluationFileError> {
-    let file = std::fs::File::open(path).map_err(EvaluationFileError::Io)?;
-    read_limited_utf8(file, limit)
-}
-
-fn read_limited_utf8(reader: impl Read, limit: u64) -> Result<String, EvaluationFileError> {
-    let mut bytes = Vec::new();
-    reader
-        .take(limit.saturating_add(1))
-        .read_to_end(&mut bytes)
-        .map_err(EvaluationFileError::Io)?;
-    if bytes.len() as u128 > limit as u128 {
-        return Err(EvaluationFileError::TooLarge {
-            limit,
-            actual: bytes.len(),
-        });
-    }
-    let text = String::from_utf8(bytes).map_err(EvaluationFileError::InvalidUtf8)?;
-    if text.starts_with('\u{feff}') {
-        return Err(EvaluationFileError::BomNotAllowed);
-    }
-    Ok(text)
-}
-
-fn report_evaluation_file_error(path: &PathBuf, label: &str, error: EvaluationFileError) -> i32 {
-    match error {
-        EvaluationFileError::Io(error) => {
-            eprintln!(
-                "error: [{error_number}] [cli.{label}_io] cannot read {label} file '{}': {error}",
-                path.display(),
-                error_number =
-                    error_number("cli", &format!("cli.{label}_io")).expect("Registered file error")
-            );
-            EXIT_IO_ERROR
-        }
-        EvaluationFileError::TooLarge { limit, actual } => {
-            eprintln!("error: [{error_number}] [cli.{label}_too_large] {label} file '{}' contains at least {actual} bytes; the trusted profile limit is {limit} bytes", path.display(), error_number = error_number("cli", &format!("cli.{label}_too_large")).expect("Registered file error"));
-            EXIT_RESOURCE_LIMIT
-        }
-        EvaluationFileError::InvalidUtf8(error) => {
-            eprintln!(
-                "error: [{error_number}] [cli.{label}_utf8] {label} file '{}' is not UTF-8: {error}",
-                path.display(),
-                error_number = error_number("cli", &format!("cli.{label}_utf8")).expect("Registered file error")
-            );
-            EXIT_IO_ERROR
-        }
-        EvaluationFileError::BomNotAllowed => {
-            eprintln!(
-                "error: [{error_number}] [cli.{label}_bom] {label} file '{}' must not start with a UTF-8 BOM",
-                path.display(), error_number = error_number("cli", &format!("cli.{label}_bom")).expect("Registered file error"));
-            EXIT_IO_ERROR
-        }
-    }
-}
-
-fn level_api_request(
-    api: &mut LevelApiV2,
-    operation: &str,
-    fields: JsonValue,
-) -> Result<JsonValue, String> {
-    let mut request = json!({ "api_version": 2, "operation": operation });
-    let request_object = request
-        .as_object_mut()
-        .ok_or_else(|| "internal request construction did not produce a JSON object".to_owned())?;
-    let fields_object = fields
-        .as_object()
-        .ok_or_else(|| "internal API fields did not produce a JSON object".to_owned())?;
-    request_object.extend(fields_object.clone());
-    let request_text = serde_json::to_string(&request).map_err(|error| error.to_string())?;
-    let response_text = api.request_json(&request_text);
-    serde_json::from_str(&response_text).map_err(|error| {
-        format!(
-            "level API returned invalid JSON ({error}): {}",
-            response_text.chars().take(400).collect::<String>()
-        )
-    })
-}
-
-fn response_status(response: &JsonValue) -> Option<&str> {
-    response.get("status").and_then(JsonValue::as_str)
-}
-
-fn response_handle(response: &JsonValue) -> Result<String, String> {
-    response
-        .get("handle")
-        .and_then(JsonValue::as_str)
-        .map(str::to_owned)
-        .ok_or_else(|| "successful level API operation omitted its handle".to_owned())
-}
-
-fn level_api_error_exit(response: &JsonValue) -> i32 {
-    match response.pointer("/error/code").and_then(JsonValue::as_str) {
-        Some("level_api.resource_limit" | "level_api.response_too_large") => EXIT_RESOURCE_LIMIT,
-        Some(code) if code.contains("fault") || code.contains("invariant") => EXIT_VM_FAULT,
-        Some(_) | None => EXIT_INVALID_ARGUMENTS,
-    }
-}
-
-fn evaluation_result_exit(response: &JsonValue) -> i32 {
-    match response
-        .pointer("/result/status")
-        .and_then(JsonValue::as_str)
-    {
-        Some("Passed") => EXIT_SUCCESS,
-        Some(
-            "ProgramRejected" | "TestFailed" | "RuntimeError" | "ConstraintExceeded"
-            | "NonTerminating",
-        ) => EXIT_EVALUATION_FAILED,
-        Some("ResourceLimitExceeded" | "Cancelled") => EXIT_RESOURCE_LIMIT,
-        Some("Fault") => EXIT_VM_FAULT,
-        Some(other) => {
-            eprintln!("error: [{error_number}] [cli.unknown_evaluation_status] unrecognized level API result status '{other}'", error_number = codegrid_model::error_number("cli", "cli.unknown_evaluation_status").expect("Registered process error"));
-            EXIT_VM_FAULT
-        }
-        None => {
-            eprintln!(
-                "error: [{error_number}] [cli.malformed_evaluation_result] level API result omitted its status", error_number = codegrid_model::error_number("cli", "cli.malformed_evaluation_result").expect("Registered process error"));
-            EXIT_VM_FAULT
-        }
-    }
-}
-
-fn print_evaluation_human(response: &JsonValue) {
-    let response_status = response_status(response).unwrap_or("unknown");
-    let result = response.get("result").unwrap_or(response);
-    let result_status = result
-        .get("status")
-        .and_then(JsonValue::as_str)
-        .unwrap_or(response_status);
-    println!("Evaluation: {result_status}");
-
-    for (label, keys) in [
-        ("Failure", &["failure", "error"][..]),
-        ("Source diagnostics", &["diagnostics"][..]),
-        ("Visible tests", &["visible_tests"][..]),
-        ("Visible cases", &["visible_cases"][..]),
-        ("Hidden failure category", &["hidden_failure"][..]),
-        ("Constraints", &["constraint_results", "constraints"][..]),
-        ("Partial metrics", &["partial_metrics"][..]),
-        ("Final metrics", &["final_metrics"][..]),
-        ("Scoring", &["scoring"][..]),
-        ("Rating", &["rating"][..]),
-    ] {
-        if let Some(value) = keys
-            .iter()
-            .find_map(|key| result.get(*key))
-            .filter(|value| !value.is_null())
-        {
-            if value == &JsonValue::Array(vec![]) || value == &json!({}) {
-                continue;
-            }
-            println!("{label}:");
-            match serde_json::to_string_pretty(value) {
-                Ok(serialized) => println!("{serialized}"),
-                Err(_) => println!("{value}"),
-            }
-        }
-    }
-}
-
 fn configuration_json(
     options: &RunOptions,
     input: &[u8],
@@ -992,9 +498,7 @@ fn configuration_json(
     json!({
 
         "seed": options.seed.to_string(),
-        "custom_execution_limit": options.custom_limit.get().to_string(),
-        "gas_hard_limit": options.gas_hard_limit.get().to_string(),
-        "max_ticks": options.max_ticks.get().to_string(),
+        "max_steps": options.max_steps.get().to_string(),
         "max_work_units": options.max_work_units.get().to_string(),
         "input": input,
         "initial_memory": initial_memory.iter().map(|(address, value)| json!({
@@ -1089,7 +593,7 @@ fn diagnostic_location(source: &str, line_index: &LineIndex, byte_offset: usize)
 fn snapshot_json(snapshot: &VmSnapshot) -> JsonValue {
     json!({
         "status": vm_status_name(snapshot.status),
-        "committed_ticks": snapshot.committed_ticks.to_string(),
+        "committed_steps": snapshot.committed_steps.to_string(),
         "registers": snapshot.registers,
         "memory": snapshot.memory.allocated_addresses().map(|address| json!({
             "address": address.to_string(),
@@ -1232,21 +736,7 @@ fn phase_json(phase: ThreadPhaseSnapshot) -> JsonValue {
 
 fn metrics_json(metrics: &RuntimeMetrics) -> JsonValue {
     json!({
-        "global_tick": metrics.global_tick().to_string(),
-        "operation_count": metrics.operation_count().to_string(),
-        "gas_used": metrics.gas_used().to_string(),
-        "execution_gas": metrics.execution_gas().to_string(),
-        "memory_gas": metrics.memory_gas().to_string(),
-        "stack_gas": metrics.stack_gas().to_string(),
-        "gas_schedule_version": metrics.gas_schedule_version(),
-        "used_cell_count": metrics.used_cell_count().to_string(),
-        "used_cells": metrics.used_cells().iter().map(static_cell_json).collect::<Vec<_>>(),
-        "used_memory_address_count": metrics.used_memory_address_count().to_string(),
-        "used_memory_addresses": metrics.used_memory_addresses().iter().map(memory_location_json).collect::<Vec<_>>(),
-        "peak_data_stack_usage": metrics.peak_data_stack_usage().to_string(),
-        "peak_instruction_stack_usage": metrics.peak_instruction_stack_usage().to_string(),
-        "peak_call_stack_usage": metrics.peak_call_stack_usage().to_string(),
-        "instruction_variety": metrics.instruction_variety().iter().copied().map(instruction_kind_name).collect::<Vec<_>>(),
+        "committed_steps": metrics.committed_steps().to_string(),
     })
 }
 
@@ -1263,9 +753,9 @@ fn memory_location_json(location: &MemoryLocationId) -> JsonValue {
     json!({
         "space": match location.space {
             MemorySpaceId::Outer => json!({"kind": "outer"}),
-            MemorySpaceId::CustomInvocation { global_tick, caller_thread_id, custom_id } => json!({
+            MemorySpaceId::CustomInvocation { transition_id, caller_thread_id, custom_id } => json!({
                 "kind": "custom_invocation",
-                "global_tick": global_tick.to_string(),
+                "transition_id": transition_id.to_string(),
                 "caller_thread_id": caller_thread_id.to_string(),
                 "custom_id": custom_id.get(),
             }),
@@ -1347,7 +837,7 @@ fn event_json(event: &VmEvent) -> JsonValue {
 
 fn runtime_error_json(error: &RuntimeError) -> JsonValue {
     json!({
-        "global_tick": error.global_tick().to_string(),
+        "transition_id": error.transition_id().to_string(),
         "scope": scope_json(error.scope()),
         "code": error.code(),
         "error_number": error_number("vm", error.code()),
@@ -1394,16 +884,6 @@ fn runtime_error_details(kind: &RuntimeErrorKind) -> JsonValue {
             "register": register,
             "thread_ids": ids_json(thread_ids),
         }),
-        RuntimeErrorKind::GasLimitExceeded {
-            limit,
-            attempted_gas,
-        } => json!({
-            "limit": limit.to_string(), "attempted_gas": attempted_gas.to_string(),
-        }),
-        RuntimeErrorKind::GasCounterOverflow | RuntimeErrorKind::CustomDisabled => json!({}),
-        RuntimeErrorKind::CustomExecutionLimitExceeded { limit } => json!({
-            "limit": limit.to_string(),
-        }),
         RuntimeErrorKind::ReturnWithoutCall {
             thread_id,
             board,
@@ -1426,12 +906,12 @@ fn scope_json(scope: ExecutionScope) -> JsonValue {
         ExecutionScope::Custom {
             caller_thread_id,
             custom_id,
-            internal_tick,
+            internal_step,
         } => json!({
             "kind": "custom",
             "caller_thread_id": caller_thread_id.to_string(),
             "custom_id": custom_id.get(),
-            "internal_tick": internal_tick.to_string(),
+            "internal_step": internal_step.to_string(),
         }),
     }
 }
@@ -1442,8 +922,8 @@ fn fault_json(fault: VmFault) -> JsonValue {
             "kind": "metric_counter_overflow", "error_number" : codegrid_model::error_number("fault", "metric_counter_overflow"),
             "counter": metric_counter_name(counter),
         }),
-        VmFault::GlobalTickOverflow => {
-            json!({"kind": "global_tick_overflow", "error_number" : codegrid_model::error_number("fault", "global_tick_overflow")})
+        VmFault::CommittedStepOverflow => {
+            json!({"kind": "committed_steps_overflow", "error_number" : codegrid_model::error_number("fault", "committed_steps_overflow")})
         }
         VmFault::InternalInvariantViolation => {
             json!({"kind": "internal_invariant_violation", "error_number" : codegrid_model::error_number("fault", "internal_invariant_violation")})
@@ -1454,7 +934,8 @@ fn fault_json(fault: VmFault) -> JsonValue {
 fn metric_counter_name(counter: MetricCounterOverflow) -> &'static str {
     match counter {
         MetricCounterOverflow::OperationCount => "operation_count",
-        MetricCounterOverflow::GlobalTick => "global_tick",
+        MetricCounterOverflow::CustomInternalDispatches => "custom_internal_dispatches",
+        MetricCounterOverflow::CommittedSteps => "committed_steps",
         MetricCounterOverflow::DataStackUsage => "data_stack_usage",
         MetricCounterOverflow::InstructionStackUsage => "instruction_stack_usage",
         MetricCounterOverflow::CallStackUsage => "call_stack_usage",
@@ -1505,14 +986,10 @@ fn vm_status_name(status: VmStatus) -> &'static str {
     }
 }
 
-fn instruction_kind_name(kind: InstructionKind) -> &'static str {
-    kind.name()
-}
-
 fn runtime_error_summary(error: &RuntimeError) -> String {
     format!(
-        "runtime error at Global Tick {}: [{}] [{}]",
-        error.global_tick(),
+        "runtime error at transition {}: [{}] [{}]",
+        error.transition_id(),
         error_number("vm", error.code()).expect("Registered VM error"),
         error.code()
     ) + ": "
@@ -1527,30 +1004,39 @@ fn print_usage() {
 #[cfg(test)]
 mod tests {
     use super::{
-        parse_arguments, parse_byte_list, parse_canonical_signed, parse_canonical_u64, Command,
+        memory_location_json, parse_arguments, parse_byte_list, parse_canonical_signed,
+        parse_canonical_u64, Command,
     };
+    use codegrid_model::Slot;
+    use codegrid_vm::{MemoryLocationId, MemorySpaceId};
+    use serde_json::json;
     use std::ffi::OsString;
 
     #[test]
-    fn limited_reads_stop_after_the_first_excess_byte() {
-        let mut input = std::io::Cursor::new(vec![b'a'; 1024]);
-        assert!(matches!(
-            super::read_limited_utf8(&mut input, 8),
-            Err(super::EvaluationFileError::TooLarge {
-                limit: 8,
-                actual: 9
+    fn custom_memory_json_uses_neutral_transition_identity() {
+        let location = MemoryLocationId {
+            space: MemorySpaceId::CustomInvocation {
+                transition_id: 42,
+                caller_thread_id: 7,
+                custom_id: Slot::new(2).expect("ID is in range"),
+            },
+            address: "-17".parse().expect("address is a valid BigInt"),
+        };
+
+        let value = memory_location_json(&location);
+
+        assert_eq!(
+            value,
+            json!({
+                "space": {
+                    "kind": "custom_invocation",
+                    "transition_id": "42",
+                    "caller_thread_id": "7",
+                    "custom_id": 2
+                },
+                "address": "-17"
             })
-        ));
-        assert_eq!(input.position(), 9);
-        assert!(matches!(super::read_limited_utf8(&b"12345678"[..], 8), Ok(s) if s == "12345678"));
-        assert!(matches!(
-            super::read_limited_utf8(&b"\xff"[..], 8),
-            Err(super::EvaluationFileError::InvalidUtf8(_))
-        ));
-        assert!(matches!(
-            super::read_limited_utf8("\u{feff}".as_bytes(), 8),
-            Err(super::EvaluationFileError::BomNotAllowed)
-        ));
+        );
     }
 
     #[test]
@@ -1593,9 +1079,7 @@ mod tests {
             "program.cg",
             "--seed",
             "18446744073709551615",
-            "--custom-limit",
-            "10",
-            "--max-ticks",
+            "--max-steps",
             "20",
             "--max-work-units",
             "30",
@@ -1606,5 +1090,11 @@ mod tests {
         .map(OsString::from)
         .collect();
         assert!(matches!(parse_arguments(args), Ok(Command::Run(_))));
+
+        let args = ["run", "program.cg", "--seed", "0", "--unknown-option", "10"]
+            .into_iter()
+            .map(OsString::from)
+            .collect();
+        assert!(parse_arguments(args).is_err());
     }
 }

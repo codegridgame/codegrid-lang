@@ -9,10 +9,6 @@ from pathlib import Path
 
 
 EXPECTED_DEPENDENCIES = {
-    "codegrid-level-wasm-browser": {"codegrid-level-api"},
-    "codegrid-level-wasm-server": {"codegrid-level-api"},
-    "codegrid-level-api": {"codegrid-level-core", "codegrid-compiler", "codegrid-ir", "codegrid-model"},
-    "codegrid-level-core": {"codegrid-ir", "codegrid-model", "codegrid-vm"},
     "codegrid-model": set(),
     "codegrid-syntax": {"codegrid-model"},
     "codegrid-hir": {"codegrid-model", "codegrid-syntax"},
@@ -31,7 +27,6 @@ EXPECTED_DEPENDENCIES = {
         "codegrid-vm",
     },
     "codegrid-cli": {
-        "codegrid-level-api",
         "codegrid-compiler",
         "codegrid-ir",
         "codegrid-model",

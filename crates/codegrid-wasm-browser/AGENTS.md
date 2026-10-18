@@ -20,14 +20,19 @@ Expose the shared runtime contract to browser JavaScript through a thin browser-
 - Do not add server-runtime imports or make the browser binding a dependency of the semantic core.
 - Check JavaScript string UTF-8 byte lengths and `Uint8Array` byte lengths before copying/converting payloads into Rust/WASM memory; also validate payload types.
 - Bound serialized response bytes and return a valid limit error rather than partial JSON.
-- Pass through the host-neutral deterministic work-unit ceiling and preserve its distinction from tick-slice exhaustion; do not present it as browser-engine fuel or a physical memory limit.
+- Pass through the host-neutral deterministic work-unit ceiling and preserve its distinction from step-slice exhaustion; do not present it as browser-engine fuel or a physical memory limit.
 - Bound the canonical snapshot JSON size of retained instances after creation and public execution/snapshot operations; release an instance that exceeds the configured quota.
 - Do not treat request/response/snapshot JSON quotas as actual allocator usage, temporary per-call allocation, WASM linear-memory, or fuel limits; those require separate budgets and actual-host tests.
 - Require `CODEGRID_WASM_MAX_MEMORY_BYTES` for every build targeting `wasm32`; keep the value deployment-configurable, validate it as a 64-KiB page multiple within the wasm32 address-space ceiling, and encode it as the module's maximum linear memory.
 - Describe the linked memory maximum only as a WASM linear-memory ceiling; it does not cap JavaScript heap usage, browser-process memory, wall-clock time, or concurrency.
 
-## Validation
+## Contract
 
-- The browser `reposition_thread(instance, thread, x, y, direction)` operation uses decimal string handles/IDs, u32 coordinates and lowercase direction names. It delegates to RuntimeApi and returns a quota-checked Full snapshot. No instruction executes during repositioning.
+- Expose Runtime API v4 with seed-only runtime configuration and generic
+  `max_run_steps_per_call`, `max_total_steps_per_instance`, and
+  `max_work_units_per_call` host limits. Do not expose game accounting, game
+  counters, or thread-selection controls.
+
+## Validation
 
 Run native adapter tests, `wasm32-unknown-unknown` compilation, and actual-browser fixtures for lifecycle, limits, exact serialization, deterministic results, and instance isolation. Verify the generated release module encodes the configured linear-memory maximum. Report unavailable host verification explicitly.

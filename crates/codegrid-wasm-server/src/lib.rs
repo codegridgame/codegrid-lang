@@ -15,7 +15,7 @@ pub use session::ServerAdapter;
 #[cfg(target_arch = "wasm32")]
 use std::{cell::RefCell, collections::BTreeMap};
 
-pub const SERVER_ABI_VERSION: u32 = 4;
+pub const SERVER_ABI_VERSION: u32 = 5;
 
 const MAX_REQUEST_BYTES: usize = 8 * 1024 * 1024;
 const MAX_RESPONSE_BYTES: usize = 8 * 1024 * 1024;
@@ -26,8 +26,8 @@ const MAX_RETAINED_BUFFER_COUNT: usize = 1024;
 const MAX_SOURCE_BYTES: usize = 4 * 1024 * 1024;
 const MAX_INPUT_BYTES: usize = 1024 * 1024;
 const MAX_INITIAL_MEMORY_ENTRIES: usize = 65_536;
-const MAX_RUN_TICKS_PER_CALL: u64 = 1_000_000;
-const MAX_TOTAL_TICKS_PER_INSTANCE: u64 = 10_000_000;
+const MAX_RUN_STEPS_PER_CALL: u64 = 1_000_000;
+const MAX_TOTAL_STEPS_PER_INSTANCE: u64 = 10_000_000;
 const MAX_WORK_UNITS_PER_CALL: u64 = 1_000_000;
 
 #[cfg(target_arch = "wasm32")]
@@ -214,17 +214,17 @@ fn api_error_response(api_version: u32, error: ApiError) -> Value {
             "unknown_instance_handle",
             json!({"instance": handle.get().to_string()}),
         ),
-        ApiError::ZeroTickBudget => ("zero_tick_budget", Value::Null),
-        ApiError::RunTickBudgetExceeded { requested, maximum } => (
-            "run_tick_budget_exceeded",
+        ApiError::ZeroStepBudget => ("zero_step_budget", Value::Null),
+        ApiError::RunStepBudgetExceeded { requested, maximum } => (
+            "run_step_budget_exceeded",
             json!({"requested": requested.to_string(), "maximum": maximum.to_string()}),
         ),
-        ApiError::InstanceTickBudgetExceeded {
+        ApiError::InstanceStepBudgetExceeded {
             requested,
             remaining,
             maximum,
         } => (
-            "instance_tick_budget_exceeded",
+            "instance_step_budget_exceeded",
             json!({"requested": requested.to_string(), "remaining": remaining.to_string(), "maximum": maximum.to_string()}),
         ),
         ApiError::WorkUnitBudgetExceeded { maximum } => (
@@ -259,7 +259,8 @@ fn direction_name(direction: codegrid_runtime_api::Direction) -> &'static str {
 fn metric_counter_name(counter: MetricCounterOverflow) -> &'static str {
     match counter {
         MetricCounterOverflow::OperationCount => "operation_count",
-        MetricCounterOverflow::GlobalTick => "global_tick",
+        MetricCounterOverflow::CustomInternalDispatches => "custom_internal_dispatches",
+        MetricCounterOverflow::CommittedSteps => "committed_steps",
         MetricCounterOverflow::DataStackUsage => "data_stack_usage",
         MetricCounterOverflow::InstructionStackUsage => "instruction_stack_usage",
         MetricCounterOverflow::CallStackUsage => "call_stack_usage",
@@ -403,9 +404,8 @@ mod tests {
             "max_instances": 8,
             "max_input_bytes": 4096,
             "max_initial_memory_entries": 65536,
-            "max_run_ticks_per_call": "1000",
-            "max_total_ticks_per_instance": "10000",
-            "max_gas_per_instance": "100000000",
+            "max_run_steps_per_call": "1000",
+            "max_total_steps_per_instance": "10000",
             "max_work_units_per_call": "10000",
             "max_response_bytes": 1048576,
             "max_instance_state_bytes": 524288
@@ -439,10 +439,9 @@ mod tests {
 
     fn operation(name: &str) -> Value {
         json!({
-            "abi_version": 4,
-            "api_version": 3,
+            "abi_version": 5,
+            "api_version": 4,
             "operation": name,
-            "gas_hard_limit": "100000000",
         })
     }
 
@@ -452,11 +451,11 @@ mod tests {
         assert_eq!(adapter.response_buffer_capacity(), 256);
         for request in [
             json!({}),
-            json!({"abi_version": 99, "api_version": 3, "operation": "check"}),
-            json!({"abi_version": 4, "api_version": u64::MAX, "operation": "check"}),
-            json!({"abi_version": 4, "api_version": 99, "operation": "check"}),
-            json!({"abi_version": 4, "api_version": 3}),
-            json!({"abi_version": 4, "api_version": 3, "operation": "initialize"}),
+            json!({"abi_version": 99, "api_version": 4, "operation": "check"}),
+            json!({"abi_version": 5, "api_version": u64::MAX, "operation": "check"}),
+            json!({"abi_version": 5, "api_version": 99, "operation": "check"}),
+            json!({"abi_version": 5, "api_version": 4}),
+            json!({"abi_version": 5, "api_version": 4, "operation": "initialize"}),
         ] {
             assert_control_response_fits(&mut adapter, request);
         }
@@ -602,8 +601,6 @@ mod tests {
             request["program"] = json!(program);
             request["input"] = json!([input]);
             request["seed"] = json!("0");
-            request["custom_execution_limit"] = json!("100");
-            request["gas_hard_limit"] = json!("100000000");
             request["initial_memory"] = json!([]);
             request
         };
@@ -618,21 +615,24 @@ mod tests {
         assert_eq!(stepped["operation"], "step");
         assert!(stepped["result"]["newly_emitted_output"].is_array());
         assert!(stepped["result"]["errors"].is_array());
-        assert_eq!(stepped["result"]["committed_ticks"], "1");
+        assert_eq!(stepped["result"]["committed_steps"], "1");
 
         let mut snapshot_first = operation("snapshot");
         snapshot_first["instance"] = json!(first_id);
         let first_snapshot = dispatch(&mut adapter, snapshot_first);
-        assert_eq!(first_snapshot["snapshot"]["committed_ticks"], "1");
+        assert_eq!(first_snapshot["snapshot"]["committed_steps"], "1");
         assert_eq!(first_snapshot["snapshot"]["registers"][0], 0);
         assert!(first_snapshot["snapshot"]["threads"].is_array());
         assert!(first_snapshot["snapshot"].get("runtime_program").is_some());
-        assert!(first_snapshot["snapshot"]["metrics"]["used_memory_addresses"].is_array());
+        assert_eq!(
+            first_snapshot["snapshot"]["metrics"],
+            json!({"committed_steps": "1"})
+        );
 
         let mut snapshot_second = operation("snapshot");
         snapshot_second["instance"] = json!(second_id);
         let second_snapshot = dispatch(&mut adapter, snapshot_second);
-        assert_eq!(second_snapshot["snapshot"]["committed_ticks"], "0");
+        assert_eq!(second_snapshot["snapshot"]["committed_steps"], "0");
         assert_eq!(second_snapshot["snapshot"]["output"], json!([]));
 
         let mut release_program = operation("release_program");
@@ -645,7 +645,7 @@ mod tests {
         let run = |adapter: &mut ServerAdapter, instance: &str| {
             let mut request = operation("run");
             request["instance"] = json!(instance);
-            request["max_ticks"] = json!("10");
+            request["max_steps"] = json!("10");
             dispatch(adapter, request)
         };
         let second_result = run(&mut adapter, &second_id);
@@ -674,7 +674,7 @@ mod tests {
     }
 
     #[test]
-    fn runtime_api_v3_full_conformance_suite_matches_snapshot_and_result_fields() {
+    fn runtime_api_v4_full_conformance_suite_matches_snapshot_and_result_fields() {
         let suite: Value =
             serde_json::from_str(include_str!("../../../tests/fixtures/conformance-v1.json"))
                 .expect("shared Full conformance suite must be valid JSON");
@@ -694,17 +694,15 @@ mod tests {
             let run = &fixture["run"];
             let compiled = dispatch(
                 &mut adapter,
-                json!({"abi_version":4,"api_version":3,"operation":"compile","source":fixture["source"]}),
+                json!({"abi_version":5,"api_version":4,"operation":"compile","source":fixture["source"]}),
             );
             assert_eq!(compiled["status"], "compiled", "{id}: compile");
             let created = dispatch(
                 &mut adapter,
                 json!({
-                    "abi_version":4,"api_version":3,"operation":"create_instance",
+                    "abi_version":5,"api_version":4,"operation":"create_instance",
                     "program":compiled["program"],"input":run["input"],
                     "seed":run["seed"],
-                    "custom_execution_limit":run["custom_execution_limit"],
-                    "gas_hard_limit":run["gas_hard_limit"],
                     "initial_memory":run.get("initial_memory").cloned().unwrap_or_else(|| json!([])),
                 }),
             );
@@ -715,12 +713,13 @@ mod tests {
             let result = dispatch(
                 &mut adapter,
                 json!({
-                    "abi_version":4,"api_version":3,"operation":"run",
-                    "instance":created["instance"],"max_ticks":run["max_ticks"],
+                    "abi_version":5,"api_version":4,"operation":"run",
+                    "instance":created["instance"],"max_steps":run["max_steps"],
                 }),
             );
             let expected = &fixture["expected"];
-            assert_eq!(result["status"], expected["status"], "{id}: run status");
+            let expected_status = expected["status"].as_str().unwrap();
+            assert_eq!(result["status"], expected_status, "{id}: run status");
             assert_eq!(
                 result["snapshot"]["status"], expected["vm_status"],
                 "{id}: VM status"
@@ -734,31 +733,13 @@ mod tests {
                 "{id}: registers"
             );
             assert_eq!(
-                result["snapshot"]["committed_ticks"], expected["committed_ticks"],
-                "{id}: ticks"
+                result["snapshot"]["committed_steps"], expected["committed_steps"],
+                "{id}: committed steps"
             );
-            for metric in [
-                "operation_count",
-                "gas_used",
-                "execution_gas",
-                "memory_gas",
-                "stack_gas",
-                "gas_schedule_version",
-                "used_cell_count",
-                "used_memory_address_count",
-                "peak_data_stack_usage",
-                "peak_instruction_stack_usage",
-                "peak_call_stack_usage",
-            ] {
-                assert_eq!(
-                    result["snapshot"]["metrics"][metric], expected[metric],
-                    "{id}: {metric}"
-                );
-            }
             assert_eq!(
-                result["snapshot"]["metrics"]["instruction_variety"],
-                expected["instruction_variety"],
-                "{id}: instruction variety"
+                result["snapshot"]["metrics"],
+                json!({"committed_steps": expected["committed_steps"]}),
+                "{id}: language metrics expose step count only"
             );
             let errors = result["snapshot"]["errors"]
                 .as_array()
@@ -776,8 +757,8 @@ mod tests {
                 .as_array()
                 .expect("Full snapshot must include threads");
             let actual_optional = json!({
-                "error_custom_internal_ticks": errors.iter().filter(|error| error["scope"]["kind"] == "custom").map(|error| error["scope"]["internal_tick"].clone()).collect::<Vec<_>>(),
-                "error_global_ticks": errors.iter().map(|error| error["global_tick"].clone()).collect::<Vec<_>>(),
+                "error_custom_internal_steps": errors.iter().filter(|error| error["scope"]["kind"] == "custom").map(|error| error["scope"]["internal_step"].clone()).collect::<Vec<_>>(),
+                "error_transition_ids": errors.iter().map(|error| error["transition_id"].clone()).collect::<Vec<_>>(),
                 "error_thread_id_groups": errors.iter().filter_map(|error| error["details"].get("thread_ids").or_else(|| error["details"].get("internal_thread_ids")).cloned()).collect::<Vec<_>>(),
                 "error_thread_ids": errors.iter().filter_map(|error| error["details"].get("thread_id").cloned()).collect::<Vec<_>>(),
                 "memory": result["snapshot"]["memory"],
@@ -792,8 +773,8 @@ mod tests {
                 "threads": threads.iter().map(|thread| json!({"id":thread["id"],"position":thread["position"],"direction":thread["direction"]})).collect::<Vec<_>>(),
             });
             for field in [
-                "error_custom_internal_ticks",
-                "error_global_ticks",
+                "error_custom_internal_steps",
+                "error_transition_ids",
                 "error_thread_id_groups",
                 "error_thread_ids",
                 "memory",
@@ -814,11 +795,11 @@ mod tests {
 
             dispatch(
                 &mut adapter,
-                json!({"abi_version":4,"api_version":3,"operation":"release_instance","instance":created["instance"]}),
+                json!({"abi_version":5,"api_version":4,"operation":"release_instance","instance":created["instance"]}),
             );
             dispatch(
                 &mut adapter,
-                json!({"abi_version":4,"api_version":3,"operation":"release_program","program":compiled["program"]}),
+                json!({"abi_version":5,"api_version":4,"operation":"release_program","program":compiled["program"]}),
             );
         }
     }
@@ -840,7 +821,7 @@ mod tests {
     }
 
     #[test]
-    fn create_instance_preserves_wide_seed_custom_limit_and_initial_memory() {
+    fn create_instance_preserves_wide_seed_and_initial_memory() {
         let mut adapter = ServerAdapter::new();
         let mut initialize = operation("initialize");
         initialize["host_limits"] = server_limits();
@@ -854,7 +835,6 @@ mod tests {
         create["program"] = program;
         create["input"] = json!([]);
         create["seed"] = json!(u64::MAX.to_string());
-        create["custom_execution_limit"] = json!(u64::MAX.to_string());
         create["initial_memory"] = json!([
             {"address": address, "value": 255},
             {"address": "0", "value": 0},
@@ -862,7 +842,7 @@ mod tests {
         let instance = dispatch(&mut adapter, create)["instance"].clone();
         assert!(
             instance.is_string(),
-            "v3 instance creation should accept exact wide integers"
+            "v4 instance creation should accept exact wide integers"
         );
 
         let mut snapshot = operation("snapshot");
@@ -873,7 +853,7 @@ mod tests {
             json!([{"address": address, "value": 255}])
         );
         assert!(snapshot["threads"][0]["random_state"].is_string());
-        assert_eq!(snapshot["metrics"]["global_tick"], "0");
+        assert_eq!(snapshot["metrics"]["committed_steps"], "0");
     }
 
     #[test]
@@ -891,7 +871,6 @@ mod tests {
             create["program"] = program.clone();
             create["input"] = json!([]);
             create["seed"] = json!("0");
-            create["custom_execution_limit"] = json!("1");
             create["initial_memory"] = json!([{"address": address, "value": 1}]);
             assert_eq!(
                 dispatch(&mut adapter, create)["error"]["code"],
@@ -903,7 +882,6 @@ mod tests {
         duplicate["program"] = program;
         duplicate["input"] = json!([]);
         duplicate["seed"] = json!("0");
-        duplicate["custom_execution_limit"] = json!("1");
         duplicate["initial_memory"] = json!([
             {"address": "-123456789012345678901234567890", "value": 1},
             {"address": "-123456789012345678901234567890", "value": 2},
@@ -950,7 +928,7 @@ mod tests {
 
         let mut excessive_limit = operation("initialize");
         let mut limits = server_limits();
-        limits["max_run_ticks_per_call"] = json!("1000001");
+        limits["max_run_steps_per_call"] = json!("1000001");
         excessive_limit["host_limits"] = limits;
         let response = dispatch(&mut adapter, excessive_limit);
         assert_eq!(

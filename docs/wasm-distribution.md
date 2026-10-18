@@ -5,8 +5,8 @@ identifiers, not compatibility baselines. Packaging does not publish a release.
 The manually dispatched CI release job is only relevant when the user chooses
 to publish a tagged build.
 
-The `wasm-full-0.1.0.zip` package is the versioned handoff for game hosts that
-consume the current Full Runtime API 3 and Server ABI 4. It contains generated browser bindings for web and
+The `wasm-full-0.1.0.zip` package is the versioned handoff for hosts that
+consume the current Full Runtime API 4 and Server ABI 5. It contains generated browser bindings for web and
 Node.js, the no-import server ABI module, a manifest with SHA-256 hashes, and
 the license. The manifest records the source profile, Runtime API version,
 server ABI version, configured linear-memory maximum, and `wasm-bindgen` CLI
@@ -40,7 +40,7 @@ server module encode the configured linear-memory maximum.
 - `browser/web/` contains the browser-target `wasm-bindgen` JavaScript and WASM
   files.
 - `browser/nodejs/` contains the Node.js-target binding and WASM files.
-- `server/codegrid_wasm_server.wasm` is the no-import server ABI v4 module. A
+- `server/codegrid_wasm_server.wasm` is the no-import server ABI v5 module. A
   host must follow the allocation, request write, process, response copy, and
   buffer release protocol in the [server adapter contract](../crates/codegrid-wasm-server/README.md).
 - `manifest.json` records current contract versions, the linear-memory maximum,

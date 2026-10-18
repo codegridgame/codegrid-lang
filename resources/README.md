@@ -16,8 +16,8 @@ generates the Rust table and the packaged VS Code JSON copy. Never edit those
 generated copies. `node scripts/check_error_codes.js` checks that they are current.
 
 Rust consumers use `codegrid_model::error_message("1004", "zh-CN")`.
-The runtime API and level API re-export this function so their adapters do not
-need additional dependencies. Resolve symbolic identities with
+The Runtime API re-exports this function so its adapters do not need an
+additional dependency. Resolve symbolic identities with
 `error_number(layer, code)` first. Unknown numbers return `None`; use
 `fallback_error_message(locale)` for a generic summary.
 

@@ -4,7 +4,7 @@ import { errorMessage } from './errorCatalog';
 
 /** Numeric presentation only; source acceptance and VM behavior remain in Rust. */
 export function errorNumber(code: string): string {
-  for (const layer of ['source', 'ir', 'vm', 'fault', 'debug', 'editor', 'level']) {
+  for (const layer of ['source', 'ir', 'vm', 'fault', 'debug', 'editor']) {
     const number = errorNumbers[`${layer}:${code}`];
     if (number) return number;
   }
@@ -17,7 +17,7 @@ export function errorLabel(code: string): string {
 
 export function localizeError(code: string, originalMessage?: string): string {
   if (vscode.env.language.toLowerCase().startsWith('en') && originalMessage) return originalMessage;
-  const number = ['source', 'ir', 'vm', 'fault', 'debug', 'editor', 'cli', 'level']
+  const number = ['source', 'ir', 'vm', 'fault', 'debug', 'editor', 'cli']
     .map(layer => errorNumbers[`${layer}:${code}`]).find(Boolean);
   return errorMessage(number || '', vscode.env.language);
 }

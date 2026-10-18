@@ -12,14 +12,14 @@ pub enum ExecutionScope {
     Custom {
         caller_thread_id: u64,
         custom_id: Slot,
-        internal_tick: u64,
+        internal_step: u64,
     },
 }
 
 /// A deterministic runtime failure reported by the VM.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct RuntimeError {
-    global_tick: u64,
+    transition_id: u64,
     scope: ExecutionScope,
     kind: RuntimeErrorKind,
 }
@@ -27,12 +27,6 @@ pub struct RuntimeError {
 /// The machine-readable category and resource context of a runtime error.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum RuntimeErrorKind {
-    GasLimitExceeded {
-        limit: u64,
-        attempted_gas: u64,
-    },
-    GasCounterOverflow,
-    CustomDisabled,
     ConcurrentCallerStackReadConflict {
         internal_thread_ids: Vec<u64>,
     },
@@ -59,9 +53,6 @@ pub enum RuntimeErrorKind {
     ConcurrentWriteConflict {
         register: u8,
         thread_ids: Vec<u64>,
-    },
-    CustomExecutionLimitExceeded {
-        limit: u64,
     },
     ReturnWithoutCall {
         thread_id: u64,
@@ -90,7 +81,7 @@ enum ResourceKey {
 
 impl RuntimeError {
     /// Creates an error and canonicalizes all participant lists.
-    pub fn new(global_tick: u64, scope: ExecutionScope, mut kind: RuntimeErrorKind) -> Self {
+    pub fn new(transition_id: u64, scope: ExecutionScope, mut kind: RuntimeErrorKind) -> Self {
         match &mut kind {
             RuntimeErrorKind::ConcurrentCallerStackReadConflict {
                 internal_thread_ids,
@@ -110,22 +101,18 @@ impl RuntimeError {
             | RuntimeErrorKind::ConcurrentWriteConflict { thread_ids, .. } => {
                 normalize_ids(thread_ids);
             }
-            RuntimeErrorKind::GasLimitExceeded { .. }
-            | RuntimeErrorKind::GasCounterOverflow
-            | RuntimeErrorKind::CustomDisabled
-            | RuntimeErrorKind::CustomExecutionLimitExceeded { .. }
-            | RuntimeErrorKind::ReturnWithoutCall { .. } => {}
+            RuntimeErrorKind::ReturnWithoutCall { .. } => {}
         }
 
         Self {
-            global_tick,
+            transition_id,
             scope,
             kind,
         }
     }
 
-    pub const fn global_tick(&self) -> u64 {
-        self.global_tick
+    pub const fn transition_id(&self) -> u64 {
+        self.transition_id
     }
 
     pub const fn scope(&self) -> ExecutionScope {
@@ -138,9 +125,6 @@ impl RuntimeError {
 
     pub fn code(&self) -> &'static str {
         match &self.kind {
-            RuntimeErrorKind::GasLimitExceeded { .. } => "GasLimitExceeded",
-            RuntimeErrorKind::GasCounterOverflow => "GasCounterOverflow",
-            RuntimeErrorKind::CustomDisabled => "CustomDisabled",
             RuntimeErrorKind::ConcurrentCallerStackReadConflict { .. } => {
                 "ConcurrentCallerStackReadConflict"
             }
@@ -157,7 +141,6 @@ impl RuntimeError {
             }
             RuntimeErrorKind::ConcurrentOutputConflict { .. } => "ConcurrentOutputConflict",
             RuntimeErrorKind::ConcurrentWriteConflict { .. } => "ConcurrentWriteConflict",
-            RuntimeErrorKind::CustomExecutionLimitExceeded { .. } => "CustomExecutionLimitExceeded",
             RuntimeErrorKind::ReturnWithoutCall { .. } => "ReturnWithoutCall",
         }
     }
@@ -192,12 +175,6 @@ impl RuntimeError {
                 register,
                 thread_ids,
             } => (ResourceKey::Register(*register), thread_ids.clone()),
-            RuntimeErrorKind::GasLimitExceeded { .. }
-            | RuntimeErrorKind::GasCounterOverflow
-            | RuntimeErrorKind::CustomDisabled
-            | RuntimeErrorKind::CustomExecutionLimitExceeded { .. } => {
-                (ResourceKey::None, Vec::new())
-            }
             RuntimeErrorKind::ReturnWithoutCall {
                 thread_id,
                 board,
@@ -280,7 +257,7 @@ mod tests {
             ExecutionScope::Custom {
                 caller_thread_id: 0,
                 custom_id: Slot::new(0).expect("zero is valid"),
-                internal_tick: 1,
+                internal_step: 1,
             },
             RuntimeErrorKind::ConcurrentMemoryWriteConflict {
                 address: BigInt::from(-1),
@@ -291,14 +268,18 @@ mod tests {
     }
 
     #[test]
-    fn custom_error_order_uses_caller_then_custom_id_then_internal_tick() {
+    fn error_order_uses_execution_scope_before_error_details() {
         let custom_zero = Slot::new(0).expect("zero is a valid Custom ID");
         let custom_one = Slot::new(1).expect("one is a valid Custom ID");
         let make_error = |scope| {
             RuntimeError::new(
                 1,
                 scope,
-                RuntimeErrorKind::CustomExecutionLimitExceeded { limit: 4 },
+                RuntimeErrorKind::ReturnWithoutCall {
+                    thread_id: 0,
+                    board: BoardId::Main,
+                    position: Coordinate { x: 0, y: 0 },
+                },
             )
         };
         let expected = vec![
@@ -306,45 +287,45 @@ mod tests {
             ExecutionScope::Custom {
                 caller_thread_id: 0,
                 custom_id: custom_zero,
-                internal_tick: 1,
+                internal_step: 1,
             },
             ExecutionScope::Custom {
                 caller_thread_id: 0,
                 custom_id: custom_zero,
-                internal_tick: 2,
+                internal_step: 2,
             },
             ExecutionScope::Custom {
                 caller_thread_id: 0,
                 custom_id: custom_one,
-                internal_tick: 1,
+                internal_step: 1,
             },
             ExecutionScope::Custom {
                 caller_thread_id: 1,
                 custom_id: custom_zero,
-                internal_tick: 1,
+                internal_step: 1,
             },
         ];
         let mut errors = vec![
             make_error(ExecutionScope::Custom {
                 caller_thread_id: 1,
                 custom_id: custom_zero,
-                internal_tick: 1,
+                internal_step: 1,
             }),
             make_error(ExecutionScope::Custom {
                 caller_thread_id: 0,
                 custom_id: custom_one,
-                internal_tick: 1,
+                internal_step: 1,
             }),
             make_error(ExecutionScope::Custom {
                 caller_thread_id: 0,
                 custom_id: custom_zero,
-                internal_tick: 2,
+                internal_step: 2,
             }),
             make_error(ExecutionScope::Outer),
             make_error(ExecutionScope::Custom {
                 caller_thread_id: 0,
                 custom_id: custom_zero,
-                internal_tick: 1,
+                internal_step: 1,
             }),
         ];
 
@@ -403,6 +384,6 @@ mod tests {
         );
 
         assert_eq!(error.code(), "ReturnWithoutCall");
-        assert_eq!(error.global_tick(), 2);
+        assert_eq!(error.transition_id(), 2);
     }
 }

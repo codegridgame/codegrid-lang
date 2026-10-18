@@ -75,7 +75,7 @@ export const PRIMARIES: PrimaryInfo[] = [
     primary(`#${slot}`, `CUSTOM ${slot}`, null, 'custom')
   ),
   primary('#]', 'CUSTOM_RETURN', null, 'custom'),
-  primary(';', 'HALT', null, 'halt', 'Halts normally after this successful tick. The VM does not move afterward.'),
+  primary(';', 'HALT', null, 'halt', 'Halts normally after this successful step. The VM does not move afterward.'),
 ];
 
 export const ENTRIES: EntryInfo[] = [

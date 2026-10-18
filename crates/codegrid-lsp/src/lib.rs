@@ -523,7 +523,7 @@ fn hover_cell(source: &str, index: &LineIndex, offset: usize) -> Value {
         ),
         Ok(CellToken::Instruction { prefix, primary, attachment }) => {
             let mut description = primary_description(primary);
-            if let Some(prefix) = prefix { if prefix == codegrid_model::ConditionPrefix::Flag { description.push_str("\n\nPrefix: execute only when the tick-start status flag F equals 1; otherwise skip the complete cell."); } else { description.push_str(&format!("\n\nPrefix: execute only when the selected tick-start register equals {}; otherwise skip the complete cell.", prefix.value())); } }
+            if let Some(prefix) = prefix { if prefix == codegrid_model::ConditionPrefix::Flag { description.push_str("\n\nPrefix: execute only when the transition-start status flag F equals 1; otherwise skip the complete cell."); } else { description.push_str(&format!("\n\nPrefix: execute only when the selected transition-start register equals {}; otherwise skip the complete cell.", prefix.value())); } }
             if let Some(attachment) = attachment { description.push_str(&format!("\n\nAttachment: {}.", attachment_description(attachment))); }
             description
         },
@@ -637,7 +637,7 @@ fn primary_description(primary: PrimaryInstruction) -> String {
             format!("Call Function F{} in the current CodeGrid.", slot.get())
         }
         PrimaryInstruction::Return => {
-            "Return through the current Function call frame; caller movement occurs on a separate AfterCall tick."
+            "Return through the current Function call frame; caller movement occurs on a separate AfterCall transition."
                 .to_owned()
         }
         PrimaryInstruction::Nand => {
@@ -678,7 +678,7 @@ fn primary_description(primary: PrimaryInstruction) -> String {
                 .to_owned()
         }
         PrimaryInstruction::Halt => {
-            "Request whole-VM termination after the current Global Tick commits.".to_owned()
+            "Request whole-VM termination after the current outer transition commits.".to_owned()
         }
     };
     format!("Full Primary instruction\n\n{semantics}")

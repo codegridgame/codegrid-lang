@@ -63,7 +63,7 @@ pub(super) struct SharedEffectBatch {
     pub caller_stack_writes: Vec<CallerStackWrite>,
 }
 
-/// Resolves conflicts for one synchronous execution-context tick.
+/// Resolves conflicts for one synchronous execution-context step.
 ///
 /// This function only diagnoses conflicts; the caller commits the effects
 /// atomically after all local and shared errors have been collected.
@@ -71,7 +71,7 @@ pub(super) fn resolve_shared_conflicts(
     effects: &SharedEffectBatch,
     input_was_nonempty: bool,
     caller_stack_was_nonempty: bool,
-    global_tick: u64,
+    transition_id: u64,
     scope: ExecutionScope,
 ) -> Vec<RuntimeError> {
     let mut errors = Vec::new();
@@ -85,7 +85,7 @@ pub(super) fn resolve_shared_conflicts(
             .collect();
         rejected_readers.extend(effects.input_reads.iter().map(|read| read.thread_id));
         errors.push(RuntimeError::new(
-            global_tick,
+            transition_id,
             scope,
             RuntimeErrorKind::ConcurrentInputConflict { thread_ids },
         ));
@@ -103,7 +103,7 @@ pub(super) fn resolve_shared_conflicts(
         rejected_caller_readers
             .extend(effects.caller_stack_reads.iter().map(|read| read.thread_id));
         errors.push(RuntimeError::new(
-            global_tick,
+            transition_id,
             scope,
             RuntimeErrorKind::ConcurrentCallerStackReadConflict {
                 internal_thread_ids,
@@ -122,7 +122,7 @@ pub(super) fn resolve_shared_conflicts(
     let caller_stack_write_conflict = effects.caller_stack_writes.len() > 1;
     if caller_stack_write_conflict {
         errors.push(RuntimeError::new(
-            global_tick,
+            transition_id,
             scope,
             RuntimeErrorKind::ConcurrentCallerStackWriteConflict {
                 internal_thread_ids: effects
@@ -146,7 +146,7 @@ pub(super) fn resolve_shared_conflicts(
                     .map(|write| write.thread_id),
             );
             errors.push(RuntimeError::new(
-                global_tick,
+                transition_id,
                 scope,
                 RuntimeErrorKind::ConcurrentCallerStackReadWriteConflict {
                     internal_thread_ids,
@@ -197,7 +197,7 @@ pub(super) fn resolve_shared_conflicts(
         thread_ids = without_rejected(&thread_ids, &rejected_caller_readers);
         if thread_ids.len() > 1 {
             errors.push(RuntimeError::new(
-                global_tick,
+                transition_id,
                 scope,
                 RuntimeErrorKind::ConcurrentWriteConflict {
                     register,
@@ -209,7 +209,7 @@ pub(super) fn resolve_shared_conflicts(
 
     if effects.output_writes.len() > 1 {
         errors.push(RuntimeError::new(
-            global_tick,
+            transition_id,
             scope,
             RuntimeErrorKind::ConcurrentOutputConflict {
                 thread_ids: effects
@@ -231,7 +231,7 @@ pub(super) fn resolve_shared_conflicts(
     for (location, thread_ids) in memory_writers {
         if thread_ids.len() > 1 {
             errors.push(RuntimeError::new(
-                global_tick,
+                transition_id,
                 scope,
                 RuntimeErrorKind::ConcurrentMemoryWriteConflict {
                     address: location.address.clone(),
@@ -251,7 +251,7 @@ pub(super) fn resolve_shared_conflicts(
     for (cell, thread_ids) in code_writers {
         if thread_ids.len() > 1 {
             errors.push(RuntimeError::new(
-                global_tick,
+                transition_id,
                 scope,
                 RuntimeErrorKind::ConcurrentCodeWriteConflict { cell, thread_ids },
             ));
@@ -365,7 +365,7 @@ mod tests {
         let custom_id = Slot::new(1).expect("ID is in range");
         let location = MemoryLocationId {
             space: MemorySpaceId::CustomInvocation {
-                global_tick: 3,
+                transition_id: 3,
                 caller_thread_id: 7,
                 custom_id,
             },
@@ -395,7 +395,7 @@ mod tests {
             ExecutionScope::Custom {
                 caller_thread_id: 7,
                 custom_id,
-                internal_tick: 1,
+                internal_step: 1,
             },
         );
         assert_eq!(errors.len(), 1);
@@ -461,7 +461,7 @@ mod tests {
             ExecutionScope::Custom {
                 caller_thread_id: 5,
                 custom_id: Slot::new(2).expect("ID is in range"),
-                internal_tick: 1,
+                internal_step: 1,
             },
         );
 
@@ -492,7 +492,7 @@ mod tests {
             ExecutionScope::Custom {
                 caller_thread_id: 2,
                 custom_id: Slot::new(0).expect("ID is in range"),
-                internal_tick: 1,
+                internal_step: 1,
             },
         );
         assert!(errors.is_empty());
@@ -521,7 +521,7 @@ mod tests {
             ExecutionScope::Custom {
                 caller_thread_id: 2,
                 custom_id: Slot::new(0).expect("ID is in range"),
-                internal_tick: 1,
+                internal_step: 1,
             },
         );
         assert_eq!(errors.len(), 1);
@@ -557,7 +557,7 @@ mod tests {
             ExecutionScope::Custom {
                 caller_thread_id: 3,
                 custom_id: Slot::new(0).expect("ID is in range"),
-                internal_tick: 1,
+                internal_step: 1,
             },
         );
 
@@ -605,7 +605,7 @@ mod tests {
         };
         let custom_memory_first = MemoryLocationId {
             space: MemorySpaceId::CustomInvocation {
-                global_tick: 2,
+                transition_id: 2,
                 caller_thread_id: 5,
                 custom_id,
             },
@@ -713,7 +713,7 @@ mod tests {
         let custom_scope = ExecutionScope::Custom {
             caller_thread_id: 5,
             custom_id,
-            internal_tick: 3,
+            internal_step: 3,
         };
         let custom_effects = SharedEffectBatch {
             register_writes: vec![
@@ -811,7 +811,7 @@ mod tests {
         };
         let custom_errors = resolve_shared_conflicts(&custom_effects, false, true, 2, custom_scope);
 
-        // Merge separate context-tick results in reverse order to verify that
+        // Merge separate context-step results in reverse order to verify that
         // the public canonical ordering still places Outer before Custom.
         let mut actual_errors = custom_errors;
         actual_errors.extend(outer_errors);

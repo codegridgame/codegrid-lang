@@ -19,9 +19,9 @@ use crate::{
 };
 
 use super::{
-    add_stack_usage, commit_effects, committed_state_events, record_cell_visit, record_operation,
-    runtime_board, runtime_cell, stack_usage_with_growth, ExecutionMode, ExecutionWorkBudget,
-    StackUsage, TickDraft,
+    commit_effects, committed_state_events, record_cell_visit, record_operation, runtime_board,
+    runtime_cell, stack_usage_with_growth, ExecutionMode, ExecutionWorkBudget, StackUsage,
+    StepDraft,
 };
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -38,23 +38,118 @@ enum CustomOutcome {
     WorkLimit,
 }
 
+/// The complete semantic state of one synchronous Custom invocation. Metrics
+/// and staged observations are deliberately excluded: neither affects future
+/// execution, and both are discarded if a work ceiling interrupts the step.
+#[derive(Clone, Debug, Eq, PartialEq)]
+struct CustomCycleState {
+    registers: [Value; 10],
+    memory: Memory,
+    input: VecDeque<Value>,
+    runtime: ScopedProgram,
+    threads: Vec<ThreadState>,
+    caller_stack: Vec<Value>,
+}
+
+impl CustomCycleState {
+    fn capture(
+        registers: &[Value; 10],
+        memory: &Memory,
+        input: &VecDeque<Value>,
+        runtime: &ScopedProgram,
+        threads: &[ThreadState],
+        caller_stack: &[Value],
+    ) -> Self {
+        Self {
+            registers: *registers,
+            memory: memory.clone(),
+            input: input.clone(),
+            runtime: runtime.clone(),
+            threads: threads.to_vec(),
+            caller_stack: caller_stack.to_vec(),
+        }
+    }
+
+    fn matches(
+        &self,
+        registers: &[Value; 10],
+        memory: &Memory,
+        input: &VecDeque<Value>,
+        runtime: &ScopedProgram,
+        threads: &[ThreadState],
+        caller_stack: &[Value],
+    ) -> bool {
+        self.registers == *registers
+            && self.memory == *memory
+            && self.input == *input
+            && self.runtime == *runtime
+            && self.threads == threads
+            && self.caller_stack == caller_stack
+    }
+}
+
+/// Brent cycle detection keeps one checkpoint regardless of the number of
+/// Custom dispatches. A repeated complete state proves this invocation can
+/// never return, while preserving exact finite-run accounting and telemetry.
+struct CustomCycleDetector {
+    checkpoint: CustomCycleState,
+    power: u64,
+    length: u64,
+}
+
+impl CustomCycleDetector {
+    fn new(checkpoint: CustomCycleState) -> Self {
+        Self {
+            checkpoint,
+            power: 1,
+            length: 0,
+        }
+    }
+
+    fn observe(
+        &mut self,
+        registers: &[Value; 10],
+        memory: &Memory,
+        input: &VecDeque<Value>,
+        runtime: &ScopedProgram,
+        threads: &[ThreadState],
+        caller_stack: &[Value],
+    ) -> bool {
+        self.length = self.length.saturating_add(1);
+        if self
+            .checkpoint
+            .matches(registers, memory, input, runtime, threads, caller_stack)
+        {
+            return true;
+        }
+        if self.length == self.power {
+            self.checkpoint =
+                CustomCycleState::capture(registers, memory, input, runtime, threads, caller_stack);
+            self.power = self.power.saturating_mul(2);
+            self.length = 0;
+        }
+        false
+    }
+}
+
 fn accumulate_custom_stack_usage(
-    draft: &mut TickDraft,
-    internal_tick: u64,
+    draft: &mut StepDraft,
+    internal_step: u64,
     usage: StackUsage,
 ) -> Result<(), VmFault> {
-    let accumulated = draft.custom_stack_samples.entry(internal_tick).or_default();
-    *accumulated = add_stack_usage(*accumulated, usage)?;
-    Ok(())
+    draft.custom_stack_samples.add_usage(internal_step, usage)
 }
 
 fn record_custom_caller_stack_sample(
-    draft: &mut TickDraft,
-    internal_tick: u64,
+    draft: &mut StepDraft,
+    internal_step: u64,
     caller_thread_id: u64,
     stack_before: &[Value],
     staged_pushes: usize,
 ) -> Result<(), VmFault> {
+    if staged_pushes == 0 {
+        return Ok(());
+    }
     let base = u64::try_from(stack_before.len())
         .map_err(|_| VmFault::MetricCounterOverflow(MetricCounterOverflow::DataStackUsage))?;
     let pushes = u64::try_from(staged_pushes)
@@ -65,18 +160,14 @@ fn record_custom_caller_stack_sample(
             MetricCounterOverflow::DataStackUsage,
         ))?;
     draft
-        .custom_caller_stack_samples
-        .entry(internal_tick)
-        .or_default()
-        .entry(caller_thread_id)
-        .and_modify(|depth| *depth = (*depth).max(sampled_depth))
-        .or_insert(sampled_depth);
+        .custom_stack_samples
+        .add_caller_depth(internal_step, caller_thread_id, sampled_depth);
     Ok(())
 }
 
 pub(super) fn evaluate_thread(
     thread: &mut ThreadState,
-    tick: u64,
+    step: u64,
     registers: &[Value; 10],
     memory: &Memory,
     input: &VecDeque<Value>,
@@ -85,7 +176,7 @@ pub(super) fn evaluate_thread(
     verified_program: &VerifiedProgram,
     config: VmConfig,
     metrics: &mut crate::RuntimeMetrics,
-    draft: &mut TickDraft,
+    draft: &mut StepDraft,
     mode: ExecutionMode,
     budget: &mut ExecutionWorkBudget,
 ) {
@@ -95,9 +186,16 @@ pub(super) fn evaluate_thread(
         }
         return;
     }
-    if !budget.consume() {
-        draft.work_limit_exceeded = true;
-        return;
+    match budget.consume(mode.scope) {
+        Ok(true) => {}
+        Ok(false) => {
+            draft.work_limit_exceeded = true;
+            return;
+        }
+        Err(overflow) => {
+            draft.fault = Some(VmFault::MetricCounterOverflow(overflow));
+            return;
+        }
     }
 
     let active_registers = thread.private_registers.unwrap_or(*registers);
@@ -109,7 +207,7 @@ pub(super) fn evaluate_thread(
     match thread.phase {
         ExecutionPhase::Normal => execute_normal(
             thread,
-            tick,
+            step,
             registers,
             memory,
             input,
@@ -123,11 +221,11 @@ pub(super) fn evaluate_thread(
             budget,
         ),
         ExecutionPhase::AfterCall => {
-            execute_after_call(thread, tick, runtime, config, metrics, draft, mode)
+            execute_after_call(thread, step, runtime, config, metrics, draft, mode)
         }
         ExecutionPhase::Repeat { total, completed } => execute_repeat(
             thread,
-            tick,
+            step,
             registers,
             memory,
             input,
@@ -149,7 +247,7 @@ pub(super) fn evaluate_thread(
             saved_outer_direction,
         } => execute_fold_cell(
             thread,
-            tick,
+            step,
             registers,
             memory,
             input,
@@ -171,7 +269,7 @@ pub(super) fn evaluate_thread(
         } => {
             thread.direction = saved_outer_direction;
             thread.phase = ExecutionPhase::Normal;
-            move_normal_cell(thread, tick, runtime, config, draft, mode);
+            move_normal_cell(thread, step, runtime, config, draft, mode);
         }
         ExecutionPhase::Terminated => unreachable!("terminated threads are skipped"),
     }
@@ -179,7 +277,7 @@ pub(super) fn evaluate_thread(
 
 fn execute_normal(
     thread: &mut ThreadState,
-    tick: u64,
+    step: u64,
     registers: &[Value; 10],
     memory: &Memory,
     input: &VecDeque<Value>,
@@ -188,7 +286,7 @@ fn execute_normal(
     program: &VerifiedProgram,
     config: VmConfig,
     metrics: &mut crate::RuntimeMetrics,
-    draft: &mut TickDraft,
+    draft: &mut StepDraft,
     mode: ExecutionMode,
     budget: &mut ExecutionWorkBudget,
 ) {
@@ -199,7 +297,7 @@ fn execute_normal(
     let id = cell_id(mode.code_grid, thread.board, None, thread.position);
     record_cell_visit(metrics, draft, thread, id, mode.scope);
     if !condition_matches(cell.prefix, thread, registers, metrics, draft) {
-        move_normal_cell(thread, tick, runtime, config, draft, mode);
+        move_normal_cell(thread, step, runtime, config, draft, mode);
         return;
     }
     let Some(primary) = cell.primary else {
@@ -215,7 +313,7 @@ fn execute_normal(
             draft.fault = Some(VmFault::InternalInvariantViolation);
             return;
         }
-        move_normal_cell(thread, tick, runtime, config, draft, mode);
+        move_normal_cell(thread, step, runtime, config, draft, mode);
         return;
     };
 
@@ -226,7 +324,7 @@ fn execute_normal(
     let flow = execute_primary(
         thread,
         primary,
-        tick,
+        step,
         registers,
         memory,
         input,
@@ -259,12 +357,12 @@ fn execute_normal(
         }
         None => {}
     }
-    move_current(thread, tick, runtime, config, draft, mode);
+    move_current(thread, step, runtime, config, draft, mode);
 }
 
 fn execute_repeat(
     thread: &mut ThreadState,
-    tick: u64,
+    step: u64,
     registers: &[Value; 10],
     memory: &Memory,
     input: &VecDeque<Value>,
@@ -273,7 +371,7 @@ fn execute_repeat(
     program: &VerifiedProgram,
     config: VmConfig,
     metrics: &mut crate::RuntimeMetrics,
-    draft: &mut TickDraft,
+    draft: &mut StepDraft,
     mode: ExecutionMode,
     total: u8,
     completed: u8,
@@ -300,7 +398,7 @@ fn execute_repeat(
     );
     if !condition_matches(cell.prefix, thread, registers, metrics, draft) {
         thread.phase = ExecutionPhase::Normal;
-        move_normal_cell(thread, tick, runtime, config, draft, mode);
+        move_normal_cell(thread, step, runtime, config, draft, mode);
         return;
     }
     record_primary(primary, metrics, draft);
@@ -310,7 +408,7 @@ fn execute_repeat(
     let flow = execute_primary(
         thread,
         primary,
-        tick,
+        step,
         registers,
         memory,
         input,
@@ -329,7 +427,7 @@ fn execute_repeat(
     let completed = completed + 1;
     if completed == total {
         thread.phase = ExecutionPhase::Normal;
-        move_current(thread, tick, runtime, config, draft, mode);
+        move_current(thread, step, runtime, config, draft, mode);
     } else {
         thread.phase = ExecutionPhase::Repeat { total, completed };
     }
@@ -337,11 +435,11 @@ fn execute_repeat(
 
 fn execute_after_call(
     thread: &mut ThreadState,
-    tick: u64,
+    step: u64,
     runtime: &ScopedProgram,
     config: VmConfig,
     metrics: &mut crate::RuntimeMetrics,
-    draft: &mut TickDraft,
+    draft: &mut StepDraft,
     mode: ExecutionMode,
 ) {
     let Some(cell) = runtime_cell(runtime, thread.board, thread.position).cloned() else {
@@ -364,12 +462,12 @@ fn execute_after_call(
         return;
     }
     thread.phase = ExecutionPhase::Normal;
-    move_normal_cell(thread, tick, runtime, config, draft, mode);
+    move_normal_cell(thread, step, runtime, config, draft, mode);
 }
 
 fn execute_fold_cell(
     thread: &mut ThreadState,
-    tick: u64,
+    step: u64,
     registers: &[Value; 10],
     memory: &Memory,
     input: &VecDeque<Value>,
@@ -378,7 +476,7 @@ fn execute_fold_cell(
     program: &VerifiedProgram,
     config: VmConfig,
     metrics: &mut crate::RuntimeMetrics,
-    draft: &mut TickDraft,
+    draft: &mut StepDraft,
     mode: ExecutionMode,
     fold_id: Slot,
     position: Coordinate,
@@ -421,7 +519,7 @@ fn execute_fold_cell(
         execute_primary(
             thread,
             primary,
-            tick,
+            step,
             registers,
             memory,
             input,
@@ -463,7 +561,7 @@ fn execute_fold_cell(
 fn execute_primary(
     thread: &mut ThreadState,
     primary: PrimaryInstruction,
-    tick: u64,
+    step: u64,
     registers: &[Value; 10],
     memory: &Memory,
     input: &VecDeque<Value>,
@@ -472,7 +570,7 @@ fn execute_primary(
     program: &VerifiedProgram,
     config: VmConfig,
     metrics: &mut crate::RuntimeMetrics,
-    draft: &mut TickDraft,
+    draft: &mut StepDraft,
     mode: ExecutionMode,
     budget: &mut ExecutionWorkBudget,
 ) -> Flow {
@@ -615,7 +713,7 @@ fn execute_primary(
         PrimaryInstruction::Return => {
             let Some(frame) = thread.call_stack.pop() else {
                 draft.errors.push(RuntimeError::new(
-                    tick,
+                    step,
                     mode.scope,
                     RuntimeErrorKind::ReturnWithoutCall {
                         thread_id: thread.id,
@@ -641,13 +739,13 @@ fn execute_primary(
         }
         PrimaryInstruction::MemoryLoad => {
             let address = effective_address(&thread.page, value);
-            metrics.record_memory_access(memory_location(mode, tick, address.clone()));
+            metrics.record_memory_access(memory_location(mode, step, address.clone()));
             thread.data_stack.push(memory.read(&address));
         }
         PrimaryInstruction::MemoryStore => {
             if let Some(stored) = thread.data_stack.pop() {
                 let address = effective_address(&thread.page, value);
-                let location = memory_location(mode, tick, address);
+                let location = memory_location(mode, step, address);
                 metrics.record_memory_access(location.clone());
                 draft.effects.memory_writes.push(MemoryWrite {
                     thread_id: thread.id,
@@ -684,7 +782,7 @@ fn execute_primary(
             };
             execute_fold_cell(
                 thread,
-                tick,
+                step,
                 registers,
                 memory,
                 input,
@@ -704,17 +802,8 @@ fn execute_primary(
             return Flow::Stay;
         }
         PrimaryInstruction::Custom(custom_id) => {
-            if !config.custom_execution_enabled() {
-                draft.errors.push(RuntimeError::new(
-                    tick,
-                    mode.scope,
-                    RuntimeErrorKind::CustomDisabled,
-                ));
-                return Flow::Stay;
-            }
-            metrics.charge_execution(8);
             match execute_custom(
-                thread, custom_id, tick, program, config, metrics, draft, budget,
+                thread, custom_id, step, program, config, metrics, draft, budget,
             ) {
                 CustomOutcome::Returned => {}
                 CustomOutcome::Halted | CustomOutcome::Failed | CustomOutcome::WorkLimit => {
@@ -742,9 +831,9 @@ fn execute_attachment(
     thread: &mut ThreadState,
     attachment: AttachmentInstruction,
     cell: StaticCellId,
-    tick_start_primary: Option<PrimaryInstruction>,
+    step_start_primary: Option<PrimaryInstruction>,
     metrics: &mut crate::RuntimeMetrics,
-    draft: &mut TickDraft,
+    draft: &mut StepDraft,
 ) {
     let Some(kind) = InstructionKind::from_attachment(attachment) else {
         draft.fault = Some(VmFault::InternalInvariantViolation);
@@ -756,7 +845,7 @@ fn execute_attachment(
     }
     match attachment {
         AttachmentInstruction::ReadCode => {
-            let item = match tick_start_primary {
+            let item = match step_start_primary {
                 Some(primary) => match InstructionStackItem::from_primary(primary) {
                     Some(item) => item,
                     None => {
@@ -786,11 +875,11 @@ fn execute_attachment(
 fn execute_custom(
     caller: &mut ThreadState,
     custom_id: Slot,
-    tick: u64,
+    step: u64,
     program: &VerifiedProgram,
     config: VmConfig,
     metrics: &mut crate::RuntimeMetrics,
-    outer_draft: &mut TickDraft,
+    outer_draft: &mut StepDraft,
     budget: &mut ExecutionWorkBudget,
 ) -> CustomOutcome {
     let Some(definition) = program.program().customs.get(&custom_id) else {
@@ -801,25 +890,34 @@ fn execute_custom(
     let mut registers = [0; 10];
     let mut memory = Memory::default();
     let mut input = VecDeque::new();
-    let invocation_seed = custom_invocation_seed(config.seed(), caller.id, tick, custom_id);
+    let invocation_seed = custom_invocation_seed(config.seed(), caller.id, step, custom_id);
     let mut threads = initial_custom_threads(&runtime, invocation_seed);
     for internal in &mut threads {
         internal.status_flag = caller.status_flag;
     }
-    let limit = config.custom_execution_limit().get();
-
-    for internal_tick in 1..=limit {
+    let mut cycle_detector = budget.is_limited().then(|| {
+        CustomCycleDetector::new(CustomCycleState::capture(
+            &registers,
+            &memory,
+            &input,
+            &runtime,
+            &threads,
+            &caller.data_stack,
+        ))
+    });
+    let mut internal_step = 1_u64;
+    loop {
         let scope = ExecutionScope::Custom {
             caller_thread_id: caller.id,
             custom_id,
-            internal_tick,
+            internal_step,
         };
         let registers_before = registers;
         let memory_before = memory.clone();
         let runtime_before = runtime.clone();
         let threads_before = threads.clone();
         let caller_stack_before = caller.data_stack.clone();
-        let mut local_draft = TickDraft::default();
+        let mut local_draft = StepDraft::default();
         let mode = ExecutionMode {
             code_grid: CodeGridId::Custom(custom_id),
             scope,
@@ -830,7 +928,7 @@ fn execute_custom(
             }
             evaluate_thread(
                 thread,
-                tick,
+                step,
                 &registers_before,
                 &memory_before,
                 &input,
@@ -856,12 +954,12 @@ fn execute_custom(
             &local_draft.effects,
             false,
             !caller_stack_before.is_empty(),
-            tick,
+            step,
             scope,
         ));
         if let Err(fault) = record_custom_caller_stack_sample(
             outer_draft,
-            internal_tick,
+            internal_step,
             caller.id,
             &caller_stack_before,
             local_draft.effects.caller_stack_writes.len(),
@@ -878,7 +976,7 @@ fn execute_custom(
                 }
             };
             if let Err(fault) =
-                accumulate_custom_stack_usage(outer_draft, internal_tick, stack_usage)
+                accumulate_custom_stack_usage(outer_draft, internal_step, stack_usage)
             {
                 outer_draft.fault = Some(fault);
                 return CustomOutcome::Failed;
@@ -920,11 +1018,11 @@ fn execute_custom(
                 return CustomOutcome::Failed;
             }
         };
-        if let Err(fault) = accumulate_custom_stack_usage(outer_draft, internal_tick, stack_usage) {
+        if let Err(fault) = accumulate_custom_stack_usage(outer_draft, internal_step, stack_usage) {
             outer_draft.fault = Some(fault);
             return CustomOutcome::Failed;
         }
-        outer_draft.events.extend(local_draft.events);
+        outer_draft.events.append(local_draft.events);
         outer_draft.committed_events.extend(committed_state_events(
             scope,
             &registers_before,
@@ -948,17 +1046,29 @@ fn execute_custom(
         {
             return CustomOutcome::Returned;
         }
-        if internal_tick == limit {
-            outer_draft.errors.push(RuntimeError::new(
-                tick,
-                scope,
-                RuntimeErrorKind::CustomExecutionLimitExceeded { limit },
-            ));
-            return CustomOutcome::Failed;
+        if cycle_detector.as_mut().is_some_and(|detector| {
+            detector.observe(
+                &registers,
+                &memory,
+                &input,
+                &runtime,
+                &threads,
+                &caller.data_stack,
+            )
+        }) {
+            if let Err(overflow) = budget.exhaust_custom_cycle() {
+                outer_draft.fault = Some(VmFault::MetricCounterOverflow(overflow));
+                return CustomOutcome::Failed;
+            }
+            outer_draft.work_limit_exceeded = true;
+            return CustomOutcome::WorkLimit;
         }
+        let Some(next_internal_step) = internal_step.checked_add(1) else {
+            outer_draft.fault = Some(VmFault::InternalInvariantViolation);
+            return CustomOutcome::Failed;
+        };
+        internal_step = next_internal_step;
     }
-    outer_draft.fault = Some(VmFault::InternalInvariantViolation);
-    CustomOutcome::Failed
 }
 
 fn initial_custom_threads(program: &ScopedProgram, invocation_seed: u64) -> Vec<ThreadState> {
@@ -1001,13 +1111,8 @@ fn initial_custom_threads(program: &ScopedProgram, invocation_seed: u64) -> Vec<
 fn record_primary(
     primary: PrimaryInstruction,
     metrics: &mut crate::RuntimeMetrics,
-    draft: &mut TickDraft,
+    draft: &mut StepDraft,
 ) {
-    match primary {
-        PrimaryInstruction::Direction(_) => metrics.charge_execution(1),
-        PrimaryInstruction::FoldedBlock(_) => metrics.charge_execution(2),
-        _ => {}
-    }
     if let Some(kind) = InstructionKind::from_primary(primary) {
         record_operation(metrics, kind, draft);
     }
@@ -1046,7 +1151,7 @@ fn cell_id(
     }
 }
 
-fn memory_location(mode: ExecutionMode, tick: u64, address: BigInt) -> MemoryLocationId {
+fn memory_location(mode: ExecutionMode, transition_id: u64, address: BigInt) -> MemoryLocationId {
     let space = match (mode.code_grid, mode.scope) {
         (CodeGridId::Outer, _) => MemorySpaceId::Outer,
         (
@@ -1057,7 +1162,7 @@ fn memory_location(mode: ExecutionMode, tick: u64, address: BigInt) -> MemoryLoc
                 ..
             },
         ) => MemorySpaceId::CustomInvocation {
-            global_tick: tick,
+            transition_id,
             caller_thread_id,
             custom_id,
         },
@@ -1066,7 +1171,7 @@ fn memory_location(mode: ExecutionMode, tick: u64, address: BigInt) -> MemoryLoc
     MemoryLocationId { space, address }
 }
 
-fn stage_register(thread: &ThreadState, value: Value, draft: &mut TickDraft) {
+fn stage_register(thread: &ThreadState, value: Value, draft: &mut StepDraft) {
     draft.effects.register_writes.push(RegisterWrite {
         thread_id: thread.id,
         register: thread.register_pointer,
@@ -1076,10 +1181,10 @@ fn stage_register(thread: &ThreadState, value: Value, draft: &mut TickDraft) {
 
 fn move_current(
     thread: &mut ThreadState,
-    tick: u64,
+    step: u64,
     runtime: &ScopedProgram,
     config: VmConfig,
-    draft: &mut TickDraft,
+    draft: &mut StepDraft,
     mode: ExecutionMode,
 ) {
     if let ExecutionPhase::Fold {
@@ -1115,16 +1220,16 @@ fn move_current(
             None => draft.fault = Some(VmFault::InternalInvariantViolation),
         }
     } else {
-        move_normal_cell(thread, tick, runtime, config, draft, mode);
+        move_normal_cell(thread, step, runtime, config, draft, mode);
     }
 }
 
 fn move_normal_cell(
     thread: &mut ThreadState,
-    _tick: u64,
+    _step: u64,
     runtime: &ScopedProgram,
     _config: VmConfig,
-    draft: &mut TickDraft,
+    draft: &mut StepDraft,
     _mode: ExecutionMode,
 ) {
     let Some(board) = runtime_board(runtime, thread.board) else {
@@ -1143,7 +1248,7 @@ fn condition_matches(
     thread: &ThreadState,
     registers: &[Value; 10],
     metrics: &mut crate::RuntimeMetrics,
-    draft: &mut TickDraft,
+    draft: &mut StepDraft,
 ) -> bool {
     let Some(prefix) = prefix else {
         return true;

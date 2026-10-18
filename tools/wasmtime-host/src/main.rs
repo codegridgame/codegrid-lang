@@ -11,15 +11,15 @@ use wasmtime::{
 };
 
 const WASM_PAGE_BYTES: u64 = 65_536;
-const ABI_VERSION: u32 = 4;
-const API_VERSION: u32 = 3;
+const ABI_VERSION: u32 = 5;
+const API_VERSION: u32 = 4;
 const MAX_RESPONSE_BYTES: usize = 8 * 1024 * 1024;
 const DEFAULT_FUEL_PER_CALL: u64 = 1_000_000_000;
 const ABI_HELPER_FUEL: u64 = 1_000_000;
 const WASM_STACK_LIMIT_BYTES: usize = 2 * 1024 * 1024;
 const MEMORY_LIMIT_PROBE_BYTES: u64 = 1 * 1024 * 1024;
 const LOW_RUN_FUEL: u64 = 100_000;
-const DEFAULT_WORK_UNITS_PER_CALL: u64 = 1_000_000;
+const DEFAULT_WORK_UNITS_PER_CALL: u64 = 10_000;
 
 struct HostState {
     limits: StoreLimits,
@@ -221,7 +221,8 @@ fn main() -> Result<()> {
             &cli_path,
             fixture,
             DEFAULT_WORK_UNITS_PER_CALL,
-        )?;
+        )
+        .with_context(|| format!("Full fixture `{}` failed", fixture["id"]))?;
         baseline_cases.push(json!({
             "id": fixture["id"],
             "result": result,
@@ -269,10 +270,11 @@ fn main() -> Result<()> {
         &cli_path,
         loop_fixture,
     )?;
+    verify_step_budget_errors(&engine, &module, memory_limit_bytes, loop_fixture)?;
     verify_low_fuel_discards_session(&engine, &module, memory_limit_bytes, loop_fixture)?;
 
     println!(
-        "PASS: Wasmtime 49.0.1 server ABI v4 / Runtime API v3, all {} Full fixtures with complete native CLI parity, work-limit yielding, memory/stack limits, and low-fuel session discard. Native full-result baseline: {}",
+        "PASS: Wasmtime 49.0.1 server ABI v5 / Runtime API v4, all {} Full fixtures with complete native CLI parity, step/work budget errors, memory/stack limits, and low-fuel session discard. Native full-result baseline: {}",
         cases.len(),
         baseline_path.display()
     );
@@ -425,7 +427,7 @@ fn run_conformance_fixture(
         "api_version": API_VERSION,
         "operation": "run",
         "instance": instance,
-        "max_ticks": run["max_ticks"],
+        "max_steps": run["max_steps"],
     }))?;
     ensure!(
         result["abi_version"] == ABI_VERSION
@@ -471,8 +473,6 @@ fn create_instance_request(program: &str, run: &Value) -> Value {
         "input": run["input"],
         "initial_memory": run.get("initial_memory").cloned().unwrap_or_else(|| json!([])),
         "seed": run["seed"],
-        "custom_execution_limit": run["custom_execution_limit"],
-        "gas_hard_limit": run["gas_hard_limit"],
     })
 }
 
@@ -506,28 +506,12 @@ fn compare_fixture_expectations(
     ensure!(
         snapshot["registers"] == expected["registers"]
             && snapshot["output"] == expected["output"]
-            && snapshot["committed_ticks"] == expected["committed_ticks"],
-        "fixture `{fixture_id}` register/output/tick expectations do not match the server result"
+            && snapshot["committed_steps"] == expected["committed_steps"],
+        "fixture `{fixture_id}` register/output/step expectations do not match the server result"
     );
-    for metric in [
-        "operation_count",
-        "gas_used", "execution_gas", "memory_gas", "stack_gas", "gas_schedule_version",
-        "used_cell_count",
-        "used_memory_address_count",
-        "peak_data_stack_usage",
-        "peak_instruction_stack_usage",
-        "peak_call_stack_usage",
-    ] {
-        ensure!(
-            snapshot["metrics"][metric] == expected[metric],
-            "fixture `{fixture_id}` metric `{metric}` mismatch: expected {}, got {}",
-            expected[metric],
-            snapshot["metrics"][metric]
-        );
-    }
     ensure!(
-        snapshot["metrics"]["instruction_variety"] == expected["instruction_variety"],
-        "fixture `{fixture_id}` instruction variety mismatch"
+        snapshot["metrics"] == json!({"committed_steps": expected["committed_steps"]}),
+        "fixture `{fixture_id}` language metrics must expose committed step count only"
     );
     let actual_error_codes = snapshot["errors"]
         .as_array()
@@ -554,20 +538,15 @@ fn compare_fixture_expectations(
         "fixture `{fixture_id}` run response must contain event and output deltas"
     );
     ensure!(
-        snapshot["metrics"]["global_tick"] == snapshot["committed_ticks"],
-        "fixture `{fixture_id}` metric global_tick must match the snapshot tick"
+        snapshot["metrics"]["committed_steps"] == snapshot["committed_steps"],
+        "fixture `{fixture_id}` metric committed_steps must match the snapshot"
     );
 
     let run = &fixture["run"];
     let config = &native.json["configuration"];
     for (field, expected_value) in [
-
         ("seed", run["seed"].clone()),
-        (
-            "custom_execution_limit",
-            run["custom_execution_limit"].clone(),
-        ),
-        ("max_ticks", run["max_ticks"].clone()),
+        ("max_steps", run["max_steps"].clone()),
         ("max_work_units", json!(work_limit.to_string())),
         ("input", run["input"].clone()),
     ] {
@@ -606,11 +585,11 @@ fn assert_optional_fixture_expectations(
         .context("server snapshot errors must be an array")?;
     let runtime_main = &snapshot["runtime_program"]["main"]["cells"];
     let actual = json!({
-        "error_custom_internal_ticks": errors.iter()
+        "error_custom_internal_steps": errors.iter()
             .filter(|error| error["scope"]["kind"] == "custom")
-            .map(|error| error["scope"]["internal_tick"].clone()).collect::<Vec<_>>(),
-        "error_global_ticks": errors.iter()
-            .map(|error| error["global_tick"].clone()).collect::<Vec<_>>(),
+            .map(|error| error["scope"]["internal_step"].clone()).collect::<Vec<_>>(),
+        "error_transition_ids": errors.iter()
+            .map(|error| error["transition_id"].clone()).collect::<Vec<_>>(),
         "error_thread_id_groups": errors.iter()
             .map(|error| error["details"].get("thread_ids")
                 .or_else(|| error["details"].get("internal_thread_ids")))
@@ -743,19 +722,11 @@ fn run_native_cli(cli_path: &Path, fixture: &Value, work_limit: u64) -> Result<N
                 .as_str()
                 .context("fixture seed must be a decimal string")?,
         )
-        .arg("--gas-hard-limit")
-        .arg(run["gas_hard_limit"].as_str().context("fixture Gas budget must be a decimal string")?)
-        .arg("--custom-limit")
+        .arg("--max-steps")
         .arg(
-            run["custom_execution_limit"]
+            run["max_steps"]
                 .as_str()
-                .context("fixture custom limit must be a decimal string")?,
-        )
-        .arg("--max-ticks")
-        .arg(
-            run["max_ticks"]
-                .as_str()
-                .context("fixture tick limit must be a decimal string")?,
+                .context("fixture step limit must be a decimal string")?,
         )
         .arg("--max-work-units")
         .arg(work_limit.to_string())
@@ -822,10 +793,8 @@ fn normalize_native_result(result: &Value) -> Result<Value> {
         Some("halted") => "halted",
         Some("runtime_error") => "error",
         Some("vm_fault") => "vm_fault",
-        Some("yielded") if result["yield_reason"] == "tick_slice_exhausted" => "tick_limit_reached",
-        Some("yielded") if result["yield_reason"] == "work_unit_budget_exhausted" => {
-            "work_limit_reached"
-        }
+        Some("step_limit_reached") => "step_limit_reached",
+        Some("work_limit_reached") => "work_limit_reached",
         other => bail!("native CLI returned unsupported run status {other:?}"),
     };
     Ok(json!({
@@ -863,7 +832,7 @@ fn normalize_server_result(result: &Value) -> Result<Value> {
         [
             "halted",
             "error",
-            "tick_limit_reached",
+            "step_limit_reached",
             "work_limit_reached"
         ]
         .contains(&status),
@@ -887,7 +856,7 @@ fn normalize_snapshot(snapshot: &Value, shape: ResultShape) -> Result<Value> {
     assert_exact_keys(
         snapshot,
         &[
-            "committed_ticks",
+            "committed_steps",
             "errors",
             "fault",
             "memory",
@@ -922,7 +891,7 @@ fn normalize_snapshot(snapshot: &Value, shape: ResultShape) -> Result<Value> {
     let metrics = normalize_metrics(&snapshot["metrics"], shape)?;
     Ok(json!({
         "status": snapshot["status"],
-        "committed_ticks": snapshot["committed_ticks"],
+        "committed_steps": snapshot["committed_steps"],
         "registers": snapshot["registers"],
         "memory": memory,
         "remaining_input": snapshot["remaining_input"],
@@ -994,50 +963,12 @@ fn normalize_runtime_board(board: &Value, shape: ResultShape) -> Result<Value> {
 fn normalize_metrics(metrics: &Value, shape: ResultShape) -> Result<Value> {
     assert_exact_keys(
         metrics,
-        &[
-            "global_tick",
-            "instruction_variety",
-            "operation_count",
-            "gas_used", "execution_gas", "memory_gas", "stack_gas", "gas_schedule_version",
-            "peak_call_stack_usage",
-            "peak_data_stack_usage",
-            "peak_instruction_stack_usage",
-            "used_cell_count",
-            "used_cells",
-            "used_memory_address_count",
-            "used_memory_addresses",
-        ],
+        &["committed_steps"],
         "full runtime metrics",
     )?;
-    let used_cells = metrics["used_cells"]
-        .as_array()
-        .context("metrics used_cells must be an array")?
-        .iter()
-        .map(normalize_static_cell)
-        .collect::<Result<Vec<_>>>()?;
-    let used_memory_addresses = metrics["used_memory_addresses"]
-        .as_array()
-        .context("metrics used_memory_addresses must be an array")?
-        .iter()
-        .map(normalize_memory_location)
-        .collect::<Result<Vec<_>>>()?;
     let _ = shape;
     Ok(json!({
-        "global_tick": metrics["global_tick"],
-        "operation_count": metrics["operation_count"],
-        "gas_used": metrics["gas_used"],
-        "execution_gas": metrics["execution_gas"],
-        "memory_gas": metrics["memory_gas"],
-        "stack_gas": metrics["stack_gas"],
-        "gas_schedule_version": metrics["gas_schedule_version"],
-        "used_cell_count": metrics["used_cell_count"],
-        "used_cells": used_cells,
-        "used_memory_address_count": metrics["used_memory_address_count"],
-        "used_memory_addresses": used_memory_addresses,
-        "peak_data_stack_usage": metrics["peak_data_stack_usage"],
-        "peak_instruction_stack_usage": metrics["peak_instruction_stack_usage"],
-        "peak_call_stack_usage": metrics["peak_call_stack_usage"],
-        "instruction_variety": metrics["instruction_variety"],
+        "committed_steps": metrics["committed_steps"],
     }))
 }
 
@@ -1246,7 +1177,7 @@ fn normalize_call_frame(frame: &Value) -> Result<Value> {
 fn normalize_error(error: &Value, shape: ResultShape) -> Result<Value> {
     assert_exact_keys(
         error,
-        &["code", "details", "error_number", "global_tick", "scope"],
+        &["code", "details", "error_number", "transition_id", "scope"],
         "runtime error",
     )?;
     let mut details = error["details"].clone();
@@ -1269,7 +1200,7 @@ fn normalize_error(error: &Value, shape: ResultShape) -> Result<Value> {
     Ok(json!({
         "code": error["code"],
         "error_number": error["error_number"],
-        "global_tick": error["global_tick"],
+        "transition_id": error["transition_id"],
         "scope": error["scope"],
         "details": details,
     }))
@@ -1435,18 +1366,18 @@ fn verify_work_limit_yield(
         "api_version": API_VERSION,
         "operation": "run",
         "instance": instance,
-        "max_ticks": fixture["run"]["max_ticks"],
+            "max_steps": fixture["run"]["max_steps"],
     }))?;
     ensure!(
-        result["status"] == "work_limit_reached" && result["snapshot"]["committed_ticks"] == "1",
-        "one-unit deterministic budget did not yield after preserving one committed tick: {result}"
+        result["status"] == "work_limit_reached" && result["snapshot"]["committed_steps"] == "1",
+        "one-unit deterministic budget did not yield after preserving one committed step: {result}"
     );
     ensure!(
         !result["events"]
             .as_array()
             .context("work-limited run must return events")?
             .is_empty(),
-        "work-limited run failed to preserve events from its committed tick"
+        "work-limited run failed to preserve events from its committed step"
     );
     let native = run_native_cli(cli_path, fixture, 1)?;
     ensure!(
@@ -1464,6 +1395,102 @@ fn verify_work_limit_yield(
     ensure!(
         shutdown["status"] == "closed",
         "work-limited session did not shut down"
+    );
+    Ok(())
+}
+
+fn verify_step_budget_errors(
+    engine: &Engine,
+    module: &Module,
+    memory_limit_bytes: u64,
+    fixture: &Value,
+) -> Result<()> {
+    let mut session = WasmtimeSession::instantiate(engine, module, memory_limit_bytes)
+        .context("instantiate disposable step-budget session")?;
+    let mut initialize = initialize_request(DEFAULT_WORK_UNITS_PER_CALL);
+    initialize["host_limits"]["max_run_steps_per_call"] = json!("2");
+    initialize["host_limits"]["max_total_steps_per_instance"] = json!("3");
+    let initialized = session.dispatch(initialize)?;
+    ensure!(
+        initialized["status"] == "initialized",
+        "step-budget session failed initialization"
+    );
+
+    let compilation = session.dispatch(json!({
+        "abi_version": ABI_VERSION,
+        "api_version": API_VERSION,
+        "operation": "compile",
+        "source": fixture["source"],
+    }))?;
+    ensure!(
+        compilation["status"] == "compiled",
+        "step-budget loop fixture did not compile"
+    );
+    let program = compilation["program"]
+        .as_str()
+        .context("step-budget compile returned no program handle")?;
+    let created = session.dispatch(create_instance_request(program, &fixture["run"]))?;
+    let instance = created["instance"]
+        .as_str()
+        .context("step-budget fixture returned no instance handle")?;
+
+    let zero_budget = session.dispatch(json!({
+        "abi_version": ABI_VERSION,
+        "api_version": API_VERSION,
+        "operation": "run",
+        "instance": instance,
+        "max_steps": "0",
+    }))?;
+    ensure!(
+        zero_budget["error"]["code"] == "zero_step_budget",
+        "zero run budget returned the wrong error: {zero_budget}"
+    );
+
+    let call_budget = session.dispatch(json!({
+        "abi_version": ABI_VERSION,
+        "api_version": API_VERSION,
+        "operation": "run",
+        "instance": instance,
+        "max_steps": "3",
+    }))?;
+    ensure!(
+        call_budget["error"]["code"] == "run_step_budget_exceeded",
+        "run request above the per-call ceiling returned the wrong error: {call_budget}"
+    );
+
+    let first_slice = session.dispatch(json!({
+        "abi_version": ABI_VERSION,
+        "api_version": API_VERSION,
+        "operation": "run",
+        "instance": instance,
+        "max_steps": "2",
+    }))?;
+    ensure!(
+        first_slice["status"] == "step_limit_reached"
+            && first_slice["snapshot"]["committed_steps"] == "2",
+        "valid bounded run did not commit its two-step slice: {first_slice}"
+    );
+
+    let instance_budget = session.dispatch(json!({
+        "abi_version": ABI_VERSION,
+        "api_version": API_VERSION,
+        "operation": "run",
+        "instance": instance,
+        "max_steps": "2",
+    }))?;
+    ensure!(
+        instance_budget["error"]["code"] == "instance_step_budget_exceeded",
+        "run request above the remaining per-instance budget returned the wrong error: {instance_budget}"
+    );
+
+    let shutdown = session.dispatch(json!({
+        "abi_version": ABI_VERSION,
+        "api_version": API_VERSION,
+        "operation": "shutdown",
+    }))?;
+    ensure!(
+        shutdown["status"] == "closed",
+        "step-budget session did not shut down"
     );
     Ok(())
 }
@@ -1509,7 +1536,7 @@ fn verify_low_fuel_discards_session(
             "api_version": API_VERSION,
             "operation": "run",
             "instance": instance,
-            "max_ticks": "1000000",
+            "max_steps": "1000000",
         }),
         LOW_RUN_FUEL,
     );
@@ -1541,9 +1568,8 @@ fn initialize_request(max_work_units_per_call: u64) -> Value {
             "max_instances": 8,
             "max_input_bytes": 1024 * 1024,
             "max_initial_memory_entries": 65_536,
-            "max_run_ticks_per_call": "1000000",
-            "max_total_ticks_per_instance": "10000000",
-            "max_gas_per_instance": "100000000",
+            "max_run_steps_per_call": "1000000",
+            "max_total_steps_per_instance": "10000000",
             "max_work_units_per_call": max_work_units_per_call.to_string(),
             "max_response_bytes": 8 * 1024 * 1024,
             "max_instance_state_bytes": 8 * 1024 * 1024,

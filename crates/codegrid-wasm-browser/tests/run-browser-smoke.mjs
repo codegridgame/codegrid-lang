@@ -96,7 +96,7 @@ try {
     throw new Error(`Browser Full smoke failed: ${result ?? stdout.slice(-2000)}\n${stderr}`);
   }
   const result = stdout.match(/<pre id="result">([^<]*)<\/pre>/)?.[1];
-  assert.match(result ?? "", /^PASS: browser WebAssembly Runtime API v3/);
+  assert.match(result ?? "", /^PASS: browser WebAssembly Runtime API v4/);
   console.log(`${result} Configured WASM memory maximum verified at ${expectedWasmMemoryBytes} bytes.`);
 } finally {
   await new Promise((resolveClose) => server.close(resolveClose));

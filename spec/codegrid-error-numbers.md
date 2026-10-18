@@ -1,6 +1,6 @@
 # CodeGrid Four-Digit Error Numbers
 
-Generated from [codegrid-error-codes.json](codegrid-error-codes.json). Numbers are stable, unique, append-only four-digit decimal strings. Original identifiers and protocol codes remain compatible.
+Generated from [codegrid-error-codes.json](codegrid-error-codes.json). Numbers are unique four-digit decimal strings for presentation; original scoped identifiers and protocol codes remain authoritative.
 
 | Number | Layer | Original code | Trigger / meaning |
 | --- | --- | --- | --- |
@@ -67,18 +67,17 @@ Generated from [codegrid-error-codes.json](codegrid-error-codes.json). Numbers a
 | `2017` | ir | `ir.custom_reference` | A Custom reference is absent or the call context forbids Custom calls. |
 | `3000` | vm | `ConcurrentCallerStackReadConflict` | Multiple nonempty caller-stack reads conflict within a Custom invocation. |
 | `3001` | vm | `ConcurrentCallerStackReadWriteConflict` | A successful caller-stack read conflicts with a caller-stack output. |
-| `3002` | vm | `ConcurrentCallerStackWriteConflict` | Multiple Custom outputs write the caller stack in one aligned internal tick. |
+| `3002` | vm | `ConcurrentCallerStackWriteConflict` | Multiple Custom outputs write the caller stack in one aligned internal transition. |
 | `3003` | vm | `ConcurrentCodeWriteConflict` | Multiple writes target the same static code cell. |
 | `3004` | vm | `ConcurrentInputConflict` | Multiple live threads consume the same available Outer input. |
 | `3005` | vm | `ConcurrentMemoryWriteConflict` | Multiple writes target the same scoped memory address. |
-| `3006` | vm | `ConcurrentOutputConflict` | Multiple Outer outputs conflict in one tick. |
+| `3006` | vm | `ConcurrentOutputConflict` | Multiple Outer outputs conflict in one transition. |
 | `3007` | vm | `ConcurrentWriteConflict` | Multiple writes target the same scoped register, including equal values. |
-| `3008` | vm | `CustomExecutionLimitExceeded` | A Custom invocation exceeds its normative execution limit. |
 | `3010` | vm | `ReturnWithoutCall` | RETURN executes without a caller frame. |
 | `3100` | fault | `metric_counter_overflow` | A normative metric counter cannot represent the attempted increment. |
-| `3101` | fault | `global_tick_overflow` | The Global Tick counter cannot represent another tick. |
+| `3101` | fault | `committed_steps_overflow` | The committed-step counter cannot represent another step. |
 | `3102` | fault | `internal_invariant_violation` | A VM internal invariant fails. |
-| `4000` | api | `unsupported_version` | Request API version differs from 3. |
+| `4000` | api | `unsupported_version` | Request Runtime API version differs from 4. |
 | `4001` | api | `source_limit_exceeded` | Source UTF-8 bytes exceed the configured maximum. |
 | `4002` | api | `program_limit_reached` | The runtime compiled-program registry is full. |
 | `4003` | api | `instance_limit_reached` | The runtime instance registry is full. |
@@ -88,10 +87,10 @@ Generated from [codegrid-error-codes.json](codegrid-error-codes.json). Numbers a
 | `4007` | api | `invalid_configuration` | An execution setting is invalid; details identify the field. |
 | `4008` | api | `unknown_program_handle` | Program handle is unknown, released, foreign or otherwise unavailable. |
 | `4009` | api | `unknown_instance_handle` | Instance handle is unknown, released, foreign or otherwise unavailable. |
-| `4010` | api | `zero_tick_budget` | A bounded run requests zero ticks. |
-| `4011` | api | `run_tick_budget_exceeded` | The requested per-call tick budget exceeds the host maximum. |
-| `4012` | api | `instance_tick_budget_exceeded` | The requested run exceeds the instance remaining total tick budget. |
-| `4013` | api | `work_unit_budget_exceeded` | A step needs more dispatches than the per-call deterministic work ceiling. |
+| `4010` | api | `zero_step_budget` | A bounded run requests zero steps. |
+| `4011` | api | `run_step_budget_exceeded` | The requested per-call step budget exceeds the host maximum. |
+| `4012` | api | `instance_step_budget_exceeded` | The requested run exceeds the instance remaining total step budget. |
+| `4013` | api | `work_unit_budget_exceeded` | A step needs more dispatches than the per-call deterministic work-unit ceiling. |
 | `4014` | api | `handle_space_exhausted` | No new opaque handle can be allocated. |
 | `4015` | api | `vm_initialization_failed` | VM initialization fails; reason identifies InitialThreadIdOverflow. |
 | `5000` | cli | `cli.invalid_arguments` | Subcommand, option, option multiplicity, required argument, canonical numeric value or direct byte list is invalid. |
@@ -104,14 +103,13 @@ Generated from [codegrid-error-codes.json](codegrid-error-codes.json). Numbers a
 | `5007` | cli | `cli.memory_data` | Initial-memory addresses or entries fail validation, including duplicates. |
 | `5008` | cli | `cli.serialization_failed` | A native run-result JSON cannot be serialized. |
 | `5009` | cli | `cli.vm_initialization_failed` | Verified program cannot initialize its VM. |
-| `5010` | cli | `cli.invalid_tick_limit` | The internal run boundary rejects a zero tick limit. |
 | `5100` | debug | `debug.invalid_request` | JSON-lines request is malformed, has unknown fields, has wrong field types, or names an unsupported command. |
 | `5101` | debug | `debug.invalid_configuration` | Seed/limit configuration is invalid or exceeds u64. |
 | `5102` | debug | `debug.already_loaded` | A session receives another launch after a successful launch. |
 | `5103` | debug | `debug.no_program` | Step or snapshot occurs before successful launch. |
 | `5104` | debug | `debug.vm_initialization_failed` | The compiled program cannot initialize its VM. |
-| `5105` | debug | `debug.tick_limit_exceeded` | The committed Global Tick count has reached the session maximum before another dispatch. |
-| `5106` | debug | `debug.work_limit_exceeded` | An atomic Global Tick exceeds its dispatch ceiling and rolls back. |
+| `5105` | debug | `debug.step_budget_exceeded` | The session has committed its configured maximum number of VM steps before another step request. |
+| `5106` | debug | `debug.work_unit_budget_exceeded` | One atomic step exceeds its deterministic work-unit ceiling and rolls back. |
 | `5107` | debug | `debug.request_limit_exceeded` | A request line exceeds 4 MiB including its line ending. |
 | `5108` | debug | `debug.transport_io` | The process cannot read a request or write a response. |
 | `6000` | editor | `editor.operation_failed` | An otherwise unclassified editor operation fails, including document access or platform exceptions. |
@@ -150,10 +148,10 @@ Generated from [codegrid-error-codes.json](codegrid-error-codes.json). Numbers a
 | `7011` | browser | `invalid_request` | A request value cannot be accepted by the binding. |
 | `7012` | browser | `invalid_instance_configuration` | Configuration JSON has an invalid shape or required fields. |
 | `7013` | browser | `invalid_instance_handle` | Instance handle spelling is not a canonical nonzero u64 decimal string. |
-| `7014` | browser | `invalid_tick_limit` | Requested tick budget is not a positive canonical u64 decimal string. |
+| `7014` | browser | `invalid_step_limit` | Requested max_steps value is not a canonical u64 decimal string. |
 | `7015` | browser | `instance_state_limit_exceeded` | Canonical retained snapshot bytes exceed the configured instance quota. |
 | `7016` | browser | `invalid_memory_address` | An initial-memory address is not a canonical arbitrary-precision signed decimal string. |
-| `7018` | browser | `invalid_configuration_integer` | Seed or Custom limit is not a valid canonical integer string. |
+| `7018` | browser | `invalid_configuration_integer` | Seed is not a valid canonical u64 decimal string. |
 | `7019` | browser | `response_payload_limit_exceeded` | The full response cannot fit the configured response ceiling. |
 | `7020` | browser | `browser.invalid_host_limit` | BrowserRuntime constructor receives invalid numeric/string ceilings or host limits. |
 | `7500` | server | `invalid_input` | Input is not a JSON array. |
@@ -163,7 +161,7 @@ Generated from [codegrid-error-codes.json](codegrid-error-codes.json). Numbers a
 | `7504` | server | `invalid_decimal_integer` | A required u64 string is noncanonical or out of range. |
 | `7505` | server | `invalid_memory_address` | Initial-memory address spelling is invalid. |
 | `7506` | server | `invalid_request_field` | Required request field is missing or has the wrong type. |
-| `7507` | server | `unsupported_api_version` | Request API version differs from 3. |
+| `7507` | server | `unsupported_api_version` | Request Runtime API version differs from 4. |
 | `7508` | server | `source_payload_limit_exceeded` | Source bytes exceed the runtime source ceiling. |
 | `7509` | server | `input_payload_limit_exceeded` | Input bytes exceed the configured ceiling. |
 | `7510` | server | `vm_initialization_error` | VM initialization fails (server alias of vm_initialization_failed). |
@@ -173,7 +171,7 @@ Generated from [codegrid-error-codes.json](codegrid-error-codes.json). Numbers a
 | `7514` | server | `request_payload_limit_exceeded` | Request bytes exceed the adapter request ceiling. |
 | `7515` | server | `invalid_request_json` | Request bytes are not one valid UTF-8 JSON value. |
 | `7516` | server | `invalid_request` | Top-level request is not a valid object. |
-| `7517` | server | `unsupported_abi_version` | Request ABI version differs from 4. |
+| `7517` | server | `unsupported_abi_version` | Request Server ABI version differs from 5. |
 | `7518` | server | `runtime_closed` | A request targets a permanently shut-down module session. |
 | `7519` | server | `runtime_not_initialized` | A runtime operation occurs before initialization. |
 | `7520` | server | `unsupported_operation` | The requested operation is not recognized. |
@@ -190,9 +188,9 @@ Generated from [codegrid-error-codes.json](codegrid-error-codes.json). Numbers a
 | `7532` | server | `invalid_configuration` | An execution setting is invalid; details identify the field. |
 | `7533` | server | `unknown_program_handle` | Program handle is unknown, released, foreign or otherwise unavailable. |
 | `7534` | server | `unknown_instance_handle` | Instance handle is unknown, released, foreign or otherwise unavailable. |
-| `7535` | server | `zero_tick_budget` | A bounded run requests zero ticks. |
-| `7536` | server | `run_tick_budget_exceeded` | The requested per-call tick budget exceeds the host maximum. |
-| `7537` | server | `instance_tick_budget_exceeded` | The requested run exceeds the instance remaining total tick budget. |
+| `7535` | server | `zero_step_budget` | A bounded run requests zero steps. |
+| `7536` | server | `run_step_budget_exceeded` | The requested per-call step budget exceeds the host maximum. |
+| `7537` | server | `instance_step_budget_exceeded` | The requested run exceeds the instance remaining total step budget. |
 | `7538` | server | `work_unit_budget_exceeded` | A step needs more dispatches than the per-call deterministic work ceiling. |
 | `7539` | server | `handle_space_exhausted` | No new opaque handle can be allocated. |
 | `8000` | lsp | `-32600` | Invalid JSON-RPC request or lifecycle operation. |
@@ -204,52 +202,3 @@ Generated from [codegrid-error-codes.json](codegrid-error-codes.json). Numbers a
 | `8100` | server-abi.alloc_buffer | `0` | Allocation length/pool/resource reservation fails; returned pointer is zero. |
 | `8101` | server-abi.free_buffer | `0` | The pointer is unknown; release returns zero. |
 | `8102` | server-abi.process_request | `0` | Pointer/length validation or response reservation/write fails; packed response is zero. |
-| `9000` | level | `level.invalid` | Invalid logical JSON/schema/capability/metric; no validated level is returned. Details are typed reason and field path. |
-| `9001` | level | `level.unsupported_format_version` | Unsupported logical format; payload is not interpreted as v1. |
-| `9002` | level | `level.unsupported_scene_type` | No registered production scene; execution never falls back to ExactIO. |
-| `9003` | level | `level.program_rejected` | Initial structural or committed generated capability violation; evaluation ends without rating. |
-| `9004` | level | `level.evaluator_fault` | Reserved umbrella for future or otherwise unclassified evaluator fault categories; known v1 fault kinds use more specific registered codes. |
-| `9005` | level | `level.resource_limit` | Trusted evaluation tick/work/state/output ceiling prevents completion; no official success. |
-| `9006` | level | `level.cancelled` | Evaluation cancelled; no official success. |
-| `9007` | level | `level_api.invalid_profile` | Malformed, duplicate, unknown, zero, or unsupported host numeric/identity data; session not created. |
-| `9008` | level | `level_api.unsupported_profile_version` | Unsupported trusted profile version; session not created. |
-| `9009` | level | `level_api.unsupported_version` | Unsupported API version; no semantic dispatch. |
-| `9010` | level | `level_api.invalid_request` | Malformed, duplicate, unknown, incorrect-type request or unsupported operation; no semantic dispatch. |
-| `9011` | level | `level_api.invalid_configuration` | Unsupported mode or noncanonical/zero required integer; no evaluation starts. |
-| `9012` | level | `level_api.seed_required` | Seed omitted without an explicit host seed source; no evaluation starts. |
-| `9013` | level | `level_api.invalid_handle` | Released, stale, wrong-kind, or other-session handle; no referenced operation executes. |
-| `9014` | level | `level_api.handle_exhausted` | Checked handle/namespace capacity exhausted; no new handle is created. |
-| `9015` | level | `level_api.resource_limit` | Request/source/program/retained-state/handle/per-call ceiling exceeded; no requested operation starts. |
-| `9016` | level | `level_api.response_too_large` | A complete result/diagnostic response exceeds the ceiling; return a complete error, never partial JSON. Evaluation may already have advanced. |
-| `9017` | level | `level_api.shutdown` | Operation attempted after shutdown; state remains released. |
-| `9018` | level | `level_api.fault` | Shared API produced an invalid transport response; infrastructure failure, never player success. |
-| `9019` | level | `level_abi.unsupported_version` | Unsupported portable ABI version; no dispatch. |
-| `9020` | level | `level_abi.already_initialized` | Attempt to replace an initialized immutable profile; current session unchanged. |
-| `9021` | level | `level_abi.not_initialized` | Semantic request before trusted initialization; no dispatch. |
-| `9022` | level | `level.metric_overflow` | Checked level metric or aggregate arithmetic overflows during evaluation. |
-| `9023` | level | `level.vm_fault` | The shared VM reports a fault during level evaluation. |
-| `9024` | level | `level.vm_initialization_fault` | The shared VM cannot initialize a standard state for an evaluation test. |
-| `5011` | cli | `cli.limits_io` | The trusted safety profile file cannot be opened or read. |
-| `5012` | cli | `cli.profile_too_large` | The trusted safety profile exceeds the fixed CLI profile-file ceiling. |
-| `5013` | cli | `cli.profile_utf8` | The trusted safety profile file is not valid UTF-8. |
-| `5014` | cli | `cli.profile_bom` | The trusted safety profile begins with a forbidden UTF-8 byte-order mark. |
-| `5015` | cli | `cli.level_api_protocol` | The shared Level API response is invalid JSON or violates the response shape expected by the CLI. |
-| `5016` | cli | `cli.unknown_evaluation_status` | The shared Level API returned an unrecognized terminal evaluation status. |
-| `5017` | cli | `cli.malformed_evaluation_result` | The shared Level API terminal result omitted its status. |
-| `5018` | cli | `cli.level_io` | The evaluate command cannot open or read the level file. |
-| `5019` | cli | `cli.level_too_large` | The level JSON exceeds the trusted profile's level-byte ceiling. |
-| `5020` | cli | `cli.source_too_large` | The source file exceeds the trusted profile's source-byte ceiling. |
-| `5021` | cli | `cli.level_utf8` | The level file is not valid UTF-8. |
-| `5022` | cli | `cli.source_utf8` | The evaluate command's source file is not valid UTF-8. |
-| `5023` | cli | `cli.level_bom` | The level file begins with a forbidden UTF-8 byte-order mark. |
-| `5024` | cli | `cli.source_bom` | The evaluate command's source file begins with a forbidden UTF-8 byte-order mark. |
-| `9025` | level | `level.wrong_output` | Committed output differs from the expected byte stream. |
-| `9026` | level | `level.incomplete_output` | Execution terminates before all expected bytes are produced. |
-| `9027` | level | `level.test_failed` | A v1 ExactIO correctness check or v2 scene correctness/action/goal check fails; v2 scene distinctions use typed reasons. |
-| `9028` | level | `level.runtime_error` | A level test encounters a VM runtime error; public details follow visibility rules. |
-| `9029` | level | `level.constraint_exceeded` | A permitted metric exceeds a configured level constraint. |
-| `3011` | vm | `GasLimitExceeded` | Attempted Gas exceeds the configured positive hard limit. |
-| `3012` | vm | `GasCounterOverflow` | A checked Gas component or total cannot represent the attempted charge. |
-| `3013` | vm | `CustomDisabled` | A Custom Primary is actually executed while Custom use is disabled. |
-| `9030` | level | `level.state_cycle` | An exact semantic state cycle repeats at committed tick boundaries so the active case can never make further progress. |
-| `9031` | level | `level.no_progress` | No goal progress occurs for the host-configured consecutive committed-tick window. |

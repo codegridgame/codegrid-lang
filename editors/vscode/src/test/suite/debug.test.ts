@@ -60,7 +60,7 @@ suite('Native Run and Debug', () => {
   test('active and suspended Function frames expose independent F values', async () => {
     await client.launch(file('@main\n~> ) [0 ?!.1 ;\n@F0\n~> + ] _ _\n@end F0\n@end main\n'));
     await client.wait((message) => message.event === 'stopped');
-    for (let tick = 0; tick < 5; tick++) {
+    for (let step = 0; step < 5; step++) {
       const mark = client.messages.length;
       await client.request('stepIn', { threadId: 1 });
       await client.wait((message) => message.event === 'stopped', mark);
@@ -75,7 +75,7 @@ suite('Native Run and Debug', () => {
     assert.strictEqual((await client.request('evaluate', { expression: 'thread.status_flag' })).result, '1');
   });
 
-  test('entry, tick step, UTF-16 source frame and watch use the actual VM', async () => {
+  test('entry, transition step, UTF-16 source frame and watch use the actual VM', async () => {
     await client.launch(file('/*🙂*/ ~> + . ;\r\n'), { seed: '18446744073709551615' });
     await client.wait((message) => message.event === 'stopped' && message.body.reason === 'entry');
     const threads = await client.request('threads');
@@ -86,7 +86,7 @@ suite('Native Run and Debug', () => {
     const mark = client.messages.length;
     await client.request('next', { threadId: 1 });
     await client.wait((message) => message.event === 'stopped', mark);
-    assert.strictEqual((await client.request('evaluate', { expression: 'committed_ticks' })).result, '1');
+    assert.strictEqual((await client.request('evaluate', { expression: 'committed_steps' })).result, '1');
     const second = client.messages.length;
     await client.request('stepIn', { threadId: 1 });
     await client.wait((message) => message.event === 'stopped', second);
@@ -116,21 +116,21 @@ suite('Native Run and Debug', () => {
     assert.ok(client.messages.some((message) => message.event === 'exited' && message.body.exitCode === 0));
   });
 
-  test('work ceiling pauses with rolled-back VM state', async () => {
-    await client.launch(file('~> ~<\n'), { maxWorkUnits: '1' });
+  test('per-step work ceiling pauses with rolled-back VM state', async () => {
+    await client.launch(file('~> ~<\n'), { maxWorkUnitsPerStep: '1' });
     const mark = client.messages.length;
     await client.request('next');
     const failure = await client.wait((message) => message.event === 'stopped' && message.body.reason === 'exception', mark);
-    assert.strictEqual(failure.body.code, 'debug.work_limit_exceeded');
-    assert.strictEqual((await client.request('evaluate', { expression: 'committed_ticks' })).result, '0');
+    assert.strictEqual(failure.body.code, 'debug.work_unit_budget_exceeded');
+    assert.strictEqual((await client.request('evaluate', { expression: 'committed_steps' })).result, '0');
   });
 
-  test('tick ceiling pauses and stop terminates the native process', async () => {
-    await client.launch(file('~> _\n'), { maxTicks: '2' });
+  test('session step budget pauses and stop terminates the native process', async () => {
+    await client.launch(file('~> _\n'), { maxSteps: '2' });
     await client.request('continue');
     const failure = await client.wait((message) => message.event === 'stopped' && message.body.reason === 'exception');
-    assert.strictEqual(failure.body.code, 'debug.tick_limit_exceeded');
-    assert.strictEqual((await client.request('evaluate', { expression: 'committed_ticks' })).result, '2');
+    assert.strictEqual(failure.body.code, 'debug.step_budget_exceeded');
+    assert.strictEqual((await client.request('evaluate', { expression: 'committed_steps' })).result, '2');
     await client.request('disconnect');
     await client.wait((message) => message.event === 'terminated');
   });
@@ -203,7 +203,7 @@ suite('Native Run and Debug', () => {
   });
 
   test('pause remains responsive during a continuing wrapped program', async () => {
-    await client.launch(file('~> _\n'), { maxTicks: '1000000' });
+    await client.launch(file('~> _\n'), { maxSteps: '1000000' });
     const mark = client.messages.length;
     await client.request('continue');
     await client.request('pause');
@@ -233,7 +233,7 @@ suite('Native Run and Debug', () => {
     await client.request('continue');
     const stopped = await client.wait((message) => message.event === 'stopped' && message.body.reason === 'breakpoint');
     assert.strictEqual(stopped.body.threadId, threads.threads[1].id);
-    assert.strictEqual((await client.request('evaluate', { expression: 'committed_ticks' })).result, '1');
+    assert.strictEqual((await client.request('evaluate', { expression: 'committed_steps' })).result, '1');
     const first = await client.request('stackTrace', { threadId: threads.threads[0].id });
     const second = await client.request('stackTrace', { threadId: threads.threads[1].id });
     assert.strictEqual(first.stackFrames[0].line, 1);

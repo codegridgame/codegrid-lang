@@ -5,8 +5,8 @@ use super::projection::{
 use super::{
     api_error_response, bounded_decimal_u64, bounded_usize, decimal_u64, error_response,
     parse_input, parse_memory_address, required_string, required_u64, MAX_INITIAL_MEMORY_ENTRIES,
-    MAX_INPUT_BYTES, MAX_REQUEST_BYTES, MAX_RESPONSE_BYTES, MAX_RUN_TICKS_PER_CALL,
-    MAX_SOURCE_BYTES, MAX_TOTAL_TICKS_PER_INSTANCE, MAX_WORK_UNITS_PER_CALL,
+    MAX_INPUT_BYTES, MAX_REQUEST_BYTES, MAX_RESPONSE_BYTES, MAX_RUN_STEPS_PER_CALL,
+    MAX_SOURCE_BYTES, MAX_TOTAL_STEPS_PER_INSTANCE, MAX_WORK_UNITS_PER_CALL,
 };
 use codegrid_runtime_api::{
     ApiError, CheckRequest, CompileOutcome, CompileRequest, CreateInstanceRequest, HostLimits,
@@ -691,16 +691,8 @@ impl<'de> Visitor<'de> for RequestVisitor {
                     let value = object.next_value::<HostLimitsValue>()?;
                     fields.insert(key, value.0);
                 }
-                "abi_version"
-                | "api_version"
-                | "operation"
-                | "source"
-                | "program"
-                | "instance"
-                | "max_ticks"
-                | "seed"
-                | "custom_execution_limit"
-                | "gas_hard_limit" => {
+                "abi_version" | "api_version" | "operation" | "source" | "program" | "instance"
+                | "max_steps" | "seed" => {
                     let value = object.next_value::<ScalarValue>()?;
                     fields.insert(key, value.0);
                 }
@@ -782,10 +774,9 @@ fn is_host_limit_field(field: &str) -> bool {
             | "max_instances"
             | "max_input_bytes"
             | "max_initial_memory_entries"
-            | "max_run_ticks_per_call"
-            | "max_total_ticks_per_instance"
+            | "max_run_steps_per_call"
+            | "max_total_steps_per_instance"
             | "max_work_units_per_call"
-            | "max_gas_per_instance"
             | "max_response_bytes"
             | "max_instance_state_bytes"
     )
@@ -1042,7 +1033,7 @@ impl ServerAdapter {
             "release_instance" => self.release_instance(&object, api_version),
             _ => self.respond(error_response(
                 "unsupported_operation",
-                "operation is not supported by server adapter ABI v4",
+                "operation is not supported by server adapter ABI v5",
                 json!({"operation": operation}),
             )),
         }
@@ -1240,24 +1231,6 @@ impl ServerAdapter {
             Ok(seed) => seed,
             Err(error) => return self.respond(error_response(error.0, error.1, Value::Null)),
         };
-        let custom_execution_limit = match decimal_u64(
-            request.get("custom_execution_limit"),
-            "custom_execution_limit",
-        ) {
-            Ok(limit) if limit > 0 => limit,
-            Ok(_) => {
-                return self.respond(error_response(
-                    "invalid_configuration",
-                    "custom_execution_limit must be positive",
-                    json!({"field":"custom_execution_limit"}),
-                ))
-            }
-            Err(error) => return self.respond(error_response(error.0, error.1, Value::Null)),
-        };
-        let gas_hard_limit = match decimal_u64(request.get("gas_hard_limit"), "gas_hard_limit") {
-            Ok(limit) => limit,
-            Err(error) => return self.respond(error_response(error.0, error.1, Value::Null)),
-        };
         let response = match self
             .runtime
             .as_mut()
@@ -1267,11 +1240,7 @@ impl ServerAdapter {
                 program,
                 input,
                 initial_memory,
-                configuration: RuntimeConfiguration {
-                    gas_hard_limit,
-                    seed,
-                    custom_execution_limit,
-                },
+                configuration: RuntimeConfiguration { seed },
             }) {
             Ok(response) => response,
             Err(error) => return self.respond(api_error_response(api_version, error)),
@@ -1346,8 +1315,8 @@ impl ServerAdapter {
             Ok(instance) => instance,
             Err(error) => return self.respond(error_response(error.0, error.1, Value::Null)),
         };
-        let max_ticks = match decimal_u64(request.get("max_ticks"), "max_ticks") {
-            Ok(ticks) => ticks,
+        let max_steps = match decimal_u64(request.get("max_steps"), "max_steps") {
+            Ok(steps) => steps,
             Err(error) => return self.respond(error_response(error.0, error.1, Value::Null)),
         };
         let response = match self
@@ -1357,7 +1326,7 @@ impl ServerAdapter {
             .run_view(RunRequest {
                 api_version,
                 instance,
-                max_ticks,
+                max_steps,
             }) {
             Ok(response) => response,
             Err(error) => return self.respond(api_error_response(api_version, error)),
@@ -1572,22 +1541,16 @@ fn parse_server_limits(
         "max_initial_memory_entries",
         MAX_INITIAL_MEMORY_ENTRIES,
     )?;
-    let max_run_ticks = bounded_decimal_u64(
-        object.get("max_run_ticks_per_call"),
-        "max_run_ticks_per_call",
-        MAX_RUN_TICKS_PER_CALL,
+    let max_run_steps = bounded_decimal_u64(
+        object.get("max_run_steps_per_call"),
+        "max_run_steps_per_call",
+        MAX_RUN_STEPS_PER_CALL,
         true,
     )?;
-    let max_total_ticks = bounded_decimal_u64(
-        object.get("max_total_ticks_per_instance"),
-        "max_total_ticks_per_instance",
-        MAX_TOTAL_TICKS_PER_INSTANCE,
-        true,
-    )?;
-    let max_gas = bounded_decimal_u64(
-        object.get("max_gas_per_instance"),
-        "max_gas_per_instance",
-        u64::MAX,
+    let max_total_steps = bounded_decimal_u64(
+        object.get("max_total_steps_per_instance"),
+        "max_total_steps_per_instance",
+        MAX_TOTAL_STEPS_PER_INSTANCE,
         true,
     )?;
     let max_work_units = bounded_decimal_u64(
@@ -1622,11 +1585,10 @@ fn parse_server_limits(
             max_instances,
             max_input_bytes,
             max_initial_memory_entries,
-            NonZeroU64::new(max_run_ticks).expect("validated positive limit"),
-            NonZeroU64::new(max_total_ticks).expect("validated positive limit"),
+            NonZeroU64::new(max_run_steps).expect("validated positive limit"),
+            NonZeroU64::new(max_total_steps).expect("validated positive limit"),
             NonZeroU64::new(max_work_units).expect("validated positive limit"),
-        )
-        .with_max_gas_per_instance(NonZeroU64::new(max_gas).expect("validated positive limit")),
+        ),
         max_response_bytes,
         max_instance_state_bytes,
     })
@@ -1673,7 +1635,7 @@ mod tests {
     fn oversized_input_arrays_are_rejected_while_parsing_without_value_nodes() {
         let mut request = String::with_capacity(MAX_INPUT_BYTES * 2 + 96);
         request.push_str(
-            r#"{"abi_version":4,"api_version":3,"operation":"create_instance","input":["#,
+            r#"{"abi_version":5,"api_version":4,"operation":"create_instance","input":["#,
         );
         for index in 0..=MAX_INPUT_BYTES {
             if index != 0 {
@@ -1716,7 +1678,7 @@ mod tests {
     fn request_parser_preserves_input_errors_and_ignores_nested_unknown_values() {
         let nested = "0,".repeat(20_000);
         let request = format!(
-            r#"{{"abi_version":4,"api_version":3,"operation":"check","source":"~> ;","input":{{"ignored":[{nested}0]}},"unknown":{{"deep":[[{nested}0]]}}}}"#
+            r#"{{"abi_version":5,"api_version":4,"operation":"check","source":"~> ;","input":{{"ignored":[{nested}0]}},"unknown":{{"deep":[[{nested}0]]}}}}"#
         );
         let ParsedRequest::Object(RequestObject { fields, input, .. }) =
             serde_json::from_str(&request).expect("nested unknown values are valid JSON")
@@ -1733,7 +1695,7 @@ mod tests {
         );
 
         let request =
-            r#"{"abi_version":4,"api_version":3,"operation":"create_instance","input":[0,256]}"#;
+            r#"{"abi_version":5,"api_version":4,"operation":"create_instance","input":[0,256]}"#;
         let ParsedRequest::Object(RequestObject { input, .. }) =
             serde_json::from_str(request).expect("byte value is valid JSON")
         else {
@@ -1766,7 +1728,7 @@ mod tests {
     fn host_limit_parser_skips_unrecognized_nested_data() {
         let nested = "0,".repeat(20_000);
         let request = format!(
-            r#"{{"abi_version":4,"api_version":3,"operation":"initialize","host_limits":{{"max_source_bytes":4096,"max_compiled_programs":8,"max_instances":8,"max_input_bytes":1024,"max_initial_memory_entries":65536,"max_run_ticks_per_call":"100","max_total_ticks_per_instance":"1000","max_gas_per_instance":"100000000","max_work_units_per_call":"1000","max_response_bytes":1048576,"max_instance_state_bytes":524288,"ignored":{{"deep":[[{nested}0]]}}}}}}"#
+            r#"{{"abi_version":5,"api_version":4,"operation":"initialize","host_limits":{{"max_source_bytes":4096,"max_compiled_programs":8,"max_instances":8,"max_input_bytes":1024,"max_initial_memory_entries":65536,"max_run_steps_per_call":"100","max_total_steps_per_instance":"1000","max_work_units_per_call":"1000","max_response_bytes":1048576,"max_instance_state_bytes":524288,"ignored":{{"deep":[[{nested}0]]}}}}}}"#
         );
         let ParsedRequest::Object(RequestObject { fields, .. }) = serde_json::from_str(&request)
             .expect("host limits with nested extension are valid JSON")
@@ -1778,7 +1740,7 @@ mod tests {
             .expect("host limits object must be retained");
         assert_eq!(
             host_limits.len(),
-            11,
+            10,
             "only accepted limit fields are retained"
         );
     }

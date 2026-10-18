@@ -1,28 +1,28 @@
 # CodeGrid Wasmtime Host Harness
 
 This standalone Rust tool embeds the no-import `wasm32-unknown-unknown`
-`codegrid-wasm-server` artifact in Wasmtime 49.0.1. It verifies the Server ABI
-v4 exports and configured linear-memory maximum, applies per-store memory and
-Wasm stack limits, initializes one persistent module instance, and executes all
-108 shared Full fixtures through the exported JSON ABI. For each case it invokes
-the Native CLI as an oracle and compares the complete observable run projection:
-status, ordered events, newly emitted output, and the full snapshot including
-program mutation, threads, memory, metrics, errors, and faults. It writes the
-same complete Native CLI projections to
+`codegrid-wasm-server` artifact in Wasmtime 49.0.1. It verifies Server ABI v5,
+Runtime API v4, the configured linear-memory maximum, per-store memory and Wasm
+stack limits, and all shared Full language conformance fixtures. For each case
+it invokes the Native CLI as an oracle and compares the complete observable run
+projection: status, ordered events, newly emitted output, and the full snapshot
+including program mutation, threads, memory, committed-step summary, errors, and faults. It
+writes complete Native CLI projections to
 `target/wasmtime-host/native-cli-full-baseline-v1.json` for the Node and
-headless-browser smoke runners. Since the fixture file has no per-run
-work-unit field, fixture runs use a uniform 1,000,000-unit ceiling; a separate
-one-unit probe verifies deterministic work-limit yielding and preservation of
-committed deltas. A disposable session also verifies that Wasmtime fuel
-exhaustion traps and causes the harness to discard that session.
+headless-browser smoke runners. Fixture execution uses the same uniform
+10,000-work-unit call ceiling as the browser smoke runners; a separate one-unit probe verifies bounded
+work yielding and preservation of committed transitions. Additional probes
+check the zero, per-call, and per-instance step budget errors. A disposable
+session verifies that Wasmtime fuel exhaustion traps and causes the harness to
+discard that session.
 
 The tool is outside the main Cargo workspace and has no CodeGrid crate
 dependencies. It provides no WASI or host imports. Wasmtime's memory limiter is
 per linear memory; it does not bound Wasmtime bookkeeping, JIT compilation,
 embedder allocations, or aggregate process memory. Fuel is a deterministic
-WebAssembly operator budget, not a wall-clock deadline. This harness does not
-implement the production game backend or its process, concurrency, or
-cancellation policy.
+WebAssembly operator budget, not a wall-clock deadline. The harness validates
+only the Full language host contract; game execution policy belongs to the
+game runtime.
 
 Build the Native CLI and server module, then run the harness from the repository
 root. Run it before the browser smoke tests so they can consume the generated
@@ -38,14 +38,3 @@ cargo run --manifest-path tools/wasmtime-host/Cargo.toml --release -- target/was
 The Wasmtime crate is pinned to 49.0.1. Wasmtime 49 requires Rust 1.96 or
 newer. The memory environment value must match the value used to build the
 server artifact.
-
-## Scene API 2
-
-`level-parity` uses the current Scene API without a version-selection flag. It executes
-the `format_version: 1` scene author levels through Level ABI/API 2 and compares
-complete native CLI results. The `v2` directory refers to the host API
-generation, not the author JSON format.
-The scene report also contains Debug event traces for cross-host comparison.
-Run `scripts/test-scene-wasm.ps1` from the repository root for current ExactIO regression
-and the scene comparison pipeline. This remains a local harness, not a
-production backend integration.

@@ -1,9 +1,9 @@
 use codegrid_runtime_api::{
     BoardView, CallFrameSnapshot, CodeGridId, CodeGridView, Coordinate, Diagnostic, Direction,
-    ExecutionScope, InstructionKind, MemoryAddress, MemoryLocationId, MemorySpaceId, ProgramView,
-    RunStatus, RuntimeError, RuntimeErrorKind, RuntimeMetricSummary, RuntimeMetrics,
-    RuntimeSnapshotView, RuntimeThreadSnapshotView, Severity, StaticCellId, StepResponseView,
-    ThreadPhaseSnapshot, VmEvent, VmFault, VmStatus, YieldReason,
+    ExecutionScope, MemoryAddress, MemoryLocationId, ProgramView, RunStatus, RuntimeError,
+    RuntimeErrorKind, RuntimeMetricSummary, RuntimeMetrics, RuntimeSnapshotView,
+    RuntimeThreadSnapshotView, Severity, StaticCellId, StepResponseView, ThreadPhaseSnapshot,
+    VmEvent, VmFault, VmStatus, YieldReason,
 };
 use serde::ser::{SerializeMap, SerializeSeq, Serializer};
 use serde::Serialize;
@@ -171,7 +171,7 @@ impl Serialize for SnapshotProjection<'_, '_> {
         let runtime_program = CodeGridView::from_scoped(snapshot.runtime_program());
         serialize_object!(serializer, {
             "status" => VmStatusName(snapshot.status()),
-            "committed_ticks" => DisplayValue(snapshot.committed_ticks()),
+            "committed_steps" => DisplayValue(snapshot.committed_steps()),
             "registers" => snapshot.registers(),
             "memory" => MemoryProjection(RefCell::new(snapshot.memory().allocated_addresses().map(|address| {
                 (address, snapshot.memory().read(address))
@@ -367,8 +367,8 @@ impl Serialize for StepResultProjection<'_, '_> {
     {
         let result = self.0;
         serialize_object!(serializer, {
-            "attempted_tick" => DisplayValue(result.attempted_tick()),
-            "committed_ticks" => DisplayValue(result.committed_ticks()),
+            "attempted_transition_id" => DisplayValue(result.attempted_transition_id()),
+            "committed_steps" => DisplayValue(result.committed_steps()),
             "status" => VmStatusName(result.status()),
             "metrics" => RuntimeMetricSummaryProjection(result.metrics()),
             "events" => VmEventSequence(result.events()),
@@ -389,19 +389,7 @@ impl Serialize for RuntimeMetricSummaryProjection<'_> {
     {
         let metrics = self.0;
         serialize_object!(serializer, {
-            "global_tick" => DisplayValue(metrics.global_tick()),
-            "operation_count" => DisplayValue(metrics.operation_count()),
-            "gas_used" => DisplayValue(metrics.gas_used()),
-            "execution_gas" => DisplayValue(metrics.execution_gas()),
-            "memory_gas" => DisplayValue(metrics.memory_gas()),
-            "stack_gas" => DisplayValue(metrics.stack_gas()),
-            "gas_schedule_version" => metrics.gas_schedule_version(),
-            "used_cell_count" => DisplayValue(metrics.used_cell_count()),
-            "peak_data_stack_usage" => DisplayValue(metrics.peak_data_stack_usage()),
-            "peak_instruction_stack_usage" => DisplayValue(metrics.peak_instruction_stack_usage()),
-            "peak_call_stack_usage" => DisplayValue(metrics.peak_call_stack_usage()),
-            "used_memory_address_count" => DisplayValue(metrics.used_memory_address_count()),
-            "instruction_variety" => InstructionVarietySet(metrics.instruction_variety())
+            "committed_steps" => DisplayValue(metrics.committed_steps()),
         })
     }
 }
@@ -415,37 +403,8 @@ impl Serialize for RuntimeMetricsProjection<'_> {
     {
         let metrics = self.0;
         serialize_object!(serializer, {
-            "global_tick" => DisplayValue(metrics.global_tick()),
-            "operation_count" => DisplayValue(metrics.operation_count()),
-            "gas_used" => DisplayValue(metrics.gas_used()),
-            "execution_gas" => DisplayValue(metrics.execution_gas()),
-            "memory_gas" => DisplayValue(metrics.memory_gas()),
-            "stack_gas" => DisplayValue(metrics.stack_gas()),
-            "gas_schedule_version" => metrics.gas_schedule_version(),
-            "used_cell_count" => DisplayValue(metrics.used_cell_count()),
-            "used_cells" => UsedCellSequence(metrics.used_cells()),
-            "peak_data_stack_usage" => DisplayValue(metrics.peak_data_stack_usage()),
-            "peak_instruction_stack_usage" => DisplayValue(metrics.peak_instruction_stack_usage()),
-            "peak_call_stack_usage" => DisplayValue(metrics.peak_call_stack_usage()),
-            "used_memory_address_count" => DisplayValue(metrics.used_memory_address_count()),
-            "used_memory_addresses" => UsedMemorySequence(metrics.used_memory_addresses()),
-            "instruction_variety" => InstructionVarietySet(metrics.instruction_variety())
+            "committed_steps" => DisplayValue(metrics.committed_steps()),
         })
-    }
-}
-
-struct UsedCellSequence<'a>(&'a std::collections::BTreeSet<StaticCellId>);
-
-impl Serialize for UsedCellSequence<'_> {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: Serializer,
-    {
-        let mut sequence = serializer.serialize_seq(Some(self.0.len()))?;
-        for cell in self.0 {
-            sequence.serialize_element(&StaticCellProjection(cell))?;
-        }
-        sequence.end()
     }
 }
 
@@ -474,21 +433,6 @@ impl Serialize for StaticCellProjection<'_> {
     }
 }
 
-struct UsedMemorySequence<'a>(&'a std::collections::BTreeSet<MemoryLocationId>);
-
-impl Serialize for UsedMemorySequence<'_> {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: Serializer,
-    {
-        let mut sequence = serializer.serialize_seq(Some(self.0.len()))?;
-        for memory in self.0 {
-            sequence.serialize_element(&MemoryLocationProjection(memory))?;
-        }
-        sequence.end()
-    }
-}
-
 struct MemoryLocationProjection<'a>(&'a MemoryLocationId);
 
 impl Serialize for MemoryLocationProjection<'_> {
@@ -497,47 +441,9 @@ impl Serialize for MemoryLocationProjection<'_> {
         S: Serializer,
     {
         serialize_object!(serializer, {
-            "space" => MemorySpaceProjection(self.0.space),
+            "space" => codegrid_runtime_api::json::MemorySpaceProjection(self.0.space),
             "address" => self.0.address.to_string()
         })
-    }
-}
-
-struct MemorySpaceProjection(MemorySpaceId);
-
-impl Serialize for MemorySpaceProjection {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: Serializer,
-    {
-        match self.0 {
-            MemorySpaceId::Outer => serialize_object!(serializer, { "kind" => "outer" }),
-            MemorySpaceId::CustomInvocation {
-                global_tick,
-                caller_thread_id,
-                custom_id,
-            } => serialize_object!(serializer, {
-                "kind" => "custom_invocation",
-                "global_tick" => DisplayValue(global_tick),
-                "caller_thread_id" => DisplayValue(caller_thread_id),
-                "custom_id" => custom_id.get()
-            }),
-        }
-    }
-}
-
-struct InstructionVarietySet<'a>(&'a std::collections::BTreeSet<InstructionKind>);
-
-impl Serialize for InstructionVarietySet<'_> {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: Serializer,
-    {
-        let mut sequence = serializer.serialize_seq(Some(self.0.len()))?;
-        for instruction in self.0 {
-            sequence.serialize_element(instruction.name())?;
-        }
-        sequence.end()
     }
 }
 
@@ -974,12 +880,12 @@ impl Serialize for ExecutionScopeProjection {
             ExecutionScope::Custom {
                 caller_thread_id,
                 custom_id,
-                internal_tick,
+                internal_step,
             } => serialize_object!(serializer, {
                 "kind" => "custom",
                 "caller_thread_id" => DisplayValue(caller_thread_id),
                 "custom_id" => custom_id.get(),
-                "internal_tick" => DisplayValue(internal_tick)
+                "internal_step" => DisplayValue(internal_step)
             }),
         }
     }
@@ -1010,7 +916,7 @@ impl Serialize for RuntimeErrorProjection<'_> {
         serialize_object!(serializer, {
             "code" => self.0.code(),
             "error_number" => codegrid_runtime_api::error_number("vm", self.0.code()),
-            "global_tick" => DisplayValue(self.0.global_tick()),
+            "transition_id" => DisplayValue(self.0.transition_id()),
             "scope" => ExecutionScopeProjection(self.0.scope()),
             "details" => RuntimeErrorDetailsProjection(self.0.kind())
         })
@@ -1060,19 +966,6 @@ impl Serialize for RuntimeErrorDetailsProjection<'_> {
             } => serialize_object!(serializer, {
                 "register" => register,
                 "thread_ids" => ThreadIdSequence(thread_ids)
-            }),
-            Kind::GasLimitExceeded {
-                limit,
-                attempted_gas,
-            } => serialize_object!(serializer, {
-                "limit" => DisplayValue(limit),
-                "attempted_gas" => DisplayValue(attempted_gas)
-            }),
-            Kind::GasCounterOverflow | Kind::CustomDisabled => {
-                serializer.serialize_map(Some(0))?.end()
-            }
-            Kind::CustomExecutionLimitExceeded { limit } => serialize_object!(serializer, {
-                "limit" => DisplayValue(limit)
             }),
             Kind::ReturnWithoutCall {
                 thread_id,
@@ -1128,8 +1021,8 @@ impl Serialize for FaultProjection {
                 "kind" => "metric_counter_overflow", "error_number" => codegrid_runtime_api::error_number("fault", "metric_counter_overflow"),
                 "counter" => super::metric_counter_name(counter)
             }),
-            VmFault::GlobalTickOverflow => {
-                serialize_object!(serializer, { "kind" => "global_tick_overflow", "error_number" => codegrid_runtime_api::error_number("fault", "global_tick_overflow") })
+            VmFault::CommittedStepOverflow => {
+                serialize_object!(serializer, { "kind" => "committed_step_overflow", "error_number" => codegrid_runtime_api::error_number("fault", "committed_steps_overflow") })
             }
             VmFault::InternalInvariantViolation => {
                 serialize_object!(serializer, { "kind" => "internal_invariant_violation", "error_number" => codegrid_runtime_api::error_number("fault", "internal_invariant_violation") })
@@ -1165,8 +1058,8 @@ impl Serialize for RunStatusName {
             RunStatus::Halted => serializer.serialize_str("halted"),
             RunStatus::Error => serializer.serialize_str("error"),
             RunStatus::Yielded {
-                reason: YieldReason::TickSliceExhausted,
-            } => serializer.serialize_str("tick_limit_reached"),
+                reason: YieldReason::StepSliceExhausted,
+            } => serializer.serialize_str("step_limit_reached"),
             RunStatus::Yielded {
                 reason: YieldReason::WorkUnitBudgetExhausted,
             } => serializer.serialize_str("work_limit_reached"),

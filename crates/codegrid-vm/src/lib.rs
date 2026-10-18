@@ -15,19 +15,22 @@ mod state;
 mod thread;
 
 pub use codegrid_ir::{TailCallSite, VerifiedProgram};
-pub use config::{VmConfig, DEFAULT_GAS_HARD_LIMIT};
-pub use engine::{RunOutcome, RunResult, StepResult, VmEvent, WorkLimitExceeded};
+pub use config::VmConfig;
+pub use engine::{
+    PreparedStep, RunOutcome, RunResult, StepReport, StepResult, VmEvent, WorkLimitExceeded,
+};
 pub use error::{ExecutionScope, RuntimeError, RuntimeErrorKind};
 pub use memory::{effective_address, Memory, MemoryAddress, Page};
 pub use metrics::{
-    InstructionKind, MemoryLocationId, MemorySpaceId, MetricCounterOverflow, RuntimeMetricSummary,
-    RuntimeMetrics, StaticCellId, GAS_SCHEDULE_VERSION,
+    InstructionKind, MemoryAccessObservation, MemoryAccessSpace, MemoryLocationId, MemorySpaceId,
+    MetricCounterOverflow, RuntimeMetricSummary, RuntimeMetrics, StackPeaks, StaticCellId,
+    StepFootprint,
 };
 pub use movement::{move_folded, move_normal, Coordinate, FoldStep};
 pub use random::{
     custom_invocation_seed, internal_thread_state, mix64, outer_thread_state, SplitMix64,
 };
 pub use state::{
-    CallFrameSnapshot, InputAppendError, ThreadPhaseSnapshot, ThreadSnapshot, ThreadSnapshotView,
+    CallFrameSnapshot, InputReplaceError, ThreadPhaseSnapshot, ThreadSnapshot, ThreadSnapshotView,
     Vm, VmFault, VmInitializationError, VmSnapshot, VmSnapshotView, VmStatus,
 };

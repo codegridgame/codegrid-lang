@@ -1,6 +1,6 @@
 # Full Language Conformance Fixtures
 
-This directory contains host-neutral cases for observable CodeGrid behavior. Native Rust, CLI, LSP where relevant, browser/server WASM, and game adapters should reuse reviewed cases rather than define separate language semantics.
+This directory contains host-neutral cases for observable CodeGrid behavior. Native Rust, CLI, LSP where relevant, browser WASM, and server WASM should reuse reviewed cases rather than define separate language semantics. The Game Runtime has its own game-level cases and invokes the language API; it does not define language conformance.
 
 ## Reviewed historical protocol cases
 
@@ -15,10 +15,10 @@ PRNG vectors and mutable-code scope.
 
 ## Existing host smoke cases
 
-The shared Full runtime suite contains 81 cases. A complete Native CLI result baseline is generated from the suite and consumed by Node/Chrome browser smoke and the Wasmtime server host harness. These actual hosts compare the complete observable run projection, including events, output deltas, snapshots, threads, stacks, Page, mutable code, memory, errors, faults, and raw metrics.
+The shared Full runtime suite contains 105 cases. The earlier 81-case native/browser/Node/Wasmtime acceptance is historical; the current server WASM smoke has an open generic VM work-unit failure recorded in [downstream synchronization](../docs/downstream-synchronization.md). The smoke harnesses compare the observable run projection, including events, output deltas, snapshots, threads, stacks, Page, mutable code, memory, errors, faults, and committed-step counts.
 
 ## Full acceptance suite
 
-The versioned, host-neutral fixture index covers Full runtime behavior. Each valid case records source, seed, input, initial memory, Custom execution limit, tick and work limits, expected status, complete observable state, errors, events, and raw metrics. Invalid cases record diagnostic spans and must never produce executable IR. Extend the suite when a normative requirement lacks a direct case.
+The versioned, host-neutral fixture index covers Full runtime behavior. Each valid case records source, seed, input, initial memory, generic step limits, expected status, complete observable state, errors, events, and language-neutral execution observations. Host work-unit ceilings are configured separately. Invalid cases record diagnostic spans and must never produce executable IR. Extend the suite when a normative requirement lacks a direct case.
 
-Run the same reviewed cases through Rust/compiler layers, CLI, Runtime API, browser-WASM, and server-WASM. Compare all contract-visible results, including thread state, stacks, Page, memory observations, mutable code, input/output, errors, events, and metrics. No host may add semantic expectations of its own.
+Run the same reviewed cases through Rust/compiler layers, CLI, Runtime API, browser WASM, and server WASM. Compare all contract-visible results, including thread state, stacks, Page, memory observations, mutable code, input/output, errors, events, committed-step counts, and work-limit outcomes. No host may add semantic expectations of its own.

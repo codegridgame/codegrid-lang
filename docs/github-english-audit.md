@@ -21,8 +21,6 @@ recorded in the root rules and the VS Code module rules.
 - The VS Code README now contains the English reference only. Its repeated
   translated introductions were removed; extension localization catalogs and
   runtime translations remain intact.
-- Scene specification and decision references use an English translation of the
-  source conversation title while preserving its conversation identifier.
 - Three existing Rust test strings use Unicode escapes without changing the
   decoded test input or its encoding and position expectations.
 - Remaining non-English letters outside localization catalogs occur only in
@@ -39,14 +37,14 @@ documentation.
 Passed:
 
 - `cargo fmt --all --check`
-- `cargo test --locked -p codegrid-cli -p codegrid-compiler -p codegrid-level-core`
+- `cargo test --locked -p codegrid-cli -p codegrid-compiler`
 - `node scripts/check_error_codes.js` (249 identities, 452 emitted references)
 - `git diff --check`
 
 Reviewed the downstream repository rules and synchronization requirements.
 The implementation-file edits are inside test-only code and preserve decoded
-values. No source acceptance, VM behavior, instruction inventory, runtime API,
-scene contract, localization catalog, generated binding, or production WASM
+values. No language source acceptance, VM behavior, instruction inventory,
+Runtime API, localization catalog, generated binding, or production WASM
 behavior changed. Therefore no downstream consumer edits or artifact rebuilds
 are required for this audit. Existing artifact provenance continues to describe
 its recorded build snapshot.

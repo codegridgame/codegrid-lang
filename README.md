@@ -17,21 +17,20 @@ CodeGrid is a grid-based programming language built around a shared Rust compile
 
 ## Full language development status
 
-The workspace implements the complete Full language across the shared Rust compiler and deterministic VM, native CLI, LSP/editor, Runtime API v3, and browser/server WebAssembly adapters. The local task book records the implementation and host verification evidence. Final acceptance requires all shared Full fixtures to produce matching observable results in native, browser-WASM, and server-WASM hosts.
+The workspace implements the complete Full language across the shared Rust compiler and deterministic VM, native CLI, LSP/editor, Runtime API v4, and browser/server WebAssembly adapters. The local task book records the implementation and host verification evidence. Final acceptance requires all shared Full fixtures to produce matching observable results in native, browser-WASM, and server-WASM hosts.
 
 The existing native CLI provides:
 
 - `codegrid check <program.cg>` using the shared compiler;
 - `codegrid run <program.cg>` using the compiler and verified IR in the shared VM.
 - `codegrid debug --stdio` providing compiler source locations and atomic VM steps to the editor debugger.
-- `codegrid evaluate <level.json> <program.cg>` using the shared Rust Scene API 2 for ExactIO, Robot and MechanicalArm; see [the CLI contract](docs/cli.md#evaluate-level-command).
 
 The [VS Code extension](editors/vscode/README.md) opens `.cg` files with Run
 and Debug buttons, F5/Ctrl+F5 launch, Main/Function/Folded Block breakpoints,
-Global Tick stepping, call frames, state variables and watches. The Windows
+single-step execution, call frames, state variables and watches. The Windows
 x64 installation package includes the native execution runtime.
 
-Full acceptance includes the execution settings, complete VM state and metrics, and host results defined by the Full contracts.
+Full acceptance includes the execution settings, complete VM state, and host results defined by the Full contracts.
 
 Local acceptance must compare the same Full fixtures in native, browser-WASM, and server-WASM hosts. A successful Rust or WebAssembly compile alone does not establish execution parity.
 
@@ -49,18 +48,23 @@ codegrid-lsp         Static language services over the Language Server Protocol
 codegrid-runtime-api Versioned host request/response and instance lifecycle
 codegrid-wasm-browser Browser WebAssembly adapter
 codegrid-wasm-server Server WebAssembly adapter
-codegrid-level-core  Logical level validation, ExactIO, metrics and rating
-codegrid-level-api   Versioned level requests, profiles, handles and results
-codegrid-level-wasm-browser Browser Level binding v1
-codegrid-level-wasm-server  Portable no-import Level ABI v1
 editors/vscode/       TypeScript editor client without language semantics
 ```
 
+Game-level validation, scenes, resource/counter policy, scoring, and evaluation
+belong to the sibling [Rust Game Runtime](../bf-steam-wt/rust/README.md), not
+the language workspace. Its [current contracts](../bf-steam-wt/rust/spec/README.md)
+and [implementation documentation](../bf-steam-wt/rust/docs/README.md) are the
+authoritative game-domain references.
+
 ## Documentation
 
-- [Level Core v1 specification](spec/codegrid-level-core-spec-v1.md) and [Level Core architecture](docs/level-core-architecture.md) define the shared Rust ExactIO evaluation layer and Web, Steam, and backend WASM integration boundaries.
-- [ExactIO implementation contract](spec/codegrid-level-exactio-contract-v1.md) records the decided first-phase evaluation rules.
-- [Rust level evaluation task book](tasks/level-core-exactio-v1.md) covers CLI and WASM delivery, Environment extension design, and actual-host result comparisons.
+- Game-level behavior, Level Core and Scene contracts, author examples,
+  fixtures, and host integration are maintained in the sibling [Rust Game
+  Runtime specifications](../bf-steam-wt/rust/spec/README.md),
+  [documentation](../bf-steam-wt/rust/docs/README.md),
+  [examples](../bf-steam-wt/rust/examples/README.md), and
+  [fixtures](../bf-steam-wt/rust/fixtures/README.md).
 
 - [Error code specification](spec/codegrid-error-codes.md) defines all scoped identifiers and stable error categories.
 

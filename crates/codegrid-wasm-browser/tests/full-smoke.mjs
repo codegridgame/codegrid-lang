@@ -1,17 +1,17 @@
-export const RUNTIME_API_VERSION = 3;
+export const RUNTIME_API_VERSION = 4;
 
 export function runFullSmoke(BrowserRuntime, suite, baseline, assert, deepEqual) {
   assert(suite.schema_version === 1, "the shared Full fixture suite must use schema version 1");
   assert(Array.isArray(suite.cases) && suite.cases.length > 0, "Full fixtures must be available");
   assert(baseline?.schema === "codegrid.native-cli.full-run-baseline", "the generated Native CLI baseline must be available");
-  assert(baseline.schema_version === 1 && baseline.api_version === RUNTIME_API_VERSION, "the Native CLI baseline must target Runtime API v3");
+  assert(baseline.schema_version === 1 && baseline.api_version === RUNTIME_API_VERSION, "the Native CLI baseline must target Runtime API v4");
   assert(baseline.suite_id === suite.suite_id, "the Native CLI baseline must belong to this fixture suite");
-  assert(baseline.max_work_units_per_call === "1000000", "the baseline must use the shared deterministic work-unit ceiling");
+  assert(baseline.max_work_units_per_call === "10000", "the baseline must use the shared deterministic work-unit ceiling");
   assert(Array.isArray(baseline.cases) && baseline.cases.length === suite.cases.length, "the Native CLI baseline must cover every Full fixture");
   deepEqual(baseline.cases.map(({ id }) => id), suite.cases.map(({ id }) => id), "Native CLI baseline fixture IDs");
 
   const runtime = createRuntime(BrowserRuntime);
-  assert(runtime.api_version() === RUNTIME_API_VERSION, "the adapter must expose Runtime API v3");
+  assert(runtime.api_version() === RUNTIME_API_VERSION, "the adapter must expose Runtime API v4");
 
   for (const [atom, reason] of [[".3*", "ReadCode"], ["?0.3*", "ReadCode"], [".3x10", "2 through 9"], ["[0x3", "Function CALL"]]) {
     const response = parseJson(runtime.compile(`~> ${atom} ;\n`), `${atom}: diagnostic`);
@@ -29,11 +29,10 @@ export function runFullSmoke(BrowserRuntime, suite, baseline, assert, deepEqual)
     const view = parseJson(runtime.program_view(compiled.outcome.program), `${id}: program view`);
     assertSuccess(view, `${id}: program view`, assert);
     assert(view.view && view.view.outer && view.view.customs, `${id}: view contains the Full program`);
+    assertProgramViewDimensions(view.view, id, assert);
 
     const configuration = JSON.stringify({
       seed: run.seed,
-      custom_execution_limit: run.custom_execution_limit,
-      gas_hard_limit: run.gas_hard_limit,
     });
     const initialMemory = JSON.stringify(run.initial_memory ?? []);
     const created = parseJson(
@@ -48,11 +47,13 @@ export function runFullSmoke(BrowserRuntime, suite, baseline, assert, deepEqual)
     assertSuccess(created, `${id}: create instance`, assert);
     assert(typeof created.instance === "string", `${id}: instance handle is a decimal string`);
 
-    const result = parseJson(runtime.run(created.instance, run.max_ticks), `${id}: run`);
+    const result = parseJson(runtime.run(created.instance, run.max_steps), `${id}: run`);
     assertSuccess(result, `${id}: run`, assert);
-    const expectedStatus = expected.status === "tick_limit_reached"
-      ? { kind: "yielded", reason: "tick_slice_exhausted" }
-      : { kind: expected.status };
+    const expectedStatus = expected.status === "step_limit_reached"
+      ? { kind: "yielded", reason: "step_slice_exhausted" }
+      : expected.status === "work_limit_reached"
+        ? { kind: "yielded", reason: "work_unit_budget_exhausted" }
+        : { kind: expected.status };
     deepEqual(result.status, expectedStatus, `${id}: run status`);
     deepEqual(result.newly_emitted_output, expected.output, `${id}: newly emitted output`);
     assert(Array.isArray(result.events), `${id}: run returns structured events`);
@@ -73,9 +74,9 @@ export function runFullSmoke(BrowserRuntime, suite, baseline, assert, deepEqual)
 
 function normalizeBrowserResult(result) {
   const status = result.status?.kind === "yielded"
-    ? (result.status.reason === "tick_slice_exhausted" ? "tick_limit_reached" : "work_limit_reached")
+    ? (result.status.reason === "step_slice_exhausted" ? "step_limit_reached" : "work_limit_reached")
     : result.status?.kind;
-  if (!["halted", "error", "tick_limit_reached", "work_limit_reached"].includes(status)) {
+  if (!["halted", "error", "step_limit_reached", "work_limit_reached"].includes(status)) {
     throw new Error(`Unsupported Browser Runtime API run status: ${JSON.stringify(result.status)}`);
   }
   return {
@@ -86,20 +87,38 @@ function normalizeBrowserResult(result) {
   };
 }
 
+function assertProgramViewDimensions(view, fixtureId, assert) {
+  const scopes = [
+    ["outer", view.outer],
+    ...Object.entries(view.customs).map(([id, codeGrid]) => [`custom ${id}`, codeGrid]),
+  ];
+  for (const [scopeName, codeGrid] of scopes) {
+    const boards = [
+      ["main", codeGrid.main],
+      ...Object.entries(codeGrid.functions).map(([id, board]) => [`function ${id}`, board]),
+    ];
+    for (const [boardName, board] of boards) {
+      for (const dimension of ["width", "height"]) {
+        assert(
+          typeof board[dimension] === "number" && Number.isSafeInteger(board[dimension]),
+          `${fixtureId}: ${scopeName} ${boardName} ${dimension} is a JSON number`,
+        );
+      }
+    }
+  }
+}
+
 function normalizeSnapshot(snapshot) {
   return {
     status: snapshot.status,
-    committed_ticks: snapshot.committed_ticks,
+    committed_steps: snapshot.committed_steps,
     registers: snapshot.registers,
     memory: snapshot.memory,
     remaining_input: snapshot.remaining_input,
     output: snapshot.output,
     runtime_program: normalizeRuntimeProgram(snapshot.runtime_program),
     threads: snapshot.threads.map((thread) => normalizeThread(thread, true)),
-    metrics: {
-      ...snapshot.metrics,
-      used_cells: snapshot.metrics.used_cells.map(normalizeStaticCell),
-    },
+    metrics: snapshot.metrics,
     errors: snapshot.errors.map(normalizeError),
     fault: snapshot.fault,
   };
@@ -127,14 +146,10 @@ function normalizeRuntimeBoard(board) {
 }
 
 function canonicalDimension(value) {
-  if (typeof value !== "string" || !/^(0|[1-9][0-9]*)$/.test(value)) {
-    throw new Error(`Runtime API board dimension is not a canonical decimal: ${JSON.stringify(value)}`);
+  if (!Number.isSafeInteger(value) || value < 0 || value > 65_535) {
+    throw new Error(`Runtime API board dimension is not a JSON number in its model range: ${JSON.stringify(value)}`);
   }
-  const dimension = Number(value);
-  if (!Number.isSafeInteger(dimension) || dimension > 65_535) {
-    throw new Error(`Runtime API board dimension is outside its model range: ${value}`);
-  }
-  return dimension;
+  return value;
 }
 
 function normalizeEvent(event) {
@@ -180,7 +195,7 @@ function normalizeError(error) {
   const details = { ...error.details };
   if (details.board) details.board = normalizeBoard(details.board);
   if (details.cell) details.cell = normalizeStaticCell(details.cell);
-  return { code: error.code, error_number: error.error_number, global_tick: error.global_tick, scope: error.scope, details };
+  return { code: error.code, error_number: error.error_number, transition_id: error.transition_id, scope: error.scope, details };
 }
 
 function normalizeStaticCell(cell) {
@@ -216,10 +231,9 @@ function createRuntime(Runtime, options = {}) {
     options.maxRequestBytes ?? 1_048_576,
     options.maxResponseBytes ?? 1_048_576,
     options.maxInstanceStateBytes ?? 1_048_576,
-    options.maxRunTicksPerCall ?? "10000",
-    options.maxTotalTicksPerInstance ?? "10000",
-    options.maxWorkUnitsPerCall ?? "1000000",
-    options.maxGasPerInstance ?? "100000000",
+    options.maxRunStepsPerCall ?? "10000",
+    options.maxTotalStepsPerInstance ?? "10000",
+    options.maxWorkUnitsPerCall ?? "10000",
   );
 }
 
@@ -232,7 +246,7 @@ function parseJson(value, operation) {
 }
 
 function assertSuccess(response, operation, assert) {
-  assert(response.api_version === RUNTIME_API_VERSION && !response.error, `${operation}: expected Runtime API v3 success`);
+  assert(response.api_version === RUNTIME_API_VERSION && !response.error, `${operation}: expected Runtime API v4 success`);
 }
 
 function scalarOrArray(actual, expected, assert, operation) {
@@ -244,21 +258,9 @@ function scalarOrArray(actual, expected, assert, operation) {
 
 function assertFullSnapshot(snapshot, expected, id, assert, deepEqual) {
   assert(snapshot.status === expected.vm_status, `${id}: VM status`);
-  for (const key of ["committed_ticks", "registers", "output"]) {
-    deepEqual(snapshot[key], expected[key], `${id}: ${key}`);
-  }
-  for (const key of [
-    "operation_count",
-    "gas_used", "execution_gas", "memory_gas", "stack_gas", "gas_schedule_version",
-    "used_cell_count",
-    "used_memory_address_count",
-    "peak_data_stack_usage",
-    "peak_instruction_stack_usage",
-    "peak_call_stack_usage",
-    "instruction_variety",
-  ]) {
-    deepEqual(snapshot.metrics[key], expected[key], `${id}: metrics.${key}`);
-  }
+  deepEqual(snapshot.committed_steps, expected.committed_steps, `${id}: committed steps`);
+  for (const key of ["registers", "output"]) deepEqual(snapshot[key], expected[key], `${id}: ${key}`);
+  deepEqual(snapshot.metrics, { committed_steps: expected.committed_steps }, `${id}: language metrics expose step count only`);
   deepEqual(snapshot.errors.map((error) => error.code), expected.error_codes, `${id}: error codes`);
   for (const error of snapshot.errors) {
     assert(/^3[0-9]{3}$/.test(error.error_number), `${id}: four-digit VM error number`);
@@ -299,8 +301,8 @@ function assertFullSnapshot(snapshot, expected, id, assert, deepEqual) {
   }
 
   for (const [key, select] of [
-    ["error_global_ticks", (error) => error.global_tick],
-    ["error_custom_internal_ticks", (error) => error.scope.internal_tick],
+    ["error_transition_ids", (error) => error.transition_id],
+    ["error_custom_internal_steps", (error) => error.scope.internal_step],
     ["error_thread_ids", (error) => error.details.thread_id],
   ]) {
     if (key in expected) {
@@ -328,7 +330,7 @@ function verifyHostBoundaries(BrowserRuntime, assert, deepEqual) {
       compiled.outcome.program,
       disguised,
       "[]",
-      JSON.stringify({ seed: "0", gas_hard_limit: "100000000", custom_execution_limit: "100" }),
+      JSON.stringify({ seed: "0" }),
     ),
     "reject disguised Uint8Array",
   );
@@ -339,7 +341,7 @@ function verifyHostBoundaries(BrowserRuntime, assert, deepEqual) {
       compiled.outcome.program,
       new Uint8Array([73]),
       "[]",
-      JSON.stringify({ seed: "9007199254740993", gas_hard_limit: "100000000", custom_execution_limit: "100" }),
+      JSON.stringify({ seed: "9007199254740993" }),
     ),
     "create isolated instance",
   );
@@ -355,7 +357,7 @@ function verifyHostBoundaries(BrowserRuntime, assert, deepEqual) {
       "1",
       new Uint8Array(32),
       "[]",
-      JSON.stringify({ seed: "0", gas_hard_limit: "100000000", custom_execution_limit: "10" }),
+      JSON.stringify({ seed: "0" }),
     ),
     "request byte quota",
   );
@@ -369,7 +371,7 @@ function verifyHostBoundaries(BrowserRuntime, assert, deepEqual) {
       inputProgram.outcome.program,
       new Uint8Array([1, 2]),
       "[]",
-      JSON.stringify({ seed: "0", gas_hard_limit: "100000000", custom_execution_limit: "10" }),
+      JSON.stringify({ seed: "0" }),
     ),
     "input byte quota",
   );
@@ -379,7 +381,7 @@ function verifyHostBoundaries(BrowserRuntime, assert, deepEqual) {
   const memoryGuard = createRuntime(BrowserRuntime, { maxInitialMemoryEntries: 1 });
   const memoryProgram = parseJson(memoryGuard.compile("~> ;\n"), "compile initial-memory fixture");
   assertSuccess(memoryProgram, "compile initial-memory fixture", assert);
-  const config = JSON.stringify({ seed: "0", gas_hard_limit: "100000000", custom_execution_limit: "10" });
+  const config = JSON.stringify({ seed: "0" });
   const duplicateMemory = parseJson(
     memoryGuard.create_instance(
       memoryProgram.outcome.program,
@@ -391,7 +393,7 @@ function verifyHostBoundaries(BrowserRuntime, assert, deepEqual) {
   );
   assert(duplicateMemory.error.code === "initial_memory_limit_exceeded", "initial-memory entry quota must be enforced before conversion");
   const invalidConfig = parseJson(
-    memoryGuard.create_instance(memoryProgram.outcome.program, new Uint8Array(), "[]", JSON.stringify({ seed: "01", gas_hard_limit: "100000000", custom_execution_limit: "10" })),
+    memoryGuard.create_instance(memoryProgram.outcome.program, new Uint8Array(), "[]", JSON.stringify({ seed: "01" })),
     "noncanonical configuration integer",
   );
   assert(invalidConfig.error.code === "invalid_configuration_integer", "wide request integers must be canonical decimal strings");
@@ -416,25 +418,25 @@ function verifyHostBoundaries(BrowserRuntime, assert, deepEqual) {
   const sourceError = parseJson(sourceGuard.check("ééé"), "UTF-8 source quota");
   assert(sourceError.error.code === "source_payload_limit_exceeded", "source quota must count UTF-8 bytes");
 
-  const tickGuard = createRuntime(BrowserRuntime, { maxRunTicksPerCall: "2", maxTotalTicksPerInstance: "2" });
-  const tickProgram = parseJson(tickGuard.compile("~> + ;\n"), "compile tick-limited source");
-  assertSuccess(tickProgram, "compile tick-limited source", assert);
-  const tickInstance = parseJson(
-    tickGuard.create_instance(
-      tickProgram.outcome.program,
+  const stepGuard = createRuntime(BrowserRuntime, { maxRunStepsPerCall: "2", maxTotalStepsPerInstance: "2" });
+  const stepProgram = parseJson(stepGuard.compile("~> + ;\n"), "compile step-limited source");
+  assertSuccess(stepProgram, "compile step-limited source", assert);
+  const stepInstance = parseJson(
+    stepGuard.create_instance(
+      stepProgram.outcome.program,
       new Uint8Array(),
       "[]",
-      JSON.stringify({ seed: "0", gas_hard_limit: "100000000", custom_execution_limit: "10" }),
+      JSON.stringify({ seed: "0" }),
     ),
-    "create tick-limited instance",
+    "create step-limited instance",
   );
-  assertSuccess(tickInstance, "create tick-limited instance", assert);
-  const rejectedSlice = parseJson(tickGuard.run(tickInstance.instance, "3"), "reject oversized run slice");
-  assert(rejectedSlice.error.code === "run_tick_budget_exceeded", "oversized run slices must fail before progress");
-  const unchanged = parseJson(tickGuard.snapshot(tickInstance.instance), "snapshot after rejected slice");
-  assert(unchanged.snapshot.committed_ticks === "0", "rejected slices must not advance an instance");
-  assertSuccess(parseJson(tickGuard.release_instance(tickInstance.instance), "release tick-limited instance"), "release tick-limited instance", assert);
-  assertSuccess(parseJson(tickGuard.release_program(tickProgram.outcome.program), "release tick-limited program"), "release tick-limited program", assert);
+  assertSuccess(stepInstance, "create step-limited instance", assert);
+  const rejectedSlice = parseJson(stepGuard.run(stepInstance.instance, "3"), "reject oversized run slice");
+  assert(rejectedSlice.error.code === "run_step_budget_exceeded", "oversized run slices must fail before progress");
+  const unchanged = parseJson(stepGuard.snapshot(stepInstance.instance), "snapshot after rejected slice");
+  assert(unchanged.snapshot.committed_steps === "0", "rejected slices must not advance an instance");
+  assertSuccess(parseJson(stepGuard.release_instance(stepInstance.instance), "release step-limited instance"), "release step-limited instance", assert);
+  assertSuccess(parseJson(stepGuard.release_program(stepProgram.outcome.program), "release step-limited program"), "release step-limited program", assert);
 
   const workGuard = createRuntime(BrowserRuntime, { maxWorkUnitsPerCall: "1" });
   const workProgram = parseJson(workGuard.compile("~> + ;\n"), "compile work-limited source");
@@ -444,7 +446,7 @@ function verifyHostBoundaries(BrowserRuntime, assert, deepEqual) {
       workProgram.outcome.program,
       new Uint8Array(),
       "[]",
-      JSON.stringify({ seed: "0", gas_hard_limit: "100000000", custom_execution_limit: "10" }),
+      JSON.stringify({ seed: "0" }),
     ),
     "create work-limited instance",
   );
@@ -463,8 +465,8 @@ function verifyHostBoundaries(BrowserRuntime, assert, deepEqual) {
   assert(responseError.error.code === "response_payload_limit_exceeded", "oversized projections must return a complete response limit error");
 
   const stateGuard = createRuntime(BrowserRuntime, {
-    maxRunTicksPerCall: "5000",
-    maxTotalTicksPerInstance: "5000",
+    maxRunStepsPerCall: "5000",
+    maxTotalStepsPerInstance: "5000",
     maxInstanceStateBytes: 4096,
   });
   const outputProgram = parseJson(stateGuard.compile("@main\n@size 2x1\n~> .\n@end\n"), "compile retained-state fixture");
@@ -474,7 +476,7 @@ function verifyHostBoundaries(BrowserRuntime, assert, deepEqual) {
       outputProgram.outcome.program,
       new Uint8Array(),
       "[]",
-      JSON.stringify({ seed: "0", gas_hard_limit: "100000000", custom_execution_limit: "100" }),
+      JSON.stringify({ seed: "0" }),
     ),
     "create retained-state fixture",
   );

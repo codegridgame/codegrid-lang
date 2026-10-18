@@ -7,7 +7,7 @@ Provide CodeGrid file association, TextMate syntax highlighting, language config
 ## Allowed dependency and call direction
 
 - The extension calls VS Code APIs and may launch `codegrid-lsp` through an explicit user configuration.
-- The extension may launch `codegrid debug --stdio` without a shell and project compiler source locations and VM snapshots into DAP threads, stack frames, variables, watches, and breakpoints. Global Tick stepping and all language behavior remain in Rust. Custom execution is atomic within an outer tick; do not advertise independently pausable Custom instructions.
+- The extension may launch `codegrid debug --stdio` without a shell and project compiler source locations and VM snapshots into DAP threads, stack frames, variables, watches, and breakpoints. Atomic VM transitions and all language behavior remain in Rust. Custom execution is atomic within its caller transition; do not advertise independently pausable Custom instructions. DAP launch limits use `maxSteps` and `maxWorkUnitsPerStep`, mapped to the native debug protocol's `max_steps` and `max_work_units_per_step`.
 - Keep UI/editor lifecycle in the extension; keep authoritative source validation and symbol resolution in shared Rust compiler/LSP APIs when available.
 - Static metadata may describe presentation, snippets, and instruction help, but must stay consistent with the normative specs and canonical instruction inventory.
 - Resolve localized error summaries by stable number from the generated shared

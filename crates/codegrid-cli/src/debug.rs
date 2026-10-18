@@ -40,26 +40,19 @@ enum Request {
         source: String,
         input: Vec<u8>,
         seed: String,
-        custom_limit: String,
-        #[serde(default = "default_gas_limit")]
-        gas_hard_limit: String,
-        max_work_units: String,
-        max_ticks: String,
+        max_steps: String,
+        max_work_units_per_step: String,
     },
     Step,
     Snapshot,
     Disconnect,
 }
 
-fn default_gas_limit() -> String {
-    codegrid_vm::DEFAULT_GAS_HARD_LIMIT.to_string()
-}
-
 #[derive(Default)]
 struct Session {
     vm: Option<Vm>,
-    work_limit: u64,
-    tick_limit: u64,
+    max_steps: u64,
+    max_work_units_per_step: u64,
 }
 
 impl Session {
@@ -69,10 +62,8 @@ impl Session {
                 source,
                 input,
                 seed,
-                custom_limit,
-                gas_hard_limit,
-                max_work_units,
-                max_ticks,
+                max_steps,
+                max_work_units_per_step,
             } => {
                 if self.vm.is_some() {
                     return Err(DebugError::new(
@@ -81,10 +72,8 @@ impl Session {
                     ));
                 }
                 let seed = decimal(&seed, false)?;
-                let custom_limit = decimal(&custom_limit, true)?;
-                let gas_hard_limit = decimal(&gas_hard_limit, true)?;
-                let work_limit = decimal(&max_work_units, true)?;
-                let tick_limit = decimal(&max_ticks, true)?;
+                let max_steps = decimal(&max_steps, true)?;
+                let max_work_units_per_step = decimal(&max_work_units_per_step, true)?;
                 let compilation = match codegrid_compiler::compile_with_symbols(&source) {
                     Ok(compilation) => compilation,
                     Err(diagnostics) => {
@@ -100,27 +89,15 @@ impl Session {
                     json!({"path":path,"line":line,"column":column,"endLine":end_line,"endColumn":end_column})
                 }).collect();
                 self.vm = Some(
-                    Vm::new(
-                        compilation.program,
-                        input,
-                        VmConfig::new(
-                            seed,
-                            NonZeroU64::new(custom_limit).ok_or("custom limit must be positive")?,
-                        )
-                        .with_gas_hard_limit(
-                            NonZeroU64::new(gas_hard_limit)
-                                .ok_or("gas hard limit must be positive")?,
-                        ),
-                    )
-                    .map_err(|error| {
+                    Vm::new(compilation.program, input, VmConfig::new(seed)).map_err(|error| {
                         DebugError::new(
                             "debug.vm_initialization_failed",
                             format!("VM initialization failed: {error:?}"),
                         )
                     })?,
                 );
-                self.work_limit = work_limit;
-                self.tick_limit = tick_limit;
+                self.max_steps = max_steps;
+                self.max_work_units_per_step = max_work_units_per_step;
                 Ok(
                     json!({"locations":locations,"snapshot":snapshot_json(&self.vm.as_ref().ok_or_else(|| DebugError::new("debug.no_program", "no program loaded"))?.snapshot())}),
                 )
@@ -130,13 +107,13 @@ impl Session {
                     .vm
                     .as_mut()
                     .ok_or_else(|| DebugError::new("debug.no_program", "no program loaded"))?;
-                if vm.status() == VmStatus::Running && vm.committed_ticks() >= self.tick_limit {
+                if vm.committed_steps() >= self.max_steps {
                     return Err(DebugError::new(
-                        "debug.tick_limit_exceeded",
-                        "configured global tick limit reached",
+                        "debug.step_budget_exceeded",
+                        "the configured session step budget has been reached",
                     ));
                 }
-                let step = vm.step_with_work_limit(NonZeroU64::new(self.work_limit).ok_or("work limit must be positive")?).map_err(|_| DebugError::new("debug.work_limit_exceeded", "global tick exceeded the configured work-unit limit; the tick was rolled back"))?;
+                let step = vm.step_with_work_limit(NonZeroU64::new(self.max_work_units_per_step).ok_or("work-unit budget must be positive")?).map_err(|_| DebugError::new("debug.work_unit_budget_exceeded", "step exceeded the configured work-unit budget; the transition was rolled back"))?;
                 Ok(
                     json!({"snapshot":snapshot_json(&vm.snapshot()),"events":step.events.iter().map(event_json).collect::<Vec<_>>(),"newly_emitted_output":step.newly_emitted_output}),
                 )
@@ -163,7 +140,7 @@ fn decimal(value: &str, positive: bool) -> Result<u64, String> {
         .parse::<u64>()
         .map_err(|_| "integer exceeds u64".to_owned())?;
     if positive && number == 0 {
-        return Err("execution limits must be positive".to_owned());
+        return Err("work-unit budget must be positive".to_owned());
     }
     Ok(number)
 }
@@ -239,10 +216,8 @@ mod tests {
             source: source.to_owned(),
             input: vec![65],
             seed: "18446744073709551615".into(),
-            custom_limit: "1000".into(),
-            gas_hard_limit: "100000000".into(),
-            max_work_units: "100000".into(),
-            max_ticks: "1000".into(),
+            max_steps: "100000".into(),
+            max_work_units_per_step: "100000".into(),
         }
     }
 
@@ -261,7 +236,7 @@ mod tests {
                 .unwrap()["column"],
             8
         );
-        assert_eq!(loaded["snapshot"]["committed_ticks"], "0");
+        assert_eq!(loaded["snapshot"]["committed_steps"], "0");
         for _ in 0..4 {
             session.request(Request::Step).unwrap();
         }
@@ -276,9 +251,28 @@ mod tests {
         assert!(session.request(Request::Step).is_err());
         assert!(decimal("01", false).is_err());
         assert!(decimal("0", true).is_err());
+        let request = r#"{"command":"launch","source":"~> ;","input":[],"seed":"0","max_steps":"10","max_work_units_per_step":"100","unknown_field":"1"}"#;
+        assert!(serde_json::from_str::<Request>(request).is_err());
         assert!(!session.request(launch("~x")).unwrap()["diagnostics"]
             .as_array()
             .unwrap()
             .is_empty());
+    }
+
+    #[test]
+    fn debug_enforces_neutral_session_step_budget() {
+        let mut session = Session::default();
+        let mut request = launch("~> _");
+        if let Request::Launch { max_steps, .. } = &mut request {
+            *max_steps = "1".into();
+        }
+        session.request(request).unwrap();
+        session.request(Request::Step).unwrap();
+        let error = session.request(Request::Step).unwrap_err();
+        assert_eq!(error.code, "debug.step_budget_exceeded");
+        assert_eq!(
+            session.request(Request::Snapshot).unwrap()["snapshot"]["committed_steps"],
+            "1"
+        );
     }
 }

@@ -38,18 +38,14 @@ These rules apply to all AI-assisted work in this repository.
   codegrid-compiler     -> codegrid-hir, codegrid-ir, codegrid-model, codegrid-syntax
   codegrid-vm           -> codegrid-ir, codegrid-model
   codegrid-runtime-api  -> codegrid-compiler, codegrid-ir, codegrid-model, codegrid-vm
-  codegrid-cli          -> codegrid-compiler, codegrid-ir, codegrid-model, codegrid-syntax, codegrid-vm, codegrid-level-api
+  codegrid-cli          -> codegrid-compiler, codegrid-ir, codegrid-model, codegrid-syntax, codegrid-vm
   codegrid-lsp          -> codegrid-compiler, codegrid-model, codegrid-syntax
   codegrid-wasm-browser -> codegrid-runtime-api
   codegrid-wasm-server  -> codegrid-runtime-api
-  codegrid-level-core   -> codegrid-ir, codegrid-model, codegrid-vm
-  codegrid-level-api    -> codegrid-level-core, codegrid-compiler, codegrid-ir, codegrid-model
-  codegrid-level-wasm-browser -> codegrid-level-api
-  codegrid-level-wasm-server  -> codegrid-level-api
   ```
 
   Native CLI check/run/debug intentionally compose compiler and VM APIs directly
-  at the process boundary; evaluate delegates to `codegrid-level-api`.
+  at the process boundary.
   Browser/server language adapters use `codegrid-runtime-api` for
   their versioned host contract. Do not introduce dependency cycles or a
   parallel `codegrid-core` model.
@@ -59,19 +55,17 @@ These rules apply to all AI-assisted work in this repository.
 - Design the same compiler and VM core for native and `wasm32`. Frontend and backend WASM hosts must pass explicit data and receive versioned results; JavaScript `Number` must not carry values that exceed its exact integer range, including `u64` seeds or unbounded Page/address values.
 - Keep source spans as UTF-8 byte offsets in the core. Convert them explicitly to UTF-16 positions at LSP/editor boundaries; never assume byte offsets are editor columns.
 - Keep VM behavior deterministic. Do not derive language results from wall-clock time, host randomness, thread scheduling, or unordered container iteration.
-- Keep scoring, levels, Steam integration, and game UI outside this repository's language core.
-  The Rust level evaluation layer lives above the language core as
-  described in `docs/level-core-architecture.md`; logical level validation and
-  scoring belong there, never in model/compiler/VM or host code. Its actual
-  dependencies appear in the workspace graph above. Web, Steam, and backend level evaluation must
-  invoke the shared Rust evaluator through WASM.
+- Keep scoring, levels, scenes, game resource/counter policy, Steam integration,
+  and game UI outside this language repository. The sibling game repository
+  owns its Rust Game Runtime and invokes language compilation and VM execution
+  through the language API; do not add game-specific crates or policy here.
 
 ### Prohibited shortcuts
 
 - Do not implement a second semantic parser, validator, instruction inventory, or interpreter in TypeScript, CLI, LSP, runtime API, browser code, or server code.
 - Do not make the core read paths, environment variables, network, clocks, or host randomness, or depend on Node.js, Electron, VS Code APIs, `wasm-bindgen`, WASI, or a specific WASM runtime.
 - Do not panic on user source, CLI input, or host-provided IR. Return structured diagnostics or validation errors; reserve assertions for internal invariants that cannot be influenced by external data.
-- Do not make a `run` loop with separate semantics from `step`; bounded execution must repeatedly apply the same deterministic outer-tick transition.
+- Do not make a `run` loop with separate semantics from `step`; bounded execution must repeatedly apply the same deterministic outer transition.
 - Do not expose animation timing, UI state, game scoring, level policy, or Steam integration from the language core.
 - Do not claim native/WASM parity from compilation alone; compare execution results in actual native, browser-WASM, and server-WASM hosts before making that claim.
 

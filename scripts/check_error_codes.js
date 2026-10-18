@@ -11,11 +11,28 @@ const translations = require('child_process').spawnSync(process.execPath,
   [path.join(__dirname, 'generate_error_messages.js'), '--check'], { encoding: 'utf8' });
 if (translations.status !== 0) throw new Error(translations.stderr || 'Error-translation generation check failed');
 const scoped = new Set();
+const required = new Set([
+  'api:zero_step_budget',
+  'api:run_step_budget_exceeded',
+  'api:instance_step_budget_exceeded',
+  'server:zero_step_budget',
+  'server:run_step_budget_exceeded',
+  'server:instance_step_budget_exceeded',
+  'debug:debug.step_budget_exceeded',
+  'debug:debug.work_unit_budget_exceeded',
+]);
 for (const entry of registry.entries) {
   const key = `${entry.layer}:${entry.code}`;
   if (scoped.has(key)) throw new Error(`Duplicate identifier: ${key}`);
   if (!entry.condition || !entry.surface || !entry.state_effect) throw new Error(`Incomplete entry: ${key}`);
   scoped.add(key);
+  required.delete(key);
+}
+if (required.size) throw new Error(`Missing current-contract error identifiers: ${[...required].sort().join(', ')}`);
+for (const entry of registry.entries) {
+  if (/level|scene|gas|tick|customexecutionlimit/i.test(String(entry.code))) {
+    throw new Error(`Non-language/game policy identifier remains in the language registry: ${entry.layer}:${entry.code}`);
+  }
 }
 const known = new Set(registry.entries.map((entry) => String(entry.code)));
 let checked = 0;
@@ -28,7 +45,7 @@ function visit(directory) {
       let source = fs.readFileSync(file, 'utf8');
       const tests = source.lastIndexOf('#[cfg(test)]\nmod tests');
       if (tests >= 0) source = source.slice(0, tests);
-      for (const pattern of [/["'`\[]((?:source|ir|cli|debug|editor|browser|lsp|level|level_api|level_abi)\.[a-z_]+)["'`\]]/g, /\b(?:input_error_json|error_response)\(\s*"([a-z_]+)"/g, /\.ok_or\(\(\s*"([a-z_]+)"/g]) {
+      for (const pattern of [/["'`\[]((?:source|ir|cli|debug|editor|browser|lsp)\.[a-z_]+)["'`\]]/g, /\b(?:input_error_json|error_response)\(\s*"([a-z_]+)"/g, /\.ok_or\(\(\s*"([a-z_]+)"/g]) {
         for (const match of source.matchAll(pattern)) {
           if (!known.has(match[1])) throw new Error(`Unregistered code ${match[1]} in ${path.relative(root, file)}`);
           checked++;

@@ -2,16 +2,20 @@
 
 ## Responsibility
 
-Execute verified Full CodeGrid IR with deterministic multi-thread semantics and return structured state, events, errors, and raw metrics. The VM owns registers, thread pointers and stacks, Pages, sparse memory, mutable code, calls, Folded Blocks, Custom invocations, Attachments, and all Full Primary instruction behavior.
+Execute verified Full CodeGrid IR with deterministic multi-thread semantics and return structured state, events, errors, committed-step counts, and prepared candidate footprints. The VM owns registers, thread pointers and stacks, Pages, sparse memory, mutable code, calls, Folded Blocks, Custom invocations, Attachments, and all Full Primary instruction behavior.
 
 ## Allowed dependency and call direction
 
 - This crate may depend only on `codegrid-ir` and `codegrid-model` among workspace crates.
 - `codegrid-cli` and `codegrid-runtime-api` may create isolated VM instances and call step/run/snapshot APIs.
-- The Full VM receives verified IR and explicit input, seed, initial-memory, Custom-limit, tick-limit, and positive Gas-hard-limit data. Gas Schedule 1 charges actual execution, cold logical memory addresses, and normative aggregate stack peaks with checked arithmetic. Gas exhaustion rolls back the whole outer tick and retains attempted diagnostic Gas; host work interruptions retain neither state nor metrics. Custom invocation is temporarily rejected with `CustomDisabled` at dispatch; retained internal implementation is exercised by crate-private unit tests only. `run` must use the same outer-tick transition semantics as repeated `step` calls.
+- The Full VM receives verified IR, explicit input, a seed, and optional initial memory. Game resource prices, budgets, and scoring do not belong in this crate. `run(max_steps)` bounds outer transitions; a generic host work-unit limit bounds synchronous thread dispatches within a transition. Custom is a production language instruction and has no VM-specific invocation cap. `run` must use the same transition semantics as repeated `step` calls.
 - The IR verifier is the single trust boundary for Full structures, board shapes, Entry counts, instructions, and Attachments. Do not duplicate that validation in the VM constructor.
 - Expose owned snapshots for callers that need detached state and borrowed snapshot views for read-only inspection; do not clone the full VM state merely to inspect it.
-- A host work-unit limit counts thread dispatches and interrupts only at a dispatch boundary; over-limit ticks must roll back without changing normative VM metrics.
+- A host work-unit limit counts thread dispatches and interrupts only at a dispatch boundary; over-limit transitions must roll back without changing VM state or committed-step counts.
+- Each prepared `StepReport` exposes the candidate's exact consumed `work_units`, counting Outer and Custom dispatches together, and `custom_internal_dispatches`, counting only dispatches in Custom scopes (including nested Custom invocations), plus its `StepFootprint`. These observations are candidate-local and are not accumulated as VM statistics. A work-limit preparation error reports the fully consumed `maximum_work_units` and its exact Custom-scope subset in `custom_internal_dispatches`; when a repeated Custom state proves the invocation cannot return, remaining dispatches are counted logically so both values still match the requested cap exactly.
+- Hosts executing untrusted or potentially nonterminating programs must use work-limited APIs for single-step, batch, and debug execution. The low-level `step` and `prepare_step` methods are unbounded and may not return when Custom execution does not terminate.
+- `set_thread_execution_location` is a generic host/debug operation between transitions. It accepts only an existing normal thread and an in-bounds coordinate within its current board; it changes only position and direction and contains no game selection policy.
+- Keep this method at the low-level VM host boundary; do not expose it through Runtime API or WASM contracts.
 - Keep deterministic work units distinct from VM semantic errors and from actual engine fuel, wall-clock, or memory budgets.
 
 ## Prohibited
@@ -25,16 +29,11 @@ Execute verified Full CodeGrid IR with deterministic multi-thread semantics and 
 
 ## Validation
 
-- `reposition_thread` is an explicit host operation between steps. It accepts only an existing normal thread in a running VM and an in-bounds coordinate within its current board. It changes only position/direction, preserving all execution resources and metrics; it contains no selection or game policy.
+- `set_thread_execution_location` is an explicit host/debug operation between transitions. It accepts only an existing normal thread in a running VM and an in-bounds coordinate within its current board. It changes only position/direction, preserving all execution resources and metrics; it contains no selection or game policy. Runtime API and WASM contracts do not expose it.
 
-Test every Full tick phase, Primary and Attachment behavior, input/output, concurrent conflicts, commit/rollback, calls/resumes/tail calls, Folded Blocks, Custom isolation/limits, deterministic random vectors, snapshots, events, and raw metrics. Run the shared Full fixtures and compare native and actual WebAssembly hosts when available.
-
-The Rust-only `append_input` operation receives explicit bytes between completed
-steps, reserves the entire append, preserves unread FIFO data, and changes no
-language metric. Its allocation/lifecycle errors are not VM runtime errors.
-Scene definitions, queue ceilings, and publication policy remain in the level
-layer; language host adapters do not expose arbitrary input mutation.
+Test every Full transition phase, Primary and Attachment behavior, input/output, concurrent conflicts, commit/rollback, calls/resumes/tail calls, Folded Blocks, Custom isolation and work-limit rollback, deterministic random vectors, snapshots, events, and raw observations. Run the shared Full fixtures and compare native and actual WebAssembly hosts when available.
 
 The Rust-only `replace_input` atomically replaces unread bytes between completed
-steps after reserving the whole vector, preserving registers, state, and metrics.
-Scene timing remains in the level layer.
+steps after reserving the whole vector, preserving registers, state, and
+committed-step counts.
+The game runtime owns the policy and timing for requesting input replacement.

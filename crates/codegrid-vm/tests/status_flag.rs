@@ -56,12 +56,7 @@ fn machine(main: Board, functions: Vec<Board>, customs: Vec<Board>, input: &[u8]
             .collect(),
     })
     .unwrap();
-    Vm::new(
-        program,
-        input.iter().copied(),
-        VmConfig::new(0, NonZeroU64::new(100).unwrap()),
-    )
-    .unwrap()
+    Vm::new(program, input.iter().copied(), VmConfig::new(0)).unwrap()
 }
 
 #[test]
@@ -139,24 +134,22 @@ fn pointer_wraps_and_repeat_rechecks_flag() {
 }
 
 #[test]
-fn functions_copy_and_restore_flags_before_disabled_custom() {
+fn functions_restore_the_outer_flag_after_custom_execution() {
     let mut vm = machine(
         board(&["~>", ")", "[0", "?!.1", "#0", "?!.2", ";"]),
         vec![board(&["~>", "?!.3", "+", "]"])],
         vec![board(&["~>", "?!.4", ",", "?!.", "#]"])],
         &[],
     );
-    vm.run(30);
+    assert_eq!(vm.run(30), RunOutcome::Halted);
     let state = vm.snapshot();
-    assert_eq!(state.output, [3, 1]);
+    assert_eq!(state.output, [3, 1, 2]);
     assert_eq!(state.threads[0].status_flag, 1);
-    assert_eq!(vm.step().errors[0].code(), "CustomDisabled");
-    // The rejected invocation cannot mutate the caller stack.
     assert!(state.threads[0].data_stack.is_empty());
 }
 
 #[test]
-fn wrapped_tick_commits_flag_and_register_and_new_instances_start_zero() {
+fn wrapped_step_commits_flag_and_register_and_new_instances_start_zero() {
     let mut vm = machine(board(&["~>", "-"]), vec![], vec![], &[]);
     assert_eq!(vm.snapshot().threads[0].status_flag, 0);
     vm.step();

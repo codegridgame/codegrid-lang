@@ -3,7 +3,7 @@ use codegrid_ir::{
 };
 use codegrid_model::{Direction, PrimaryInstruction, Slot};
 use codegrid_vm::{RunOutcome, Vm, VmConfig, VmStatus};
-use std::{collections::BTreeMap, num::NonZeroU64};
+use std::collections::BTreeMap;
 
 fn instruction(token: &str) -> Cell {
     Cell::instruction(PrimaryInstruction::from_token(token).unwrap(), None)
@@ -17,7 +17,7 @@ fn repeated_digit(digit: u8, count: u8) -> Cell {
 }
 
 #[test]
-fn immediate_repeat_emits_once_per_tick_and_matches_bounded_execution() {
+fn immediate_repeat_emits_once_per_step_and_matches_bounded_execution() {
     for digit in 0..10 {
         for count in 2..=9 {
             let main = board(
@@ -37,8 +37,7 @@ fn immediate_repeat_emits_once_per_tick_and_matches_bounded_execution() {
                 assert_eq!(state.output, vec![digit; usize::from(completed)]);
                 assert_eq!(state.registers, [0; 10]);
                 assert_eq!(state.threads[0].register_pointer, 0);
-                assert_eq!(state.metrics.operation_count(), u64::from(completed));
-                assert_eq!(stepped.committed_ticks(), u64::from(completed) + 1);
+                assert_eq!(stepped.committed_steps(), u64::from(completed) + 1);
             }
             stepped.step();
             assert_eq!(bounded.run(20), RunOutcome::Halted);
@@ -48,7 +47,7 @@ fn immediate_repeat_emits_once_per_tick_and_matches_bounded_execution() {
 }
 
 #[test]
-fn repeated_immediate_output_conflict_rolls_back_only_the_conflicting_tick() {
+fn repeated_immediate_output_conflict_rolls_back_only_the_conflicting_step() {
     let main = board(
         vec![
             Cell::entry(Direction::Right),
@@ -66,24 +65,18 @@ fn repeated_immediate_output_conflict_rolls_back_only_the_conflicting_tick() {
     assert_eq!(vm.snapshot().output, [3]);
     assert_eq!(vm.step().status, VmStatus::Error);
     assert_eq!(vm.snapshot().output, [3]);
-    assert_eq!(vm.committed_ticks(), 2);
+    assert_eq!(vm.committed_steps(), 2);
 }
 
 #[test]
-fn repeated_custom_immediate_output_is_rejected_before_internal_work() {
+fn repeated_custom_immediate_output_is_pushed_to_the_caller_stack() {
     let outer = board(
         vec![
             Cell::entry(Direction::Right),
             instruction("#0"),
-            instruction(")"),
-            instruction("."),
-            instruction(")"),
-            instruction("."),
-            instruction(")"),
-            instruction("."),
             instruction(";"),
         ],
-        9,
+        3,
     );
     let custom = board(
         vec![
@@ -94,9 +87,9 @@ fn repeated_custom_immediate_output_is_rejected_before_internal_work() {
         3,
     );
     let mut vm = machine(outer, Some(custom), &[]);
-    assert_eq!(vm.run(30), RunOutcome::Error);
+    assert_eq!(vm.run(10), RunOutcome::Halted);
     assert!(vm.snapshot().output.is_empty());
-    assert_eq!(vm.step().errors[0].code(), "CustomDisabled");
+    assert_eq!(vm.snapshot().threads[0].data_stack, [9, 9, 9]);
 }
 fn board(cells: Vec<Cell>, width: usize) -> Board {
     Board {
@@ -129,16 +122,11 @@ fn machine(main: Board, custom: Option<Board>, input: &[u8]) -> Vm {
         customs,
     })
     .unwrap();
-    Vm::new(
-        program,
-        input.iter().copied(),
-        VmConfig::new(0, NonZeroU64::new(100).unwrap()),
-    )
-    .unwrap()
+    Vm::new(program, input.iter().copied(), VmConfig::new(0)).unwrap()
 }
 
 #[test]
-fn all_digits_preserve_selected_register_pointer_and_share_output_metrics() {
+fn all_digits_preserve_selected_register_pointer_and_share_output_state() {
     let mut cells = vec![
         Cell::entry(Direction::Right),
         instruction("}"),
@@ -155,12 +143,6 @@ fn all_digits_preserve_selected_register_pointer_and_share_output_metrics() {
     assert_eq!(state.registers[1], 77);
     assert_eq!(state.registers[0], 0);
     assert_eq!(state.threads[0].register_pointer, 1);
-    assert_eq!(state.metrics.operation_count(), 14);
-    assert_eq!(state.metrics.instruction_variety().len(), 4);
-    assert!(state
-        .metrics
-        .instruction_variety()
-        .contains(&codegrid_vm::InstructionKind::Output));
 }
 
 #[test]
@@ -179,21 +161,18 @@ fn immediate_and_register_outputs_conflict_and_roll_back() {
     let result = vm.step();
     assert_eq!(result.status, VmStatus::Error);
     assert!(vm.snapshot().output.is_empty());
-    assert_eq!(vm.committed_ticks(), 1);
+    assert_eq!(vm.committed_steps(), 1);
 }
 
 #[test]
-fn custom_immediate_output_is_currently_unavailable() {
+fn custom_immediate_output_is_pushed_to_the_caller_stack() {
     let outer = board(
         vec![
             Cell::entry(Direction::Right),
-            instruction("+"),
             instruction("#0"),
-            instruction(")"),
-            instruction("."),
             instruction(";"),
         ],
-        6,
+        3,
     );
     let custom = board(
         vec![
@@ -204,78 +183,9 @@ fn custom_immediate_output_is_currently_unavailable() {
         3,
     );
     let mut vm = machine(outer, Some(custom), &[]);
-    assert_eq!(vm.run(20), RunOutcome::Error);
-    assert!(vm.snapshot().output.is_empty());
-    assert_eq!(vm.snapshot().registers[0], 1);
-    assert_eq!(vm.step().errors[0].code(), "CustomDisabled");
-}
-
-#[test]
-fn appended_input_preserves_unread_tail_and_execution_state() {
-    let mut vm = machine(
-        board(
-            vec![
-                Cell::entry(Direction::Right),
-                instruction(","),
-                instruction("."),
-                instruction(","),
-                instruction("."),
-                instruction(";"),
-            ],
-            6,
-        ),
-        None,
-        &[9],
-    );
-    vm.step();
-    let before = vm.snapshot();
-    vm.append_input(&[8, 7]).unwrap();
-    vm.append_input(&[]).unwrap();
-    let after = vm.snapshot();
-    assert_eq!(after.input, [9, 8, 7]);
-    assert_eq!(after.registers, before.registers);
-    assert_eq!(after.threads, before.threads);
-    assert_eq!(after.metrics, before.metrics);
-    assert_eq!(after.runtime_program, before.runtime_program);
     assert_eq!(vm.run(10), RunOutcome::Halted);
-    assert_eq!(vm.snapshot().output, [9, 8]);
-    assert_eq!(vm.snapshot().input, [7]);
-    let terminal = vm.snapshot();
-    assert_eq!(
-        vm.append_input(&[6]),
-        Err(codegrid_vm::InputAppendError::Terminal)
-    );
-    assert_eq!(vm.snapshot(), terminal);
-}
-
-#[test]
-fn append_after_interrupted_tick_uses_the_rolled_back_boundary() {
-    let outer = board(
-        vec![
-            Cell::entry(Direction::Right),
-            instruction(","),
-            instruction("."),
-            instruction(";"),
-            Cell::entry(Direction::Right),
-            Cell::empty(),
-            Cell::empty(),
-            Cell::empty(),
-        ],
-        4,
-    );
-    let mut vm = machine(outer, None, &[8]);
-    vm.step();
-    let before = vm.snapshot();
-    let (result, work) = vm.step_with_work_accounting(NonZeroU64::new(1).unwrap());
-    assert!(result.is_err());
-    assert_eq!(work, 1);
-    assert_eq!(vm.snapshot(), before);
-    vm.append_input(&[7]).unwrap();
-    assert_eq!(vm.snapshot().input, [8, 7]);
-    assert_eq!(vm.snapshot().metrics, before.metrics);
-    assert_eq!(vm.run(20), RunOutcome::Halted);
-    assert_eq!(vm.snapshot().output, [8]);
-    assert_eq!(vm.snapshot().input, [7]);
+    assert!(vm.snapshot().output.is_empty());
+    assert_eq!(vm.snapshot().threads[0].data_stack, [9]);
 }
 
 #[test]
@@ -306,7 +216,7 @@ fn replacement_discards_partial_input_and_preserves_execution_state() {
     assert_eq!(vm.snapshot().output, [6]);
     assert_eq!(
         vm.replace_input(&[5]),
-        Err(codegrid_vm::InputAppendError::Terminal)
+        Err(codegrid_vm::InputReplaceError::Terminal)
     );
 }
 

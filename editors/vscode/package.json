@@ -49,23 +49,17 @@
           "pattern": "^(0|[1-9][0-9]*)$",
           "description": "%codegrid.execution.seed.description%"
         },
-        "codegrid.execution.customLimit": {
-          "type": "string",
-          "default": "10000",
-          "pattern": "^[1-9][0-9]*$",
-          "description": "%codegrid.execution.customLimit.description%"
-        },
-        "codegrid.execution.maxTicks": {
+        "codegrid.execution.maxSteps": {
           "type": "string",
           "default": "100000",
           "pattern": "^[1-9][0-9]*$",
-          "description": "%codegrid.execution.maxTicks.description%"
+          "description": "%codegrid.execution.maxSteps.description%"
         },
-        "codegrid.execution.maxWorkUnits": {
+        "codegrid.execution.maxWorkUnitsPerStep": {
           "type": "string",
           "default": "1000000",
           "pattern": "^[1-9][0-9]*$",
-          "description": "%codegrid.execution.maxWorkUnits.description%"
+          "description": "%codegrid.execution.maxWorkUnitsPerStep.description%"
         },
         "codegrid.languageServer.enabled": {
           "type": "boolean",
@@ -214,15 +208,11 @@
                 "type": "string",
                 "default": "0"
               },
-              "customLimit": {
-                "type": "string",
-                "default": "10000"
-              },
-              "maxTicks": {
+              "maxSteps": {
                 "type": "string",
                 "default": "100000"
               },
-              "maxWorkUnits": {
+              "maxWorkUnitsPerStep": {
                 "type": "string",
                 "default": "1000000"
               }

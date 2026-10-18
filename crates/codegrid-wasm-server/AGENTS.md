@@ -51,6 +51,10 @@ one WebAssembly module instance.
 
 ## Validation
 
+The no-import ABI is v5 over Runtime API v4. Host limits use generic step and
+work-unit ceilings; runtime creation accepts seed and initial language state,
+without game Gas or custom-execution quotas.
+
 Check the native library, compile the `wasm32-unknown-unknown` artifact, and run
 the exported ABI against shared Full conformance fixtures in an actual WebAssembly
 host. Verify the complete Full Runtime API lifecycle, isolation between VM

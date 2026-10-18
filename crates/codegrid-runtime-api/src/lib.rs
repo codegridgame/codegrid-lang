@@ -4,6 +4,8 @@
 //! integration. A host creates one `RuntimeApi` per isolation boundary and
 //! passes explicit source, input, configuration, and execution budgets.
 
+pub mod json;
+
 use std::collections::BTreeMap;
 use std::num::NonZeroU64;
 
@@ -20,7 +22,7 @@ pub use codegrid_vm::{
     CallFrameSnapshot, Coordinate, ExecutionScope, InstructionKind, MemoryAddress,
     MemoryLocationId, MemorySpaceId, MetricCounterOverflow, Page, RunOutcome, RuntimeError,
     RuntimeErrorKind, RuntimeMetricSummary, RuntimeMetrics, StaticCellId, ThreadPhaseSnapshot,
-    VmEvent, VmFault, VmStatus, DEFAULT_GAS_HARD_LIMIT, GAS_SCHEDULE_VERSION,
+    VmEvent, VmFault, VmStatus,
 };
 use codegrid_vm::{
     RunResult as VmRunResult, StepResult as VmStepResult, ThreadSnapshotView, Vm, VmConfig,
@@ -28,14 +30,14 @@ use codegrid_vm::{
 };
 
 /// Version of the host-neutral operation and request/response contract.
-pub const RUNTIME_API_VERSION: u32 = 3;
+pub const RUNTIME_API_VERSION: u32 = 4;
 
 /// Operational safeguards supplied by the embedding host.
 ///
 /// These limits do not alter CodeGrid semantics. Hosts should select values
 /// appropriate to their deployment and separately enforce wall-clock, memory,
 /// concurrency, and request-size budgets where those facilities exist. A zero
-/// count/byte limit disables that capability; per-call and per-instance tick
+/// count/byte limit disables that capability; per-call and per-instance step
 /// budgets and the per-call work-unit ceiling must be positive so accepted
 /// execution slices have finite bounds.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -45,10 +47,9 @@ pub struct HostLimits {
     max_instances: usize,
     max_input_bytes: usize,
     max_initial_memory_entries: usize,
-    max_run_ticks_per_call: NonZeroU64,
-    max_total_ticks_per_instance: NonZeroU64,
+    max_run_steps_per_call: NonZeroU64,
+    max_total_steps_per_instance: NonZeroU64,
     max_work_units_per_call: NonZeroU64,
-    max_gas_per_instance: NonZeroU64,
 }
 
 impl HostLimits {
@@ -58,8 +59,8 @@ impl HostLimits {
         max_instances: usize,
         max_input_bytes: usize,
         max_initial_memory_entries: usize,
-        max_run_ticks_per_call: NonZeroU64,
-        max_total_ticks_per_instance: NonZeroU64,
+        max_run_steps_per_call: NonZeroU64,
+        max_total_steps_per_instance: NonZeroU64,
         max_work_units_per_call: NonZeroU64,
     ) -> Self {
         Self {
@@ -68,10 +69,9 @@ impl HostLimits {
             max_instances,
             max_input_bytes,
             max_initial_memory_entries,
-            max_run_ticks_per_call,
-            max_total_ticks_per_instance,
+            max_run_steps_per_call,
+            max_total_steps_per_instance,
             max_work_units_per_call,
-            max_gas_per_instance: NonZeroU64::new(DEFAULT_GAS_HARD_LIMIT).unwrap(),
         }
     }
 
@@ -95,25 +95,16 @@ impl HostLimits {
         self.max_initial_memory_entries
     }
 
-    pub const fn max_run_ticks_per_call(self) -> u64 {
-        self.max_run_ticks_per_call.get()
+    pub const fn max_run_steps_per_call(self) -> u64 {
+        self.max_run_steps_per_call.get()
     }
 
-    pub const fn max_total_ticks_per_instance(self) -> u64 {
-        self.max_total_ticks_per_instance.get()
+    pub const fn max_total_steps_per_instance(self) -> u64 {
+        self.max_total_steps_per_instance.get()
     }
 
     pub const fn max_work_units_per_call(self) -> u64 {
         self.max_work_units_per_call.get()
-    }
-
-    pub const fn max_gas_per_instance(self) -> u64 {
-        self.max_gas_per_instance.get()
-    }
-
-    pub const fn with_max_gas_per_instance(mut self, maximum: NonZeroU64) -> Self {
-        self.max_gas_per_instance = maximum;
-        self
     }
 
     pub const fn with_max_work_units_per_call(mut self, maximum: NonZeroU64) -> Self {
@@ -245,9 +236,7 @@ impl ProgramViewResponseView<'_> {
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct RuntimeConfiguration {
-    pub gas_hard_limit: u64,
     pub seed: u64,
-    pub custom_execution_limit: u64,
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -286,8 +275,8 @@ pub struct StepResponse {
 /// Full detached step result with an owned post-transition snapshot.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct RuntimeStepResult {
-    pub attempted_tick: u64,
-    pub committed_ticks: u64,
+    pub attempted_transition_id: u64,
+    pub committed_steps: u64,
     pub status: VmStatus,
     pub metrics: RuntimeMetricSummary,
     pub events: Vec<VmEvent>,
@@ -309,12 +298,12 @@ impl StepResponseView<'_> {
         self.api_version
     }
 
-    pub const fn attempted_tick(&self) -> u64 {
-        self.result.attempted_tick
+    pub const fn attempted_transition_id(&self) -> u64 {
+        self.result.attempted_transition_id
     }
 
-    pub const fn committed_ticks(&self) -> u64 {
-        self.result.committed_ticks
+    pub const fn committed_steps(&self) -> u64 {
+        self.result.committed_steps
     }
 
     pub const fn status(&self) -> VmStatus {
@@ -354,8 +343,8 @@ impl StepResponseView<'_> {
         StepResponse {
             api_version,
             result: RuntimeStepResult {
-                attempted_tick: result.attempted_tick,
-                committed_ticks: result.committed_ticks,
+                attempted_transition_id: result.attempted_transition_id,
+                committed_steps: result.committed_steps,
                 status: result.status,
                 metrics: result.metrics,
                 events: result.events,
@@ -390,7 +379,7 @@ pub struct RuntimeThreadSnapshot {
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct RuntimeSnapshot {
     pub status: VmStatus,
-    pub committed_ticks: u64,
+    pub committed_steps: u64,
     pub registers: [u8; 10],
     pub memory: BTreeMap<MemoryAddress, u8>,
     pub remaining_input: Vec<u8>,
@@ -406,13 +395,18 @@ pub struct RuntimeSnapshotView<'a> {
     inner: VmSnapshotView<'a>,
 }
 
-impl RuntimeSnapshotView<'_> {
+impl<'a> RuntimeSnapshotView<'a> {
+    /// Wrap a borrowed VM for the shared host projection without cloning it.
+    pub fn from_vm_view(inner: VmSnapshotView<'a>) -> Self {
+        Self { inner }
+    }
+
     pub fn status(&self) -> VmStatus {
         self.inner.status()
     }
 
-    pub fn committed_ticks(&self) -> u64 {
-        self.inner.committed_ticks()
+    pub fn committed_steps(&self) -> u64 {
+        self.inner.committed_steps()
     }
 
     pub fn registers(&self) -> &[u8; 10] {
@@ -461,7 +455,7 @@ impl RuntimeSnapshotView<'_> {
             .collect();
         RuntimeSnapshot {
             status: self.status(),
-            committed_ticks: self.committed_ticks(),
+            committed_steps: self.committed_steps(),
             registers: *self.registers(),
             memory,
             remaining_input: self.remaining_input().copied().collect(),
@@ -563,14 +557,14 @@ impl RuntimeThreadSnapshotView<'_> {
 pub struct RunRequest {
     pub api_version: u32,
     pub instance: InstanceHandle,
-    pub max_ticks: u64,
+    pub max_steps: u64,
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum YieldReason {
     /// The host requested a bounded slice and the VM remains runnable.
-    TickSliceExhausted,
-    /// The host work-unit ceiling interrupted the current Global Tick.
+    StepSliceExhausted,
+    /// The host work-unit ceiling interrupted the current VM step.
     WorkUnitBudgetExhausted,
 }
 
@@ -676,12 +670,12 @@ pub enum ApiError {
     UnknownInstanceHandle {
         handle: InstanceHandle,
     },
-    ZeroTickBudget,
-    RunTickBudgetExceeded {
+    ZeroStepBudget,
+    RunStepBudgetExceeded {
         requested: u64,
         maximum: u64,
     },
-    InstanceTickBudgetExceeded {
+    InstanceStepBudgetExceeded {
         requested: u64,
         remaining: u64,
         maximum: u64,
@@ -711,9 +705,9 @@ impl ApiError {
             Self::InvalidConfiguration { .. } => "invalid_configuration",
             Self::UnknownProgramHandle { .. } => "unknown_program_handle",
             Self::UnknownInstanceHandle { .. } => "unknown_instance_handle",
-            Self::ZeroTickBudget => "zero_tick_budget",
-            Self::RunTickBudgetExceeded { .. } => "run_tick_budget_exceeded",
-            Self::InstanceTickBudgetExceeded { .. } => "instance_tick_budget_exceeded",
+            Self::ZeroStepBudget => "zero_step_budget",
+            Self::RunStepBudgetExceeded { .. } => "run_step_budget_exceeded",
+            Self::InstanceStepBudgetExceeded { .. } => "instance_step_budget_exceeded",
             Self::WorkUnitBudgetExceeded { .. } => "work_unit_budget_exceeded",
             Self::HandleSpaceExhausted => "handle_space_exhausted",
             Self::VmInitialization(_) => "vm_initialization_failed",
@@ -830,15 +824,6 @@ impl RuntimeApi {
                 maximum: self.limits.max_initial_memory_entries(),
             });
         }
-        let custom_execution_limit = NonZeroU64::new(request.configuration.custom_execution_limit)
-            .ok_or(ApiError::InvalidConfiguration {
-                field: "custom_execution_limit",
-            })?;
-        let gas_hard_limit = NonZeroU64::new(request.configuration.gas_hard_limit)
-            .filter(|limit| limit.get() <= self.limits.max_gas_per_instance())
-            .ok_or(ApiError::InvalidConfiguration {
-                field: "gas_hard_limit",
-            })?;
         if self.instances.len() >= self.limits.max_instances() {
             return Err(ApiError::InstanceLimitReached {
                 maximum: self.limits.max_instances(),
@@ -864,8 +849,7 @@ impl RuntimeApi {
                 });
             }
         }
-        let configuration = VmConfig::new(request.configuration.seed, custom_execution_limit)
-            .with_gas_hard_limit(gas_hard_limit);
+        let configuration = VmConfig::new(request.configuration.seed);
         let vm = Vm::with_initial_memory(program, request.input, initial_memory, configuration)
             .map_err(ApiError::VmInitialization)?;
         let handle = self.allocate_instance_handle()?;
@@ -880,30 +864,7 @@ impl RuntimeApi {
         self.step_view(request).map(StepResponseView::into_owned)
     }
 
-    /// Host-directed repositioning at a normal step boundary, without execution.
-    pub fn reposition_thread(
-        &mut self,
-        request: SnapshotRequest,
-        thread: u64,
-        position: Coordinate,
-        direction: Direction,
-    ) -> Result<(), ApiError> {
-        self.validate_version(request.api_version)?;
-        let vm =
-            self.instances
-                .get_mut(&request.instance)
-                .ok_or(ApiError::UnknownInstanceHandle {
-                    handle: request.instance,
-                })?;
-        if !vm.reposition_thread(thread, position, direction) {
-            return Err(ApiError::InvalidConfiguration {
-                field: "thread_position",
-            });
-        }
-        Ok(())
-    }
-
-    /// Applies one VM transition and returns a borrowed Full snapshot for
+    /// Applies one VM step and returns a borrowed Full snapshot for
     /// immediate host serialization.
     ///
     /// Unlike [`RuntimeApi::step`], this method does not materialize an owned
@@ -911,19 +872,19 @@ impl RuntimeApi {
     /// mutable operations on this runtime until it is dropped.
     pub fn step_view(&mut self, request: StepRequest) -> Result<StepResponseView<'_>, ApiError> {
         self.validate_version(request.api_version)?;
-        let maximum = self.limits.max_total_ticks_per_instance();
+        let maximum = self.limits.max_total_steps_per_instance();
         let vm =
             self.instances
                 .get_mut(&request.instance)
                 .ok_or(ApiError::UnknownInstanceHandle {
                     handle: request.instance,
                 })?;
-        // Terminal VM steps are specified no-ops. They do not commit a tick,
-        // so an exhausted cumulative tick budget must not hide their stable
+        // Terminal VM steps are specified no-ops. They do not commit a step,
+        // so an exhausted cumulative step budget must not hide their stable
         // terminal result or snapshot.
-        let remaining = maximum.saturating_sub(vm.committed_ticks());
+        let remaining = maximum.saturating_sub(vm.committed_steps());
         if vm.status() == VmStatus::Running && remaining == 0 {
-            return Err(ApiError::InstanceTickBudgetExceeded {
+            return Err(ApiError::InstanceStepBudgetExceeded {
                 requested: 1,
                 remaining,
                 maximum,
@@ -974,26 +935,26 @@ impl RuntimeApi {
         request: RunRequest,
     ) -> Result<(RunStatus, Vec<VmEvent>, Vec<u8>), ApiError> {
         self.validate_version(request.api_version)?;
-        if request.max_ticks == 0 {
-            return Err(ApiError::ZeroTickBudget);
+        if request.max_steps == 0 {
+            return Err(ApiError::ZeroStepBudget);
         }
-        if request.max_ticks > self.limits.max_run_ticks_per_call() {
-            return Err(ApiError::RunTickBudgetExceeded {
-                requested: request.max_ticks,
-                maximum: self.limits.max_run_ticks_per_call(),
+        if request.max_steps > self.limits.max_run_steps_per_call() {
+            return Err(ApiError::RunStepBudgetExceeded {
+                requested: request.max_steps,
+                maximum: self.limits.max_run_steps_per_call(),
             });
         }
-        let maximum = self.limits.max_total_ticks_per_instance();
+        let maximum = self.limits.max_total_steps_per_instance();
         let vm =
             self.instances
                 .get_mut(&request.instance)
                 .ok_or(ApiError::UnknownInstanceHandle {
                     handle: request.instance,
                 })?;
-        let remaining = maximum.saturating_sub(vm.committed_ticks());
-        if request.max_ticks > remaining {
-            return Err(ApiError::InstanceTickBudgetExceeded {
-                requested: request.max_ticks,
+        let remaining = maximum.saturating_sub(vm.committed_steps());
+        if request.max_steps > remaining {
+            return Err(ApiError::InstanceStepBudgetExceeded {
+                requested: request.max_steps,
                 remaining,
                 maximum,
             });
@@ -1003,17 +964,17 @@ impl RuntimeApi {
             events,
             newly_emitted_output,
             work_limit_exceeded: _,
-        } = vm.run_with_work_limit_detailed(request.max_ticks, self.limits.max_work_units_per_call);
+        } = vm.run_with_work_limit_detailed(request.max_steps, self.limits.max_work_units_per_call);
         let status = match outcome {
             RunOutcome::Halted => RunStatus::Halted,
             RunOutcome::Error => RunStatus::Error,
-            RunOutcome::TickLimitReached => RunStatus::Yielded {
-                reason: YieldReason::TickSliceExhausted,
+            RunOutcome::StepLimitReached => RunStatus::Yielded {
+                reason: YieldReason::StepSliceExhausted,
             },
             RunOutcome::WorkLimitReached => RunStatus::Yielded {
                 reason: YieldReason::WorkUnitBudgetExhausted,
             },
-            RunOutcome::InvalidTickLimit => return Err(ApiError::ZeroTickBudget),
+            RunOutcome::InvalidStepLimit => return Err(ApiError::ZeroStepBudget),
         };
         Ok((
             status,

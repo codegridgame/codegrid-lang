@@ -13,8 +13,8 @@ fn limits(
     max_instances: usize,
     max_input_bytes: usize,
     max_initial_memory_entries: usize,
-    max_run_ticks: u64,
-    max_total_ticks: u64,
+    max_run_steps: u64,
+    max_total_steps: u64,
     max_work_units: u64,
 ) -> HostLimits {
     HostLimits::new(
@@ -23,8 +23,8 @@ fn limits(
         max_instances,
         max_input_bytes,
         max_initial_memory_entries,
-        NonZeroU64::new(max_run_ticks).expect("positive run-tick limit"),
-        NonZeroU64::new(max_total_ticks).expect("positive instance-tick limit"),
+        NonZeroU64::new(max_run_steps).expect("positive per-call step limit"),
+        NonZeroU64::new(max_total_steps).expect("positive per-instance step limit"),
         NonZeroU64::new(max_work_units).expect("positive work limit"),
     )
 }
@@ -46,12 +46,8 @@ fn compile_source(runtime: &mut RuntimeApi, source: &str) -> ProgramHandle {
     }
 }
 
-fn configuration(seed: u64, custom_execution_limit: u64) -> RuntimeConfiguration {
-    RuntimeConfiguration {
-        gas_hard_limit: 100_000_000,
-        seed,
-        custom_execution_limit,
-    }
+fn configuration(seed: u64) -> RuntimeConfiguration {
+    RuntimeConfiguration { seed }
 }
 
 fn create_instance(
@@ -69,14 +65,14 @@ fn create_instance(
             initial_memory,
             configuration,
         })
-        .expect("valid v3 instance request")
+        .expect("valid v4 instance request")
         .instance
 }
 
 #[test]
-fn v3_compile_and_program_view_use_verified_handle_lifecycle() {
+fn v4_compile_and_program_view_use_verified_handle_lifecycle() {
     let mut api = runtime();
-    assert_eq!(api.api_version(), 3);
+    assert_eq!(api.api_version(), 4);
     assert!(api
         .check(CheckRequest {
             api_version: RUNTIME_API_VERSION,
@@ -143,7 +139,7 @@ fn instance_creation_preserves_full_configuration_and_sparse_bigint_memory() {
                 value: 0,
             },
         ],
-        configuration(u64::MAX, u64::MAX),
+        configuration(u64::MAX),
     );
 
     let snapshot = api
@@ -161,11 +157,11 @@ fn instance_creation_preserves_full_configuration_and_sparse_bigint_memory() {
     assert_eq!(snapshot.runtime_program.main.height, 1);
     assert_eq!(snapshot.threads.len(), 1);
     assert_eq!(snapshot.threads[0].id, 0);
-    assert_eq!(snapshot.metrics.global_tick(), 0);
+    assert_eq!(snapshot.metrics.committed_steps(), 0);
 }
 
 #[test]
-fn initial_memory_and_configuration_rejections_do_not_allocate_instances() {
+fn invalid_initial_memory_does_not_allocate_instances() {
     let mut api = RuntimeApi::new(limits(1024, 2, 1, 4, 1, 8, 32, 100));
     let program = compile_source(&mut api, "@main\n@size 1x1\n~>\n@end main\n");
     let duplicate_address = MemoryAddress::from(-3);
@@ -189,26 +185,13 @@ fn initial_memory_and_configuration_rejections_do_not_allocate_instances() {
                     value: 0,
                 },
             ],
-            configuration(0, 1),
+            configuration(0),
         )),
         Err(ApiError::InitialMemoryLimitExceeded {
             received_entries: 2,
             maximum: 1,
         })
     );
-    assert_eq!(
-        api.create_instance(request(
-            vec![MemoryEntry {
-                address: duplicate_address.clone(),
-                value: 1,
-            }],
-            configuration(0, 0),
-        )),
-        Err(ApiError::InvalidConfiguration {
-            field: "custom_execution_limit",
-        })
-    );
-
     // A duplicate remains invalid even when one entry is zero-valued.
     let mut api = RuntimeApi::new(limits(1024, 2, 1, 4, 2, 8, 32, 100));
     let program = compile_source(&mut api, "@main\n@size 1x1\n~>\n@end main\n");
@@ -227,19 +210,13 @@ fn initial_memory_and_configuration_rejections_do_not_allocate_instances() {
                     value: 8,
                 },
             ],
-            configuration: configuration(0, 1),
+            configuration: configuration(0),
         }),
         Err(ApiError::DuplicateInitialMemoryAddress {
             address: duplicate_address,
         })
     );
-    let instance = create_instance(
-        &mut api,
-        program,
-        Vec::new(),
-        Vec::new(),
-        configuration(0, 1),
-    );
+    let instance = create_instance(&mut api, program, Vec::new(), Vec::new(), configuration(0));
     assert_eq!(
         instance.get(),
         1,
@@ -257,13 +234,13 @@ fn run_deltas_match_the_ordered_results_of_repeated_step_calls() {
         run_program,
         vec![93],
         Vec::new(),
-        configuration(77, 100),
+        configuration(77),
     );
     let run_result = run_api
         .run(RunRequest {
             api_version: RUNTIME_API_VERSION,
             instance: run_instance,
-            max_ticks: 16,
+            max_steps: 16,
         })
         .expect("bounded run fits request and instance ceilings");
 
@@ -274,7 +251,7 @@ fn run_deltas_match_the_ordered_results_of_repeated_step_calls() {
         step_program,
         vec![93],
         Vec::new(),
-        configuration(77, 100),
+        configuration(77),
     );
     let mut events = Vec::new();
     let mut output = Vec::new();
@@ -312,34 +289,28 @@ fn run_deltas_match_the_ordered_results_of_repeated_step_calls() {
 fn run_slice_yields_with_full_borrowed_snapshot_and_release_is_instance_local() {
     let mut api = RuntimeApi::new(limits(1024, 2, 2, 8, 0, 2, 8, 100));
     let program = compile_source(&mut api, "@main\n@size 1x1\n~>\n@end main\n");
-    let first = create_instance(
-        &mut api,
-        program,
-        Vec::new(),
-        Vec::new(),
-        configuration(5, 9),
-    );
-    let second = create_instance(&mut api, program, vec![7], Vec::new(), configuration(8, 9));
+    let first = create_instance(&mut api, program, Vec::new(), Vec::new(), configuration(5));
+    let second = create_instance(&mut api, program, vec![7], Vec::new(), configuration(8));
 
     let response = api
         .run_view(RunRequest {
             api_version: RUNTIME_API_VERSION,
             instance: first,
-            max_ticks: 2,
+            max_steps: 2,
         })
         .expect("bounded run should return a borrowed Full snapshot");
     assert_eq!(
         response.status,
         RunStatus::Yielded {
-            reason: YieldReason::TickSliceExhausted,
+            reason: YieldReason::StepSliceExhausted,
         }
     );
     assert_eq!(response.snapshot.status(), VmStatus::Running);
-    assert_eq!(response.snapshot.committed_ticks(), 2);
+    assert_eq!(response.snapshot.committed_steps(), 2);
     assert_eq!(response.snapshot.threads().count(), 1);
-    assert_eq!(response.snapshot.metrics().global_tick(), 2);
+    assert_eq!(response.snapshot.metrics().committed_steps(), 2);
     let response = response.into_owned();
-    assert_eq!(response.snapshot.committed_ticks, 2);
+    assert_eq!(response.snapshot.committed_steps, 2);
 
     api.release_instance(ReleaseInstanceRequest {
         api_version: RUNTIME_API_VERSION,

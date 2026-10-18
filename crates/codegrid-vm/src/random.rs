@@ -19,16 +19,16 @@ pub const fn outer_thread_state(vm_seed: u64, thread_id: u64) -> u64 {
 
 /// Derives the deterministic seed for one outer Custom invocation.
 ///
-/// `global_tick` is one-based, including a tick whose execution later rolls
-/// back.
+/// `transition_id` is one-based, including an attempt whose execution later
+/// rolls back.
 pub const fn custom_invocation_seed(
     vm_seed: u64,
     caller_thread_id: u64,
-    global_tick: u64,
+    transition_id: u64,
     custom_id: Slot,
 ) -> u64 {
     mix64(
-        mix64(mix64(mix64(vm_seed ^ CUSTOM_DOMAIN) ^ caller_thread_id) ^ global_tick)
+        mix64(mix64(mix64(vm_seed ^ CUSTOM_DOMAIN) ^ caller_thread_id) ^ transition_id)
             ^ custom_id.get() as u64,
     )
 }

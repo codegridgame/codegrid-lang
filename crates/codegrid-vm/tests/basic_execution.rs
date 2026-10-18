@@ -2,7 +2,7 @@ use std::collections::BTreeMap;
 
 use codegrid_ir::{Board, Cell, Program, ScopedProgram, VerifiedProgram, IR_FORMAT_VERSION};
 use codegrid_model::{Direction, PrimaryInstruction, ShiftDirection};
-use codegrid_vm::{InstructionKind, RunOutcome, Vm, VmConfig, VmStatus};
+use codegrid_vm::{RunOutcome, Vm, VmConfig, VmStatus};
 
 fn verified(cells: Vec<Cell>, width: usize, height: usize) -> VerifiedProgram {
     VerifiedProgram::new(Program {
@@ -25,7 +25,7 @@ fn vm(cells: Vec<Cell>, width: usize, height: usize, input: &[u8]) -> Vm {
     Vm::new(
         verified(cells, width, height),
         input.iter().copied(),
-        VmConfig::new(0, std::num::NonZeroU64::MIN),
+        VmConfig::new(0),
     )
     .expect("a verified Full program must initialize")
 }
@@ -51,10 +51,10 @@ fn starts_with_ten_zero_registers_and_halt_commits_without_moving() {
 
     let halt = vm.step();
     assert_eq!(halt.status, VmStatus::Halted);
-    assert_eq!(halt.committed_ticks, 3);
+    assert_eq!(halt.committed_steps, 3);
     assert_eq!(vm.snapshot().threads[0].position.x, 2);
     assert_eq!(vm.run(2), RunOutcome::Halted);
-    assert_eq!(vm.snapshot().committed_ticks, 3);
+    assert_eq!(vm.snapshot().committed_steps, 3);
 }
 
 #[test]
@@ -74,18 +74,6 @@ fn arithmetic_wraps_and_operation_variety_matches_the_full_inventory() {
 
     let snapshot = vm.snapshot();
     assert_eq!(snapshot.registers[0], 0);
-    assert_eq!(snapshot.metrics.operation_count(), 3);
-    assert_eq!(snapshot.metrics.used_cell_count(), 4);
-    assert_eq!(
-        snapshot.metrics.instruction_variety(),
-        &[
-            InstructionKind::Add,
-            InstructionKind::Sub,
-            InstructionKind::Halt
-        ]
-        .into_iter()
-        .collect()
-    );
 }
 
 #[test]
@@ -228,7 +216,7 @@ fn exhausted_read_preserves_a_previously_read_value_and_keeps_direction() {
         codegrid_vm::Coordinate { x: 4, y: 0 }
     );
     assert_eq!(snapshot.threads[0].direction, Direction::Right);
-    assert_eq!(snapshot.committed_ticks, 5);
+    assert_eq!(snapshot.committed_steps, 5);
 }
 
 #[test]
@@ -270,7 +258,7 @@ fn right_shift_zero_fills_the_high_bit_and_discards_the_low_bit() {
 }
 
 #[test]
-fn wrapped_tick_commits_state_and_metrics() {
+fn wrapped_step_commits_state_and_step_count() {
     let mut vm = vm(
         vec![
             Cell::entry(Direction::Right),
@@ -284,15 +272,13 @@ fn wrapped_tick_commits_state_and_metrics() {
     let failed = vm.step();
 
     assert_eq!(failed.status, VmStatus::Running);
-    assert_eq!(failed.attempted_tick, 2);
-    assert_eq!(failed.committed_ticks, 2);
+    assert_eq!(failed.attempted_transition_id, 2);
+    assert_eq!(failed.committed_steps, 2);
     assert!(failed.errors.is_empty());
     let snapshot = vm.snapshot();
     assert_eq!(snapshot.registers[0], 1);
     assert_eq!(snapshot.threads[0].position.x, 0);
-    assert_eq!(snapshot.committed_ticks, 2);
-    assert_eq!(snapshot.metrics.operation_count(), 1);
-    assert_eq!(snapshot.metrics.used_cell_count(), 2);
+    assert_eq!(snapshot.committed_steps, 2);
 }
 
 #[test]
@@ -311,8 +297,8 @@ fn vertical_wrap_commits_direction_change() {
     let failed = vm.step();
 
     assert_eq!(failed.status, VmStatus::Running);
-    assert_eq!(failed.attempted_tick, 2);
-    assert_eq!(failed.committed_ticks, 2);
+    assert_eq!(failed.attempted_transition_id, 2);
+    assert_eq!(failed.committed_steps, 2);
     assert!(failed.errors.is_empty());
     let snapshot = vm.snapshot();
     assert_eq!(
@@ -320,7 +306,7 @@ fn vertical_wrap_commits_direction_change() {
         codegrid_vm::Coordinate { x: 1, y: 0 }
     );
     assert_eq!(snapshot.threads[0].direction, Direction::Down);
-    assert_eq!(snapshot.committed_ticks, 2);
+    assert_eq!(snapshot.committed_steps, 2);
 }
 
 #[test]
@@ -339,8 +325,8 @@ fn wrapped_read_commits_register_and_input_consumption() {
     let failed = vm.step();
 
     assert_eq!(failed.status, VmStatus::Running);
-    assert_eq!(failed.attempted_tick, 2);
-    assert_eq!(failed.committed_ticks, 2);
+    assert_eq!(failed.attempted_transition_id, 2);
+    assert_eq!(failed.committed_steps, 2);
     assert!(failed.errors.is_empty());
     let snapshot = vm.snapshot();
     assert_eq!(snapshot.registers[0], 173);
@@ -350,12 +336,10 @@ fn wrapped_read_commits_register_and_input_consumption() {
         codegrid_vm::Coordinate { x: 0, y: 0 }
     );
     assert_eq!(snapshot.threads[0].direction, Direction::Right);
-    assert_eq!(snapshot.metrics.operation_count(), 1);
-    assert_eq!(snapshot.metrics.used_cell_count(), 2);
 }
 
 #[test]
-fn wrapped_output_commits_current_tick_output() {
+fn wrapped_output_commits_current_step_output() {
     let mut vm = vm(
         vec![
             Cell::entry(Direction::Right),
@@ -367,14 +351,14 @@ fn wrapped_output_commits_current_tick_output() {
         1,
         &[],
     );
-    assert_eq!(vm.run(3), RunOutcome::TickLimitReached);
+    assert_eq!(vm.run(3), RunOutcome::StepLimitReached);
     assert_eq!(vm.snapshot().output, [0]);
 
     let failed = vm.step();
 
     assert_eq!(failed.status, VmStatus::Running);
-    assert_eq!(failed.attempted_tick, 4);
-    assert_eq!(failed.committed_ticks, 4);
+    assert_eq!(failed.attempted_transition_id, 4);
+    assert_eq!(failed.committed_steps, 4);
     assert_eq!(failed.newly_emitted_output, [1]);
     assert!(failed.errors.is_empty());
     let snapshot = vm.snapshot();
@@ -384,7 +368,6 @@ fn wrapped_output_commits_current_tick_output() {
         snapshot.threads[0].position,
         codegrid_vm::Coordinate { x: 0, y: 0 }
     );
-    assert_eq!(snapshot.metrics.operation_count(), 3);
 }
 
 #[test]
@@ -428,18 +411,18 @@ fn step_is_a_no_op_after_halt_or_error() {
 }
 
 #[test]
-fn zero_tick_limit_is_invalid_and_a_later_run_continues_after_tick_limit() {
+fn zero_step_limit_is_invalid_and_a_later_run_continues_after_step_limit() {
     let mut vm = vm(vec![Cell::entry(Direction::Right)], 1, 1, &[]);
-    assert_eq!(vm.run(0), RunOutcome::InvalidTickLimit);
-    assert_eq!(vm.snapshot().committed_ticks, 0);
+    assert_eq!(vm.run(0), RunOutcome::InvalidStepLimit);
+    assert_eq!(vm.snapshot().committed_steps, 0);
 
-    assert_eq!(vm.run(1), RunOutcome::TickLimitReached);
-    assert_eq!(vm.snapshot().committed_ticks, 1);
-    assert_eq!(vm.run(2), RunOutcome::TickLimitReached);
+    assert_eq!(vm.run(1), RunOutcome::StepLimitReached);
+    assert_eq!(vm.snapshot().committed_steps, 1);
+    assert_eq!(vm.run(2), RunOutcome::StepLimitReached);
 
     let snapshot = vm.snapshot();
     assert_eq!(snapshot.status, VmStatus::Running);
-    assert_eq!(snapshot.committed_ticks, 3);
+    assert_eq!(snapshot.committed_steps, 3);
     assert_eq!(
         snapshot.threads[0].position,
         codegrid_vm::Coordinate { x: 0, y: 0 }

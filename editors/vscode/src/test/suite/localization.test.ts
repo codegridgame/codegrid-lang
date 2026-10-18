@@ -4,6 +4,7 @@ import * as path from 'path';
 import * as vscode from 'vscode';
 import { CodedError } from '../../debug/errors';
 import { errorNumber, localizeError, localizeDiagnostic, presentRuntimeErrors } from '../../language/errorMessages';
+import { errorNumbers } from '../../language/errorNumbers';
 
 import { errorCatalog, errorMessage, errorMessageByCode, normalizeErrorLocale } from '../../language/errorCatalog';
 
@@ -46,6 +47,8 @@ suite('Localization', () => {
     const canonical = JSON.parse(fs.readFileSync(path.resolve(root, '../../resources/codegrid-error-messages.json'), 'utf8'));
     assert.deepStrictEqual(errorCatalog, canonical);
     assert.strictEqual(Object.keys(errorCatalog.errors).length, registry.entries.length);
+    assert.ok(registry.entries.every((entry: { layer: string }) => entry.layer !== 'level'));
+    assert.ok(Object.keys(errorNumbers).every((key) => !key.startsWith('level:')));
     for (const entry of registry.entries) {
       const row = errorCatalog.errors[entry.error_number];
       assert.strictEqual(row.layer, entry.layer);
@@ -65,9 +68,9 @@ suite('Localization', () => {
 
   test('error translation follows the code and keeps native messages and diagnostic positions', () => {
     const original = 'Unrelated wording from a native host';
-    const error = new CodedError('debug.work_limit_exceeded', original);
+    const error = new CodedError('debug.work_unit_budget_exceeded', original);
     assert.strictEqual(error.originalMessage, original);
-    assert.strictEqual(error.code, 'debug.work_limit_exceeded');
+    assert.strictEqual(error.code, 'debug.work_unit_budget_exceeded');
     assert.strictEqual(error.errorNumber, '5106');
     assert.strictEqual(errorNumber('ConcurrentOutputConflict'), '3006');
     const english = vscode.env.language.toLowerCase().startsWith('en');
@@ -96,10 +99,10 @@ suite('Localization', () => {
   });
 
   test('structured VM exceptions expose stable codes and localized messages without changing raw state', () => {
-    const snapshot = { errors: [{ code: 'ConcurrentOutputConflict', details: { thread_ids: ['0', '1'] } }], fault: { kind: 'global_tick_overflow' } };
+    const snapshot = { errors: [{ code: 'ConcurrentOutputConflict', details: { thread_ids: ['0', '1'] } }], fault: { kind: 'committed_steps_overflow' } };
     const original = JSON.stringify(snapshot);
     const issues = presentRuntimeErrors(snapshot);
-    assert.deepStrictEqual(issues.map((issue) => issue.code), ['ConcurrentOutputConflict', 'global_tick_overflow']);
+    assert.deepStrictEqual(issues.map((issue) => issue.code), ['ConcurrentOutputConflict', 'committed_steps_overflow']);
     for (const issue of issues) assert.strictEqual(issue.message, errorMessage(errorNumber(issue.code), vscode.env.language));
     assert.strictEqual(JSON.stringify(snapshot), original);
   });
@@ -109,7 +112,7 @@ suite('Localization', () => {
     if (!executable) this.skip();
     const { NativeRuntime } = await import('../../debug/nativeRuntime');
     const runtime = new NativeRuntime(executable!, () => undefined);
-    const configuration = { command: 'launch', input: [], seed: '0', custom_limit: '10000', max_ticks: '100', max_work_units: '1' };
+    const configuration = { command: 'launch', input: [], seed: '0', max_steps: '100', max_work_units_per_step: '1' };
     try {
       const rejected = await runtime.request({ ...configuration, source: '~x\n' });
       assert.strictEqual(rejected.diagnostics![0].code, 'source.invalid_entry');
@@ -119,14 +122,14 @@ suite('Localization', () => {
       await runtime.request({ ...configuration, source: '~> ~<\n' });
       await assert.rejects(runtime.request({ command: 'step' }), (failure: unknown) => {
         assert.ok(failure instanceof CodedError);
-        assert.strictEqual(failure.code, 'debug.work_limit_exceeded');
+        assert.strictEqual(failure.code, 'debug.work_unit_budget_exceeded');
         assert.strictEqual(failure.message, localizeError(failure.code, failure.originalMessage));
         return true;
       });
     } finally { runtime.dispose(); }
     const conflict = new NativeRuntime(executable!, () => undefined);
     try {
-      await conflict.request({ ...configuration, source: '~> . ~<\n', max_work_units: '1000' });
+      await conflict.request({ ...configuration, source: '~> . ~<\n', max_work_units_per_step: '1000' });
       await conflict.request({ command: 'step' });
       const result = await conflict.request({ command: 'step' });
       assert.strictEqual(result.snapshot!.status, 'error');
@@ -164,7 +167,7 @@ suite('Localization', () => {
     const title = extension.packageJSON.contributes.commands.find((command: { command: string }) => command.command === 'codegrid.run').title;
     assert.strictEqual(typeof title === 'string' ? title : title.value, manifest['codegrid.run.title']);
     assert.strictEqual(vscode.l10n.t('Select a CodeGrid template'), catalog['Select a CodeGrid template']);
-    assert.strictEqual(vscode.l10n.t('Program halted after {0} Global Ticks.', 12), catalog['Program halted after {0} Global Ticks.'].replace('{0}', '12'));
+    assert.strictEqual(vscode.l10n.t('Program halted after {0} steps.', 12), catalog['Program halted after {0} steps.'].replace('{0}', '12'));
     const error = new CodedError('editor.no_session', 'No active runtime.');
     assert.strictEqual(error.code, 'editor.no_session');
     assert.strictEqual(error.message, errorMessage(error.errorNumber, vscode.env.language));

@@ -1,6 +1,10 @@
-# Conditional Prefix Migration Execution Manual
+# Conditional Prefix Migration Record
 
-Status: Implemented and verified. The approved decisions are reflected in the normative specifications, shared Rust pipeline, VM, level evaluator, hosts, and editor.
+Historical record, dated 2026-10-03. The language syntax and VM decisions are
+described by the current source and VM specifications linked below. Former
+game-level permission, Level Core, and game-host verification details are
+archived in the [Game Runtime history record](../../bf-steam-wt/doc/codegrid-lang-history/conditional-prefix-game-host-2026-10-03.md);
+they are not current Lang contracts.
 
 Date: 2026-10-03
 
@@ -18,15 +22,15 @@ Authorities reviewed:
 - [VM contract](../spec/codegrid-vm-spec.md), especially sections 4–10 and 14.
 - [Decision record](../docs/decisions.md).
 - [Error identities](../spec/codegrid-error-codes.md).
-- [ExactIO contract](../spec/codegrid-level-exactio-contract-v1.md).
+- [Historical Game Runtime integration record](../../bf-steam-wt/doc/codegrid-lang-history/conditional-prefix-game-host-2026-10-03.md).
 
-Implementation evidence reviewed includes the canonical model inventory, HIR cell representation, IR cell/verifier and tail-call analysis, VM Normal/Repeat/AfterCall dispatch, VM metrics, level capability validation, and VS Code instruction metadata. The Cargo workspace already includes language and level WASM adapters; older documents describing them as planned do not establish their current implementation status.
+Implementation evidence reviewed includes the canonical model inventory, HIR cell representation, IR cell/verifier and tail-call analysis, VM Normal/Repeat/AfterCall dispatch, VM step observations, static validation, and VS Code instruction metadata. The language Cargo workspace includes generic language WASM adapters; game-level adapters are maintained by the Rust Game Runtime.
 
 ## 2. Baseline behavior and affected design
 
 | Area | Current behavior | Consequence of the proposal |
 | --- | --- | --- |
-| Conditional Primary | `#^`, `#v`, `#<`, `#>` are `IfZero(Direction)` | Removing them affects parsing, inventory, execution, metrics, encoding, editor metadata, and level capabilities. |
+| Conditional Primary | `#^`, `#v`, `#<`, `#>` are `IfZero(Direction)` | Removing them affects parsing, inventory, VM execution, metrics, encoding, and editor metadata. |
 | Custom calls | `#0`–`#9` call Custom CodeGrids; `#]` returns | Preserved unchanged; the accepted `?0`–`?2` spelling avoids the initial collision. |
 | Random direction | `?` is RandomDirection | Rename the token to `??`; decide encoding compatibility separately. |
 | Comparison | No CMP Primary exists in the current canonical inventory | Add `?=` as a Primary with a non-consuming Data Stack comparison; decide empty-stack behavior and encoding. |
@@ -34,13 +38,13 @@ Implementation evidence reviewed includes the canonical model inventory, HIR cel
 | Suffixes | `*`, `=`, `x2`–`x9` | They run after the Primary, with special CALL/RETURN timing. |
 | Suffix restrictions | Encodable Primaries only; Repeat excludes CALL/RETURN | Prefix eligibility must be specified independently. |
 | Folded Blocks | Attachments are forbidden; structural restrictions also apply | Allowing prefixes requires a specific exception without permitting forbidden Primaries. |
-| Register reads | Context tick-start register snapshot; thread-local pointer | A condition should use the selected register, not hard-code R0 or see sibling writes. |
-| Repeat | Primary executes once per tick; the thread stays until completion | Rechecking a prefix and cancelling a repeat need explicit phase transitions. |
-| Function resume | Successful RETURN enters a separate AfterCall tick | Decide whether a previously successful condition is rechecked after the callee changes state. |
+| Register reads | Context transition-start register snapshot; thread-local pointer | A condition should use the selected register, not hard-code R0 or see sibling writes. |
+| Repeat | Primary executes once per transition; the thread stays until completion | Rechecking a prefix and cancelling a repeat need explicit phase transitions. |
+| Function resume | Successful RETURN enters a separate AfterCall transition | Decide whether a previously successful condition is rechecked after the callee changes state. |
 | WriteCode | Changes only Primary; fixed suffix survives, even after EMPTY | Decide whether a prefix survives replacement and clearing. |
 | Encoding | IfZero codes are 95, 97, 129, 153; EMPTY is 32 | Removed codes must not silently acquire new meanings. |
 | IR | `IR_FORMAT_VERSION` is currently 1 | Removing a Primary and extending cells requires an explicit compatibility decision. |
-| Level rules | IF_ZERO capabilities and independent suffix permissions exist | Replace capabilities and define prefix permissions and static kind accounting. |
+| Game host policy | The former Level adapter had instruction capabilities and suffix permissions | Historical policy details are archived in the linked Game Runtime record. |
 
 ## 3. Decision checklist
 
@@ -52,13 +56,13 @@ Confirmed: all D1–D15. No language-semantic question remains open. Concrete in
 | D2 | How is the Custom token collision resolved? | Confirmed: use `?0`, `?1`, `?2`; rename RandomDirection to `??`; preserve `#0`–`#9` and `#]`. Thus `?0+` is guarded Add and `?1#0` is guarded Custom 0. |
 | D3 | Can prefix and suffix coexist? | At most one prefix and one existing suffix, ordered `prefix + Primary + suffix`, without whitespace. |
 | D4 | What can receive a prefix? | Every Primary, including immediate output, Halt, calls, returns, and allowed Folded Block contents; never initial Empty or Entry cells. Existing contextual Primary restrictions remain mandatory. |
-| D5 | What happens on false? | Skip the Primary and suffix, consume one dispatch/tick visit, and perform ordinary movement in the current direction. Movement may still cause a boundary error or Fold exit. |
-| D6 | When and which register is read? | Use the context tick-start snapshot at the executing thread's pointer before any Primary effect. |
+| D5 | What happens on false? | Skip the Primary and suffix, consume one dispatch/transition visit, and perform ordinary movement in the current direction. Movement may still cause a boundary error or Fold exit. |
+| D6 | When and which register is read? | Use the context transition-start snapshot at the executing thread's pointer before any Primary effect. |
 | D7 | How does Repeat interact? | Check before every attempted Primary execution. A false result cancels remaining repetitions, returns to Normal, and moves once. |
 | D8 | Does AfterCall recheck the condition? | No. Test when dispatching CALL; after a successful return, run the existing deferred suffix and resume behavior once. FoldResume likewise does not recheck. |
 | D9 | What survives WriteCode? | Prefix and suffix remain fixed; ReadCode/WriteCode and DECODE/ENCODE continue to represent only Primary. A cleared cell can retain a prefix; true permits the existing suffix behavior, false suppresses it. This runtime state is distinct from invalid initial detached prefixes. |
 | D10 | Does a condition cost an operation? | Count each evaluated prefix as one operation, including false results, and use one runtime instruction kind for all three values. Count skipped cells as visited; do not count skipped Primaries/suffixes as executed. |
-| D11 | How are level permissions represented? | Independent per-value prefix capabilities, separate from Primary permissions and existing suffix permissions. Count each prefix capability in static instruction kinds, consistent with current per-Attachment static counting. Choose and document concrete identifiers/schema during implementation. |
+| D11 | How were game-host permissions handled? | The former Level policy and the original boundary ambiguity are archived in the linked Game Runtime record; no language rule is established here. |
 | D12 | What compatibility is required? | Reject removed source forms in the new language; reserve removed Instruction Codes and old random code 63 without reuse or decoding; invalidate old executable IR via a version change. Preserve unrelated published error identities and transport aliases. Decide separately which observable host schemas require version changes. |
 | D13 | What does CMP compare and write? | Confirmed: `?=` compares Data Stack top A with selected register B without popping; writes 0 if equal, 1 if A > B, and 2 if A < B. |
 | D14 | What does CMP do on an empty Data Stack? | Preserve the register and stack, count the executed Primary, and move normally, consistent with existing empty-stack POPADD/NAND behavior. |
@@ -88,7 +92,7 @@ The user confirms retaining the current exclusions of FoldedBlock, Custom, Custo
 - Prefixes are independent tests, not an `if`/`else` chain. In `?0+ ?1.`, a successful first cell changes 0 to 1, so the next cell can also execute. A comparison result is ordinary mutable register data.
 - In Custom code, CMP and PUSH/POPADD/NAND use the internal thread's own Data Stack. READ/OUTPUT use the outer caller's stack.
 - Prefix evaluation precedes Primary behavior and suffix effects. In `?1}=`, the test uses the old pointer. In `?0?=`, the test uses B before CMP overwrites it.
-- A skipped instruction still moves and wraps across normal-board edges. Skipping a return does not terminate the thread; skipping a Halt does not request termination. Existing tick/work and Custom limits still bound execution.
+- A skipped instruction still moves and wraps across normal-board edges. Skipping a return does not terminate the thread; skipping a Halt does not request termination. Generic step/work-unit host limits still bound execution.
 - Control-flow analysis must retain the false fall-through path of guarded direction changes, Halt, and returns. Existing tail-call proofs must not assume those instructions always execute.
 - Random bytes must migrate from 63 to 126 in source using DECODE/ENCODE or self-modification, not just rename `?` tokens. Bytes 63, 95, 97, 129, and 153 no longer decode; under the existing invalid-DECODE rule they are counted no-ops, not runtime errors.
 - Prefixes are fixed cell metadata under D9. Snapshots and debug views must show them even after Primary replacement or clearing. Hosts must not infer conditions from instruction numbers.
@@ -114,7 +118,7 @@ Parse the complete atom using the shared Rust language authority. Do not consume
 | `#0` | Existing Custom 0 call. |
 | `?1#0` | Call Custom 0 only when the selected register is 1. |
 | `?0[0=` | Conditional Function call with the existing deferred WriteCode suffix. |
-| `?1+x3` | Conditional Repeat; it adds once from 1 to 2, then skips and leaves on the next tick. |
+| `?1+x3` | Conditional Repeat; it adds once from 1 to 2, then skips and leaves on the next transition. |
 | `?2;` | Halt only when the selected register is 2. |
 | `?0.3` | Output literal byte 3 only when the selected register is 0. |
 | `??` / `?0??` | RandomDirection / RandomDirection guarded by register equality to zero. |
@@ -133,7 +137,7 @@ Examples describe the implemented new syntax. Under D12, migrate `#^`, `#v`, `#<
 
 1. Use the approved D1–D15 and examples as the contract; do not reopen resolved semantics for implementation convenience.
 2. Record accepted decisions in `docs/decisions.md`.
-3. Update source and VM specifications, the encoding table, error triggers, level rules, and affected host contracts together.
+3. Update source and VM specifications, the encoding table, error triggers, and affected language-host contracts together. Game Runtime capability policy is recorded separately in the linked history document.
 4. Select IR and any required API/ABI/schema version changes. Do not bump unrelated contracts automatically or silently reuse old semantic versions.
 
 Exit criterion: no unresolved decision affects parsing, execution phases, static acceptance, metrics, or external interpretation.
@@ -164,10 +168,10 @@ Exit criterion: accepted source lowers to verified IR; invalid source or host-pr
 
 Exit criterion: phase transitions and observable effects match the contract, including rollback and retry.
 
-### Gate D: Level and host boundaries
+### Gate D: Game and host boundaries
 
-1. Update level capability validation, grouped identifiers, whitelist checks, generated-code policy, static metrics, fixtures, and schema documentation. Conditions must not hide forbidden Primaries from static validation.
-2. Keep language and level adapters thin; they convert explicit data and delegate to shared Rust behavior.
+1. Update shared language static acceptance, generated-code validation, language fixtures, and source documentation. Conditions must not hide invalid Primaries from language validation. Game-specific capability policy and metrics belong to the Rust Game Runtime.
+2. Keep language adapters thin; the separate Game Runtime owns game-level requests, policies, and results.
 3. Update runtime request/response conversions, code snapshots/events, CLI debug protocol, LSP presentation, and WASM transports only where their actual exposed shape changes.
 4. Update VS Code highlighting, completion, hover, formatter integration, snippets, help, and debug rendering. Do not introduce an editor-side semantic parser or interpreter.
 5. Migrate examples, current tests, distribution documentation, and relevant task documents. Preserve historical evidence as clearly labelled history where appropriate.
@@ -196,21 +200,28 @@ Exit criterion: required acceptance cases pass and every verification limitation
 | Repeat | Initial false; true throughout; true then false; no incorrect waiting at the cell; rollback does not advance repetitions; sibling code mutation reviewed under existing mutable-Primary rules. |
 | Calls | False CALL creates no frame; successful guarded CALL returns despite changed pointer/register; deferred suffix exactly once; false RETURN retains frame; false CustomReturn retains internal thread; guarded Custom shell and internal work. |
 | Mutable code | Replacement retains prefix/suffix; ReadCode reads only Primary; EMPTY clearing; true/false cleared-cell visits; removed codes do not decode as new instructions. |
-| Concurrency | Sibling register write does not affect same-tick condition; skipped effects do not conflict; executing effects still conflict; errors outrank Halt; failed ticks expose no committed events. |
-| Accounting | Successful and false prefix evaluation costs; skipped Primary/suffix variety; cell visits; Custom internal work; nonterminal work/tick yields and retry. |
-| Levels and hosts | Prefix permissions; forbidden guarded/generated Primary; static counts; matching normalized outputs, status, errors, metrics, and traces in actual native/browser/server execution. |
+| Concurrency | Sibling register write does not affect same-transition condition; skipped effects do not conflict; executing effects still conflict; errors outrank Halt; failed transitions expose no committed events. |
+| Accounting | Successful and false prefix evaluation costs; skipped Primary/suffix variety; cell visits; Custom internal work; nonterminal step/work-unit yields and retry. |
+| Game host (historical) | See the linked Game Runtime history record for the former game-specific acceptance items. |
 
-## 7. Current delivery state
+## 7. Historical delivery report (2026-10-03)
 
-Implementation is complete. IR format is version 2. Runtime API, debug protocol, and host ABI envelope versions remain unchanged; normal code views add a nullable `prefix` field and folded code views include the prefix in their token strings. Level permissions are `CMP` and independently authorized `CONDITION_0`, `CONDITION_1`, and `CONDITION_2`. Runtime metrics use `Compare` and a shared `Condition` kind. Functions containing a conditional prefix conservatively disable tail-call optimization, as recorded in the VM contract.
+At the time of this report, the language-side implementation was reported
+complete with IR format 2; the current language specifications now describe the
+later contract. The old Level permission identifiers and game-host integration
+claims have moved to the linked Game Runtime history record. The language report
+also recorded unchanged Runtime API/debug/host envelope versions, a nullable
+`prefix` in normal code views, prefix text in folded code views, `Compare` and
+`Condition` runtime kinds, and conservative tail-call handling for conditional
+prefixes.
 
 Verification completed on 2026-10-03:
 
 - `cargo check --workspace`, `cargo fmt --all -- --check`, and `cargo test --workspace --no-fail-fast` passed.
-- Focused runtime coverage includes 14 conditional/CMP tests for unsigned comparisons, empty stacks, Repeat, tick-start reads, deferred suffixes, mutable code, Custom isolation, conflict rollback, retired codes, and run/step equivalence.
+- Focused runtime coverage includes 14 conditional/CMP tests for unsigned comparisons, empty stacks, Repeat, transition-start reads, deferred suffixes, mutable code, Custom isolation, conflict rollback, retired codes, and run/step equivalence.
 - `node scripts/check_error_codes.js` passed: 249 scoped identities and 456 emitted references.
 - Actual language execution passed all 75 shared fixtures in native CLI, browser WebAssembly, Node WebAssembly, and Wasmtime server WebAssembly, including complete-result comparison, lifecycle, limits, and yielding checks.
-- Actual level execution passed 41 complete semantic comparisons in native CLI, browser module worker, Node WebAssembly, and Wasmtime.
+- Historical Game Runtime host verification is preserved in the linked history record.
 - The VS Code TypeScript build and real editor suite using the release CLI and LSP passed 124 tests.
 - `git diff --check` passed.
 
@@ -218,7 +229,10 @@ Host checks use a configured WebAssembly memory maximum of 67,108,864 bytes. Sha
 
 ### Follow-up implementation review
 
-The follow-up review corrected Folded Block condition-permission rejection paths to identify the exact folded cell, removed stale CLI capability guidance, and updated current host fixture counts. The older Level JSON walkthrough is explicitly marked historical. Added coverage verifies false Function/Custom calls and returns, CMP ReadCode suffix encoding, and exact folded rejection paths. Focused tests, the full Rust workspace, error-registry checks, and actual 41-case level comparisons were rerun after the correction.
+The follow-up review's language-side coverage verifies false Function/Custom
+calls and returns, CMP ReadCode suffix encoding, and exact folded rejection
+paths; focused tests and the Full language suite were also reported rerun. The
+game-host corrections and verification are in the linked history record.
 
 ### Documentation audit (2026-10-03)
 
@@ -229,10 +243,12 @@ All specification documents were reviewed against the recorded decisions:
 | Source | Complete Primary inventory, prefix/suffix grammar, Folded restrictions, and retired syntax. |
 | VM | Prefix-first Normal/Repeat transitions, CMP behavior, calls/resumes, mutation, metrics, codes, and IR version. |
 | Runtime API | Nullable prefix projection in the main snapshot contract and unchanged envelope versions. |
-| ExactIO | CMP and per-value permissions, unconditional static validation, and static/dynamic metric rules. |
-| Level Core | Explicit CMP/prefix whitelist rules; Level format 1 remains unchanged. |
-| Level errors | Existing rejection identities and exact folded-cell paths; no new identity. |
 | Error registry/catalogs | Detached prefix and folded suffix triggers, suffix-specific compatibility, and preserved stable numbers. |
 | Specification index | Current syntax, IR version, and migration link. |
 
-The root README, CLI field inventory, IR version guidance, editor feature list, current host fixture counts, and level traceability were synchronized. Architecture, safety accounting, distribution, and transport documents were reviewed; dependency direction, work-unit definitions, API versions, and host ABI layouts do not change. Historical decision entries, old walkthroughs, dated verification reports, and artifact hashes remain explicitly historical rather than being rewritten as new evidence.
+Historical game-specific ExactIO/Level Core/error contract references and host
+verification details are recorded in the linked Game Runtime history document.
+The original language report stated that the root README, CLI field inventory,
+IR guidance, editor feature list, host fixture counts, and level traceability
+were synchronized. Dated reports remain evidence of what was reported then,
+not current build claims.

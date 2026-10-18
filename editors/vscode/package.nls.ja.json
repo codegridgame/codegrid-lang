@@ -1,11 +1,8 @@
 {
-  "extension.description": "CodeGrid の編集、ローカル実行、Global Tick デバッグ。言語サーバーは任意。",
+  "extension.description": "CodeGrid の編集、ローカル実行、ステップデバッグ。言語サーバーは任意。",
   "codegrid.runtime.path.description": "CodeGrid 実行ファイルのパス。空の場合は同梱ランタイム、次に PATH を使用。",
   "codegrid.execution.input.description": "実行とデバッグの入力バイト。",
   "codegrid.execution.seed.description": "正規の十進数 u64 シード。",
-  "codegrid.execution.customLimit.description": "Custom の実行上限。",
-  "codegrid.execution.maxTicks.description": "セッションごとの確定 Global Tick 数の上限。",
-  "codegrid.execution.maxWorkUnits.description": "アトミックな Global Tick ごとの作業単位上限。",
   "codegrid.languageServer.enabled.description": "任意のネイティブ言語サーバーを有効化。起動に失敗しても単独の編集機能を利用できます。",
   "codegrid.languageServer.path.description": "CodeGrid ネイティブ言語サーバーのパス。",
   "codegrid.languageServer.arguments.description": "ネイティブ言語サーバーに渡す引数。",
@@ -16,5 +13,7 @@
   "debug.program.description": "CodeGrid ソースファイル。",
   "debug.runtimePath.description": "ネイティブ実行ファイルの任意の代替パス。",
   "debug.configuration.name": "CodeGrid をデバッグ",
-  "debug.snippet.label": "CodeGrid: 現在のファイルをデバッグ"
+  "debug.snippet.label": "CodeGrid: 現在のファイルをデバッグ",
+  "codegrid.execution.maxSteps.description": "セッションごとの VM 確定ステップ数の上限。",
+  "codegrid.execution.maxWorkUnitsPerStep.description": "アトミックな VM ステップごとの作業単位上限。"
 }

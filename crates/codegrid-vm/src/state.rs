@@ -20,9 +20,9 @@ pub enum VmInitializationError {
     InitialThreadIdOverflow,
 }
 
-/// Input append failures are host resource/lifecycle failures, not VM errors.
+/// Input replacement failures are host resource/lifecycle failures, not VM errors.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
-pub enum InputAppendError {
+pub enum InputReplaceError {
     Terminal,
     Capacity,
 }
@@ -108,17 +108,17 @@ impl Vm {
         self.status
     }
 
-    pub const fn committed_ticks(&self) -> u64 {
-        self.metrics.global_tick()
+    pub const fn committed_steps(&self) -> u64 {
+        self.metrics.committed_steps()
     }
 
     pub const fn config(&self) -> VmConfig {
         self.config
     }
 
-    /// Reposition one normal thread within its current board at a step boundary.
+    /// Set one normal thread's execution location at a transition boundary.
     /// No instruction executes and all other state and metrics remain intact.
-    pub fn reposition_thread(
+    pub fn set_thread_execution_location(
         &mut self,
         id: u64,
         position: Coordinate,
@@ -148,33 +148,16 @@ impl Vm {
         true
     }
 
-    /// Append explicit data at a completed step boundary without executing code.
-    ///
-    /// Steps are synchronous and retain no unfinished tick between calls, so
-    /// exclusive access guarantees a committed boundary (including rollback).
-    /// Reserve the complete append before publishing any bytes. Evaluators own
-    /// their queue ceilings; this operation only reports allocation failure.
-    pub fn append_input(&mut self, values: &[Value]) -> Result<(), InputAppendError> {
-        if self.status != VmStatus::Running {
-            return Err(InputAppendError::Terminal);
-        }
-        self.input
-            .try_reserve(values.len())
-            .map_err(|_| InputAppendError::Capacity)?;
-        self.input.extend(values.iter().copied());
-        Ok(())
-    }
-
     /// Replace unread input atomically at a completed step boundary.
     /// Registers, execution state, and language metrics are preserved.
-    pub fn replace_input(&mut self, values: &[Value]) -> Result<(), InputAppendError> {
+    pub fn replace_input(&mut self, values: &[Value]) -> Result<(), InputReplaceError> {
         if self.status != VmStatus::Running {
-            return Err(InputAppendError::Terminal);
+            return Err(InputReplaceError::Terminal);
         }
         let mut input = std::collections::VecDeque::new();
         input
             .try_reserve(values.len())
-            .map_err(|_| InputAppendError::Capacity)?;
+            .map_err(|_| InputReplaceError::Capacity)?;
         input.extend(values.iter().copied());
         self.input = input;
         Ok(())
@@ -183,7 +166,7 @@ impl Vm {
     pub fn snapshot(&self) -> VmSnapshot {
         VmSnapshot {
             status: self.status,
-            committed_ticks: self.metrics.global_tick(),
+            committed_steps: self.metrics.committed_steps(),
             registers: self.registers,
             memory: self.memory.clone(),
             input: self.input.iter().copied().collect(),
@@ -213,8 +196,8 @@ impl<'a> VmSnapshotView<'a> {
         self.vm.status
     }
 
-    pub const fn committed_ticks(&self) -> u64 {
-        self.vm.metrics.global_tick()
+    pub const fn committed_steps(&self) -> u64 {
+        self.vm.metrics.committed_steps()
     }
 
     pub const fn registers(&self) -> &'a [Value; 10] {
@@ -352,7 +335,7 @@ impl ThreadSnapshotView<'_> {
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum VmFault {
     MetricCounterOverflow(crate::MetricCounterOverflow),
-    GlobalTickOverflow,
+    CommittedStepOverflow,
     InternalInvariantViolation,
 }
 
@@ -360,7 +343,7 @@ impl VmFault {
     pub fn error_number(self) -> Option<&'static str> {
         let code = match self {
             Self::MetricCounterOverflow(_) => "metric_counter_overflow",
-            Self::GlobalTickOverflow => "global_tick_overflow",
+            Self::CommittedStepOverflow => "committed_steps_overflow",
             Self::InternalInvariantViolation => "internal_invariant_violation",
         };
         codegrid_model::error_number("fault", code)
@@ -370,7 +353,7 @@ impl VmFault {
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct VmSnapshot {
     pub status: VmStatus,
-    pub committed_ticks: u64,
+    pub committed_steps: u64,
     pub registers: [Value; 10],
     pub memory: Memory,
     pub input: Vec<Value>,

@@ -5,7 +5,8 @@ use crate::effects::{resolve_shared_conflicts, SharedEffectBatch};
 use crate::thread::ThreadState;
 use crate::{
     Coordinate, ExecutionScope, InstructionKind, MemoryLocationId, MetricCounterOverflow,
-    RuntimeError, RuntimeMetricSummary, StaticCellId, ThreadSnapshot, Vm, VmFault, VmStatus,
+    RuntimeError, RuntimeMetricSummary, StaticCellId, StepFootprint, ThreadSnapshot, Vm, VmFault,
+    VmStatus,
 };
 use codegrid_ir::{Board, BoardId, CodeGridId, ScopedProgram};
 use codegrid_model::{PrimaryInstruction, Value};
@@ -14,13 +15,13 @@ mod full;
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct StepResult {
-    /// One-based number of the attempted Global Tick.
-    pub attempted_tick: u64,
-    /// Number of Global Ticks committed after this attempt completes.
-    pub committed_ticks: u64,
-    /// Cumulative raw metrics after this attempt, including failed work.
+    /// One-based identifier of the attempted atomic transition.
+    pub attempted_transition_id: u64,
+    /// Number of atomic transitions committed after this attempt completes.
+    pub committed_steps: u64,
+    /// Committed-step summary after this attempt.
     pub metrics: RuntimeMetricSummary,
-    /// Ordered execution and committed-state events for this Global Tick.
+    /// Ordered execution and committed-state events for this transition.
     /// Failed or rolled-back attempts return no events.
     pub events: Vec<VmEvent>,
     pub status: VmStatus,
@@ -29,7 +30,27 @@ pub struct StepResult {
     pub fault: Option<VmFault>,
 }
 
-/// A host-neutral event emitted by a successfully committed Global Tick.
+/// Diagnostics and raw observations produced for one candidate transition.
+///
+/// The footprint contains no host prices or budgets. Events and newly emitted
+/// output become observable only from [`PreparedStep::commit`]. `work_units`
+/// reports the dispatches consumed while evaluating this candidate; it is not
+/// retained in VM state or cumulative metrics.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct StepReport {
+    pub footprint: StepFootprint,
+    /// Outer and Custom thread dispatches consumed by this candidate.
+    pub work_units: u64,
+    /// Custom-scope thread dispatches consumed by this candidate, including
+    /// dispatches in nested Custom invocations and excluding Outer dispatches.
+    pub custom_internal_dispatches: u64,
+    /// Candidate status if the pending transition is committed.
+    pub candidate_status: VmStatus,
+    pub errors: Vec<RuntimeError>,
+    pub fault: Option<VmFault>,
+}
+
+/// A host-neutral event emitted by a successfully committed transition.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum VmEvent {
     /// A static cell reached during outer or Custom execution.
@@ -77,15 +98,15 @@ pub enum VmEvent {
 pub enum RunOutcome {
     Halted,
     Error,
-    TickLimitReached,
-    InvalidTickLimit,
+    StepLimitReached,
+    InvalidStepLimit,
     WorkLimitReached,
 }
 
-/// Committed output from a bounded sequence of Global Ticks.
+/// Committed output from a bounded sequence of VM transitions.
 ///
-/// If a work ceiling interrupts a tick, earlier completed ticks remain in
-/// these deltas while the interrupted tick contributes no state or metrics.
+/// If a work ceiling interrupts a step, earlier completed steps remain in
+/// these deltas while the interrupted step contributes no state or metrics.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct RunResult {
     pub outcome: RunOutcome,
@@ -94,16 +115,152 @@ pub struct RunResult {
     pub work_limit_exceeded: Option<WorkLimitExceeded>,
 }
 
-/// A deterministic host work ceiling interrupted an uncommitted Global Tick.
+/// A deterministic host work ceiling interrupted an uncommitted transition.
+///
+/// The VM checks the ceiling before each dispatch. Therefore an interruption
+/// means `maximum_work_units` dispatches were consumed, so callers can account
+/// for the attempted candidate exactly from these values.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub struct WorkLimitExceeded {
     pub maximum_work_units: u64,
+    /// The Custom-scope subset of `maximum_work_units`, including logical
+    /// dispatches skipped after the VM proves a deterministic Custom cycle.
+    pub custom_internal_dispatches: u64,
+}
+
+/// A prepared, exclusively borrowed VM transition awaiting one decision.
+///
+/// Keeping this value alive holds the VM's mutable borrow, so the host cannot
+/// step the VM or change its input before deciding. Dropping the value aborts
+/// the pending transition. `commit` and `abort` consume it, making a second
+/// completion impossible in safe Rust.
+///
+/// ```compile_fail
+/// use codegrid_vm::Vm;
+/// fn cannot_step_while_pending(vm: &mut Vm) {
+///     let pending = vm.prepare_step();
+///     vm.step();
+///     pending.abort();
+/// }
+/// ```
+///
+/// ```compile_fail
+/// use codegrid_vm::Vm;
+/// fn cannot_replace_input_while_pending(vm: &mut Vm) {
+///     let pending = vm.prepare_step();
+///     vm.replace_input(&[1]);
+///     pending.commit();
+/// }
+/// ```
+///
+/// ```compile_fail
+/// use codegrid_vm::Vm;
+/// fn can_complete_only_once(vm: &mut Vm) {
+///     let pending = vm.prepare_step();
+///     let _ = pending.commit();
+///     let _ = pending.abort();
+/// }
+/// ```
+pub struct PreparedStep<'a> {
+    vm: &'a mut Vm,
+    before: Option<VmCheckpoint>,
+    result: Option<StepResult>,
+    report: StepReport,
+}
+
+struct VmCheckpoint {
+    status: VmStatus,
+    registers: [Value; 10],
+    memory: crate::Memory,
+    input: VecDeque<Value>,
+    output: Vec<Value>,
+    runtime_program: ScopedProgram,
+    threads: Vec<ThreadState>,
+    metrics: crate::RuntimeMetrics,
+    terminal_errors: Vec<RuntimeError>,
+    terminal_fault: Option<VmFault>,
+}
+
+impl VmCheckpoint {
+    fn capture(vm: &Vm) -> Self {
+        Self {
+            status: vm.status,
+            registers: vm.registers,
+            memory: vm.memory.clone(),
+            input: vm.input.clone(),
+            output: vm.output.clone(),
+            runtime_program: vm.runtime_program.clone(),
+            threads: vm.threads.clone(),
+            metrics: vm.metrics.clone(),
+            terminal_errors: vm.terminal_errors.clone(),
+            terminal_fault: vm.terminal_fault,
+        }
+    }
+}
+
+impl PreparedStep<'_> {
+    /// Returns candidate observations and diagnostics without exposing staged
+    /// events or output.
+    pub const fn report(&self) -> &StepReport {
+        &self.report
+    }
+
+    /// Returns a borrowed read-only view of the VM state with this candidate
+    /// transition applied.
+    ///
+    /// The view is valid only while this prepared transition is alive. It may
+    /// be inspected to make a host decision before commit or abort, but must
+    /// not be serialized or published as committed state. This view contains
+    /// only generic VM state and does not apply host-specific policy.
+    pub fn candidate_snapshot_view(&self) -> crate::VmSnapshotView<'_> {
+        self.vm.snapshot_view()
+    }
+
+    /// Makes the prepared transition and its events/output visible.
+    pub fn commit(mut self) -> StepResult {
+        self.before.take();
+        self.result
+            .take()
+            .expect("a pending step can be completed only once")
+    }
+
+    /// Discards every staged VM change and returns diagnostics for the
+    /// attempted candidate. The report does not contain events or output.
+    pub fn abort(mut self) -> StepReport {
+        if let Some(before) = self.before.take() {
+            restore_checkpoint(self.vm, before);
+        }
+        self.result.take();
+        self.report.clone()
+    }
+}
+
+impl Drop for PreparedStep<'_> {
+    fn drop(&mut self) {
+        if let Some(before) = self.before.take() {
+            restore_checkpoint(self.vm, before);
+        }
+    }
+}
+
+fn restore_checkpoint(vm: &mut Vm, checkpoint: VmCheckpoint) {
+    vm.status = checkpoint.status;
+    vm.metrics = checkpoint.metrics;
+    vm.registers = checkpoint.registers;
+    vm.memory = checkpoint.memory;
+    vm.input = checkpoint.input;
+    vm.output = checkpoint.output;
+    vm.runtime_program = checkpoint.runtime_program;
+    vm.threads = checkpoint.threads;
+    vm.terminal_errors = checkpoint.terminal_errors;
+    vm.terminal_fault = checkpoint.terminal_fault;
 }
 
 #[derive(Clone, Copy)]
 struct ExecutionWorkBudget {
     maximum: Option<u64>,
     consumed: u64,
+    custom_internal_dispatches: u64,
 }
 
 impl ExecutionWorkBudget {
@@ -111,6 +268,7 @@ impl ExecutionWorkBudget {
         Self {
             maximum: None,
             consumed: 0,
+            custom_internal_dispatches: 0,
         }
     }
 
@@ -118,42 +276,297 @@ impl ExecutionWorkBudget {
         Self {
             maximum: Some(maximum.get()),
             consumed: 0,
+            custom_internal_dispatches: 0,
         }
     }
 
-    fn consume(&mut self) -> bool {
+    const fn is_limited(&self) -> bool {
+        self.maximum.is_some()
+    }
+
+    fn consume(&mut self, scope: ExecutionScope) -> Result<bool, MetricCounterOverflow> {
         if self.maximum.is_some_and(|maximum| self.consumed >= maximum) {
-            return false;
+            return Ok(false);
         }
+        let custom_internal_dispatches = match scope {
+            ExecutionScope::Outer => None,
+            ExecutionScope::Custom { .. } => Some(
+                self.custom_internal_dispatches
+                    .checked_add(1)
+                    .ok_or(MetricCounterOverflow::CustomInternalDispatches)?,
+            ),
+        };
         self.consumed = self.consumed.saturating_add(1);
-        true
+        if let Some(count) = custom_internal_dispatches {
+            self.custom_internal_dispatches = count;
+        }
+        Ok(true)
     }
 
     fn exceeded(&self) -> Option<WorkLimitExceeded> {
         self.maximum
             .filter(|maximum| self.consumed >= *maximum)
-            .map(|maximum_work_units| WorkLimitExceeded { maximum_work_units })
+            .map(|maximum_work_units| WorkLimitExceeded {
+                maximum_work_units,
+                custom_internal_dispatches: self.custom_internal_dispatches,
+            })
+    }
+
+    fn exhaust_custom_cycle(&mut self) -> Result<(), MetricCounterOverflow> {
+        let Some(maximum) = self.maximum else {
+            return Ok(());
+        };
+        if self.consumed >= maximum {
+            return Ok(());
+        }
+        let remaining = maximum - self.consumed;
+        self.custom_internal_dispatches = self
+            .custom_internal_dispatches
+            .checked_add(remaining)
+            .ok_or(MetricCounterOverflow::CustomInternalDispatches)?;
+        self.consumed = maximum;
+        Ok(())
+    }
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+struct CellVisitRun {
+    scope: ExecutionScope,
+    thread_id: u64,
+    cell: StaticCellId,
+    count: u64,
+}
+
+#[derive(Default)]
+struct CellVisitLog {
+    runs: Vec<CellVisitRun>,
+}
+
+impl CellVisitLog {
+    fn push(&mut self, scope: ExecutionScope, thread_id: u64, cell: StaticCellId) {
+        self.push_run(CellVisitRun {
+            scope,
+            thread_id,
+            cell,
+            count: 1,
+        });
+    }
+
+    fn append(&mut self, other: Self) {
+        for run in other.runs {
+            self.push_run(run);
+        }
+    }
+
+    fn push_run(&mut self, run: CellVisitRun) {
+        if let Some(last) = self.runs.last_mut() {
+            let next_step = match last.scope {
+                ExecutionScope::Outer => None,
+                ExecutionScope::Custom {
+                    caller_thread_id,
+                    custom_id,
+                    internal_step,
+                } => internal_step
+                    .checked_add(last.count)
+                    .map(|step| (caller_thread_id, custom_id, step)),
+            };
+            let same_scope_sequence = match (next_step, run.scope) {
+                (
+                    Some((last_caller, last_custom, expected_step)),
+                    ExecutionScope::Custom {
+                        caller_thread_id,
+                        custom_id,
+                        internal_step,
+                    },
+                ) => {
+                    last_caller == caller_thread_id
+                        && last_custom == custom_id
+                        && expected_step == internal_step
+                }
+                _ => false,
+            };
+            if same_scope_sequence && last.thread_id == run.thread_id && last.cell == run.cell {
+                if let Some(count) = last.count.checked_add(run.count) {
+                    last.count = count;
+                    return;
+                }
+            }
+        }
+        self.runs.push(run);
+    }
+
+    fn into_events(self) -> Vec<VmEvent> {
+        let mut events = Vec::new();
+        for run in self.runs {
+            for offset in 0..run.count {
+                let scope = match run.scope {
+                    ExecutionScope::Outer => ExecutionScope::Outer,
+                    ExecutionScope::Custom {
+                        caller_thread_id,
+                        custom_id,
+                        internal_step,
+                    } => ExecutionScope::Custom {
+                        caller_thread_id,
+                        custom_id,
+                        internal_step: internal_step
+                            .checked_add(offset)
+                            .expect("recorded Custom event steps fit u64"),
+                    },
+                };
+                events.push(VmEvent::CellReached {
+                    scope,
+                    thread_id: run.thread_id,
+                    cell: run.cell,
+                });
+            }
+        }
+        events
+    }
+}
+
+#[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
+struct StackUsage {
+    data: u64,
+    instruction: u64,
+    call: u64,
+}
+
+#[derive(Clone, Debug, Default, Eq, PartialEq)]
+struct CustomStackSample {
+    usage: StackUsage,
+    caller_depths: BTreeMap<u64, u64>,
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+struct CustomStackSampleRun {
+    end_step: u64,
+    sample: CustomStackSample,
+}
+
+#[derive(Default)]
+struct CustomStackSamples {
+    /// Run-length encoded, one-based Custom internal-step samples. Gaps mean
+    /// the all-zero sample, which cannot raise the outer stack high-water mark.
+    runs: BTreeMap<u64, CustomStackSampleRun>,
+}
+
+impl CustomStackSamples {
+    fn add_usage(&mut self, internal_step: u64, usage: StackUsage) -> Result<(), VmFault> {
+        if usage == StackUsage::default() {
+            return Ok(());
+        }
+        let mut sample = self.sample_at(internal_step);
+        sample.usage = add_stack_usage(sample.usage, usage)?;
+        self.set_point(internal_step, sample);
+        Ok(())
+    }
+
+    fn add_caller_depth(&mut self, internal_step: u64, caller_thread_id: u64, depth: u64) {
+        let mut sample = self.sample_at(internal_step);
+        if sample
+            .caller_depths
+            .get(&caller_thread_id)
+            .is_some_and(|current| *current >= depth)
+        {
+            return;
+        }
+        sample.caller_depths.insert(caller_thread_id, depth);
+        self.set_point(internal_step, sample);
+    }
+
+    fn sample_at(&self, internal_step: u64) -> CustomStackSample {
+        self.runs
+            .range(..=internal_step)
+            .next_back()
+            .filter(|(_, run)| internal_step <= run.end_step)
+            .map_or_else(CustomStackSample::default, |(_, run)| run.sample.clone())
+    }
+
+    fn set_point(&mut self, internal_step: u64, sample: CustomStackSample) {
+        if let Some((&start, run)) = self.runs.range(..=internal_step).next_back() {
+            if internal_step <= run.end_step {
+                let old = run.clone();
+                self.runs.remove(&start);
+                if start < internal_step {
+                    self.runs.insert(
+                        start,
+                        CustomStackSampleRun {
+                            end_step: internal_step - 1,
+                            sample: old.sample.clone(),
+                        },
+                    );
+                }
+                if internal_step < old.end_step {
+                    self.runs.insert(
+                        internal_step + 1,
+                        CustomStackSampleRun {
+                            end_step: old.end_step,
+                            sample: old.sample,
+                        },
+                    );
+                }
+            }
+        }
+        self.runs.insert(
+            internal_step,
+            CustomStackSampleRun {
+                end_step: internal_step,
+                sample,
+            },
+        );
+        self.coalesce_at(internal_step);
+    }
+
+    fn coalesce_at(&mut self, mut start: u64) {
+        if let Some((&previous_start, previous)) = self.runs.range(..start).next_back() {
+            if previous.end_step.checked_add(1) == Some(start) {
+                let current = self
+                    .runs
+                    .get(&start)
+                    .expect("the updated Custom stack sample exists");
+                if previous.sample == current.sample {
+                    let merged = CustomStackSampleRun {
+                        end_step: current.end_step,
+                        sample: current.sample.clone(),
+                    };
+                    self.runs.remove(&previous_start);
+                    self.runs.remove(&start);
+                    self.runs.insert(previous_start, merged);
+                    start = previous_start;
+                }
+            }
+        }
+        let Some(current) = self.runs.get(&start).cloned() else {
+            return;
+        };
+        let next_start = current.end_step.checked_add(1);
+        let Some(next_start) = next_start else {
+            return;
+        };
+        if let Some(next) = self.runs.get(&next_start) {
+            if current.sample == next.sample {
+                let merged = CustomStackSampleRun {
+                    end_step: next.end_step,
+                    sample: current.sample,
+                };
+                self.runs.remove(&start);
+                self.runs.remove(&next_start);
+                self.runs.insert(start, merged);
+            }
+        }
     }
 }
 
 #[derive(Default)]
-struct TickDraft {
+struct StepDraft {
     effects: SharedEffectBatch,
-    events: Vec<VmEvent>,
+    events: CellVisitLog,
     committed_events: Vec<VmEvent>,
     errors: Vec<RuntimeError>,
     halt_requested: bool,
     work_limit_exceeded: bool,
     fault: Option<VmFault>,
-    custom_stack_samples: BTreeMap<u64, StackUsage>,
-    custom_caller_stack_samples: BTreeMap<u64, BTreeMap<u64, u64>>,
-}
-
-#[derive(Clone, Copy, Default)]
-struct StackUsage {
-    data: u64,
-    instruction: u64,
-    call: u64,
+    custom_stack_samples: CustomStackSamples,
 }
 
 #[derive(Clone, Copy)]
@@ -172,18 +585,36 @@ impl ExecutionMode {
 }
 
 impl Vm {
-    /// Evaluates and atomically commits one outer Global Tick.
+    /// Evaluates and stages one outer transition for an explicit host
+    /// decision. Inspect its footprint report, then commit or abort exactly once.
+    pub fn prepare_step(&mut self) -> PreparedStep<'_> {
+        let mut work_budget = ExecutionWorkBudget::unlimited();
+        self.prepare_with_budget(&mut work_budget)
+            .expect("an unlimited execution budget cannot be exhausted")
+    }
+
+    /// Evaluates and stages one outer transition under a deterministic host
+    /// work ceiling. An interrupted attempt creates no pending transition.
+    pub fn prepare_step_with_work_limit(
+        &mut self,
+        maximum_work_units: NonZeroU64,
+    ) -> Result<PreparedStep<'_>, WorkLimitExceeded> {
+        let mut work_budget = ExecutionWorkBudget::limited(maximum_work_units);
+        self.prepare_with_budget(&mut work_budget)
+    }
+
+    /// Evaluates and atomically commits one outer transition.
     pub fn step(&mut self) -> StepResult {
         let mut work_budget = ExecutionWorkBudget::unlimited();
         self.step_with_budget(&mut work_budget)
             .expect("an unlimited execution budget cannot be exhausted")
     }
 
-    /// Evaluates one outer Global Tick with a deterministic host work ceiling.
+    /// Evaluates one outer transition with a deterministic host work ceiling.
     ///
     /// One work unit is one outer or Custom thread dispatch. Exceeding the
-    /// ceiling rolls back the entire attempted Global Tick and leaves VM state
-    /// and normative metrics unchanged.
+    /// ceiling rolls back the entire attempted transition and leaves VM state
+    /// and raw observations unchanged.
     pub fn step_with_work_limit(
         &mut self,
         maximum_work_units: NonZeroU64,
@@ -192,11 +623,10 @@ impl Vm {
         self.step_with_budget(&mut work_budget)
     }
 
-    /// Attempts the same atomic tick and reports actual thread dispatches,
+    /// Attempts the same atomic transition and reports actual thread dispatches,
     /// including work discarded by rollback. Host accounting is independent
-    /// of normative VM metrics. Runtime-error attempts preserve the VM's
-    /// normative attempted-work metric rules; work-interrupted attempts retain
-    /// no interrupted-tick metrics. The returned dispatch count covers both.
+    /// of VM observations. Runtime-error attempts retain their attempted
+    /// observations; work-interrupted attempts retain none.
     pub fn step_with_work_accounting(
         &mut self,
         maximum_work_units: NonZeroU64,
@@ -210,38 +640,52 @@ impl Vm {
         &mut self,
         work_budget: &mut ExecutionWorkBudget,
     ) -> Result<StepResult, WorkLimitExceeded> {
+        self.step_with_budget_and_footprint(work_budget)
+            .map(|(result, _)| result)
+    }
+
+    fn step_with_budget_and_footprint(
+        &mut self,
+        work_budget: &mut ExecutionWorkBudget,
+    ) -> Result<(StepResult, StepFootprint), WorkLimitExceeded> {
         if self.status != VmStatus::Running {
-            return Ok(StepResult {
-                attempted_tick: self.metrics.global_tick(),
-                committed_ticks: self.metrics.global_tick(),
-                metrics: self.metrics.summary(),
-                events: Vec::new(),
-                status: self.status,
-                newly_emitted_output: Vec::new(),
-                errors: self.terminal_errors.clone(),
-                fault: self.terminal_fault,
-            });
+            return Ok((
+                StepResult {
+                    attempted_transition_id: self.metrics.committed_steps(),
+                    committed_steps: self.metrics.committed_steps(),
+                    metrics: self.metrics.summary(),
+                    events: Vec::new(),
+                    status: self.status,
+                    newly_emitted_output: Vec::new(),
+                    errors: self.terminal_errors.clone(),
+                    fault: self.terminal_fault,
+                },
+                StepFootprint::default(),
+            ));
         }
 
-        let Some(attempted_tick) = self.metrics.global_tick().checked_add(1) else {
+        let Some(attempted_transition_id) = self.metrics.committed_steps().checked_add(1) else {
             self.status = VmStatus::Error;
-            self.terminal_fault = Some(VmFault::GlobalTickOverflow);
-            return Ok(StepResult {
-                attempted_tick: u64::MAX,
-                committed_ticks: self.metrics.global_tick(),
-                metrics: self.metrics.summary(),
-                events: Vec::new(),
-                status: self.status,
-                newly_emitted_output: Vec::new(),
-                errors: Vec::new(),
-                fault: self.terminal_fault,
-            });
+            self.terminal_fault = Some(VmFault::CommittedStepOverflow);
+            return Ok((
+                StepResult {
+                    attempted_transition_id: u64::MAX,
+                    committed_steps: self.metrics.committed_steps(),
+                    metrics: self.metrics.summary(),
+                    events: Vec::new(),
+                    status: self.status,
+                    newly_emitted_output: Vec::new(),
+                    errors: Vec::new(),
+                    fault: self.terminal_fault,
+                },
+                StepFootprint::default(),
+            ));
         };
 
-        let mut attempted_metrics = self.metrics.begin_tick_attempt();
+        let mut attempted_metrics = self.metrics.begin_step_attempt();
         let initial_stack_fault = observe_stacks(&mut attempted_metrics, &self.threads);
 
-        // Every thread reads these tick-start snapshots. Effects are committed
+        // Every thread reads these step-start snapshots. Effects are committed
         // only after all local failures and shared conflicts have been found.
         let registers = self.registers;
         let input: VecDeque<Value> = self.input.clone();
@@ -249,15 +693,15 @@ impl Vm {
         let runtime_start = self.runtime_program.clone();
         let verified_program = self.verified_program.clone();
         let mut staged_threads = self.threads.clone();
-        let mut draft = TickDraft {
+        let mut draft = StepDraft {
             fault: initial_stack_fault,
-            ..TickDraft::default()
+            ..StepDraft::default()
         };
 
         for thread in &mut staged_threads {
             full::evaluate_thread(
                 thread,
-                attempted_tick,
+                attempted_transition_id,
                 &registers,
                 &memory,
                 &input,
@@ -270,7 +714,7 @@ impl Vm {
                 ExecutionMode::outer(),
                 work_budget,
             );
-            if draft.work_limit_exceeded {
+            if draft.work_limit_exceeded || draft.fault.is_some() {
                 break;
             }
         }
@@ -285,7 +729,7 @@ impl Vm {
             &draft.effects,
             !input.is_empty(),
             false,
-            attempted_tick,
+            attempted_transition_id,
             ExecutionScope::Outer,
         ));
         RuntimeError::sort_canonical(&mut draft.errors);
@@ -297,46 +741,42 @@ impl Vm {
                         outer_usage.instruction,
                         outer_usage.call,
                     );
-                    for (internal_tick, custom_usage) in &draft.custom_stack_samples {
+                    for sample_run in draft.custom_stack_samples.runs.values() {
                         let mut aligned = outer_usage;
-                        if let Some(caller_samples) =
-                            draft.custom_caller_stack_samples.get(internal_tick)
-                        {
-                            for (caller_id, sampled_depth) in caller_samples {
-                                let before_depth =
-                                    match stack_depth_for_thread(&self.threads, *caller_id) {
-                                        Ok(depth) => depth,
-                                        Err(fault) => {
-                                            draft.fault = Some(fault);
-                                            break;
-                                        }
-                                    };
-                                let after_depth =
-                                    match stack_depth_for_thread(&staged_threads, *caller_id) {
-                                        Ok(depth) => depth,
-                                        Err(fault) => {
-                                            draft.fault = Some(fault);
-                                            break;
-                                        }
-                                    };
-                                aligned = match replace_caller_stack_sample(
-                                    aligned,
-                                    before_depth,
-                                    after_depth,
-                                    *sampled_depth,
-                                ) {
-                                    Ok(aligned) => aligned,
+                        for (caller_id, sampled_depth) in &sample_run.sample.caller_depths {
+                            let before_depth =
+                                match stack_depth_for_thread(&self.threads, *caller_id) {
+                                    Ok(depth) => depth,
                                     Err(fault) => {
                                         draft.fault = Some(fault);
                                         break;
                                     }
                                 };
+                            let after_depth =
+                                match stack_depth_for_thread(&staged_threads, *caller_id) {
+                                    Ok(depth) => depth,
+                                    Err(fault) => {
+                                        draft.fault = Some(fault);
+                                        break;
+                                    }
+                                };
+                            aligned = match replace_caller_stack_sample(
+                                aligned,
+                                before_depth,
+                                after_depth,
+                                *sampled_depth,
+                            ) {
+                                Ok(aligned) => aligned,
+                                Err(fault) => {
+                                    draft.fault = Some(fault);
+                                    break;
+                                }
                             }
                         }
                         if draft.fault.is_some() {
                             break;
                         }
-                        let aligned = match add_stack_usage(aligned, *custom_usage) {
+                        let aligned = match add_stack_usage(aligned, sample_run.sample.usage) {
                             Ok(aligned) => aligned,
                             Err(fault) => {
                                 draft.fault = Some(fault);
@@ -364,71 +804,62 @@ impl Vm {
             }
         }
 
-        let gas_error = if attempted_metrics.finalize_gas().is_err() {
-            attempted_metrics.retain_representable_gas(&self.metrics);
-            Some(crate::RuntimeErrorKind::GasCounterOverflow)
-        } else if attempted_metrics.gas_used() > self.config.gas_hard_limit().get() {
-            Some(crate::RuntimeErrorKind::GasLimitExceeded {
-                limit: self.config.gas_hard_limit().get(),
-                attempted_gas: attempted_metrics.gas_used(),
-            })
-        } else {
-            None
-        };
-        if let Some(kind) = gas_error {
-            draft.errors.push(RuntimeError::new(
-                attempted_tick,
-                ExecutionScope::Outer,
-                kind,
-            ));
-            RuntimeError::sort_canonical(&mut draft.errors);
-        }
+        let footprint = attempted_metrics.step_footprint();
 
         if draft.fault.is_some() {
-            self.metrics.merge_tick_attempt(attempted_metrics);
+            self.metrics.merge_step_attempt(attempted_metrics);
             self.status = VmStatus::Error;
             self.terminal_fault = draft.fault;
-            return Ok(StepResult {
-                attempted_tick,
-                committed_ticks: self.metrics.global_tick(),
-                metrics: self.metrics.summary(),
-                events: Vec::new(),
-                status: self.status,
-                newly_emitted_output: Vec::new(),
-                errors: Vec::new(),
-                fault: self.terminal_fault,
-            });
+            return Ok((
+                StepResult {
+                    attempted_transition_id,
+                    committed_steps: self.metrics.committed_steps(),
+                    metrics: self.metrics.summary(),
+                    events: Vec::new(),
+                    status: self.status,
+                    newly_emitted_output: Vec::new(),
+                    errors: Vec::new(),
+                    fault: self.terminal_fault,
+                },
+                footprint,
+            ));
         }
 
         if !draft.errors.is_empty() {
-            self.metrics.merge_tick_attempt(attempted_metrics);
+            self.metrics.merge_step_attempt(attempted_metrics);
             self.status = VmStatus::Error;
             self.terminal_errors = draft.errors.clone();
-            return Ok(StepResult {
-                attempted_tick,
-                committed_ticks: self.metrics.global_tick(),
-                metrics: self.metrics.summary(),
-                events: Vec::new(),
-                status: self.status,
-                newly_emitted_output: Vec::new(),
-                errors: draft.errors,
-                fault: None,
-            });
+            return Ok((
+                StepResult {
+                    attempted_transition_id,
+                    committed_steps: self.metrics.committed_steps(),
+                    metrics: self.metrics.summary(),
+                    events: Vec::new(),
+                    status: self.status,
+                    newly_emitted_output: Vec::new(),
+                    errors: draft.errors,
+                    fault: None,
+                },
+                footprint,
+            ));
         }
 
-        if self.metrics.global_tick() == u64::MAX {
+        if self.metrics.committed_steps() == u64::MAX {
             self.status = VmStatus::Error;
-            self.terminal_fault = Some(VmFault::GlobalTickOverflow);
-            return Ok(StepResult {
-                attempted_tick,
-                committed_ticks: self.metrics.global_tick(),
-                metrics: self.metrics.summary(),
-                events: Vec::new(),
-                status: self.status,
-                newly_emitted_output: Vec::new(),
-                errors: Vec::new(),
-                fault: self.terminal_fault,
-            });
+            self.terminal_fault = Some(VmFault::CommittedStepOverflow);
+            return Ok((
+                StepResult {
+                    attempted_transition_id,
+                    committed_steps: self.metrics.committed_steps(),
+                    metrics: self.metrics.summary(),
+                    events: Vec::new(),
+                    status: self.status,
+                    newly_emitted_output: Vec::new(),
+                    errors: Vec::new(),
+                    fault: self.terminal_fault,
+                },
+                footprint,
+            ));
         }
 
         let output_start = self.output.len();
@@ -441,7 +872,7 @@ impl Vm {
             &mut self.runtime_program,
             &draft.effects,
         );
-        let mut events = std::mem::take(&mut draft.events);
+        let mut events = std::mem::take(&mut draft.events).into_events();
         events.sort_by_key(cell_visit_order);
         draft
             .committed_events
@@ -460,37 +891,62 @@ impl Vm {
             &draft.effects,
         ));
         self.threads = staged_threads;
-        let committed = attempted_metrics.commit_global_tick().is_ok();
-        self.metrics.merge_tick_attempt(attempted_metrics);
+        let committed = attempted_metrics.commit_step().is_ok();
+        self.metrics.merge_step_attempt(attempted_metrics);
         if !committed {
             // The explicit preflight above makes this unreachable unless the
             // metrics implementation changes independently.
             self.status = VmStatus::Error;
             self.terminal_fault = Some(VmFault::MetricCounterOverflow(
-                MetricCounterOverflow::GlobalTick,
+                MetricCounterOverflow::CommittedSteps,
             ));
         } else if draft.halt_requested {
             self.status = VmStatus::Halted;
         }
 
-        Ok(StepResult {
-            attempted_tick,
-            committed_ticks: self.metrics.global_tick(),
-            metrics: self.metrics.summary(),
-            events: if committed { events } else { Vec::new() },
-            status: self.status,
-            newly_emitted_output: self.output[output_start..].to_vec(),
-            errors: Vec::new(),
-            fault: self.terminal_fault,
+        Ok((
+            StepResult {
+                attempted_transition_id,
+                committed_steps: self.metrics.committed_steps(),
+                metrics: self.metrics.summary(),
+                events: if committed { events } else { Vec::new() },
+                status: self.status,
+                newly_emitted_output: self.output[output_start..].to_vec(),
+                errors: Vec::new(),
+                fault: self.terminal_fault,
+            },
+            footprint,
+        ))
+    }
+
+    fn prepare_with_budget(
+        &mut self,
+        work_budget: &mut ExecutionWorkBudget,
+    ) -> Result<PreparedStep<'_>, WorkLimitExceeded> {
+        let before = VmCheckpoint::capture(self);
+        let (result, footprint) = self.step_with_budget_and_footprint(work_budget)?;
+        let report = StepReport {
+            footprint,
+            work_units: work_budget.consumed,
+            custom_internal_dispatches: work_budget.custom_internal_dispatches,
+            candidate_status: result.status,
+            errors: result.errors.clone(),
+            fault: result.fault,
+        };
+        Ok(PreparedStep {
+            vm: self,
+            before: Some(before),
+            result: Some(result),
+            report,
         })
     }
 
-    /// Runs at most `max_ticks` attempted Global Ticks using [`Vm::step`].
-    pub fn run(&mut self, max_ticks: u64) -> RunOutcome {
-        if max_ticks == 0 {
-            return RunOutcome::InvalidTickLimit;
+    /// Runs at most `max_steps` atomic transitions using [`Vm::step`].
+    pub fn run(&mut self, max_steps: u64) -> RunOutcome {
+        if max_steps == 0 {
+            return RunOutcome::InvalidStepLimit;
         }
-        for _ in 0..max_ticks {
+        for _ in 0..max_steps {
             match self.step().status {
                 VmStatus::Running => {}
                 VmStatus::Halted => return RunOutcome::Halted,
@@ -500,23 +956,23 @@ impl Vm {
         match self.status {
             VmStatus::Halted => RunOutcome::Halted,
             VmStatus::Error => RunOutcome::Error,
-            VmStatus::Running => RunOutcome::TickLimitReached,
+            VmStatus::Running => RunOutcome::StepLimitReached,
         }
     }
 
     /// Runs a bounded slice under one shared work ceiling across all attempted
-    /// Global Ticks. Earlier complete ticks remain committed if a later tick
-    /// exceeds the budget; the interrupted tick is rolled back atomically.
+    /// transitions. Earlier complete steps remain committed if a later step
+    /// exceeds the budget; the interrupted step is rolled back atomically.
     pub fn run_with_work_limit(
         &mut self,
-        max_ticks: u64,
+        max_steps: u64,
         maximum_work_units: NonZeroU64,
     ) -> Result<RunOutcome, WorkLimitExceeded> {
-        if max_ticks == 0 {
-            return Ok(RunOutcome::InvalidTickLimit);
+        if max_steps == 0 {
+            return Ok(RunOutcome::InvalidStepLimit);
         }
         let mut work_budget = ExecutionWorkBudget::limited(maximum_work_units);
-        for _ in 0..max_ticks {
+        for _ in 0..max_steps {
             let _ = self.step_with_budget(&mut work_budget)?;
             match self.status {
                 VmStatus::Running => {}
@@ -527,20 +983,20 @@ impl Vm {
         Ok(match self.status {
             VmStatus::Halted => RunOutcome::Halted,
             VmStatus::Error => RunOutcome::Error,
-            VmStatus::Running => RunOutcome::TickLimitReached,
+            VmStatus::Running => RunOutcome::StepLimitReached,
         })
     }
 
-    /// Runs bounded ticks and retains committed events/output when a work
+    /// Runs bounded transitions and retains committed events/output when a work
     /// ceiling yields partway through the requested run.
     pub fn run_with_work_limit_detailed(
         &mut self,
-        max_ticks: u64,
+        max_steps: u64,
         maximum_work_units: NonZeroU64,
     ) -> RunResult {
-        if max_ticks == 0 {
+        if max_steps == 0 {
             return RunResult {
-                outcome: RunOutcome::InvalidTickLimit,
+                outcome: RunOutcome::InvalidStepLimit,
                 events: Vec::new(),
                 newly_emitted_output: Vec::new(),
                 work_limit_exceeded: None,
@@ -550,7 +1006,7 @@ impl Vm {
         let mut work_budget = ExecutionWorkBudget::limited(maximum_work_units);
         let mut events = Vec::new();
         let mut newly_emitted_output = Vec::new();
-        for _ in 0..max_ticks {
+        for _ in 0..max_steps {
             let step = match self.step_with_budget(&mut work_budget) {
                 Ok(step) => step,
                 Err(work_limit_exceeded) => {
@@ -586,7 +1042,7 @@ impl Vm {
         }
 
         RunResult {
-            outcome: RunOutcome::TickLimitReached,
+            outcome: RunOutcome::StepLimitReached,
             events,
             newly_emitted_output,
             work_limit_exceeded: None,
@@ -596,17 +1052,13 @@ impl Vm {
 
 fn record_cell_visit(
     metrics: &mut crate::RuntimeMetrics,
-    draft: &mut TickDraft,
+    draft: &mut StepDraft,
     thread: &ThreadState,
     cell: StaticCellId,
     scope: ExecutionScope,
 ) {
     metrics.record_cell(cell);
-    draft.events.push(VmEvent::CellReached {
-        scope,
-        thread_id: thread.id,
-        cell,
-    });
+    draft.events.push(scope, thread.id, cell);
 }
 
 fn committed_state_events(
@@ -708,12 +1160,12 @@ fn cell_visit_order(event: &VmEvent) -> (u64, u8, u64, u64) {
             scope:
                 ExecutionScope::Custom {
                     caller_thread_id,
-                    internal_tick,
+                    internal_step,
                     ..
                 },
             thread_id,
             ..
-        } => (*caller_thread_id, 1, *internal_tick, *thread_id),
+        } => (*caller_thread_id, 1, *internal_step, *thread_id),
         _ => (u64::MAX, u8::MAX, u64::MAX, u64::MAX),
     }
 }
@@ -731,8 +1183,8 @@ fn committed_state_event_order(event: &VmEvent) -> (u8, u64, u64, u8) {
         ExecutionScope::Custom {
             caller_thread_id,
             custom_id,
-            internal_tick,
-        } => (0, internal_tick, caller_thread_id, custom_id.get()),
+            internal_step,
+        } => (0, internal_step, caller_thread_id, custom_id.get()),
         ExecutionScope::Outer => (1, 0, 0, 0),
     }
 }
@@ -740,7 +1192,7 @@ fn committed_state_event_order(event: &VmEvent) -> (u8, u64, u64, u8) {
 fn record_operation(
     metrics: &mut crate::RuntimeMetrics,
     kind: InstructionKind,
-    draft: &mut TickDraft,
+    draft: &mut StepDraft,
 ) {
     if let Err(error) = metrics.record_operation(kind) {
         draft.fault = Some(VmFault::MetricCounterOverflow(error));
@@ -982,7 +1434,7 @@ mod stack_high_water_formula_tests {
         add_stack_usage, replace_caller_stack_sample, stack_usage, stack_usage_with_growth,
     };
     use crate::thread::{CallFrame, ThreadState};
-    use crate::{Coordinate, RuntimeMetrics};
+    use crate::{Coordinate, RuntimeMetrics, StackPeaks};
     use codegrid_ir::BoardId;
     use codegrid_model::{Direction, InstructionStackItem};
 
@@ -1012,7 +1464,7 @@ mod stack_high_water_formula_tests {
     }
 
     #[test]
-    fn failed_aligned_custom_tick_preserves_the_aggregate_stack_high_water_formula() {
+    fn aligned_custom_stack_footprint_uses_one_caller_sample() {
         let outer_before = vec![
             thread_with_stacks(0, 2, 2, 1),
             thread_with_stacks(1, 1, 1, 0),
@@ -1025,11 +1477,11 @@ mod stack_high_water_formula_tests {
         // Keep the attempted baseline, add each thread's positive staged
         // growth, and do not let staged pops reduce any stack peak.
         let outer = stack_usage_with_growth(&outer_before, &staged_outer)
-            .expect("outer stack totals fit the metric counters");
+            .expect("outer stack totals fit the candidate counters");
         assert_eq!((outer.data, outer.instruction, outer.call), (4, 4, 2));
 
         // At an aligned Custom boundary, replace the caller's single outer
-        // sample with its internal-tick depth, then add every Custom thread.
+        // sample with its internal-step depth, then add every Custom thread.
         let aligned_outer = replace_caller_stack_sample(outer, 2, 1, 3)
             .expect("caller stack is counted once at the aligned sample");
         let custom_threads = vec![
@@ -1044,20 +1496,38 @@ mod stack_high_water_formula_tests {
             (8, 5, 3)
         );
 
-        // A runtime-error tick merges attempted peaks while retaining any
-        // earlier committed high-water values.
-        let mut committed_metrics = RuntimeMetrics::default();
-        committed_metrics.observe_stack_usage(1, 1, 1);
-        let mut failed_attempt = committed_metrics.begin_tick_attempt();
-        failed_attempt.observe_stack_usage(attempted.data, attempted.instruction, attempted.call);
-        committed_metrics.merge_tick_attempt(failed_attempt);
+        let mut candidate = RuntimeMetrics::default().begin_step_attempt();
+        candidate.observe_stack_usage(attempted.data, attempted.instruction, attempted.call);
         assert_eq!(
-            (
-                committed_metrics.peak_data_stack_usage(),
-                committed_metrics.peak_instruction_stack_usage(),
-                committed_metrics.peak_call_stack_usage(),
-            ),
-            (8, 5, 3)
+            candidate.step_footprint().stack_peaks,
+            StackPeaks {
+                data: 8,
+                instruction: 5,
+                call: 3,
+            }
         );
+    }
+}
+
+#[cfg(test)]
+mod work_budget_tests {
+    use super::ExecutionWorkBudget;
+    use crate::{ExecutionScope, MetricCounterOverflow};
+    use codegrid_model::Slot;
+
+    #[test]
+    fn custom_dispatch_counter_reports_overflow_without_wrapping() {
+        let mut budget = ExecutionWorkBudget::unlimited();
+        budget.custom_internal_dispatches = u64::MAX;
+
+        let result = budget.consume(ExecutionScope::Custom {
+            caller_thread_id: 0,
+            custom_id: Slot::new(0).expect("zero is a valid Custom ID"),
+            internal_step: 1,
+        });
+
+        assert_eq!(result, Err(MetricCounterOverflow::CustomInternalDispatches));
+        assert_eq!(budget.custom_internal_dispatches, u64::MAX);
+        assert_eq!(budget.consumed, 0);
     }
 }

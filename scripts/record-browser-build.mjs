@@ -17,7 +17,7 @@ const manifest = {
   schema_version: 1,
   source_commit: version('git', ['rev-parse', 'HEAD']),
   source_dirty: version('git', ['status', '--porcelain']).length > 0,
-  runtime_api_version: 3,
+  runtime_api_version: 4,
   wasm_bindgen_version: version('wasm-bindgen', ['--version']).split(' ')[1],
   wasm32_linear_memory_ceiling_bytes: bytes,
   files_sha256: Object.fromEntries(files(directory).filter(path => /\.(js|wasm)$/.test(path)).sort().map(path => [relative(directory, path).replaceAll('\\', '/'), hash(path)])),

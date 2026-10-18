@@ -1,24 +1,93 @@
 # Mandatory downstream synchronization
 
-## 2026-10-12 explicit host repositioning
+## Current boundary and synchronization status (2026-10-18)
 
-VM, RuntimeApi and BrowserRuntime expose a validated same-board normal-thread
-repositioning operation. Steam resumes a completed revealed selection branch
-with current resources, then executes ordinary Rust ticks. It journals the
-step/position/direction for replay and breaks the rendered route at relocation.
-Steam and Web browser bindings/WASM use the same rebuilt set and generated
-`scripts/record-browser-build.mjs` provenance (base
-`b9a71a0d1d2c497f903e6f33c038f4281273d75c`, dirty source). Existing server and
-Scene hosts do not expose this operation; instruction, Server ABI and Scene
-contracts are unchanged, so their binaries retain their actual provenance.
-Validation: affected Rust crate tests, exact native pre/post state comparison,
-Steam unit/type checks/build and real Chrome branch execution/replay, Web
-unit/type checks, downstream architecture and the 64-MiB WASM memory ceiling.
+The game-domain implementation has been moved out of this repository in the
+current working trees. `codegrid-lang` retains `.cg` syntax, compilation,
+verified IR, deterministic VM transitions, neutral step/work-unit safeguards,
+the language CLI/LSP/VS Code tools, and Full Runtime hosts. The Rust Game
+Runtime in `C:/source/bf-steam-wt/rust/` owns levels, scenes, game budgets and
+metrics, case selection, game errors, and result judgment. Game-only Level
+crates, the game `evaluate` CLI command, and Level/Scene fixtures are absent
+from the Lang workspace.
 
-This document is a required completion gate for AI-assisted changes in
-`C:/source/codegrid-lang`. The downstream application repository is
-`C:/source/bf-steam-wt`. This requirement was requested on 2026-10-06 because
-language and scene mechanism changes were not reaching application consumers.
+The Game Runtime also owns interactive case debugging. A Debug session names
+one visible source test index; the runtime steps that case, compares its output
+with its expectation, and stops with that case's result. It does not aggregate
+or judge the full level. Generic language debugging remains in Lang.
+
+The source split and current consumers are verified in these local working
+trees, with one reproducibility limit: the Game Runtime Cargo files still pin
+Lang revision `9e07063c8f7cf5734f86b285c8a9264c9307bfe`, which predates the
+neutral prepared-step APIs consumed by the game runtime. The current Rust
+workspace and Level WASM artifacts were built with the explicitly recorded
+local Lang patch override. They run and pass the recorded checks, but a clean
+checkout cannot rebuild them from the configured pin until the Lang changes
+exist at an immutable revision. Do not replace the pin with an absolute local
+path or describe the override as a published revision. Exact source and
+artifact identities are in the [Game Runtime synchronization record](../../bf-steam-wt/doc/codegrid-lang同步规则.md).
+
+Game decision and verification history formerly stored here has moved to the
+[Game Runtime history archive](../../bf-steam-wt/doc/codegrid-lang-history/README.md).
+
+## Generic VM work-unit smoke failure observed (2026-10-18)
+
+The configured work-unit ceiling did not bound one Custom candidate transition
+in the server WASM smoke. The release artifact build succeeded. The exact build
+and failing smoke commands were:
+
+```powershell
+$env:CODEGRID_WASM_MAX_MEMORY_BYTES='67108864'
+cargo build --locked --release --target wasm32-unknown-unknown -p codegrid-wasm-server
+node crates/codegrid-wasm-server/tests/server-smoke.mjs
+```
+
+It failed on fixture `custom-wrapping-loop-reaches-internal-limit` in
+[`tests/fixtures/conformance-v1.json`](../tests/fixtures/conformance-v1.json).
+This is fixture 59 of 105. The case runs
+`@main\n~> #0 ;\n@end main\n@C0\n@size 2x1\n~> +\n@end C0\n`
+with seed `0`, empty input, and `max_steps: "10"`; server limits include
+`max_work_units_per_call: "1000000"`. The primary trap is Rust allocation
+failure (`RuntimeError: unreachable`) through
+`std::alloc::rust_oom` / `handle_alloc_error` / `RawVec::reserve`, then
+`codegrid_vm::engine::full::execute_primary`, `evaluate_thread`, and
+`Vm::step_with_budget_and_footprint`. The request is processed by
+`codegrid_server_process_request` in
+[`crates/codegrid-wasm-server/src/lib.rs`](../crates/codegrid-wasm-server/src/lib.rs).
+
+The harness then calls `codegrid_server_free_buffer` from the `dispatch()`
+`finally` block in
+[`server-smoke.mjs`](../crates/codegrid-wasm-server/tests/server-smoke.mjs).
+That produces a secondary `core::cell::panic_already_borrowed` panic because
+the WASM trap interrupted processing while the request-buffer borrow was held.
+The secondary cleanup panic does not explain or replace the primary VM OOM.
+At the observed source lines, `dispatch()` cleanup is at `server-smoke.mjs:100`
+and the Rust export is `codegrid-wasm-server/src/lib.rs:325`. An isolated
+Node reproduction that initializes the server, compiles only this source,
+creates one instance, and runs it with the same host limits captured both
+stacks (symbol chains summarized here):
+
+```text
+PRIMARY run: RuntimeError: unreachable
+  rust_oom -> alloc::raw_vec::reserve -> codegrid_vm::engine::full::execute_primary
+  -> codegrid_vm::engine::full::evaluate_thread
+  -> Vm::step_with_budget_and_footprint
+CLEANUP free_buffer: RuntimeError: unreachable
+  core::cell::panic_already_borrowed -> codegrid_server_free_buffer
+```
+
+This fixture remains a generic VM work-unit conformance case. Its
+`expected.process_exit_code` value (`7`) remains in Lang because the native CLI
+fixture test uses it to assert the language CLI exit status. Removing the
+duplicate game-field absence assertions changed no VM implementation, fixture
+source, CLI expectation, run request, or work ceiling.
+No server-smoke result was recorded before these working-tree edits, so there
+is no before/after evidence to attribute the observed failure to that cleanup.
+The run used a dirty worktree based on Lang HEAD
+`9e07063c8f7cf5734f86b285c8a9264c9307bfe2`; no complete patch or artifact
+hash was recorded. Treat generic VM work-unit
+bounding as unresolved until the same server smoke passes after the VM guard is
+repaired. Do not count downstream server verification as complete meanwhile.
 
 ## Every-change requirement
 
@@ -29,11 +98,14 @@ directly; do not add compatibility readers, retain old artifacts, reserve old
 codes, or require migrations/version bumps for unpublished versions. Continue
 to preserve unrelated user data and record truthful artifact provenance.
 
-For every change, inspect its downstream impact before reporting completion.
-Changes to syntax, instruction permissions, compilation, VM behavior, scenes,
-level JSON, errors, metrics, limits, scoring, or public API/WASM contracts must
-include the corresponding downstream updates in the same task. Do not wait for
-a separate user reminder or leave synchronization as an optional follow-up.
+For every Lang change, inspect its downstream impact before reporting
+completion. Changes to syntax, instruction permissions, compilation, VM
+behavior, transition/work-unit metrics, language error identities, or public language
+API/WASM contracts must include the affected Rust Game Runtime and application
+consumer updates in the same task. Game-specific scene, level, scoring, and
+limit changes are authored in `C:/source/bf-steam-wt/rust/`; they do not make
+`codegrid-lang` the owner of those contracts. Do not leave a required language
+integration update as an optional follow-up.
 
 Documentation-only and internal changes may have no downstream effect. Establish
 that by checking the affected contracts and consumers, and report the concrete
@@ -74,31 +146,30 @@ This is an AI workflow requirement; it does not install a filesystem watcher.
 
 | Upstream change | Downstream areas to inspect |
 | --- | --- |
-| Scene evaluator, Scene Host API, level schema, scoring, debug events | `apps/editor/src/scene-wasm/`, editor worker/playtest adapters, `packages/client-application/`, `packages/api-contract/`, authoring fixtures and AI generation |
-| Full browser Runtime API and language behavior | `apps/web/public/codegrid-full/v3/`, Web runtime host, transport adapters, browser integration tests |
-| Full server ABI and Runtime API | `apps/api/src/codegrid/full-v3/`, Worker runtime host, `packages/api-contract/`, Worker smoke and conformance fixtures |
-| Instructions, conditions, permissions, error identities | Authoring DTOs, validation, templates, prompts, examples, diagnostic presentation and compatibility readers |
-| Shared game or terminal contracts | `packages/game-core/`, `packages/game-language/`, `packages/game-content/`, `apps/terminal/` and their tests; inspect actual dependencies before changing these separate execution paths |
+| Full source, compiler, or VM semantics | `C:/source/bf-steam-wt/rust/crates/codegrid-game-runtime/` language adapter, current WASM consumers, and relevant app conformance tests |
+| Full browser Runtime API and language behavior | Current Full browser WASM assets and binding, Web runtime host, transport adapters, browser integration tests, and Rust Game Runtime adapter |
+| Full server ABI and Runtime API | Current Full server WASM assets, Worker runtime host, `packages/api-contract/`, Worker smoke and conformance fixtures, and Rust Game Runtime adapter |
+| Language instructions, permissions, diagnostics, or error identities | Rust language adapter, editor/authoring validation, templates, prompts, examples, and language diagnostic presentation |
+| Raw VM transition/work-unit fields or error behavior | Rust Game Runtime adapter and language host consumers that read these fields; verify the affected Runtime API, WASM, CLI, and debug contracts explicitly |
 
-The inventory reflects the 2026-10-06 synchronization. Discover current paths
-and versions before each future update; do not assume the listed versioned
-directories remain the active consumers.
+Discover current paths and versions before each update. Archived downstream
+reports do not establish that their former paths or versioned artifacts remain
+active.
 
 ### Artifact-specific requirements
 
-- Editor assets come from `codegrid-level-wasm-browser` and the generated level
-  build provenance. Preserve the host's explicit local WASM-byte initialization
-  and Steam offline `file://` support. Its generated JavaScript has a deliberate
-  default-loader patch: retain upstream provenance and record the patched file
-  hash separately in `editor-vendor-manifest.json`. Verify both identities.
+- Language editor/browser assets come from `codegrid-wasm-browser`; keep their
+  source/build provenance truthful and preserve explicit local-byte loading
+  where the host requires it. Game Runtime WASM is built and versioned by the
+  Rust Game Runtime repository, not by a Lang level crate.
 - Web Full assets come from `codegrid-wasm-browser`; server Full assets come from
   `codegrid-wasm-server`. Update host constructor arguments, requests, versions,
   result/status/error shapes, quotas, and projections whenever contracts change.
   Retain old versioned artifacts only when an explicitly published baseline
   requires them; current unpublished consumers use current artifacts directly.
 - Keep source commit/dirty-state identity and fixture hashes truthful. Regenerate
-  provenance through the repository's build tools. API/ABI versions and level
-  `format_version` are distinct and must come from their respective contracts.
+  provenance through the owning repository's build tools. Language API/ABI
+  versions and game level `format_version` are separate contracts.
 - Keep downstream strict TypeScript rules. Generated declarations must not
   introduce prohibited `any`; maintain the existing narrow host declarations.
 
@@ -108,9 +179,10 @@ Select checks according to the affected consumer. The downstream root provides
 `npm run typecheck`, `npm run build:editor`, `npm run test:e2e:editor`,
 `npm run build:web`, and `npm run build:steam`. Inspect current workspace scripts
 for editor artifact integrity, Web browser/server parity, actual Worker
-conformance, and editor offline Electron acceptance. Upstream scene WASM checks
-are available through `scripts/test-scene-wasm.ps1`; inspect current language
-adapter smoke scripts for native, browser, and server comparisons.
+conformance, and editor offline Electron acceptance. Run the Lang Full VM/API
+checks plus Rust Game Runtime tests and relevant actual-host comparisons for the
+affected boundary; the removed Lang scene-WASM harness is no longer an active
+verification entry point.
 
 Do not claim browser tests establish real Steamworks, physical controller,
 installer, audio, or cloud acceptance. Do not deploy, enable production runtime
@@ -121,123 +193,3 @@ If a repository, toolchain, required host, or check is unavailable, report
 **downstream synchronization incomplete**, naming the affected files, blocker,
 completed work, and remaining verification. Do not silently skip the consumer
 or report the overall mechanism change as fully complete.
-
-## 2026-10-13 dynamic scene input replacement
-
-Robot observations now put color before position. Robot and MechanicalArm
-replace unread input each nonterminal round; both arm layouts provide hand
-snapshots, including single-arm initial/empty 255. GRAB preserves item state;
-worktables perform transformations. Single/dual frame boundaries remain.
-Shared Debug publication is InputUpdated. ExactIO and language host contracts
-remain unchanged. This explicit user decision supersedes scene append rules.
-
-Updated editor and API level-eval WASM/binding sets, source/build provenance,
-local-byte patch hashes, API evaluator identity, feedback labels, scene docs,
-and focused actual-WASM tests in C:/source/bf-steam-wt. Source base is
-b9a71a0d1d2c497f903e6f33c038f4281273d75c with source_dirty=true.
-352 Rust tests, formatter checks, all 72 native/Node/browser/Wasmtime scene
-results and WASM traces pass. Downstream editor 91/API 95 tests, full workspace
-type checks, architecture check, editor build and offline Electron pass.
-See [verification and source identity](scene-input-updates.md).
-
-## 2026-10-13 final MechanicalArm inspection bitmap
-
-The user swapped UNINSPECTED/NORMAL codes to 0/3; DEFECT and IRREPARABLE
-remain 1/2. Hidden true_inspection accepts only 1/2/3. Initial blue item state
-is 1, normal blue is 13, processed normal blue is 29, packed normal blue is 45,
-and processed/packed normal blue is 61. GRAB preserves state; worktables alone
-perform transformations. This supersedes earlier same-day bitmap examples.
-
-Updated Rust state initialization, table operations, author/output validation,
-fixtures, tests, and normative specs. Updated downstream editor state choices,
-defaults, arrival/output controls, client author validation, fixture bytes,
-actual-WASM consumers and both artifact/provenance sets. No player-data migration
-or compatibility reader is introduced. User requested committing/pushing only
-codegrid-lang; downstream synchronization remains locally applied and uncommitted.
-See [final bitmap and verification](scene-input-updates.md#final-inspection-bitmap-ordering).
-
-## 2026-10-13 MechanicalArm module logistics replacement
-
-The user authorized direct replacement after resolving action mapping, empty
-hand 255, three colors and atomic dual rounds. MechanicalArm now uses 192 module
-bytes, fixed six/ten stations, STACK/FLIP/INPUT/OUTPUT and OUTPUT_SEQUENCE /
-FINAL_LAYOUT. Final targets serialize only exact station contents; inventory
-conservation enforces all required modules are placed. Input snapshots replace
-unread bytes at every completed nonterminal frame. Robot semantics are unchanged.
-
-Synchronized editor draft/import/export/module controls, Rust author validation,
-playtest station feedback, API publication evaluation, examples, tests, browser
-bindings/WASM and actual provenance. Publication uses Official mode to execute
-hidden cases and removes only name/description metadata from Rust scene input.
-The signed/stored publish envelope is preserved. No legacy reader or user-data
-conversion is introduced. Full language WASM adapters have no level-core
-execution dependency and their contracts are unchanged; their artifacts retain
-their original truthful provenance.
-
-Source base: 17641b5a2582d43822db3586419204588239ab13, source_dirty=true.
-Evaluator: codegrid-level-source-sha256:df21818653fe066f55f7224bfac23d2608e4cf54aad48f037138a3f9c862f60a.
-Checks: 607 Rust workspace tests; formatter; 77 complete scene results across
-native CLI, browser Worker, Node WASM and Wasmtime, with matching WASM Debug
-traces and 64-MiB memory ceilings; downstream workspace architecture/type checks;
-client-application 228, API-contract 37, editor 88 and API 102 tests; editor/API
-builds; six actual browser arm checks at 1440/375/320px; offline Electron
-execution/persistence. Editor chunk-size warnings remain. No production
-Workerd publication, Steamworks or physical-device acceptance is claimed.
-Steam's independent game-screen rebuild remains outside this scene/editor work.
-
-## 2026-10-14 MechanicalArm scene-state peak accounting
-
-The Level Core initialization bound now includes the serialized target copy
-materialized when a FINAL_LAYOUT already matches at initialization. Completed
-frame peak accounting reserves that whole copy for FINAL_LAYOUT and only the
-remaining OUTPUT_SEQUENCE bytes that the actors can produce in the frame.
-The runtime and preconstruction bound share one layout comparison helper.
-Scene and language contracts are unchanged.
-
-Rebuilt the browser and portable Level WASM artifacts and synchronized the
-editor vendor set and API level-eval copy. Source base:
-`2bd78699985256d3baf66a593021fce631b04892`, `source_dirty=true`; evaluator:
-`codegrid-level-source-sha256:b5be1e478c920fc8518dc59e7fcc94e1866333f57bf027f614968eb46b140f3d`.
-Browser WASM SHA-256: `97e6f02953945a4dbd3c82eb55feb0fad78e6db827ff3116374e254dccb1d59c`;
-portable WASM: `2e425528a05b594a7941cc776522011874e11a0898efd6522ef84728f27bbc39`;
-generated browser JavaScript: `3757c44e2e6da1e583f7e81b7c7e439794d201879960789737431b1ac59629a7`;
-editor-patched JavaScript: `4a012f01b18f50c8f8dc82b485def29ac1ec5aa4c97e33ded6991530d98699b5`.
-The declaration hash remains `fb761259e98e4eb4b87001cd2c561849400f6892119eb9c057d0ef9fd30536a8`.
-
-Formatter, pinned-toolchain check, Level Core/API `cargo check`, the locked
-browser/server WASM release build, wasm-bindgen generation, downstream workspace
-typecheck, and editor/API production builds passed. Regression suites and
-four-host scene comparisons were not run for this correction, so runtime
-verification remains incomplete. Downstream synchronization is incomplete
-until those regression and four-host checks are run. No deployment or
-production-host acceptance is claimed.
-
-
-## 2026-10-14 Robot patrol repair and uniform ground
-
-Robot action byte 2 is now REPAIR. Visiting a patrol point does not mark it
-complete; REPAIR only records the point under the acting robot, and REPAIR
-elsewhere has no effect. The goal passes immediately when every required patrol
-point has been repaired. Robot map terrain now accepts only . for VOID and
-0 for uniform-height ground; movement no longer compares elevations.
-
-Updated Level Core, the Scene specs and decision record, existing focused
-conformance cases, editor authoring/import/export/playtest, strict client
-validation, and the editor/API Level WASM artifact sets. The editor local-byte
-loader patch remains applied. Full language WASM and the separate Steam game
-interpreter are outside this Scene evaluator change.
-
-Source base: f2d371d226369c7976e419310b6eee16c3efaade, source_dirty=true.
-Evaluator: codegrid-level-source-sha256:6c814fd48722d67f82005937cf6903d67933a4780ba72be81003607f430d59d7.
-Browser WASM SHA-256: 1cd39b7f6d367abf5e19cea95f696fce226516a37f006e772eb4918315569d23;
-portable WASM: 200a9a8deddf991af6ff245006a4ba8299a5a58f3dde8a65ecd6cbe343bcff40;
-generated browser JavaScript: 3757c44e2e6da1e583f7e81b7c7e439794d201879960789737431b1ac59629a7;
-patched editor JavaScript: 4a012f01b18f50c8f8dc82b485def29ac1ec5aa4c97e33ded6991530d98699b5.
-
-Formatter, pinned toolchain, Rust Level Core/API test-target compilation,
-locked browser/server WASM release build, binding generation, downstream
-workspace typecheck, editor/API builds, artifact hash checks, and whitespace
-checks passed. Regression suites and native/browser/Node/Wasmtime scene
-comparisons were not run; runtime verification remains incomplete. No
-production Steamworks or deployment acceptance is claimed.
-The downstream API scene-input fixtures now reach the patrol point and issue REPAIR only after consuming the updated snapshot.
