@@ -16,25 +16,23 @@ one visible source test index; the runtime steps that case, compares its output
 with its expectation, and stops with that case's result. It does not aggregate
 or judge the full level. Generic language debugging remains in Lang.
 
-The source split and current consumers are verified in these local working
-trees, with one reproducibility limit: the Game Runtime Cargo files still pin
-Lang revision `9e07063c8f7cf5734f86b285c8a9264c9307bfe`, which predates the
-neutral prepared-step APIs consumed by the game runtime. The current Rust
-workspace and Level WASM artifacts were built with the explicitly recorded
-local Lang patch override. They run and pass the recorded checks, but a clean
-checkout cannot rebuild them from the configured pin until the Lang changes
-exist at an immutable revision. Do not replace the pin with an absolute local
-path or describe the override as a published revision. Exact source and
-artifact identities are in the [Game Runtime synchronization record](../../bf-steam-wt/doc/codegrid-lang同步规则.md).
+The source split and current consumers are verified against immutable Lang
+revision `e27e29b1a8b0bf1fd8957c0ad5a25d1e6bada1e6`. The Game Runtime Cargo
+manifest and lockfile pin this revision. Its current Rust workspace and four
+Level WASM artifacts were rebuilt with `--locked` and without a local Cargo
+override. The neutral prepared-step APIs consumed by the Game Runtime are
+available at the pinned revision. Exact source and artifact identities are in
+the [Game Runtime synchronization record](../../bf-steam-wt/doc/codegrid-lang同步规则.md).
 
 Game decision and verification history formerly stored here has moved to the
 [Game Runtime history archive](../../bf-steam-wt/doc/codegrid-lang-history/README.md).
 
-## Generic VM work-unit smoke failure observed (2026-10-18)
+## Historical VM work-unit smoke failure and current verification (2026-10-18)
 
-The configured work-unit ceiling did not bound one Custom candidate transition
-in the server WASM smoke. The release artifact build succeeded. The exact build
-and failing smoke commands were:
+An earlier server WASM smoke run, based on Lang revision
+`9e07063c8f7cf5734f86b285c8a9264c9307bfe2`, failed to bound one Custom
+candidate transition. The release artifact built, but the exact smoke sequence
+below failed:
 
 ```powershell
 $env:CODEGRID_WASM_MAX_MEMORY_BYTES='67108864'
@@ -78,16 +76,22 @@ CLEANUP free_buffer: RuntimeError: unreachable
 
 This fixture remains a generic VM work-unit conformance case. Its
 `expected.process_exit_code` value (`7`) remains in Lang because the native CLI
-fixture test uses it to assert the language CLI exit status. Removing the
-duplicate game-field absence assertions changed no VM implementation, fixture
-source, CLI expectation, run request, or work ceiling.
-No server-smoke result was recorded before these working-tree edits, so there
-is no before/after evidence to attribute the observed failure to that cleanup.
-The run used a dirty worktree based on Lang HEAD
-`9e07063c8f7cf5734f86b285c8a9264c9307bfe2`; no complete patch or artifact
-hash was recorded. Treat generic VM work-unit
-bounding as unresolved until the same server smoke passes after the VM guard is
-repaired. Do not count downstream server verification as complete meanwhile.
+fixture test asserts the language CLI exit status. The earlier failure was
+reproduced on a dirty worktree based on Lang revision
+`9e07063c8f7cf5734f86b285c8a9264c9307bfe2`.
+
+The VM work-unit guard was subsequently updated to detect repeated Custom
+semantic states with bounded memory, count the remaining dispatches exactly,
+and roll back the uncommitted candidate. On 2026-10-18, the same issue was
+rechecked against immutable Lang commit
+`e27e29b1a8b0bf1fd8957c0ad5a25d1e6bada1e6`. `cargo fmt --all -- --check` and
+`cargo test --workspace` passed. The release server WASM smoke passed all 105
+shared fixtures; the Wasmtime 49.0.1 harness passed all 105 with complete
+Native CLI parity and regenerated the current baseline; browser Node WASM and
+headless-browser runs each passed all 105 fixtures against that baseline.
+These checks resolve the recorded smoke failure for this revision. They do not
+establish general process-memory, cancellation, concurrency, or wall-clock
+limits for production hosts.
 
 ## Every-change requirement
 
