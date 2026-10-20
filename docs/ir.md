@@ -38,7 +38,7 @@ The verifier returns structured errors for malformed external IR. Any decoder, c
 
 ## Version boundaries
 
-Source profile, IR format, CLI result JSON, debug protocol, Runtime API, and WASM ABIs are separate contracts. Current versions are executable IR 4, CLI run-result schema 1, debug protocol 2, Runtime API 5, browser API 5, and server ABI 6. Never infer accepted source syntax from an IR/API/ABI version, and never pass wide integers through imprecise JavaScript numbers.
+Source profile, IR format, CLI result JSON, debug protocol, Runtime API, and WASM ABIs are separate contracts. Current versions are executable IR 5, CLI run-result schema 1, debug protocol 2, Runtime API 6, browser API 6, and server ABI 7. Never infer accepted source syntax from an IR/API/ABI version, and never pass wide integers through imprecise JavaScript numbers.
 
 ## Historical: conditional prefix and CMP migration (2026-10-03)
 

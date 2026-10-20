@@ -69,6 +69,7 @@ export const errorNumbers: Readonly<Record<string, string>> = {
   "vm:ConcurrentOutputConflict": "3006",
   "vm:ConcurrentWriteConflict": "3007",
   "vm:ReturnWithoutCall": "3010",
+  "vm:FoldedBlockWithoutDefinition": "3011",
   "fault:metric_counter_overflow": "3100",
   "fault:committed_steps_overflow": "3101",
   "fault:internal_invariant_violation": "3102",

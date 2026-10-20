@@ -468,9 +468,15 @@ fn verifies_the_complete_full_primary_attachment_compatibility_matrix() {
                     primary,
                     PrimaryInstruction::Call(_) | PrimaryInstruction::Return
                 );
+            let inert_unencoded_read =
+                !primary.is_encodable() && matches!(attachment, Attachment::ReadCode);
+            let inert_return_write = matches!(primary, PrimaryInstruction::Return)
+                && matches!(attachment, Attachment::WriteCode);
             let compatible = (primary.is_encodable()
                 || (matches!(primary, PrimaryInstruction::OutputImmediate(_))
-                    && matches!(attachment, Attachment::Repeat(_))))
+                    && matches!(attachment, Attachment::Repeat(_)))
+                || inert_unencoded_read
+                || inert_return_write)
                 && !repeat_on_call_or_return;
             let result =
                 VerifiedProgram::new(program_with_attachment_candidate(primary, attachment));

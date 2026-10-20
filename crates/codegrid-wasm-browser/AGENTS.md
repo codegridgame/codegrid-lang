@@ -28,7 +28,7 @@ Expose the shared runtime contract to browser JavaScript through a thin browser-
 
 ## Contract
 
-- Expose Runtime API v5 with seed-only runtime configuration and generic
+- Expose Runtime API v6 with seed-only runtime configuration and generic
   `max_run_steps_per_call`, `max_total_steps_per_instance`, and
   `max_work_units_per_call` host limits. Do not expose game accounting, game
   counters, or thread-selection controls.

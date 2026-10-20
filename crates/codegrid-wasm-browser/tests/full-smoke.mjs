@@ -1,19 +1,19 @@
-export const RUNTIME_API_VERSION = 5;
+export const RUNTIME_API_VERSION = 6;
 
 export function runFullSmoke(BrowserRuntime, suite, baseline, assert, deepEqual) {
   assert(suite.schema_version === 1, "the shared Full fixture suite must use schema version 1");
   assert(Array.isArray(suite.cases) && suite.cases.length > 0, "Full fixtures must be available");
   assert(baseline?.schema === "codegrid.native-cli.full-run-baseline", "the generated Native CLI baseline must be available");
-  assert(baseline.schema_version === 1 && baseline.api_version === RUNTIME_API_VERSION, "the Native CLI baseline must target Runtime API v5");
+  assert(baseline.schema_version === 1 && baseline.api_version === RUNTIME_API_VERSION, "the Native CLI baseline must target Runtime API v6");
   assert(baseline.suite_id === suite.suite_id, "the Native CLI baseline must belong to this fixture suite");
   assert(baseline.max_work_units_per_call === "10000", "the baseline must use the shared deterministic work-unit ceiling");
   assert(Array.isArray(baseline.cases) && baseline.cases.length === suite.cases.length, "the Native CLI baseline must cover every Full fixture");
   deepEqual(baseline.cases.map(({ id }) => id), suite.cases.map(({ id }) => id), "Native CLI baseline fixture IDs");
 
   const runtime = createRuntime(BrowserRuntime);
-  assert(runtime.api_version() === RUNTIME_API_VERSION, "the adapter must expose Runtime API v5");
+  assert(runtime.api_version() === RUNTIME_API_VERSION, "the adapter must expose Runtime API v6");
 
-  for (const [atom, reason] of [[".3*", "ReadCode"], ["?0.3*", "ReadCode"], [".3x10", "2 through 9"], ["[0x3", "Function CALL"]]) {
+  for (const [atom, reason] of [[".3x10", "2 through 9"], ["[0x3", "Function CALL"]]) {
     const response = parseJson(runtime.compile(`~> ${atom} ;\n`), `${atom}: diagnostic`);
     const diagnostic = response.outcome.items.find((item) => item.code === "source.invalid_cell");
     assert(diagnostic && diagnostic.message.includes(`'${atom}'`) && diagnostic.message.includes(reason), `${atom}: identify the invalid atom and forbidden rule`);
@@ -53,7 +53,7 @@ export function runFullSmoke(BrowserRuntime, suite, baseline, assert, deepEqual)
       ? { kind: "yielded", reason: "step_slice_exhausted" }
       : expected.status === "work_limit_reached"
         ? { kind: "yielded", reason: "work_unit_budget_exhausted" }
-        : { kind: expected.status };
+        : { kind: expected.status === "runtime_error" ? "error" : expected.status };
     deepEqual(result.status, expectedStatus, `${id}: run status`);
     deepEqual(result.newly_emitted_output, expected.output, `${id}: newly emitted output`);
     assert(Array.isArray(result.events), `${id}: run returns structured events`);
@@ -246,7 +246,7 @@ function parseJson(value, operation) {
 }
 
 function assertSuccess(response, operation, assert) {
-  assert(response.api_version === RUNTIME_API_VERSION && !response.error, `${operation}: expected Runtime API v5 success`);
+  assert(response.api_version === RUNTIME_API_VERSION && !response.error, `${operation}: expected Runtime API v6 success`);
 }
 
 function scalarOrArray(actual, expected, assert, operation) {

@@ -15,7 +15,7 @@ pub use session::ServerAdapter;
 #[cfg(target_arch = "wasm32")]
 use std::{cell::RefCell, collections::BTreeMap};
 
-pub const SERVER_ABI_VERSION: u32 = 6;
+pub const SERVER_ABI_VERSION: u32 = 7;
 
 const MAX_REQUEST_BYTES: usize = 8 * 1024 * 1024;
 const MAX_RESPONSE_BYTES: usize = 8 * 1024 * 1024;
@@ -439,8 +439,8 @@ mod tests {
 
     fn operation(name: &str) -> Value {
         json!({
-            "abi_version": 6,
-            "api_version": 5,
+            "abi_version": 7,
+            "api_version": 6,
             "operation": name,
         })
     }
@@ -451,11 +451,11 @@ mod tests {
         assert_eq!(adapter.response_buffer_capacity(), 256);
         for request in [
             json!({}),
-            json!({"abi_version": 99, "api_version": 5, "operation": "check"}),
-            json!({"abi_version": 6, "api_version": u64::MAX, "operation": "check"}),
-            json!({"abi_version": 6, "api_version": 99, "operation": "check"}),
-            json!({"abi_version": 6, "api_version": 5}),
-            json!({"abi_version": 6, "api_version": 5, "operation": "initialize"}),
+            json!({"abi_version": 99, "api_version": 6, "operation": "check"}),
+            json!({"abi_version": 7, "api_version": u64::MAX, "operation": "check"}),
+            json!({"abi_version": 7, "api_version": 99, "operation": "check"}),
+            json!({"abi_version": 7, "api_version": 6}),
+            json!({"abi_version": 7, "api_version": 6, "operation": "initialize"}),
         ] {
             assert_control_response_fits(&mut adapter, request);
         }
@@ -586,7 +586,7 @@ mod tests {
         compile["source"] = json!(source);
         let compiled = dispatch(&mut adapter, compile);
         assert_eq!(compiled["status"], "compiled");
-        assert_eq!(compiled["view"]["ir_format_version"], 4);
+        assert_eq!(compiled["view"]["ir_format_version"], 5);
         let program = compiled["program"].as_str().unwrap().to_owned();
         let mut program_view_request = operation("program_view");
         program_view_request["program"] = json!(program.clone());
@@ -674,7 +674,7 @@ mod tests {
     }
 
     #[test]
-    fn runtime_api_v5_full_conformance_suite_matches_snapshot_and_result_fields() {
+    fn runtime_api_v6_full_conformance_suite_matches_snapshot_and_result_fields() {
         let suite: Value =
             serde_json::from_str(include_str!("../../../tests/fixtures/conformance-v1.json"))
                 .expect("shared Full conformance suite must be valid JSON");
@@ -694,13 +694,13 @@ mod tests {
             let run = &fixture["run"];
             let compiled = dispatch(
                 &mut adapter,
-                json!({"abi_version":6,"api_version":5,"operation":"compile","source":fixture["source"]}),
+                json!({"abi_version":7,"api_version":6,"operation":"compile","source":fixture["source"]}),
             );
             assert_eq!(compiled["status"], "compiled", "{id}: compile");
             let created = dispatch(
                 &mut adapter,
                 json!({
-                    "abi_version":6,"api_version":5,"operation":"create_instance",
+                    "abi_version":7,"api_version":6,"operation":"create_instance",
                     "program":compiled["program"],"input":run["input"],
                     "seed":run["seed"],
                     "initial_memory":run.get("initial_memory").cloned().unwrap_or_else(|| json!([])),
@@ -713,12 +713,15 @@ mod tests {
             let result = dispatch(
                 &mut adapter,
                 json!({
-                    "abi_version":6,"api_version":5,"operation":"run",
+                    "abi_version":7,"api_version":6,"operation":"run",
                     "instance":created["instance"],"max_steps":run["max_steps"],
                 }),
             );
             let expected = &fixture["expected"];
-            let expected_status = expected["status"].as_str().unwrap();
+            let expected_status = match expected["status"].as_str().unwrap() {
+                "runtime_error" => "error",
+                status => status,
+            };
             assert_eq!(result["status"], expected_status, "{id}: run status");
             assert_eq!(
                 result["snapshot"]["status"], expected["vm_status"],
@@ -795,11 +798,11 @@ mod tests {
 
             dispatch(
                 &mut adapter,
-                json!({"abi_version":6,"api_version":5,"operation":"release_instance","instance":created["instance"]}),
+                json!({"abi_version":7,"api_version":6,"operation":"release_instance","instance":created["instance"]}),
             );
             dispatch(
                 &mut adapter,
-                json!({"abi_version":6,"api_version":5,"operation":"release_program","program":compiled["program"]}),
+                json!({"abi_version":7,"api_version":6,"operation":"release_program","program":compiled["program"]}),
             );
         }
     }

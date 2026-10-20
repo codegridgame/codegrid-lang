@@ -2,7 +2,7 @@
 
 This log records language and VM decisions only. The current normative
 contracts are the [source specification](../spec/codegrid-source-spec.md),
-[VM specification](../spec/codegrid-vm-spec.md), and [Runtime API v5](runtime-api-spec.md).
+[VM specification](../spec/codegrid-vm-spec.md), and [Runtime API v6](runtime-api-spec.md).
 Historical host versions and behavior descriptions remain dated evidence; they
 do not replace current specifications. Game-only decisions and game-specific
 verification excerpts are archived in the sibling
@@ -12,7 +12,7 @@ verification excerpts are archived in the sibling
 
 - [`spec/codegrid-source-spec.md`](../spec/codegrid-source-spec.md) is the normative Full authority for source syntax and static acceptance. Source-language choices are resolved below, and the source/compiler plus IR implementation gates have focused conformance coverage.
 - [`spec/codegrid-vm-spec.md`](../spec/codegrid-vm-spec.md) is the Full execution authority. The choices in the table below resolve its former implementation gates; direct conformance coverage remains required.
-- [`runtime-api-spec.md`](runtime-api-spec.md) defines the normative host-neutral Full Runtime API v5 contract. Browser bindings and server ABI use separately versioned transport contracts.
+- [`runtime-api-spec.md`](runtime-api-spec.md) defines the normative host-neutral Full Runtime API v6 contract. Browser bindings and server ABI use separately versioned transport contracts.
 - Historical compiler, IR, and VM tests plus retained Full examples are evidence to review, not automatic replacements for normative rules.
 
 ## Stable error identifiers (2026-09-30)
@@ -66,7 +66,8 @@ are unchanged.
 
 | Topic | Decision | Evidence and implementation requirement |
 | --- | --- | --- |
-| Attachment compatibility | ReadCode and WriteCode are valid on every Primary with a normative Instruction Code. Repeat is valid on those Primary instructions except CALL and RETURN. Folded Block calls, Custom calls, Custom returns, and HALT are not encodable and accept no Attachment. | `compiles_every_resolved_attachment_pair_for_each_encodable_primary` covers compiler acceptance; `verifies_the_complete_full_primary_attachment_compatibility_matrix` covers the IR verifier; `rejects_invalid_attachment_placement_and_repeat_counts` covers detached, Entry, non-encodable, and invalid Repeat cases. The compiler and IR tests use the same `is_encodable()` rule and CALL/RETURN exclusion. |
+| Attachment compatibility | ReadCode is accepted on every valid Primary; on a Primary without an Instruction Code it is an inert, uncounted no-op. WriteCode is valid on every encodable Primary and is accepted inertly on RETURN. Repeat is valid on encodable Primaries except Function CALL and RETURN, and on immediate output. Folded Block calls are encodable and accept ReadCode, WriteCode, and Repeat. Custom calls, Custom returns, and HALT accept ReadCode only; immediate output accepts ReadCode and Repeat; RETURN accepts ReadCode and WriteCode but not Repeat. | The compiler and IR compatibility gates must cover encoded and unencoded Primaries, inert ReadCode/RETURN behavior, all Folded Block call suffixes, and existing immediate-output rules. |
+| Folded Block and RETURN Instruction Codes | Folded Block `$0`–`$9` encode as ASCII sums 84–93. RETURN `]` remains a source Primary but has no Instruction Code; code 93 now decodes as `$9`. | The model's complete Instruction Code round-trip test must prove unique codes, all ten Folded Block slot mappings, and the changed code-93 decode. |
 | Portable board geometry | Width and height are each in `1..=u32::MAX`; checked width × height is at most `u32::MAX` cells. The same source-level bound applies on native and `wasm32`; embedding hosts may impose lower resource ceilings. | `rejects_dimensions_and_total_cells_above_the_portable_source_limit` and `rejects_board_dimensions_and_cell_counts_above_portable_full_bounds` cover source compilation and decoded-IR verification with the shared portable limit. |
 | Size placement | A lexical-scope `@size` may occur between that scope's grid rows. It applies to the whole scope and does not terminate or split the row sequence. Grid rows still must remain contiguous apart from size directives/comments and must precede nested structural definitions. | `size_between_rows_applies_to_the_complete_lexical_scope` verifies rows on both sides of `@size` form one board and that the declared size applies to the whole scope. |
 | Implicit Main with Folded Blocks | An implicit Main may define local `@M<n>` or its equivalent `@main.M<n>` after its grid begins. It may not define Functions or Customs. The first non-size structural definition ends the top-level Main row sequence; later top-level rows are invalid. | `compiles_implicit_main_with_only_board_local_folded_blocks`, `implicit_main_accepts_qualified_folded_blocks_after_its_grid`, and `implicit_main_requires_an_explicit_block_when_function_or_custom_is_defined` cover the accepted relative/qualified forms and rejection boundary. |
@@ -78,7 +79,9 @@ are unchanged.
 | --- | --- | --- |
 | CustomReturn completion | `#]` terminates only the executing Custom internal thread. A Custom invocation returns normally after every internal Entry thread has terminated through `#]`; other threads continue on later aligned internal steps. A same-step Custom Halt takes precedence over normal return, and any runtime error takes precedence over Halt. | Direct Full tests `custom_invocation_waits_for_returns_from_every_internal_thread` and `custom_threads_returning_on_the_same_step_complete_together` cover staggered and simultaneous returns. `custom_halt_takes_priority_over_same_step_custom_return`, `custom_internal_error_takes_priority_over_a_same_step_halt_request`, and `work_limit_covers_nested_custom_dispatch_and_rolls_back_the_committed_steps` cover priority and the limit. Covered by active VM tests. |
 | CALL attachments | A CALL's ReadCode or WriteCode Attachment is deferred until the caller's AfterCall transition, after the callee returns successfully. It executes once against the CALL site's transition-start mutable Primary, then the caller advances. It does not execute if the call halts, errors, or otherwise fails before returning. | `calls_consume_a_step_and_return_uses_a_separate_resume_step` and `call_write_code_runs_after_return_using_the_callees_instruction_stack` cover the two attachment types; `recursive_callee_aftercall_uses_the_current_mutable_call_site` observes consecutive recursive AfterCall writes against the updated CALL cell; `deferred_call_attachments_do_not_run_when_the_callee_halts_or_errors` checks both attachment types against halt and error exits. Covered by active VM tests. |
-| RETURN attachments | ReadCode and WriteCode attached to RETURN are accepted by the source/IR compatibility matrix but have no runtime effect and contribute no attachment operation metric. RETURN itself still executes and is counted normally. | The CALL timing test observes inert RETURN ReadCode; `write_code_attached_to_return_is_inert` asserts the Primary, Instruction Stack, operation count, and Instruction Variety for RETURN WriteCode. Covered by active VM tests. |
+| Folded Block invocation Attachments and Repeat | Invocation-site ReadCode/WriteCode runs once on successful FoldResume against the call site's transition-start mutable Primary; Halt/error skips it. Repeat reexecutes the entire invocation, with each later pass starting at internal (0,0) facing Right and evaluating its first internal cell in the FoldResume dispatch. The call-site prefix is reevaluated before each later pass; a false result cancels remaining passes and moves from the call site. | Add direct Full tests for deferred suffix timing and site mutation, skipped effects on Halt/error, whole-invocation Repeat with prefix rechecks, and metrics. |
+| Dynamic Folded Block reference | Static `$n` references must resolve to a Folded Block on the owning Board. A dynamically installed `$n` whose local definition is missing raises `FoldedBlockWithoutDefinition` rather than an internal VM fault. | Error identity 3011 is registered; direct VM coverage must assert its structured runtime context and rollback. |
+| RETURN attachments | ReadCode and WriteCode attached to RETURN are accepted by the source/IR compatibility matrix but have no runtime effect and contribute no attachment operation metric. RETURN itself still executes and is counted normally. | `read_code_attached_to_return_is_an_uncounted_no_op` and `write_code_attached_to_return_is_inert` assert that RETURN retains its stack and cell state and contributes no Attachment operation. The same ReadCode no-op rule applies to every other unencoded Primary. |
 | ReadCode of Empty | Preserve the defensive result that an Empty transition-start Primary would push the EMPTY Instruction Stack item (Instruction Code 32). This state is unreachable in verified IR: each cell has one fixed Attachment, attachments require an initial Primary, and WriteCode changes only the Primary while retaining its Attachment. | `validate_cell` enforces the initial structure, and the VM writes only the Primary field. Active tests cover ReadCode of an executable Primary, WriteCode clearing while retaining its Attachment, and DECODE/ENCODE of Code 32. The impossible post-mutation ReadCode case remains intentionally excluded; VM spec §17 records the reachable acceptance gates. |
 | Empty POPADD and NAND | Each is a counted no-op when the executing thread's Data Stack is empty: preserve the selected register and stack, then perform ordinary movement. | `empty_popadd_and_nand_are_counted_noops` directly asserts preserved register/stack, each instruction's movement, operation count, and variety; nonempty behavior is covered by `nonempty_popadd_updates_register_and_consumes_one_stack_value` and `nand_complements_the_bitwise_and_of_register_and_stack_values`. Covered by active VM tests. |
 | Empty Custom READ | Preserve the selected Custom register and set the instruction's encoded direction, as outer READ does when its input source is exhausted. The empty caller stack causes no successful caller-stack read, register write, or read conflict. | `empty_custom_read_preserves_register_and_turns_before_later_output` checks preserved value, direction, and movement; `exhausted_custom_read_can_coexist_with_one_caller_stack_output` and `custom-empty-concurrent-reads-coexist-with-output` cover coexistence. Nonempty reads and conflict cases have separate direct tests. Covered by active VM tests. |
@@ -94,15 +97,15 @@ The local native CLI contract is specified in [`docs/cli.md`](cli.md). Its comma
 | --- | --- | --- |
 | Commands and bounds | Keep `check <program.cg>` and `run <program.cg>`. `run` requires `--seed`, `--max-steps`, and `--max-work-units`; both limits are positive `u64` values. Input is optional and comes from exactly one of `--input` or `--input-file`; initial Outer memory is optional via `--initial-memory-file`. | Current command and bound names are specified in [`docs/cli.md`](cli.md); focused argument and shared Full fixture checks cover the language CLI. Former game execution quotas are in the Game Runtime history archive. |
 | Input representation | Inline input is a comma-separated byte list; file input is a JSON byte array. Initial memory is a JSON array of unique `{address, value}` entries; addresses are canonical signed decimal strings and values are bytes. Zero-valued initial entries are accepted and normalized away. | Implemented and covered for both input forms, malformed values, duplicate addresses, empty input, wide addresses, and memory normalization. |
-| Run result | Use `schema: "codegrid.cli.run-result"`, `schema_version: 1`, with distinct `source_error`, `halted`, `runtime_error`, `yielded`, and `vm_fault` outcomes, complete Full snapshots, committed events/output, and the effective configuration. | Implemented with full snapshots, events, metrics, errors, yields, and deterministic JSON checks; this schema remains independent from the current Runtime API v5 and adapter wire schemas. |
+| Run result | Use `schema: "codegrid.cli.run-result"`, `schema_version: 1`, with distinct `source_error`, `halted`, `runtime_error`, `yielded`, and `vm_fault` outcomes, complete Full snapshots, committed events/output, and the effective configuration. | Implemented with full snapshots, events, metrics, errors, yields, and deterministic JSON checks; this schema remains independent from the current Runtime API v6 and adapter wire schemas. |
 | Wide integers and ordering | Encode every `u64`, arbitrary-precision signed integer, and UTF-8 source byte offset as a canonical decimal string. Keep bytes and bounded values as exact JSON numbers. Serialize identity collections in canonical VM order. | Implemented and covered by wide seed/address and shared Full conformance checks. |
 | Process behavior | `check` uses human-readable output. `run` emits one complete JSON result on stdout whenever source reaches the compiler; human diagnostics go to stderr. Exit codes are fixed: 0 success/halt/help, 2 invalid arguments or host data, 3 I/O or source decoding, 4 source rejection, 5 VM runtime error, 6 step-limit yield, 7 work-unit yield, and 8 VM fault. | Implemented and exercised by focused CLI tests; step/work yields and VM faults remain distinct from normal halt and runtime errors. |
 
-## Historical server Runtime API adapter contract (2026-09-30; superseded by Runtime API v5 / Server ABI v6)
+## Historical server Runtime API adapter contract (2026-09-30; superseded by Runtime API v6 / Server ABI v7)
 
 The following records the earlier v3/v4 adapter decision and its verification.
-The current host-neutral contract is [Runtime API v5](runtime-api-spec.md);
-the current server transport uses ABI v6.
+The current host-neutral contract is [Runtime API v6](runtime-api-spec.md);
+the current server transport uses ABI v7.
 
 The no-import server adapter uses its own Server ABI v4 over host-neutral
 Runtime API v3. ABI v3's reduced request and snapshot fields are incompatible
@@ -162,8 +165,9 @@ the JSON registry.
 
 The user explicitly approves .0 through .9 as non-encodable Primaries that
 output raw byte values 0 through 9 without changing registers or the register
-pointer. They have no Instruction Codes and accept no Attachments, including
-ReadCode, WriteCode, and Repeat. Ordinary . retains its existing behavior.
+pointer. They have no Instruction Codes. The later 2026-10-20 rule accepts
+ReadCode on every no-code Primary as an inert, uncounted no-op, superseding
+this prohibition for ReadCode only. Ordinary . retains its existing behavior.
 Immediate output uses ordinary output movement, step/work accounting,
 transactional effects, concurrent conflicts, and Custom caller-stack routing.
 All forms share OUTPUT permissions and the Output metric kind; immediate
@@ -235,6 +239,11 @@ create executable Instruction Code collisions. The proposed encoded subset,
 including CMP 124 and RandomDirection 126, is unique. No collision-driven token
 changes or expansion of encoding eligibility are required.
 
+The 2026-10-20 user decision supersedes that follow-up for FoldedBlock calls:
+`$0` through `$9` are encodable as 84 through 93, and RETURN `]` loses code 93
+while retaining its source and execution behavior. Custom calls, Custom
+returns, immediate output, and HALT remain unencoded.
+
 ### Final approval of execution and migration rules
 
 The user approves all remaining design choices in the execution manual:
@@ -244,7 +253,9 @@ The user approves all remaining design choices in the execution manual:
   internal Custom threads. It supports ReadCode, WriteCode, and Repeat and counts
   one CMP runtime kind.
 - A prefix reads the selected register from the context step-start snapshot.
-  CALL checks only before invocation; AfterCall and FoldResume do not recheck.
+  CALL checks only before invocation; AfterCall and ordinary/final FoldResume
+  do not recheck. A FoldResume that begins a later Repeat pass for a Folded
+  Block call rechecks that call site's prefix.
 - WriteCode changes only Primary and preserves both prefix and suffix. ReadCode
   reads only Primary. Cleared cells still evaluate their fixed prefix before
   deciding whether to execute the retained suffix.
@@ -254,7 +265,9 @@ The user approves all remaining design choices in the execution manual:
   a new format version. RandomDirection moves from code 63 to 126 and CMP uses
   124; 63 and removed IfZero codes 95, 97, 129, and 153 no longer decode. Other
   retained encodings remain unchanged, and existing non-encodable forms remain
-  excluded. Existing invalid-byte DECODE behavior remains a counted no-op.
+  excluded under that decision. The later 2026-10-20 Folded Block encoding
+  decision supersedes the FoldedBlock exclusion. Existing invalid-byte DECODE
+  behavior remains a counted no-op.
 
 This approval resolved the preceding design entries. At that time, implementation,
 normative specification migration, and host execution parity remained future
@@ -285,9 +298,10 @@ The user explicitly permits `.0` through `.9` with Repeat suffixes `x2` through
 suffix prohibition for Repeat only. Each repetition executes on its own committed step,
 uses ordinary output costs, conflicts and rollback, and routes Custom output
 to the caller stack. Registers and their pointer are preserved; movement occurs
-after the last repetition. ReadCode and WriteCode remain invalid because
-immediate outputs have no Instruction Code. Encoding, IR format and host API
-versions are unchanged. Rust compiler/IR/VM and actual-host fixtures establish
+after the last repetition. WriteCode remains invalid because immediate outputs
+have no Instruction Code. The later 2026-10-20 rule accepts ReadCode there as
+an inert no-op. Encoding, IR format and host API versions were unchanged by
+this earlier decision. Rust compiler/IR/VM and actual-host fixtures establish
 acceptance and execution; downstream consumers use rebuilt shared WASM.
 
 ## 2026-10-07: Specific invalid-cell diagnostics
@@ -452,6 +466,35 @@ The obsolete `source.fold_attachment` diagnostic and its presentation catalog
 entry are removed, rather than reserved, under the unpublished-release policy.
 Folded and ordinary cells use the same IR Attachment compatibility validation.
 
-This decision applies to cells inside a Folded Block definition. The outer
-`$0`–`$9` invocation remains non-encodable and cannot carry a suffix Attachment;
-for example, `$0x3`, `$0*`, and `$0=` remain invalid source.
+At the time of this decision, it applied to cells inside a Folded Block
+definition; the outer invocation was still unencoded. The following user
+decision extends suffix Attachments to Folded Block invocation sites.
+
+## Folded Block invocation encoding and Attachments (2026-10-20)
+
+The user approves Instruction Codes 84 through 93 for `$0` through `$9`,
+respectively, following the ASCII-sum rule. Code 93 is removed from RETURN `]`;
+the token remains a valid Function RETURN but is not representable on the
+Instruction Stack. Since Folded Block calls are now encodable, their call-site
+cells accept ReadCode, WriteCode, and Repeat under the ordinary compatibility
+matrix.
+
+Call-site ReadCode and WriteCode are deferred until a successful FoldResume,
+run once against the call site's transition-start mutable Primary, then the
+thread advances from the call site in its saved direction. Halt or a runtime
+error before FoldResume skips the deferred Attachment. `Repeat(N)` repeats the
+whole Folded Block invocation. Each later pass starts at internal (0,0) facing
+Right and executes its first internal cell in the FoldResume dispatch. The
+call-site prefix is rechecked before each later pass; a false result cancels
+the remaining passes and advances once from the call site. A dynamically
+installed call to an undefined local Folded Block raises the structured
+`FoldedBlockWithoutDefinition` runtime error.
+
+ReadCode is accepted on every valid Primary. If the Primary has no Instruction
+Code, it is an inert, uncounted no-op. This includes `.0`–`.9`, Custom calls,
+CustomReturn, HALT, and RETURN. The prior RETURN ReadCode/WriteCode inert rule
+continues to apply; no-code forms do not gain WriteCode or Repeat eligibility.
+The executable IR format advances from 4 to 5 for the changed Instruction
+Code and Attachment contract; Runtime API advances from 5 to 6 and server ABI
+from 6 to 7 for invocation-repeat progress. Earlier formats are rejected under
+the pre-publication policy.

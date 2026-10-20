@@ -16,7 +16,7 @@ keep raw request/response error identities and details independent of locale.
 
 The `json` module owns exact transport-neutral Full projections shared by browser
 and server hosts. It serializes read-only views and never performs VM transitions.
-Runtime API v5 exposes committed-step counts, attempted-transition identity,
+Runtime API v6 exposes committed-step counts, attempted-transition identity,
 and generic work-unit accounting, without cumulative resource statistics.
 Candidate-local Custom dispatch counts remain available only through the Rust
 VM's prepared-step report and do not belong in Runtime API response snapshots.

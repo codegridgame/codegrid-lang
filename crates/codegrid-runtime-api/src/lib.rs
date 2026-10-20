@@ -20,9 +20,9 @@ pub use codegrid_model::{
 };
 pub use codegrid_vm::{
     CallFrameSnapshot, Coordinate, ExecutionScope, InstructionKind, MemoryAddress,
-    MemoryLocationId, MemorySpaceId, MetricCounterOverflow, Page, RunOutcome, RuntimeError,
-    RuntimeErrorKind, RuntimeMetricSummary, RuntimeMetrics, StaticCellId, ThreadPhaseSnapshot,
-    VmEvent, VmFault, VmStatus,
+    MemoryLocationId, MemorySpaceId, MetricCounterOverflow, Page, RepeatProgress, RunOutcome,
+    RuntimeError, RuntimeErrorKind, RuntimeMetricSummary, RuntimeMetrics, StaticCellId,
+    ThreadPhaseSnapshot, VmEvent, VmFault, VmStatus,
 };
 use codegrid_vm::{
     RunResult as VmRunResult, StepResult as VmStepResult, ThreadSnapshotView, Vm, VmConfig,
@@ -30,7 +30,7 @@ use codegrid_vm::{
 };
 
 /// Version of the host-neutral operation and request/response contract.
-pub const RUNTIME_API_VERSION: u32 = 5;
+pub const RUNTIME_API_VERSION: u32 = 6;
 
 /// Operational safeguards supplied by the embedding host.
 ///

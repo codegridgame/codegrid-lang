@@ -80,4 +80,4 @@ creation.
 | 8 | VM fault. |
 
 CLI run-result schema 1 and debug protocol 2 are independent of the Runtime API
-v5 and Server ABI v6 transport contracts.
+v6 and Server ABI v7 transport contracts.

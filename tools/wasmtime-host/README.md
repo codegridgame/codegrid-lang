@@ -1,8 +1,8 @@
 # CodeGrid Wasmtime Host Harness
 
 This standalone Rust tool embeds the no-import `wasm32-unknown-unknown`
-`codegrid-wasm-server` artifact in Wasmtime 49.0.1. It verifies Server ABI v6,
-Runtime API v5, the configured linear-memory maximum, per-store memory and Wasm
+`codegrid-wasm-server` artifact in Wasmtime 49.0.1. It verifies Server ABI v7,
+Runtime API v6, the configured linear-memory maximum, per-store memory and Wasm
 stack limits, and all shared Full language conformance fixtures. For each case
 it invokes the Native CLI as an oracle and compares the complete observable run
 projection: status, ordered events, newly emitted output, and the full snapshot

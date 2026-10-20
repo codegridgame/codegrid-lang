@@ -73,10 +73,11 @@ Generated from [codegrid-error-codes.json](codegrid-error-codes.json). Numbers a
 | `3006` | vm | `ConcurrentOutputConflict` | Multiple Outer outputs conflict in one transition. |
 | `3007` | vm | `ConcurrentWriteConflict` | Multiple writes target the same scoped register, including equal values. |
 | `3010` | vm | `ReturnWithoutCall` | RETURN executes without a caller frame. |
+| `3011` | vm | `FoldedBlockWithoutDefinition` | A dynamically installed Folded Block call executes without a definition on its owning board. |
 | `3100` | fault | `metric_counter_overflow` | A normative metric counter cannot represent the attempted increment. |
 | `3101` | fault | `committed_steps_overflow` | The committed-step counter cannot represent another step. |
 | `3102` | fault | `internal_invariant_violation` | A VM internal invariant fails. |
-| `4000` | api | `unsupported_version` | Request Runtime API version differs from 5. |
+| `4000` | api | `unsupported_version` | Request Runtime API version differs from 6. |
 | `4001` | api | `source_limit_exceeded` | Source UTF-8 bytes exceed the configured maximum. |
 | `4002` | api | `program_limit_reached` | The runtime compiled-program registry is full. |
 | `4003` | api | `instance_limit_reached` | The runtime instance registry is full. |
@@ -160,7 +161,7 @@ Generated from [codegrid-error-codes.json](codegrid-error-codes.json). Numbers a
 | `7504` | server | `invalid_decimal_integer` | A required u64 string is noncanonical or out of range. |
 | `7505` | server | `invalid_memory_address` | Initial-memory address spelling is invalid. |
 | `7506` | server | `invalid_request_field` | Required request field is missing or has the wrong type. |
-| `7507` | server | `unsupported_api_version` | Request Runtime API version differs from 5. |
+| `7507` | server | `unsupported_api_version` | Request Runtime API version differs from 6. |
 | `7508` | server | `source_payload_limit_exceeded` | Source bytes exceed the runtime source ceiling. |
 | `7509` | server | `input_payload_limit_exceeded` | Input bytes exceed the configured ceiling. |
 | `7510` | server | `vm_initialization_error` | VM initialization fails (server alias of vm_initialization_failed). |

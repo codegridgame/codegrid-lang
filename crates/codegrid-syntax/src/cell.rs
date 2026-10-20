@@ -91,14 +91,21 @@ fn parse_attached_primary(token: &str) -> Result<CellToken, CellTokenError> {
         };
         let immediate_repeat = matches!(primary, PrimaryInstruction::OutputImmediate(_))
             && matches!(attachment, AttachmentInstruction::Repeat(_));
-        if !primary.is_encodable() && !immediate_repeat {
+        let inert_read_code =
+            !primary.is_encodable() && matches!(attachment, AttachmentInstruction::ReadCode);
+        let inert_return_write_code = matches!(primary, PrimaryInstruction::Return)
+            && matches!(attachment, AttachmentInstruction::WriteCode);
+        if !primary.is_encodable()
+            && !immediate_repeat
+            && !inert_read_code
+            && !inert_return_write_code
+        {
             return Err(CellTokenError {
                 code: "source.invalid_cell",
                 message: match primary {
-                    PrimaryInstruction::OutputImmediate(_) => "Immediate output .0 through .9 allows only Repeat x2 through x9; ReadCode (*) and WriteCode (=) are not allowed.",
-                    PrimaryInstruction::Halt => "HALT (;) cannot carry a suffix Attachment.",
-                    PrimaryInstruction::FoldedBlock(_) => "A Folded Block call cannot carry a suffix Attachment.",
-                    PrimaryInstruction::Custom(_) | PrimaryInstruction::CustomReturn => "A Custom call or return cannot carry a suffix Attachment.",
+                    PrimaryInstruction::OutputImmediate(_) => "Immediate output .0 through .9 allows ReadCode (*) or Repeat x2 through x9; WriteCode (=) is not allowed.",
+                    PrimaryInstruction::Halt => "HALT (;) allows only inert ReadCode (*), not WriteCode (=) or Repeat.",
+                    PrimaryInstruction::Custom(_) | PrimaryInstruction::CustomReturn => "A Custom call or return allows only inert ReadCode (*).",
                     _ => "This Primary instruction cannot carry a suffix Attachment.",
                 },
             });
@@ -232,8 +239,8 @@ mod tests {
     fn rejects_detached_and_malformed_complete_tokens() {
         for token in [
             ",^", ",v", ",<", ",>", "?!,v", ",^x2", "*", "=", "x2", "#0x3", "#00", "++", "+*x3",
-            "+x2*", ";x2", ";*", ";=", "$0x2", "[0x3", "[0x2", "]x2", "#]x2", "~>x2", "~>*", "_x2",
-            "[[0", "+x0", "+x10",
+            "+x2*", ";x2", ";=", "[0x3", "[0x2", "]x2", "#]x2", "~>x2", "~>*", "_x2", "[[0", "+x0",
+            "+x10",
         ] {
             assert!(parse_cell_token(token).is_err(), "{token} must be rejected");
         }
@@ -266,11 +273,16 @@ mod tests {
     }
 
     #[test]
-    fn accepts_read_write_code_and_repeat_according_to_the_encoding_matrix() {
+    fn accepts_attachments_according_to_the_primary_compatibility_matrix() {
         for primary in PrimaryInstruction::source_forms() {
             for attachment in AttachmentInstruction::ALL {
                 let token = format!("{}{}", primary.token(), attachment.token());
+                let inert_read_code = matches!(attachment, AttachmentInstruction::ReadCode);
+                let inert_return_write_code = matches!(primary, PrimaryInstruction::Return)
+                    && matches!(attachment, AttachmentInstruction::WriteCode);
                 let compatible = (primary.is_encodable()
+                    || inert_read_code
+                    || inert_return_write_code
                     || (matches!(primary, PrimaryInstruction::OutputImmediate(_))
                         && matches!(attachment, AttachmentInstruction::Repeat(_))))
                     && (!matches!(attachment, AttachmentInstruction::Repeat(_))
@@ -318,7 +330,7 @@ mod tests {
         }
         for token in [
             "?", "#^", "#v", "#<", "#>", "?0", "?1", "?2", "?3+", "?0_", "?0~>", "?0?1+", "?0?0+",
-            "?0+*=", "?0.3*", "?0[0x2",
+            "?0+*=", "?0.3=", "?0[0x2",
         ] {
             assert!(parse_cell_token(token).is_err(), "{token}");
         }

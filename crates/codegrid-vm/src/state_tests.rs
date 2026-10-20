@@ -3,7 +3,8 @@ mod tests {
     use super::{Vm, VmStatus};
     use crate::{Coordinate, MemoryAddress, VmConfig};
     use codegrid_ir::{
-        Board, Cell, CustomDefinition, Program, ScopedProgram, VerifiedProgram, IR_FORMAT_VERSION,
+        Board, BoardId, Cell, CustomDefinition, Program, ScopedProgram, VerifiedProgram,
+        IR_FORMAT_VERSION,
     };
     use codegrid_model::{Direction};
     use std::collections::BTreeMap;
@@ -1956,6 +1957,7 @@ mod tests {
                 internal_position: Coordinate { x: 1, y: 0 },
                 internal_direction: Direction::Right,
                 saved_outer_direction: Direction::Right,
+                ..
             } if id == slot
         ));
         assert_eq!(vm.step().status, VmStatus::Running);
@@ -1964,6 +1966,7 @@ mod tests {
             vm.snapshot().threads[0].phase,
             super::ThreadPhaseSnapshot::FoldResume {
                 saved_outer_direction: Direction::Right,
+                ..
             }
         ));
         assert_eq!(vm.step().status, VmStatus::Running);
@@ -2025,6 +2028,7 @@ mod tests {
                 saved_outer_direction: Direction::Right,
                 total: 3,
                 completed: 1,
+                outer_repeat: None,
             }
         );
 
@@ -2112,6 +2116,491 @@ mod tests {
     }
 
     #[test]
+    fn outer_fold_repeat_repeats_the_whole_invocation_and_reports_completed_calls() {
+        use codegrid_ir::FoldedBlock;
+        use codegrid_model::{AttachmentInstruction, PrimaryInstruction};
+
+        let fold_id = codegrid_model::Slot::new(0).expect("zero is a valid Folded Block ID");
+        let program = VerifiedProgram::new(Program {
+            format_version: IR_FORMAT_VERSION,
+            outer: ScopedProgram {
+                main: Board {
+                    width: 3,
+                    height: 1,
+                    cells: vec![
+                        Cell::entry(Direction::Right),
+                        Cell::instruction(
+                            PrimaryInstruction::FoldedBlock(fold_id),
+                            Some(AttachmentInstruction::Repeat(3)),
+                        ),
+                        Cell::instruction(PrimaryInstruction::Halt, None),
+                    ],
+                    folded_blocks: BTreeMap::from([(
+                        fold_id,
+                        FoldedBlock {
+                            prefixes: Default::default(),
+                            attachments: Default::default(),
+                            cells: vec![Some(PrimaryInstruction::Add), None, None],
+                        },
+                    )]),
+                },
+                functions: BTreeMap::new(),
+            },
+            customs: BTreeMap::new(),
+        })
+        .expect("an encoded Folded Block may have an outer Repeat attachment");
+        let mut vm = Vm::new(program, [], config()).expect("one initial thread fits in u64");
+
+        assert_eq!(vm.step().status, VmStatus::Running);
+        assert_eq!(vm.step().status, VmStatus::Running);
+        assert_eq!(vm.snapshot().registers[0], 1);
+        assert!(matches!(
+            vm.snapshot().threads[0].phase,
+            super::ThreadPhaseSnapshot::Fold {
+                outer_repeat: Some(super::RepeatProgress {
+                    total: 3,
+                    completed: 0,
+                }),
+                ..
+            }
+        ));
+
+        assert_eq!(vm.step().status, VmStatus::Running);
+        assert_eq!(vm.step().status, VmStatus::Running);
+        assert!(matches!(
+            vm.snapshot().threads[0].phase,
+            super::ThreadPhaseSnapshot::FoldResume {
+                outer_repeat: Some(super::RepeatProgress {
+                    total: 3,
+                    completed: 1,
+                }),
+                ..
+            }
+        ));
+        assert_eq!(vm.step().status, VmStatus::Running);
+        assert_eq!(vm.snapshot().registers[0], 2);
+        assert!(matches!(
+            vm.snapshot().threads[0].phase,
+            super::ThreadPhaseSnapshot::Fold {
+                outer_repeat: Some(super::RepeatProgress {
+                    total: 3,
+                    completed: 1,
+                }),
+                ..
+            }
+        ));
+
+        for _ in 0..5 {
+            assert_eq!(vm.step().status, VmStatus::Running);
+        }
+        assert_eq!(vm.snapshot().registers[0], 3);
+        assert!(matches!(
+            vm.snapshot().threads[0].phase,
+            super::ThreadPhaseSnapshot::FoldResume {
+                outer_repeat: Some(super::RepeatProgress {
+                    total: 3,
+                    completed: 3,
+                }),
+                ..
+            }
+        ));
+        assert_eq!(vm.step().status, VmStatus::Running);
+        assert_eq!(vm.snapshot().threads[0].position.x, 2);
+        assert_eq!(vm.step().status, VmStatus::Halted);
+    }
+
+    #[test]
+    fn outer_fold_repeat_rechecks_the_call_site_prefix_before_each_invocation() {
+        use codegrid_ir::FoldedBlock;
+        use codegrid_model::{AttachmentInstruction, ConditionPrefix, PrimaryInstruction};
+
+        let fold_id = codegrid_model::Slot::new(0).expect("zero is a valid Folded Block ID");
+        let mut call = Cell::instruction(
+            PrimaryInstruction::FoldedBlock(fold_id),
+            Some(AttachmentInstruction::Repeat(3)),
+        );
+        call.prefix = Some(ConditionPrefix::Zero);
+        let program = VerifiedProgram::new(Program {
+            format_version: IR_FORMAT_VERSION,
+            outer: ScopedProgram {
+                main: Board {
+                    width: 3,
+                    height: 1,
+                    cells: vec![
+                        Cell::entry(Direction::Right),
+                        call,
+                        Cell::instruction(PrimaryInstruction::Halt, None),
+                    ],
+                    folded_blocks: BTreeMap::from([(
+                        fold_id,
+                        FoldedBlock {
+                            prefixes: Default::default(),
+                            attachments: Default::default(),
+                            cells: vec![Some(PrimaryInstruction::Add), None, None],
+                        },
+                    )]),
+                },
+                functions: BTreeMap::new(),
+            },
+            customs: BTreeMap::new(),
+        })
+        .expect("the call-site Prefix and Repeat are valid");
+        let mut vm = Vm::new(program, [], config()).expect("one initial thread fits in u64");
+
+        assert_eq!(vm.step().status, VmStatus::Running);
+        assert_eq!(vm.step().status, VmStatus::Running);
+        assert_eq!(vm.step().status, VmStatus::Running);
+        assert_eq!(vm.step().status, VmStatus::Running);
+        assert_eq!(vm.step().status, VmStatus::Running);
+        assert_eq!(vm.snapshot().registers[0], 1);
+        assert_eq!(vm.snapshot().threads[0].position.x, 2);
+        assert_eq!(vm.snapshot().threads[0].phase, super::ThreadPhaseSnapshot::Normal);
+    }
+
+    #[test]
+    fn outer_fold_attachments_run_on_resume_using_the_call_site_primary_at_step_start() {
+        use codegrid_ir::FoldedBlock;
+        use codegrid_model::{AttachmentInstruction, InstructionStackItem, PrimaryInstruction};
+
+        let fold_id = codegrid_model::Slot::new(0).expect("zero is a valid Folded Block ID");
+        let program = VerifiedProgram::new(Program {
+            format_version: IR_FORMAT_VERSION,
+            outer: ScopedProgram {
+                main: Board {
+                    width: 3,
+                    height: 1,
+                    cells: vec![
+                        Cell::entry(Direction::Right),
+                        Cell::instruction(
+                            PrimaryInstruction::FoldedBlock(fold_id),
+                            Some(AttachmentInstruction::ReadCode),
+                        ),
+                        Cell::instruction(PrimaryInstruction::Halt, None),
+                    ],
+                    folded_blocks: BTreeMap::from([(
+                        fold_id,
+                        FoldedBlock {
+                            prefixes: Default::default(),
+                            attachments: Default::default(),
+                            cells: vec![Some(PrimaryInstruction::Add), None, None],
+                        },
+                    )]),
+                },
+                functions: BTreeMap::new(),
+            },
+            customs: BTreeMap::new(),
+        })
+        .expect("a Folded Block call may use ReadCode");
+        let mut vm = Vm::new(program, [], config()).expect("one initial thread fits in u64");
+        for _ in 0..4 {
+            assert_eq!(vm.step().status, VmStatus::Running);
+        }
+        assert!(matches!(
+            vm.snapshot().threads[0].phase,
+            super::ThreadPhaseSnapshot::FoldResume { .. }
+        ));
+
+        vm.runtime_program.main.cells[1].primary = Some(PrimaryInstruction::Sub);
+        let pending = vm.prepare_step();
+        assert_eq!(
+            pending
+                .report()
+                .footprint
+                .operations
+                .get(&crate::InstructionKind::ReadCode),
+            Some(&1)
+        );
+        pending.commit();
+        assert_eq!(
+            vm.snapshot().threads[0].instruction_stack,
+            vec![InstructionStackItem::from_primary(PrimaryInstruction::Sub)
+                .expect("Sub has an instruction code")]
+        );
+    }
+
+    #[test]
+    fn outer_fold_write_code_runs_after_the_complete_invocation() {
+        use codegrid_ir::FoldedBlock;
+        use codegrid_model::{AttachmentInstruction, InstructionStackItem, PrimaryInstruction};
+
+        let fold_id = codegrid_model::Slot::new(0).expect("zero is a valid Folded Block ID");
+        let program = VerifiedProgram::new(Program {
+            format_version: IR_FORMAT_VERSION,
+            outer: ScopedProgram {
+                main: Board {
+                    width: 3,
+                    height: 1,
+                    cells: vec![
+                        Cell::entry(Direction::Right),
+                        Cell::instruction(
+                            PrimaryInstruction::FoldedBlock(fold_id),
+                            Some(AttachmentInstruction::WriteCode),
+                        ),
+                        Cell::instruction(PrimaryInstruction::Halt, None),
+                    ],
+                    folded_blocks: BTreeMap::from([(
+                        fold_id,
+                        FoldedBlock {
+                            prefixes: Default::default(),
+                            attachments: Default::default(),
+                            cells: vec![Some(PrimaryInstruction::Add), None, None],
+                        },
+                    )]),
+                },
+                functions: BTreeMap::new(),
+            },
+            customs: BTreeMap::new(),
+        })
+        .expect("a Folded Block call may use WriteCode");
+        let mut vm = Vm::new(program, [], config()).expect("one initial thread fits in u64");
+        for _ in 0..4 {
+            assert_eq!(vm.step().status, VmStatus::Running);
+        }
+        assert!(matches!(
+            vm.snapshot().threads[0].phase,
+            super::ThreadPhaseSnapshot::FoldResume { .. }
+        ));
+        let write = InstructionStackItem::from_primary(PrimaryInstruction::Sub)
+            .expect("Sub has an instruction code");
+        vm.threads[0].instruction_stack.push(write);
+
+        let pending = vm.prepare_step();
+        assert_eq!(
+            pending
+                .report()
+                .footprint
+                .operations
+                .get(&crate::InstructionKind::WriteCode),
+            Some(&1)
+        );
+        let result = pending.commit();
+        assert!(result.events.iter().any(|event| matches!(
+            event,
+            crate::VmEvent::CodeChanged {
+                cell,
+                old: Some(PrimaryInstruction::FoldedBlock(id)),
+                new: Some(PrimaryInstruction::Sub),
+                ..
+            } if cell.position.x == 1 && *id == fold_id
+        )));
+        assert_eq!(
+            vm.snapshot().runtime_program.main.cells[1].primary,
+            Some(PrimaryInstruction::Sub)
+        );
+        assert!(vm.snapshot().threads[0].instruction_stack.is_empty());
+    }
+
+    #[test]
+    fn outer_fold_suffix_is_skipped_when_the_invocation_halts() {
+        use codegrid_ir::FoldedBlock;
+        use codegrid_model::{AttachmentInstruction, PrimaryInstruction};
+
+        let fold_id = codegrid_model::Slot::new(0).expect("zero is a valid Folded Block ID");
+        let program = VerifiedProgram::new(Program {
+            format_version: IR_FORMAT_VERSION,
+            outer: ScopedProgram {
+                main: Board {
+                    width: 3,
+                    height: 1,
+                    cells: vec![
+                        Cell::entry(Direction::Right),
+                        Cell::instruction(
+                            PrimaryInstruction::FoldedBlock(fold_id),
+                            Some(AttachmentInstruction::ReadCode),
+                        ),
+                        Cell::instruction(PrimaryInstruction::Halt, None),
+                    ],
+                    folded_blocks: BTreeMap::from([(
+                        fold_id,
+                        FoldedBlock {
+                            prefixes: Default::default(),
+                            attachments: Default::default(),
+                            cells: vec![Some(PrimaryInstruction::Halt), None, None],
+                        },
+                    )]),
+                },
+                functions: BTreeMap::new(),
+            },
+            customs: BTreeMap::new(),
+        })
+        .expect("Halt may end a Folded Block invocation");
+        let mut vm = Vm::new(program, [], config()).expect("one initial thread fits in u64");
+        assert_eq!(vm.step().status, VmStatus::Running);
+
+        let pending = vm.prepare_step();
+        assert_eq!(
+            pending
+                .report()
+                .footprint
+                .operations
+                .get(&crate::InstructionKind::ReadCode),
+            None
+        );
+        assert_eq!(pending.commit().status, VmStatus::Halted);
+        assert!(vm.snapshot().threads[0].instruction_stack.is_empty());
+        assert!(matches!(
+            vm.snapshot().threads[0].phase,
+            super::ThreadPhaseSnapshot::Fold { .. }
+        ));
+    }
+
+    #[test]
+    fn read_code_on_an_unencodable_primary_is_a_true_no_op() {
+        use codegrid_ir::CustomDefinition;
+        use codegrid_model::{AttachmentInstruction, PrimaryInstruction};
+
+        let custom_id = codegrid_model::Slot::new(0).expect("zero is a valid Custom ID");
+        let program = VerifiedProgram::new(Program {
+            format_version: IR_FORMAT_VERSION,
+            outer: ScopedProgram {
+                main: Board {
+                    width: 3,
+                    height: 1,
+                    cells: vec![
+                        Cell::entry(Direction::Right),
+                        Cell::instruction(
+                            PrimaryInstruction::Custom(custom_id),
+                            Some(AttachmentInstruction::ReadCode),
+                        ),
+                        Cell::instruction(PrimaryInstruction::Halt, None),
+                    ],
+                    folded_blocks: BTreeMap::new(),
+                },
+                functions: BTreeMap::new(),
+            },
+            customs: BTreeMap::from([(
+                custom_id,
+                CustomDefinition {
+                    program: ScopedProgram {
+                        main: Board {
+                            width: 2,
+                            height: 1,
+                            cells: vec![
+                                Cell::entry(Direction::Right),
+                                Cell::instruction(
+                                    PrimaryInstruction::CustomReturn,
+                                    Some(AttachmentInstruction::ReadCode),
+                                ),
+                            ],
+                            folded_blocks: BTreeMap::new(),
+                        },
+                        functions: BTreeMap::new(),
+                    },
+                },
+            )]),
+        })
+        .expect("ReadCode on an unencodable Primary is a valid no-op placement");
+        let mut vm = Vm::new(program, [], config()).expect("one initial thread fits in u64");
+        assert_eq!(vm.step().status, VmStatus::Running);
+
+        let mut status = VmStatus::Running;
+        for _ in 0..8 {
+            let pending = vm.prepare_step();
+            assert_eq!(
+                pending
+                    .report()
+                    .footprint
+                    .operations
+                    .get(&crate::InstructionKind::ReadCode),
+                None
+            );
+            status = pending.commit().status;
+            if status == VmStatus::Halted {
+                break;
+            }
+        }
+        assert_eq!(status, VmStatus::Halted);
+        assert!(vm.snapshot().threads[0].instruction_stack.is_empty());
+    }
+
+    #[test]
+    fn read_code_on_immediate_output_preserves_output_without_counting_the_attachment() {
+        use codegrid_model::{AttachmentInstruction, PrimaryInstruction};
+
+        let program = verified_cells(
+            vec![
+                Cell::entry(Direction::Right),
+                Cell::instruction(
+                    PrimaryInstruction::OutputImmediate(
+                        codegrid_model::ImmediateDigit::new(7).unwrap(),
+                    ),
+                    Some(AttachmentInstruction::ReadCode),
+                ),
+                Cell::instruction(PrimaryInstruction::Halt, None),
+            ],
+            3,
+        );
+        let mut vm = Vm::new(program, [], config()).expect("one initial thread fits in u64");
+        assert_eq!(vm.step().status, VmStatus::Running);
+
+        let pending = vm.prepare_step();
+        assert_eq!(
+            pending
+                .report()
+                .footprint
+                .operations
+                .get(&crate::InstructionKind::ReadCode),
+            None
+        );
+        assert_eq!(pending.commit().newly_emitted_output, vec![7]);
+        assert_eq!(vm.snapshot().output, vec![7]);
+        assert!(vm.snapshot().threads[0].instruction_stack.is_empty());
+    }
+
+    #[test]
+    fn writing_a_folded_call_without_a_definition_reports_a_structured_runtime_error() {
+        use codegrid_model::{AttachmentInstruction, PrimaryInstruction};
+
+        let program = VerifiedProgram::new(Program {
+            format_version: IR_FORMAT_VERSION,
+            outer: ScopedProgram {
+                main: Board {
+                    width: 5,
+                    height: 1,
+                    cells: vec![
+                        Cell::entry(Direction::Right),
+                        Cell::instruction(PrimaryInstruction::Decode, None),
+                        Cell::instruction(
+                            PrimaryInstruction::Compare,
+                            Some(AttachmentInstruction::WriteCode),
+                        ),
+                        Cell::instruction(
+                            PrimaryInstruction::Direction(Direction::Left),
+                            None,
+                        ),
+                        Cell::empty(),
+                    ],
+                    folded_blocks: BTreeMap::new(),
+                },
+                functions: BTreeMap::new(),
+            },
+            customs: BTreeMap::new(),
+        })
+        .expect("the original program has no undefined Folded Block call");
+        let mut vm = Vm::new(program, [], config()).expect("one initial thread fits in u64");
+        vm.registers[0] = 84;
+
+        for _ in 0..4 {
+            assert_eq!(vm.step().status, VmStatus::Running);
+        }
+        let failed = vm.step();
+        assert_eq!(failed.status, VmStatus::Error);
+        assert_eq!(failed.fault, None);
+        let error = &failed.errors[0];
+        assert_eq!(error.code(), "FoldedBlockWithoutDefinition");
+        assert_eq!(error.error_number(), Some("3011"));
+        assert!(matches!(
+            error.kind(),
+            crate::RuntimeErrorKind::FoldedBlockWithoutDefinition {
+                thread_id: 0,
+                board: codegrid_ir::BoardId::Main,
+                position: Coordinate { x: 2, y: 0 },
+                fold_id,
+            } if fold_id.get() == 0
+        ));
+    }
+
+    #[test]
     fn forbidden_folded_write_keeps_code_stack_item_and_write_metric_unchanged() {
         use codegrid_ir::FoldedBlock;
         use codegrid_model::{AttachmentInstruction, InstructionStackItem, PrimaryInstruction};
@@ -2156,7 +2645,9 @@ mod tests {
             PrimaryInstruction::Direction(Direction::Right),
             PrimaryInstruction::RandomDirection,
             PrimaryInstruction::Call(fold_id),
-            PrimaryInstruction::Return,
+            PrimaryInstruction::FoldedBlock(
+                codegrid_model::Slot::new(1).expect("one is a valid Folded Block ID"),
+            ),
         ] {
             let forbidden = InstructionStackItem::from_primary(primary)
                 .expect("the forbidden Primary has an instruction code");
@@ -2342,6 +2833,7 @@ mod tests {
                 internal_position: Coordinate { x: 1, y: 0 },
                 internal_direction: Direction::Right,
                 saved_outer_direction: Direction::Right,
+                ..
             } if id == fold_id
         ));
 
@@ -2881,6 +3373,48 @@ mod tests {
             snapshot.runtime_program.functions[&function_id].cells[1].primary,
             Some(PrimaryInstruction::Return)
         );
+    }
+
+    #[test]
+    fn read_code_attached_to_return_is_an_uncounted_no_op() {
+        use codegrid_model::{AttachmentInstruction, PrimaryInstruction};
+
+        let function_id = codegrid_model::Slot::new(0).expect("zero is a valid Function ID");
+        let program = verified_with_function(
+            vec![
+                codegrid_ir::Cell::entry(Direction::Right),
+                codegrid_ir::Cell::instruction(PrimaryInstruction::Call(function_id), None),
+                codegrid_ir::Cell::instruction(PrimaryInstruction::Halt, None),
+            ],
+            vec![
+                codegrid_ir::Cell::entry(Direction::Right),
+                codegrid_ir::Cell::instruction(
+                    PrimaryInstruction::Return,
+                    Some(AttachmentInstruction::ReadCode),
+                ),
+            ],
+        );
+        let mut vm = Vm::new(program, [], config()).expect("one initial thread fits in u64");
+        assert_eq!(vm.step().status, VmStatus::Running);
+        assert_eq!(vm.step().status, VmStatus::Running);
+        assert_eq!(vm.step().status, VmStatus::Running);
+        assert_eq!(vm.snapshot().threads[0].board, BoardId::Function(function_id));
+
+        let pending = vm.prepare_step();
+        assert_eq!(
+            pending
+                .report()
+                .footprint
+                .operations
+                .get(&crate::InstructionKind::ReadCode),
+            None
+        );
+        pending.commit();
+        assert!(vm.snapshot().threads[0].instruction_stack.is_empty());
+        assert!(matches!(
+            vm.snapshot().threads[0].phase,
+            super::ThreadPhaseSnapshot::AfterCall
+        ));
     }
 
     #[test]
@@ -4913,39 +5447,26 @@ mod tests {
     }
 
     #[test]
-    fn return_without_call_is_reported_for_runtime_generated_main_return() {
-        use codegrid_model::{AttachmentInstruction, PrimaryInstruction};
+    fn return_without_call_is_reported_on_main() {
+        use codegrid_model::PrimaryInstruction;
 
         let program = verified_cells(
             vec![
                 Cell::entry(Direction::Right),
-                Cell::instruction(
-                    PrimaryInstruction::Add,
-                    Some(AttachmentInstruction::WriteCode),
-                ),
-                Cell::instruction(PrimaryInstruction::Direction(Direction::Left), None),
+                Cell::instruction(PrimaryInstruction::Add, None),
+                Cell::instruction(PrimaryInstruction::Halt, None),
             ],
             3,
         );
-        let encoded_return =
-            codegrid_model::InstructionStackItem::from_primary(PrimaryInstruction::Return)
-                .expect("RETURN has an instruction code");
-        let mut vm = Vm::new(program, [], config())
-            .expect("one initial thread fits in u64");
-        vm.threads[0].instruction_stack.push(encoded_return);
+        let mut vm = Vm::new(program, [], config()).expect("one initial thread fits in u64");
 
         assert_eq!(vm.step().status, VmStatus::Running);
-        assert_eq!(vm.step().status, VmStatus::Running);
-        assert_eq!(
-            vm.snapshot().runtime_program.main.cells[1].primary,
-            Some(PrimaryInstruction::Return)
-        );
-        assert_eq!(vm.step().status, VmStatus::Running);
+        vm.runtime_program.main.cells[1].primary = Some(PrimaryInstruction::Return);
         let failed = vm.step();
 
         assert_eq!(failed.status, VmStatus::Error);
-        assert_eq!(failed.attempted_transition_id, 4);
-        assert_eq!(failed.committed_steps, 3);
+        assert_eq!(failed.attempted_transition_id, 2);
+        assert_eq!(failed.committed_steps, 1);
         assert_eq!(failed.errors.len(), 1);
         assert_eq!(failed.errors[0].code(), "ReturnWithoutCall");
         assert!(matches!(
@@ -5301,12 +5822,14 @@ mod tests {
             vm.snapshot().threads[0].phase,
             super::ThreadPhaseSnapshot::FoldResume {
                 saved_outer_direction: Direction::Right,
+                ..
             }
         ));
         assert!(matches!(
             vm.snapshot().threads[1].phase,
             super::ThreadPhaseSnapshot::FoldResume {
                 saved_outer_direction: Direction::Left,
+                ..
             }
         ));
         assert_eq!(vm.step().status, VmStatus::Running);

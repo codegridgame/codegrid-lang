@@ -12,8 +12,8 @@ use codegrid_model::{
 use codegrid_syntax::{Diagnostic, LineIndex, Severity};
 use codegrid_vm::{
     ExecutionScope, MemoryAddress, MemoryLocationId, MemorySpaceId, MetricCounterOverflow,
-    RuntimeError, RuntimeErrorKind, RuntimeMetrics, StaticCellId, ThreadPhaseSnapshot,
-    ThreadSnapshot, Vm, VmConfig, VmEvent, VmFault, VmSnapshot, VmStatus,
+    RepeatProgress, RuntimeError, RuntimeErrorKind, RuntimeMetrics, StaticCellId,
+    ThreadPhaseSnapshot, ThreadSnapshot, Vm, VmConfig, VmEvent, VmFault, VmSnapshot, VmStatus,
 };
 use serde::Deserialize;
 use serde_json::{json, Value as JsonValue};
@@ -729,12 +729,14 @@ fn phase_json(phase: ThreadPhaseSnapshot) -> JsonValue {
             internal_position,
             internal_direction,
             saved_outer_direction,
+            outer_repeat,
         } => json!({
             "kind": "fold",
             "fold_id": fold_id.get(),
             "internal_position": coordinate_json(internal_position),
             "internal_direction": direction_name(internal_direction),
             "saved_outer_direction": direction_name(saved_outer_direction),
+            "outer_repeat": outer_repeat.map(repeat_progress_json),
         }),
         ThreadPhaseSnapshot::FoldRepeat {
             fold_id,
@@ -743,6 +745,7 @@ fn phase_json(phase: ThreadPhaseSnapshot) -> JsonValue {
             saved_outer_direction,
             total,
             completed,
+            outer_repeat,
         } => json!({
             "kind": "fold_repeat",
             "fold_id": fold_id.get(),
@@ -751,15 +754,22 @@ fn phase_json(phase: ThreadPhaseSnapshot) -> JsonValue {
             "saved_outer_direction": direction_name(saved_outer_direction),
             "total": total,
             "completed": completed,
+            "outer_repeat": outer_repeat.map(repeat_progress_json),
         }),
         ThreadPhaseSnapshot::FoldResume {
             saved_outer_direction,
+            outer_repeat,
         } => json!({
             "kind": "fold_resume",
             "saved_outer_direction": direction_name(saved_outer_direction),
+            "outer_repeat": outer_repeat.map(repeat_progress_json),
         }),
         ThreadPhaseSnapshot::Terminated => json!({"kind": "terminated"}),
     }
+}
+
+fn repeat_progress_json(progress: RepeatProgress) -> JsonValue {
+    json!({"total": progress.total, "completed": progress.completed})
 }
 
 fn metrics_json(metrics: &RuntimeMetrics) -> JsonValue {
@@ -920,6 +930,17 @@ fn runtime_error_details(kind: &RuntimeErrorKind) -> JsonValue {
             "thread_id": thread_id.to_string(),
             "board": board_id_json(*board),
             "position": coordinate_json(*position),
+        }),
+        RuntimeErrorKind::FoldedBlockWithoutDefinition {
+            thread_id,
+            board,
+            position,
+            fold_id,
+        } => json!({
+            "thread_id": thread_id.to_string(),
+            "board": board_id_json(*board),
+            "position": coordinate_json(*position),
+            "fold_id": fold_id.get(),
         }),
     }
 }

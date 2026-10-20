@@ -24,7 +24,7 @@ mod tests {
     }
 
     #[test]
-    fn immediate_output_accepts_only_repeat_at_ir_boundary() {
+    fn immediate_output_accepts_inert_read_code_and_repeat_at_ir_boundary() {
         let primary = PrimaryInstruction::from_token(".3").unwrap();
         for attachment in AttachmentInstruction::ALL {
             let result = VerifiedProgram::new(program(
@@ -36,7 +36,10 @@ mod tests {
             ));
             assert_eq!(
                 result.is_ok(),
-                matches!(attachment, AttachmentInstruction::Repeat(_)),
+                matches!(
+                    attachment,
+                    AttachmentInstruction::ReadCode | AttachmentInstruction::Repeat(_)
+                ),
                 "{attachment:?}"
             );
         }

@@ -1132,6 +1132,22 @@
         "ru": "Для RETURN нет кадра вызывающего."
       }
     },
+    "3011": {
+      "layer": "vm",
+      "code": "FoldedBlockWithoutDefinition",
+      "messages": {
+        "en": "The Folded Block reference has no definition on this board.",
+        "de": "Die Folded-Block-Referenz ist auf diesem Brett nicht definiert.",
+        "fr": "La référence au Folded Block n’est pas définie sur ce plateau.",
+        "es": "La referencia al Folded Block no está definida en este tablero.",
+        "zh-tw": "此棋盤上未定義此 Folded Block 參照。",
+        "ja": "このボード上に Folded Block の定義がありません。",
+        "zh-cn": "此棋盘上未定义该 Folded Block 引用。",
+        "ko": "이 보드에 Folded Block 참조의 정의가 없습니다.",
+        "pt-br": "A referência ao Folded Block não está definida neste tabuleiro.",
+        "ru": "Ссылка Folded Block не определена на этом поле."
+      }
+    },
     "3100": {
       "layer": "fault",
       "code": "metric_counter_overflow",

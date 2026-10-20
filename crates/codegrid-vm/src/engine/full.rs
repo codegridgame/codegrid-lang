@@ -245,6 +245,7 @@ pub(super) fn evaluate_thread(
             internal_position,
             internal_direction,
             saved_outer_direction,
+            outer_repeat,
         } => execute_fold_cell(
             thread,
             step,
@@ -263,6 +264,7 @@ pub(super) fn evaluate_thread(
             internal_direction,
             saved_outer_direction,
             None,
+            outer_repeat,
             budget,
         ),
         ExecutionPhase::FoldRepeat {
@@ -272,6 +274,7 @@ pub(super) fn evaluate_thread(
             saved_outer_direction,
             total,
             completed,
+            outer_repeat,
         } => execute_fold_cell(
             thread,
             step,
@@ -290,15 +293,29 @@ pub(super) fn evaluate_thread(
             internal_direction,
             saved_outer_direction,
             Some((total, completed)),
+            outer_repeat,
             budget,
         ),
         ExecutionPhase::FoldResume {
             saved_outer_direction,
-        } => {
-            thread.direction = saved_outer_direction;
-            thread.phase = ExecutionPhase::Normal;
-            move_normal_cell(thread, step, runtime, config, draft, mode);
-        }
+            outer_repeat,
+        } => execute_fold_resume(
+            thread,
+            step,
+            registers,
+            memory,
+            input,
+            caller_stack,
+            runtime,
+            verified_program,
+            config,
+            metrics,
+            draft,
+            mode,
+            saved_outer_direction,
+            outer_repeat,
+            budget,
+        ),
         ExecutionPhase::Terminated => unreachable!("terminated threads are skipped"),
     }
 }
@@ -366,6 +383,10 @@ fn execute_normal(
         metrics,
         draft,
         mode,
+        match cell.attachment {
+            Some(AttachmentInstruction::Repeat(total)) => Some((total, 1)),
+            _ => None,
+        },
         budget,
     );
     if draft.fault.is_some() || flow != Flow::Move {
@@ -451,6 +472,7 @@ fn execute_repeat(
         metrics,
         draft,
         mode,
+        Some((total, completed + 1)),
         budget,
     );
     if draft.fault.is_some() || flow != Flow::Move {
@@ -497,6 +519,80 @@ fn execute_after_call(
     move_normal_cell(thread, step, runtime, config, draft, mode);
 }
 
+fn execute_fold_resume(
+    thread: &mut ThreadState,
+    step: u64,
+    registers: &[Value; 10],
+    memory: &Memory,
+    input: &VecDeque<Value>,
+    caller_stack: Option<&[Value]>,
+    runtime: &ScopedProgram,
+    program: &VerifiedProgram,
+    config: VmConfig,
+    metrics: &mut crate::RuntimeMetrics,
+    draft: &mut StepDraft,
+    mode: ExecutionMode,
+    saved_outer_direction: Direction,
+    outer_repeat: Option<(u8, u8)>,
+    budget: &mut ExecutionWorkBudget,
+) {
+    thread.direction = saved_outer_direction;
+    if let Some((total, completed)) = outer_repeat {
+        if total == 0 || completed == 0 || completed > total {
+            draft.fault = Some(VmFault::InternalInvariantViolation);
+            return;
+        }
+        if completed < total {
+            execute_repeat(
+                thread,
+                step,
+                registers,
+                memory,
+                input,
+                caller_stack,
+                runtime,
+                program,
+                config,
+                metrics,
+                draft,
+                mode,
+                total,
+                completed,
+                budget,
+            );
+            return;
+        }
+    }
+
+    let Some(cell) = runtime_cell(runtime, thread.board, thread.position).cloned() else {
+        draft.fault = Some(VmFault::InternalInvariantViolation);
+        return;
+    };
+    if let Some(attachment @ (AttachmentInstruction::ReadCode | AttachmentInstruction::WriteCode)) =
+        cell.attachment
+    {
+        execute_attachment(
+            thread,
+            attachment,
+            cell_id(mode.code_grid, thread.board, None, thread.position),
+            cell.primary,
+            metrics,
+            draft,
+        );
+    } else if cell
+        .attachment
+        .is_some_and(|attachment| !matches!(attachment, AttachmentInstruction::Repeat(_)))
+    {
+        draft.fault = Some(VmFault::InternalInvariantViolation);
+        return;
+    }
+    if draft.fault.is_some() {
+        return;
+    }
+    thread.phase = ExecutionPhase::Normal;
+    move_normal_cell(thread, step, runtime, config, draft, mode);
+}
+
 fn execute_fold_cell(
     thread: &mut ThreadState,
     step: u64,
@@ -515,6 +611,7 @@ fn execute_fold_cell(
     direction: Direction,
     saved_outer_direction: Direction,
     repetition: Option<(u8, u8)>,
+    outer_repeat: Option<(u8, u8)>,
     budget: &mut ExecutionWorkBudget,
 ) {
     let Some(board) = runtime_board(runtime, thread.board) else {
@@ -565,6 +662,7 @@ fn execute_fold_cell(
             metrics,
             draft,
             mode,
+            None,
             budget,
         )
     } else {
@@ -583,6 +681,7 @@ fn execute_fold_cell(
                     saved_outer_direction,
                     total,
                     completed: 1,
+                    outer_repeat,
                 };
                 return;
             }
@@ -598,6 +697,7 @@ fn execute_fold_cell(
                         saved_outer_direction,
                         total,
                         completed,
+                        outer_repeat,
                     };
                     return;
                 }
@@ -623,6 +723,7 @@ fn execute_fold_cell(
         internal_position: position,
         internal_direction: thread.direction,
         saved_outer_direction,
+        outer_repeat,
     };
     let next_direction = thread.direction;
     match move_folded(position, next_direction, block.cells.len()) {
@@ -632,12 +733,14 @@ fn execute_fold_cell(
                 internal_position: next,
                 internal_direction: next_direction,
                 saved_outer_direction,
+                outer_repeat,
             };
         }
         Some(FoldStep::VerticalExit(_)) => {
             thread.direction = saved_outer_direction;
             thread.phase = ExecutionPhase::FoldResume {
                 saved_outer_direction,
+                outer_repeat,
             };
         }
         None => draft.fault = Some(VmFault::InternalInvariantViolation),
@@ -658,6 +761,7 @@ fn execute_primary(
     metrics: &mut crate::RuntimeMetrics,
     draft: &mut StepDraft,
     mode: ExecutionMode,
+    repetition: Option<(u8, u8)>,
     budget: &mut ExecutionWorkBudget,
 ) -> Flow {
     let value = registers[usize::from(thread.register_pointer)];
@@ -859,12 +963,29 @@ fn execute_primary(
             );
         }
         PrimaryInstruction::FoldedBlock(fold_id) => {
+            if !runtime_board(runtime, thread.board)
+                .is_some_and(|board| board.folded_blocks.contains_key(&fold_id))
+            {
+                draft.errors.push(RuntimeError::new(
+                    step,
+                    mode.scope,
+                    RuntimeErrorKind::FoldedBlockWithoutDefinition {
+                        thread_id: thread.id,
+                        board: thread.board,
+                        position: thread.position,
+                        fold_id,
+                    },
+                ));
+                return Flow::Stay;
+            }
+            let outer_repeat = repetition;
             let saved_outer_direction = thread.direction;
             thread.phase = ExecutionPhase::Fold {
                 fold_id,
                 internal_position: Coordinate { x: 0, y: 0 },
                 internal_direction: Direction::Right,
                 saved_outer_direction,
+                outer_repeat,
             };
             execute_fold_cell(
                 thread,
@@ -884,6 +1005,7 @@ fn execute_primary(
                 Direction::Right,
                 saved_outer_direction,
                 None,
+                outer_repeat,
                 budget,
             );
             return Flow::Stay;
@@ -922,6 +1044,17 @@ fn execute_attachment(
     metrics: &mut crate::RuntimeMetrics,
     draft: &mut StepDraft,
 ) {
+    let read_item = if attachment == AttachmentInstruction::ReadCode {
+        match step_start_primary {
+            Some(primary) => match InstructionStackItem::from_primary(primary) {
+                Some(item) => Some(item),
+                None => return,
+            },
+            None => Some(InstructionStackItem::Empty),
+        }
+    } else {
+        None
+    };
     if attachment == AttachmentInstruction::WriteCode {
         if let (Some(_), Some(item)) = (cell.folded_block, thread.instruction_stack.last()) {
             if item.primary().is_some_and(|primary| {
@@ -946,15 +1079,9 @@ fn execute_attachment(
     }
     match attachment {
         AttachmentInstruction::ReadCode => {
-            let item = match step_start_primary {
-                Some(primary) => match InstructionStackItem::from_primary(primary) {
-                    Some(item) => item,
-                    None => {
-                        draft.fault = Some(VmFault::InternalInvariantViolation);
-                        return;
-                    }
-                },
-                None => InstructionStackItem::Empty,
+            let Some(item) = read_item else {
+                draft.fault = Some(VmFault::InternalInvariantViolation);
+                return;
             };
             thread.instruction_stack.push(item);
         }
@@ -1293,6 +1420,7 @@ fn move_current(
         internal_position,
         internal_direction: _,
         saved_outer_direction,
+        outer_repeat,
     } = thread.phase
     {
         let Some(board) = runtime_board(runtime, thread.board) else {
@@ -1310,12 +1438,14 @@ fn move_current(
                     internal_position: next,
                     internal_direction: thread.direction,
                     saved_outer_direction,
+                    outer_repeat,
                 };
             }
             Some(FoldStep::VerticalExit(_)) => {
                 thread.direction = saved_outer_direction;
                 thread.phase = ExecutionPhase::FoldResume {
                     saved_outer_direction,
+                    outer_repeat,
                 };
             }
             None => draft.fault = Some(VmFault::InternalInvariantViolation),

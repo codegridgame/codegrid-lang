@@ -22,8 +22,9 @@ fn conditional_prefixes_preserve_references_and_fold_restrictions() {
 }
 
 #[test]
-fn immediate_outputs_allow_only_repeat_suffixes() {
+fn immediate_outputs_allow_read_code_or_repeat_suffixes() {
     compile("~> .0 .1 .2 .3 .4 .5 .6 .7 .8 .9 . ;\n").unwrap();
+    compile("~> .3* ;\n").expect("ReadCode on immediate output is inert");
     for digit in 0..10 {
         for count in 2..=9 {
             for prefix in ["", "?0", "?1", "?2"] {
@@ -37,7 +38,7 @@ fn immediate_outputs_allow_only_repeat_suffixes() {
         }
     }
     for atom in [
-        ".10", ".00", ".-1", ".９", ".3*", ".3=", ".3x1", ".3x10", ".3x3*", ".3x3x2",
+        ".10", ".00", ".-1", ".９", ".3=", ".3x1", ".3x10", ".3x3*", ".3x3x2",
     ] {
         let errors = compile(&format!("~> {atom} ;\n")).unwrap_err();
         assert!(
@@ -83,8 +84,8 @@ fn stable_diagnostic_codes_are_assigned_at_validation_origins() {
 #[test]
 fn invalid_cells_identify_the_atom_and_specific_rule_without_masking_prefix_errors() {
     for (atom, reason) in [
-        (".3*", "Immediate output .0 through .9 allows only Repeat"),
-        ("?0.3*", "Immediate output .0 through .9 allows only Repeat"),
+        (".3=", "Immediate output .0 through .9 allows ReadCode"),
+        ("?0.3=", "Immediate output .0 through .9 allows ReadCode"),
         (
             ".3x10",
             "Repeat count must be a single digit from 2 through 9",
@@ -809,18 +810,23 @@ fn compiles_call_read_and_write_code_attachments_from_source() {
 }
 
 #[test]
-fn compiles_every_resolved_attachment_pair_for_each_encodable_primary() {
-    // ReadCode and WriteCode apply to every encodable Primary; Repeat excludes Call and Return.
+fn compiles_every_resolved_primary_attachment_compatibility_pair() {
     for primary in PrimaryInstruction::source_forms() {
-        if !primary.is_encodable() {
-            continue;
-        }
         for attachment in AttachmentInstruction::ALL {
-            if matches!(attachment, AttachmentInstruction::Repeat(_))
-                && matches!(
-                    primary,
-                    PrimaryInstruction::Call(_) | PrimaryInstruction::Return
-                )
+            let inert_read_code = matches!(attachment, AttachmentInstruction::ReadCode);
+            let inert_return_write_code = matches!(primary, PrimaryInstruction::Return)
+                && matches!(attachment, AttachmentInstruction::WriteCode);
+            let immediate_repeat = matches!(primary, PrimaryInstruction::OutputImmediate(_))
+                && matches!(attachment, AttachmentInstruction::Repeat(_));
+            if !(primary.is_encodable()
+                || inert_read_code
+                || inert_return_write_code
+                || immediate_repeat)
+                || (matches!(attachment, AttachmentInstruction::Repeat(_))
+                    && matches!(
+                        primary,
+                        PrimaryInstruction::Call(_) | PrimaryInstruction::Return
+                    ))
             {
                 continue;
             }
@@ -1663,7 +1669,7 @@ fn rejects_the_required_source_validation_failures() {
         (
             "Attachment on HALT",
             "~> ;x2\n",
-            "HALT (;) cannot carry",
+            "HALT (;) allows only inert ReadCode",
             ";x2",
         ),
         (

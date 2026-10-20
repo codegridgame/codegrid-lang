@@ -10,7 +10,7 @@ use codegrid_model::{
     MAX_BOARD_DIMENSION,
 };
 
-pub const IR_FORMAT_VERSION: u32 = 4;
+pub const IR_FORMAT_VERSION: u32 = 5;
 
 #[derive(Clone, Copy, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
 pub enum CodeGridId {
@@ -528,7 +528,12 @@ fn validate_attachment(
     }
     let immediate_repeat = matches!(primary, PrimaryInstruction::OutputImmediate(_))
         && matches!(attachment, AttachmentInstruction::Repeat(_));
-    if !primary.is_encodable() && !immediate_repeat {
+    let inert_read_code =
+        !primary.is_encodable() && matches!(attachment, AttachmentInstruction::ReadCode);
+    let inert_return_write_code = matches!(primary, PrimaryInstruction::Return)
+        && matches!(attachment, AttachmentInstruction::WriteCode);
+    if !primary.is_encodable() && !immediate_repeat && !inert_read_code && !inert_return_write_code
+    {
         errors.push(error(
             path,
             "ir.attachment_primary",

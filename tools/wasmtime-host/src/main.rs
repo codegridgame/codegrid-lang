@@ -11,8 +11,8 @@ use wasmtime::{
 };
 
 const WASM_PAGE_BYTES: u64 = 65_536;
-const ABI_VERSION: u32 = 6;
-const API_VERSION: u32 = 5;
+const ABI_VERSION: u32 = 7;
+const API_VERSION: u32 = 6;
 const MAX_RESPONSE_BYTES: usize = 8 * 1024 * 1024;
 const DEFAULT_FUEL_PER_CALL: u64 = 1_000_000_000;
 const ABI_HELPER_FUEL: u64 = 1_000_000;
@@ -274,7 +274,7 @@ fn main() -> Result<()> {
     verify_low_fuel_discards_session(&engine, &module, memory_limit_bytes, loop_fixture)?;
 
     println!(
-        "PASS: Wasmtime 49.0.1 server ABI v6 / Runtime API v5, all {} Full fixtures with complete native CLI parity, step/work budget errors, memory/stack limits, and low-fuel session discard. Native full-result baseline: {}",
+        "PASS: Wasmtime 49.0.1 server ABI v7 / Runtime API v6, all {} Full fixtures with complete native CLI parity, step/work budget errors, memory/stack limits, and low-fuel session discard. Native full-result baseline: {}",
         cases.len(),
         baseline_path.display()
     );
@@ -491,10 +491,15 @@ fn compare_fixture_expectations(
         expected["process_exit_code"],
         native.exit_code
     );
+    let expected_status = match expected["status"].as_str() {
+        Some("runtime_error") => "error",
+        Some(status) => status,
+        None => bail!("fixture `{fixture_id}` is missing its expected run status"),
+    };
     ensure!(
-        server["status"] == expected["status"],
+        server["status"] == expected_status,
         "fixture `{fixture_id}` run status mismatch: expected {}, got {}",
-        expected["status"],
+        expected_status,
         server["status"]
     );
     ensure!(

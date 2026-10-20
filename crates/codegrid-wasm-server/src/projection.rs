@@ -1,7 +1,7 @@
 use codegrid_runtime_api::{
     BoardView, CallFrameSnapshot, CodeGridId, CodeGridView, Coordinate, Diagnostic, Direction,
-    ExecutionScope, MemoryAddress, MemoryLocationId, ProgramView, RunStatus, RuntimeError,
-    RuntimeErrorKind, RuntimeMetricSummary, RuntimeMetrics, RuntimeSnapshotView,
+    ExecutionScope, MemoryAddress, MemoryLocationId, ProgramView, RepeatProgress, RunStatus,
+    RuntimeError, RuntimeErrorKind, RuntimeMetricSummary, RuntimeMetrics, RuntimeSnapshotView,
     RuntimeThreadSnapshotView, Severity, StaticCellId, StepResponseView, ThreadPhaseSnapshot,
     VmEvent, VmFault, VmStatus, YieldReason,
 };
@@ -666,12 +666,14 @@ impl Serialize for ThreadPhaseProjection {
                 internal_position,
                 internal_direction,
                 saved_outer_direction,
+                outer_repeat,
             } => serialize_object!(serializer, {
                 "kind" => "fold",
                 "fold_id" => fold_id.get(),
                 "internal_position" => CoordinateProjection(internal_position),
                 "internal_direction" => DirectionName(internal_direction),
-                "saved_outer_direction" => DirectionName(saved_outer_direction)
+                "saved_outer_direction" => DirectionName(saved_outer_direction),
+                "outer_repeat" => RepeatProgressProjection(outer_repeat)
             }),
             Phase::FoldRepeat {
                 fold_id,
@@ -680,6 +682,7 @@ impl Serialize for ThreadPhaseProjection {
                 saved_outer_direction,
                 total,
                 completed,
+                outer_repeat,
             } => serialize_object!(serializer, {
                 "kind" => "fold_repeat",
                 "fold_id" => fold_id.get(),
@@ -687,13 +690,16 @@ impl Serialize for ThreadPhaseProjection {
                 "internal_direction" => DirectionName(internal_direction),
                 "saved_outer_direction" => DirectionName(saved_outer_direction),
                 "total" => total,
-                "completed" => completed
+                "completed" => completed,
+                "outer_repeat" => RepeatProgressProjection(outer_repeat)
             }),
             Phase::FoldResume {
                 saved_outer_direction,
+                outer_repeat,
             } => serialize_object!(serializer, {
                 "kind" => "fold_resume",
-                "saved_outer_direction" => DirectionName(saved_outer_direction)
+                "saved_outer_direction" => DirectionName(saved_outer_direction),
+                "outer_repeat" => RepeatProgressProjection(outer_repeat)
             }),
             Phase::Terminated => serialize_object!(serializer, { "kind" => "terminated" }),
         }
@@ -992,6 +998,34 @@ impl Serialize for RuntimeErrorDetailsProjection<'_> {
                 "board" => BoardName(*board),
                 "position" => CoordinateProjection(*position)
             }),
+            Kind::FoldedBlockWithoutDefinition {
+                thread_id,
+                board,
+                position,
+                fold_id,
+            } => serialize_object!(serializer, {
+                "thread_id" => DisplayValue(thread_id),
+                "board" => BoardName(*board),
+                "position" => CoordinateProjection(*position),
+                "fold_id" => fold_id.get()
+            }),
+        }
+    }
+}
+
+struct RepeatProgressProjection(Option<RepeatProgress>);
+
+impl Serialize for RepeatProgressProjection {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        match self.0 {
+            Some(progress) => serialize_object!(serializer, {
+                "total" => progress.total,
+                "completed" => progress.completed
+            }),
+            None => serializer.serialize_none(),
         }
     }
 }
@@ -1145,5 +1179,34 @@ impl<T: Display> Serialize for DisplayValue<T> {
         S: Serializer,
     {
         serializer.collect_str(&self.0)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::ThreadPhaseProjection;
+    use codegrid_runtime_api::{Direction, RepeatProgress, ThreadPhaseSnapshot};
+
+    #[test]
+    fn folded_phase_projection_serializes_outer_repeat_progress() {
+        let idle = serde_json::to_value(ThreadPhaseProjection(ThreadPhaseSnapshot::FoldResume {
+            saved_outer_direction: Direction::Right,
+            outer_repeat: None,
+        }))
+        .expect("fold phase must serialize");
+        assert_eq!(idle["outer_repeat"], serde_json::Value::Null);
+
+        let active = serde_json::to_value(ThreadPhaseProjection(ThreadPhaseSnapshot::FoldResume {
+            saved_outer_direction: Direction::Right,
+            outer_repeat: Some(RepeatProgress {
+                total: 4,
+                completed: 3,
+            }),
+        }))
+        .expect("outer repeat progress must serialize");
+        assert_eq!(
+            active["outer_repeat"],
+            serde_json::json!({"total": 4, "completed": 3})
+        );
     }
 }

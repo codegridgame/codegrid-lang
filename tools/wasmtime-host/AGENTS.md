@@ -3,7 +3,7 @@
 ## Responsibility
 
 This standalone tool embeds the built `codegrid-wasm-server` artifact in the
-official Wasmtime Rust runtime. It verifies Server ABI v6, Runtime API v5, the
+official Wasmtime Rust runtime. It verifies Server ABI v7, Runtime API v6, the
 no-import boundary, step/work-unit limits, and shared Full conformance fixtures.
 
 ## Dependencies and boundaries

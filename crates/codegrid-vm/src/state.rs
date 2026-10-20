@@ -312,11 +312,16 @@ impl ThreadSnapshotView<'_> {
                 internal_position,
                 internal_direction,
                 saved_outer_direction,
+                outer_repeat,
             } => ThreadPhaseSnapshot::Fold {
                 fold_id,
                 internal_position,
                 internal_direction,
                 saved_outer_direction,
+                outer_repeat: outer_repeat.map(|(total, invocation)| RepeatProgress {
+                    total,
+                    completed: invocation.saturating_sub(1),
+                }),
             },
             ExecutionPhase::FoldRepeat {
                 fold_id,
@@ -325,6 +330,7 @@ impl ThreadSnapshotView<'_> {
                 saved_outer_direction,
                 total,
                 completed,
+                outer_repeat,
             } => ThreadPhaseSnapshot::FoldRepeat {
                 fold_id,
                 internal_position,
@@ -332,11 +338,17 @@ impl ThreadSnapshotView<'_> {
                 saved_outer_direction,
                 total,
                 completed,
+                outer_repeat: outer_repeat.map(|(total, invocation)| RepeatProgress {
+                    total,
+                    completed: invocation.saturating_sub(1),
+                }),
             },
             ExecutionPhase::FoldResume {
                 saved_outer_direction,
+                outer_repeat,
             } => ThreadPhaseSnapshot::FoldResume {
                 saved_outer_direction,
+                outer_repeat: outer_repeat.map(RepeatProgress::from),
             },
             ExecutionPhase::Terminated => ThreadPhaseSnapshot::Terminated,
         }
@@ -394,6 +406,7 @@ pub enum ThreadPhaseSnapshot {
         internal_position: Coordinate,
         internal_direction: Direction,
         saved_outer_direction: Direction,
+        outer_repeat: Option<RepeatProgress>,
     },
     FoldRepeat {
         fold_id: codegrid_model::Slot,
@@ -402,11 +415,26 @@ pub enum ThreadPhaseSnapshot {
         saved_outer_direction: Direction,
         total: u8,
         completed: u8,
+        outer_repeat: Option<RepeatProgress>,
     },
     FoldResume {
         saved_outer_direction: Direction,
+        outer_repeat: Option<RepeatProgress>,
     },
     Terminated,
+}
+
+/// Progress for an outer Repeat attachment on a Folded Block call site.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub struct RepeatProgress {
+    pub total: u8,
+    pub completed: u8,
+}
+
+impl From<(u8, u8)> for RepeatProgress {
+    fn from((total, completed): (u8, u8)) -> Self {
+        Self { total, completed }
+    }
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -449,11 +477,16 @@ impl From<&ThreadState> for ThreadSnapshot {
                 internal_position,
                 internal_direction,
                 saved_outer_direction,
+                outer_repeat,
             } => ThreadPhaseSnapshot::Fold {
                 fold_id,
                 internal_position,
                 internal_direction,
                 saved_outer_direction,
+                outer_repeat: outer_repeat.map(|(total, invocation)| RepeatProgress {
+                    total,
+                    completed: invocation.saturating_sub(1),
+                }),
             },
             ExecutionPhase::FoldRepeat {
                 fold_id,
@@ -462,6 +495,7 @@ impl From<&ThreadState> for ThreadSnapshot {
                 saved_outer_direction,
                 total,
                 completed,
+                outer_repeat,
             } => ThreadPhaseSnapshot::FoldRepeat {
                 fold_id,
                 internal_position,
@@ -469,11 +503,17 @@ impl From<&ThreadState> for ThreadSnapshot {
                 saved_outer_direction,
                 total,
                 completed,
+                outer_repeat: outer_repeat.map(|(total, invocation)| RepeatProgress {
+                    total,
+                    completed: invocation.saturating_sub(1),
+                }),
             },
             ExecutionPhase::FoldResume {
                 saved_outer_direction,
+                outer_repeat,
             } => ThreadPhaseSnapshot::FoldResume {
                 saved_outer_direction,
+                outer_repeat: outer_repeat.map(RepeatProgress::from),
             },
             ExecutionPhase::Terminated => ThreadPhaseSnapshot::Terminated,
         };

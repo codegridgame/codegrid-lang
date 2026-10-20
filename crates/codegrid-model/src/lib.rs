@@ -352,8 +352,8 @@ impl PrimaryInstruction {
     pub const fn is_encodable(self) -> bool {
         !matches!(
             self,
-            Self::OutputImmediate(_)
-                | Self::FoldedBlock(_)
+            Self::Return
+                | Self::OutputImmediate(_)
                 | Self::Custom(_)
                 | Self::CustomReturn
                 | Self::Halt
@@ -381,7 +381,6 @@ impl PrimaryInstruction {
             Self::Decode => Some(38),
             Self::Encode => Some(37),
             Self::Call(slot) => Some(139 + slot.get()),
-            Self::Return => Some(93),
             Self::Neg => Some(69),
             Self::Nand => Some(74),
             Self::MemoryLoad => Some(76),
@@ -390,8 +389,9 @@ impl PrimaryInstruction {
             Self::MovePage(PageDirection::Decrement) => Some(81),
             Self::Shift(ShiftDirection::Left) => Some(96),
             Self::Shift(ShiftDirection::Right) => Some(98),
-            Self::OutputImmediate(_)
-            | Self::FoldedBlock(_)
+            Self::FoldedBlock(slot) => Some(84 + slot.get()),
+            Self::Return
+            | Self::OutputImmediate(_)
             | Self::Custom(_)
             | Self::CustomReturn
             | Self::Halt => None,
@@ -421,13 +421,13 @@ impl PrimaryInstruction {
             77 => Self::MemoryStore,
             79 => Self::MovePage(PageDirection::Increment),
             81 => Self::MovePage(PageDirection::Decrement),
-            93 => Self::Return,
             94 => Self::Direction(Direction::Up),
             96 => Self::Shift(ShiftDirection::Left),
             98 => Self::Shift(ShiftDirection::Right),
             118 => Self::Direction(Direction::Down),
             123 => Self::MoveRegisterPointer(PointerDirection::Left),
             125 => Self::MoveRegisterPointer(PointerDirection::Right),
+            84..=93 => Self::FoldedBlock(Slot::new(code - 84)?),
             139..=148 => Self::Call(Slot::new(code - 139)?),
             _ => return None,
         };
@@ -459,7 +459,7 @@ pub enum InstructionStackItem {
     Primary(EncodablePrimary),
 }
 
-/// A Primary value that has a valid v2 Instruction Code.
+/// A Primary value that has a normative Instruction Code.
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub struct EncodablePrimary {
     primary: PrimaryInstruction,
@@ -597,8 +597,9 @@ mod tests {
     #[test]
     fn instruction_stack_codes_round_trip() {
         let valid_codes = [
-            32, 33, 37, 38, 40, 41, 43, 44, 45, 46, 60, 62, 126, 124, 74, 76, 77, 79, 81, 93, 94,
-            96, 98, 118, 123, 125, 139, 140, 141, 142, 143, 144, 145, 146, 147, 148,
+            32, 33, 37, 38, 40, 41, 43, 44, 45, 46, 60, 62, 126, 124, 74, 76, 77, 79, 81, 84, 85,
+            86, 87, 88, 89, 90, 91, 92, 93, 94, 96, 98, 118, 123, 125, 139, 140, 141, 142, 143,
+            144, 145, 146, 147, 148,
         ];
 
         for code in valid_codes {
@@ -635,24 +636,49 @@ mod tests {
 
     #[test]
     fn decoder_rejects_attachment_prefix_and_structural_codes() {
-        for code in [35, 36, 42, 104, 106, 138, 162, 59, 61, 70, 91, 120] {
+        for code in [35, 36, 42, 104, 106, 138, 162, 59, 61, 70, 120] {
             assert_eq!(InstructionStackItem::from_code(code), None);
         }
         assert_eq!(PrimaryInstruction::from_instruction_code(32), None,);
     }
 
     #[test]
-    fn structural_primary_forms_are_not_encodable() {
+    fn folded_block_codes_are_ascii_sums_and_decode_to_their_slots() {
         for value in 0..Slot::COUNT as u8 {
             let slot = Slot::new(value).expect("value is within the slot range");
-            for primary in [
-                PrimaryInstruction::FoldedBlock(slot),
-                PrimaryInstruction::Custom(slot),
-            ] {
-                assert!(!primary.is_encodable(), "{}", primary.token());
-                assert_eq!(primary.instruction_code(), None, "{}", primary.token());
-                assert_eq!(InstructionStackItem::from_primary(primary), None);
-            }
+            let primary = PrimaryInstruction::FoldedBlock(slot);
+            let code = 84 + value;
+            assert!(primary.is_encodable(), "{}", primary.token());
+            assert_eq!(primary.instruction_code(), Some(code));
+            assert_eq!(
+                InstructionStackItem::from_primary(primary).map(|item| item.code()),
+                Some(code)
+            );
+            assert_eq!(
+                PrimaryInstruction::from_instruction_code(code),
+                Some(primary)
+            );
+        }
+        assert!(!PrimaryInstruction::Return.is_encodable());
+        assert_eq!(PrimaryInstruction::Return.instruction_code(), None);
+        assert_eq!(
+            InstructionStackItem::from_primary(PrimaryInstruction::Return),
+            None
+        );
+        assert_eq!(
+            PrimaryInstruction::from_instruction_code(93),
+            Some(PrimaryInstruction::FoldedBlock(Slot::new(9).unwrap()))
+        );
+    }
+
+    #[test]
+    fn custom_structural_primary_forms_remain_not_encodable() {
+        for value in 0..Slot::COUNT as u8 {
+            let slot = Slot::new(value).expect("value is within the slot range");
+            let primary = PrimaryInstruction::Custom(slot);
+            assert!(!primary.is_encodable(), "{}", primary.token());
+            assert_eq!(primary.instruction_code(), None, "{}", primary.token());
+            assert_eq!(InstructionStackItem::from_primary(primary), None);
         }
 
         for primary in [PrimaryInstruction::CustomReturn, PrimaryInstruction::Halt] {

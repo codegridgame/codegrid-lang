@@ -1,7 +1,7 @@
 # CodeGrid Server WebAssembly Adapter
 
-This crate exposes [Runtime API v5](../../docs/runtime-api-spec.md) through the
-no-import Server ABI v6. It owns byte-buffer transport, JSON conversion, request
+This crate exposes [Runtime API v6](../../docs/runtime-api-spec.md) through the
+no-import Server ABI v7. It owns byte-buffer transport, JSON conversion, request
 validation, trusted host ceilings, and the Runtime API session. It does not
 implement language execution or game policy.
 
@@ -12,7 +12,7 @@ untrusted tenants.
 
 ## Exported no-import ABI
 
-- `codegrid_server_abi_version() -> u32` returns `6`.
+- `codegrid_server_abi_version() -> u32` returns `7`.
 - `codegrid_server_alloc_buffer(length: u32) -> u32` allocates a zero-filled
   request or response buffer. Zero signals a rejected length or allocation
   failure.
@@ -33,7 +33,7 @@ response ceiling before dispatch.
 
 ## Versioned JSON contract
 
-Each request carries `abi_version: 6`, `api_version: 5`, and an `operation`.
+Each request carries `abi_version: 7`, `api_version: 6`, and an `operation`.
 Each response includes both version fields. The versions describe the server
 transport and Runtime API independently.
 
@@ -41,8 +41,8 @@ transport and Runtime API independently.
 
 ```json
 {
-  "abi_version": 6,
-  "api_version": 5,
+  "abi_version": 7,
+  "api_version": 6,
   "operation": "initialize",
   "host_limits": {
     "max_source_bytes": 4194304,
@@ -124,9 +124,9 @@ responsibilities of the embedding server.
 
 ## Local validation
 
-Native tests exercise ABI v6 request validation, lifecycle, exact integer and
+Native tests exercise ABI v7 request validation, lifecycle, exact integer and
 memory conversion, and shared Full fixtures. `server-smoke.mjs` exercises the
-no-import exports, buffers, configured memory maximum, ABI v6 operations,
+no-import exports, buffers, configured memory maximum, ABI v7 operations,
 Full projection fields, and host ceilings in Node's WebAssembly host. These
 checks do not establish production-host compatibility or peak-allocation
 safety.

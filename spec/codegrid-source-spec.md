@@ -140,7 +140,7 @@ Every Primary token in the canonical language inventory is listed here. Instruct
 | `#]` | Return from a Custom invocation. |
 | `;` | Halt. |
 
-Prefixes are not tokens by themselves. In particular, standalone `#`, `$`, `,`, `[`, or `x` are invalid. Malformed or unknown atoms (for example `#00`, `++`, `~V`, or `#0x3`) are rejected as complete atoms and never split into valid instructions.
+Prefixes are not tokens by themselves. In particular, standalone `#`, `$`, `,`, `[`, or `x` are invalid. Malformed or unknown atoms (for example `#00`, `++`, `~V`, or `$0x10`) are rejected as complete atoms and never split into valid instructions.
 
 ## 6. Attachments
 
@@ -156,7 +156,7 @@ An Attachment is concatenated directly to a Primary token in the same cell. The 
 | `=` | WriteCode. |
 | `x2`–`x9` | Repeat with the stated count. |
 
-Examples of complete attached cells are `+x3`, `,*`, and `[0=`. An Attachment separated by whitespace from its Primary is detached and invalid. A cell cannot contain more than one suffix Attachment. Entry markers and HALT cannot carry a suffix. Folded Block cells use the same Attachment compatibility rules as other cells, subject to Folded Block Primary restrictions.
+Examples of complete attached cells are `+x3`, `,*`, `[0=`, `$0x3`, and `;*`. An Attachment separated by whitespace from its Primary is detached and invalid. A cell cannot contain more than one suffix Attachment. Entry markers cannot carry a suffix. Folded Block cells use the same Attachment compatibility rules as other cells, subject to Folded Block Primary restrictions.
 
 NEG is an encodable ordinary Primary. Its complete forms include `$!`,
 `?0$!`, `$!*`, `$!=`, `$!x2`, and `?1$!x3`. Unicode multiplication signs
@@ -164,13 +164,14 @@ are not Repeat syntax; `$!×2` and whitespace-separated `?0 $!` or `$! x2`
 are invalid. NEG is allowed on outer and Custom Main and Function Boards,
 and in Folded Blocks with any compatible suffix, under the existing placement rules.
 
-ReadCode and WriteCode may be attached to any encodable Primary, defined as a Primary with a normative Instruction Code. Repeat may be attached to any encodable Primary except CALL and RETURN, and to immediate output Primaries `.0`–`.9`. Folded Block calls, Custom calls, Custom returns, and HALT are not encodable and cannot carry suffix Attachments. No other Primary-suffix combination is valid. Conditional prefix eligibility is independent.
+ReadCode may be attached to any Primary. When the Primary has no Instruction Code, ReadCode is accepted as an inert, uncounted no-op. WriteCode may be attached to any Primary with an Instruction Code, and to RETURN `]` as an inert, uncounted no-op. Repeat may be attached to any Primary with an Instruction Code except Function CALL and RETURN, and to immediate output Primaries `.0`–`.9`. Thus Folded Block calls `$0`–`$9` accept ReadCode, WriteCode, and Repeat; Custom calls, Custom returns, and HALT accept ReadCode only; immediate output accepts ReadCode and Repeat; RETURN accepts ReadCode and WriteCode but not Repeat. No other Primary-suffix combination is valid. Conditional prefix eligibility is independent.
 
 ## 7. Contextual placement and name resolution
 
-Immediate output Primaries `.0`–`.9` have no Instruction Code and may carry only
-Repeat suffixes `x2`–`x9`; conditional prefixes are allowed. `.3x3` executes
-three immediate outputs on separate VM transitions before moving. Forms such as `.3*`, `.3=`, `.3x1`, `.10`, `.00`, and `.-1`
+Immediate output Primaries `.0`–`.9` have no Instruction Code and may carry
+ReadCode as an inert, uncounted no-op or Repeat suffixes `x2`–`x9`; conditional
+prefixes are allowed. `.3x3` executes three immediate outputs on separate VM
+transitions before moving. Forms such as `.3=`, `.3x1`, `.10`, `.00`, and `.-1`
 are rejected as whole atoms. Ordinary `.` retains its encoding and Attachments.
 
 Static validation checks each Primary against its owning CodeGrid and Board:
@@ -218,4 +219,4 @@ This Full contract replaces the source restrictions recorded by earlier language
 
 ## 12. Conditional prefix and CMP migration (2026-10-03)
 
-The approved [decision record](../docs/decisions.md#conditional-prefix-migration-design-2026-10-03) removes the four IfZero forms and standalone random `?`. They are rejected as complete atoms. RandomDirection is `??` and CMP is `?=`. Prefixes and suffixes are separate categories; references and forbidden Primaries remain invalid even when guarded. This migration introduced executable IR format 2. The 2026-10-08 Function/NEG implementation advanced the format to 3; current IR format 4 adds Folded Block suffix Attachments and rejects formats 1 through 3. Recompile source.
+The approved [decision record](../docs/decisions.md#conditional-prefix-migration-design-2026-10-03) removes the four IfZero forms and standalone random `?`. They are rejected as complete atoms. RandomDirection is `??` and CMP is `?=`. Prefixes and suffixes are separate categories; references and forbidden Primaries remain invalid even when guarded. This migration introduced executable IR format 2. The 2026-10-08 Function/NEG implementation advanced the format to 3; IR format 4 added Folded Block cell suffix Attachments; current IR format 5 adds Folded Block call-site Attachments and Instruction Codes, and rejects formats 1 through 4. Recompile source.

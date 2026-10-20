@@ -59,6 +59,12 @@ pub enum RuntimeErrorKind {
         board: BoardId,
         position: Coordinate,
     },
+    FoldedBlockWithoutDefinition {
+        thread_id: u64,
+        board: BoardId,
+        position: Coordinate,
+        fold_id: Slot,
+    },
 }
 
 #[derive(Clone, Debug, Eq, Ord, PartialEq, PartialOrd)]
@@ -76,6 +82,7 @@ enum ResourceKey {
     Register(u8),
     Memory(BigInt),
     CodeCell(StaticCellId),
+    FoldedBlockCall(BoardId, Coordinate, Slot),
     CallerStack,
 }
 
@@ -101,7 +108,8 @@ impl RuntimeError {
             | RuntimeErrorKind::ConcurrentWriteConflict { thread_ids, .. } => {
                 normalize_ids(thread_ids);
             }
-            RuntimeErrorKind::ReturnWithoutCall { .. } => {}
+            RuntimeErrorKind::ReturnWithoutCall { .. }
+            | RuntimeErrorKind::FoldedBlockWithoutDefinition { .. } => {}
         }
 
         Self {
@@ -142,6 +150,7 @@ impl RuntimeError {
             RuntimeErrorKind::ConcurrentOutputConflict { .. } => "ConcurrentOutputConflict",
             RuntimeErrorKind::ConcurrentWriteConflict { .. } => "ConcurrentWriteConflict",
             RuntimeErrorKind::ReturnWithoutCall { .. } => "ReturnWithoutCall",
+            RuntimeErrorKind::FoldedBlockWithoutDefinition { .. } => "FoldedBlockWithoutDefinition",
         }
     }
 
@@ -180,6 +189,15 @@ impl RuntimeError {
                 board,
                 position,
             } => (ResourceKey::BoardCell(*board, *position), vec![*thread_id]),
+            RuntimeErrorKind::FoldedBlockWithoutDefinition {
+                thread_id,
+                board,
+                position,
+                fold_id,
+            } => (
+                ResourceKey::FoldedBlockCall(*board, *position, *fold_id),
+                vec![*thread_id],
+            ),
         };
 
         CanonicalErrorKey {

@@ -564,12 +564,14 @@ impl Serialize for ThreadPhaseProjection {
                 internal_position,
                 internal_direction,
                 saved_outer_direction,
+                outer_repeat,
             } => serialize_object!(serializer, {
                 "kind" => "fold",
                 "fold_id" => fold_id.get(),
                 "internal_position" => CoordinateProjection(internal_position),
                 "internal_direction" => direction_name(internal_direction),
                 "saved_outer_direction" => direction_name(saved_outer_direction),
+                "outer_repeat" => RepeatProgressProjection(outer_repeat),
             }),
             ThreadPhaseSnapshot::FoldRepeat {
                 fold_id,
@@ -578,6 +580,7 @@ impl Serialize for ThreadPhaseProjection {
                 saved_outer_direction,
                 total,
                 completed,
+                outer_repeat,
             } => serialize_object!(serializer, {
                 "kind" => "fold_repeat",
                 "fold_id" => fold_id.get(),
@@ -586,12 +589,15 @@ impl Serialize for ThreadPhaseProjection {
                 "saved_outer_direction" => direction_name(saved_outer_direction),
                 "total" => total,
                 "completed" => completed,
+                "outer_repeat" => RepeatProgressProjection(outer_repeat),
             }),
             ThreadPhaseSnapshot::FoldResume {
                 saved_outer_direction,
+                outer_repeat,
             } => serialize_object!(serializer, {
                 "kind" => "fold_resume",
                 "saved_outer_direction" => direction_name(saved_outer_direction),
+                "outer_repeat" => RepeatProgressProjection(outer_repeat),
             }),
             ThreadPhaseSnapshot::Terminated => {
                 serialize_object!(serializer, { "kind" => "terminated" })
@@ -1089,6 +1095,34 @@ impl Serialize for RuntimeErrorDetailsProjection<'_> {
                 "board" => BoardIdProjection(*board),
                 "position" => CoordinateProjection(*position),
             }),
+            RuntimeErrorKind::FoldedBlockWithoutDefinition {
+                thread_id,
+                board,
+                position,
+                fold_id,
+            } => serialize_object!(serializer, {
+                "thread_id" => DisplayValue(*thread_id),
+                "board" => BoardIdProjection(*board),
+                "position" => CoordinateProjection(*position),
+                "fold_id" => fold_id.get(),
+            }),
+        }
+    }
+}
+
+struct RepeatProgressProjection(pub Option<RepeatProgress>);
+
+impl Serialize for RepeatProgressProjection {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        match self.0 {
+            Some(progress) => serialize_object!(serializer, {
+                "total" => progress.total,
+                "completed" => progress.completed,
+            }),
+            None => serializer.serialize_none(),
         }
     }
 }
@@ -1174,8 +1208,14 @@ pub fn metric_counter_name(counter: MetricCounterOverflow) -> &'static str {
 
 #[cfg(test)]
 mod tests {
-    use super::{metric_counter_name, MemoryLocationProjection, ProgramViewProjection};
-    use crate::{MemoryLocationId, MemorySpaceId, ProgramView};
+    use super::{
+        metric_counter_name, MemoryLocationProjection, ProgramViewProjection,
+        RuntimeErrorProjection, ThreadPhaseProjection,
+    };
+    use crate::{
+        BoardId, Coordinate, Direction, ExecutionScope, MemoryLocationId, MemorySpaceId,
+        ProgramView, RepeatProgress, RuntimeError, RuntimeErrorKind, ThreadPhaseSnapshot,
+    };
     use codegrid_model::Slot;
     use codegrid_vm::MetricCounterOverflow;
 
@@ -1234,5 +1274,55 @@ mod tests {
         assert!(value["outer"]["functions"]["0"]["width"].is_number());
         assert_eq!(value["outer"]["functions"]["0"]["height"], 1);
         assert!(value["outer"]["functions"]["0"]["height"].is_number());
+    }
+
+    #[test]
+    fn folded_phase_projection_keeps_outer_repeat_nullable() {
+        let idle = serde_json::to_value(ThreadPhaseProjection(ThreadPhaseSnapshot::FoldResume {
+            saved_outer_direction: Direction::Right,
+            outer_repeat: None,
+        }))
+        .expect("fold phase must serialize");
+        assert_eq!(idle["outer_repeat"], serde_json::Value::Null);
+
+        let active = serde_json::to_value(ThreadPhaseProjection(ThreadPhaseSnapshot::FoldResume {
+            saved_outer_direction: Direction::Right,
+            outer_repeat: Some(RepeatProgress {
+                total: 3,
+                completed: 2,
+            }),
+        }))
+        .expect("fold repeat progress must serialize");
+        assert_eq!(
+            active["outer_repeat"],
+            serde_json::json!({"total": 3, "completed": 2})
+        );
+    }
+
+    #[test]
+    fn missing_folded_definition_error_keeps_structured_call_site_details() {
+        let error = RuntimeError::new(
+            12,
+            ExecutionScope::Outer,
+            RuntimeErrorKind::FoldedBlockWithoutDefinition {
+                thread_id: 7,
+                board: BoardId::Main,
+                position: Coordinate { x: 3, y: 1 },
+                fold_id: Slot::new(9).expect("slot is in range"),
+            },
+        );
+        let value = serde_json::to_value(RuntimeErrorProjection(&error))
+            .expect("runtime error must serialize");
+
+        assert_eq!(value["code"], "FoldedBlockWithoutDefinition");
+        assert_eq!(
+            value["details"],
+            serde_json::json!({
+                "thread_id": "7",
+                "board": {"kind": "main"},
+                "position": {"x": 3, "y": 1},
+                "fold_id": 9
+            })
+        );
     }
 }

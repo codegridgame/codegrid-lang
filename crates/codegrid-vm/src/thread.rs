@@ -19,6 +19,7 @@ pub(super) enum ExecutionPhase {
         internal_position: Coordinate,
         internal_direction: Direction,
         saved_outer_direction: Direction,
+        outer_repeat: Option<(u8, u8)>,
     },
     FoldRepeat {
         fold_id: codegrid_model::Slot,
@@ -27,9 +28,11 @@ pub(super) enum ExecutionPhase {
         saved_outer_direction: Direction,
         total: u8,
         completed: u8,
+        outer_repeat: Option<(u8, u8)>,
     },
     FoldResume {
         saved_outer_direction: Direction,
+        outer_repeat: Option<(u8, u8)>,
     },
     Terminated,
 }

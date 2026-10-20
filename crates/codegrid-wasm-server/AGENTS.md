@@ -51,7 +51,7 @@ one WebAssembly module instance.
 
 ## Validation
 
-The no-import ABI is v6 over Runtime API v5. Host limits use generic step and
+The no-import ABI is v7 over Runtime API v6. Host limits use generic step and
 work-unit ceilings; runtime creation accepts seed and initial language state,
 without game Gas or custom-execution quotas.
 

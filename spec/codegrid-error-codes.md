@@ -7,7 +7,7 @@ Registry version: 3. Language entries are normative for compiler, VM, CLI, debug
 - Consumers MUST use a code together with its layer/transport version, never parse message wording. Codes are case-sensitive. Existing VM PascalCase codes, WASM snake_case codes, JSON-RPC numeric codes, and ABI sentinels retain their spelling. New source, IR, CLI, debug and editor identifiers use a dotted namespace.
 - Codes identify stable categories, not necessarily one message. A category may cover several concrete validation failures; source location, resource fields and configuration fields distinguish the instances.
 - Before a user-published release, identifiers may be added, removed, or renamed with their consumers; do not retain unpublished aliases, number reservations, or migration layers. After publication, record the exact compatibility scope here.
-- Source diagnostics expose codes under Runtime API v5, Server ABI v6 and CLI run-result schema 1. Debug protocol 2 carries structured errors. Older debug protocol 1 is rejected with editor.unsupported_debug_protocol.
+- Source diagnostics expose codes under Runtime API v6, Server ABI v7 and CLI run-result schema 1. Debug protocol 2 carries structured errors. Older debug protocol 1 is rejected with editor.unsupported_debug_protocol.
 - This registry covers errors deliberately emitted by the language toolchain. Operating-system termination, browser engine traps, Wasmtime fuel/stack traps, allocation aborts, and third-party VS Code failures outside a callable adapter are host failures, not newly invented language errors. Hosts retain their own platform codes; the editor catches exposed exceptions as a coded host category.
 - The machine-readable registry is [codegrid-error-codes.json](codegrid-error-codes.json). Every entry identifies layer, code, trigger, return surface and state effect. The called ABI export is part of the identity for numeric sentinel errors.
 
@@ -52,7 +52,7 @@ API Rust errors expose `ApiError::code()`. Browser/server JSON uses `error:{code
 
 ### Process and ABI failures
 
-CLI/debug/LSP process messages render a bracketed code on stderr. If a pipe cannot be written, no valid JSON response can be promised. Server buffer exports return the documented zero sentinel without a JSON envelope; its coarse category is intentional under ABI v6. No host may infer a more precise cause from zero alone.
+CLI/debug/LSP process messages render a bracketed code on stderr. If a pipe cannot be written, no valid JSON response can be promised. Server buffer exports return the documented zero sentinel without a JSON envelope; its coarse category is intentional under ABI v7. No host may infer a more precise cause from zero alone.
 
 ## 3. Complete identifier registry
 
@@ -151,6 +151,7 @@ State effect: Entire failing outer transition rolls back; committed events/outpu
 | `ConcurrentOutputConflict` | Multiple Outer outputs conflict in one transition. |
 | `ConcurrentWriteConflict` | Multiple writes target the same scoped register, including equal values. |
 | `ReturnWithoutCall` | RETURN executes without a caller frame. |
+| `FoldedBlockWithoutDefinition` | A dynamically installed Folded Block call executes without a definition on its owning board. |
 
 Details fields:
 
@@ -165,6 +166,7 @@ Details fields:
 | `ConcurrentOutputConflict` | `thread_ids` |
 | `ConcurrentWriteConflict` | `register, thread_ids` |
 | `ReturnWithoutCall` | `thread_id, board, position` |
+| `FoldedBlockWithoutDefinition` | `thread_id, board, position, fold_id` |
 
 ### fault
 
@@ -186,7 +188,7 @@ State effect: Rejected requests do not advance the VM; a work-limited step rolls
 
 | Code | Trigger / meaning |
 | --- | --- |
-| `unsupported_version` | Request Runtime API version differs from 5. |
+| `unsupported_version` | Request Runtime API version differs from 6. |
 | `source_limit_exceeded` | Source UTF-8 bytes exceed the configured maximum. |
 | `program_limit_reached` | The runtime compiled-program registry is full. |
 | `instance_limit_reached` | The runtime instance registry is full. |
@@ -274,7 +276,7 @@ State effect: Editor/transport rejection; never substitute these categories for 
 
 ### browser
 
-Return surface: Browser adapter error.code (API v5). Runtime API errors also use the API table.
+Return surface: Browser adapter error.code (API v6). Runtime API errors also use the API table.
 
 State effect: Pre-copy validation failures do not dispatch; oversized retained-state instances are released; response limits produce complete structured errors.
 
@@ -303,7 +305,7 @@ State effect: Pre-copy validation failures do not dispatch; oversized retained-s
 
 ### server
 
-Return surface: Server ABI v6 / Runtime API v5 JSON error.code.
+Return surface: Server ABI v7 / Runtime API v6 JSON error.code.
 
 State effect: Invalid/over-limit requests do not execute; work limit rolls back; oversized retained instances are released; shutdown permanently closes the session.
 
@@ -316,7 +318,7 @@ State effect: Invalid/over-limit requests do not execute; work limit rolls back;
 | `invalid_decimal_integer` | A required u64 string is noncanonical or out of range. |
 | `invalid_memory_address` | Initial-memory address spelling is invalid. |
 | `invalid_request_field` | Required request field is missing or has the wrong type. |
-| `unsupported_api_version` | Request Runtime API version differs from 5. |
+| `unsupported_api_version` | Request Runtime API version differs from 6. |
 | `source_payload_limit_exceeded` | Source bytes exceed the runtime source ceiling. |
 | `input_payload_limit_exceeded` | Input bytes exceed the configured ceiling. |
 | `vm_initialization_error` | VM initialization fails (server alias of vm_initialization_failed). |

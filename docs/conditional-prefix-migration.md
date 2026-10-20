@@ -59,14 +59,14 @@ Confirmed: all D1–D15. No language-semantic question remains open. Concrete in
 | D5 | What happens on false? | Skip the Primary and suffix, consume one dispatch/transition visit, and perform ordinary movement in the current direction. Movement may still cause a boundary error or Fold exit. |
 | D6 | When and which register is read? | Use the context transition-start snapshot at the executing thread's pointer before any Primary effect. |
 | D7 | How does Repeat interact? | Check before every attempted Primary execution. A false result cancels remaining repetitions, returns to Normal, and moves once. |
-| D8 | Does AfterCall recheck the condition? | No. Test when dispatching CALL; after a successful return, run the existing deferred suffix and resume behavior once. FoldResume likewise does not recheck. |
+| D8 | Does AfterCall recheck the condition? | CALL is tested before invocation; after a successful return, run the existing deferred suffix and resume behavior once. FoldResume normally does not recheck. The 2026-10-20 Folded Block invocation Repeat decision adds a call-site prefix recheck before each later whole-block pass. |
 | D9 | What survives WriteCode? | Prefix and suffix remain fixed; ReadCode/WriteCode and DECODE/ENCODE continue to represent only Primary. A cleared cell can retain a prefix; true permits the existing suffix behavior, false suppresses it. This runtime state is distinct from invalid initial detached prefixes. |
 | D10 | Does a condition cost an operation? | Count each evaluated prefix as one operation, including false results, and use one runtime instruction kind for all three values. Count skipped cells as visited; do not count skipped Primaries/suffixes as executed. |
 | D11 | How were game-host permissions handled? | The former Level policy and the original boundary ambiguity are archived in the linked Game Runtime record; no language rule is established here. |
 | D12 | What compatibility is required? | Reject removed source forms in the new language; reserve removed Instruction Codes and old random code 63 without reuse or decoding; invalidate old executable IR via a version change. Preserve unrelated published error identities and transport aliases. Decide separately which observable host schemas require version changes. |
 | D13 | What does CMP compare and write? | Confirmed: `?=` compares Data Stack top A with selected register B without popping; writes 0 if equal, 1 if A > B, and 2 if A < B. |
 | D14 | What does CMP do on an empty Data Stack? | Preserve the register and stack, count the executed Primary, and move normally, consistent with existing empty-stack POPADD/NAND behavior. |
-| D15 | How is CMP encoded and accounted for? | ASCII-sum numbering: CMP `?=` is 124 and RandomDirection `??` is 126. Existing non-encodable forms remain non-encodable. CMP supports `*`, `=`, and `x2`–`x9`; each execution counts one operation and one CMP runtime kind, with independent `CMP` Primary capability. |
+| D15 | How is CMP encoded and accounted for? | ASCII-sum numbering: CMP `?=` is 124 and RandomDirection `??` is 126. The earlier decision retained existing non-encodable forms; the 2026-10-20 Folded Block invocation decision supersedes that exclusion for `$0`–`$9`. CMP supports `*`, `=`, and `x2`–`x9`; each execution counts one operation and one CMP runtime kind, with independent `CMP` Primary capability. |
 
 ### ASCII-sum numbering audit
 
@@ -84,7 +84,15 @@ A computed audit of all 70 proposed Primary spellings finds these duplicate sums
 
 The current 73 Primary spellings additionally collide at 95 (`#<` / `.1`) and 97 (`#>` / `.3`); removing IfZero eliminates those two pairs. Adding existing suffix tokens and the new prefix tokens to the proposed audit produces no additional collisions. CMP and renamed RandomDirection have no collisions.
 
-The user confirms retaining the current exclusions of FoldedBlock, Custom, CustomReturn, immediate output, and Halt from Instruction Codes. With these exclusions, the proposed encodable Primary subset has no collisions. Prefixes and suffixes remain outside the Primary Instruction Code namespace. No token renaming is needed to resolve the sums above.
+At the time of the CMP migration, the user confirmed retaining the exclusions of FoldedBlock, Custom, CustomReturn, immediate output, and Halt from Instruction Codes. The proposed encodable subset then had no collisions. Prefixes and suffixes remain outside the Primary Instruction Code namespace. No token renaming was needed to resolve the sums above.
+
+The 2026-10-20 follow-up assigns codes 84 through 93 to Folded Block calls
+`$0` through `$9`, respectively, and removes code 93 from RETURN `]` while
+retaining the source Return instruction. `#0`–`#9`, CustomReturn, immediate
+output, and Halt remain unencoded, so their matching ASCII sums do not collide
+with the newly encoded Folded Block forms. ReadCode on any valid unencoded
+Primary is accepted as an inert, uncounted no-op; RETURN ReadCode and WriteCode
+remain inert as before. See the current [decision record](decisions.md#folded-block-invocation-encoding-and-attachments-2026-10-20).
 
 ### Additional semantic and compatibility review
 

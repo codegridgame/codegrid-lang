@@ -4,7 +4,7 @@
 
 - [CodeGrid source specification](../spec/codegrid-source-spec.md): normative Full `.cg` syntax and static acceptance.
 - [CodeGrid VM specification](../spec/codegrid-vm-spec.md): normative Full execution, errors, snapshots, metrics, and determinism.
-- [CodeGrid Runtime API specification](runtime-api-spec.md): normative Full v5 lifecycle, request/response, generic step/work-unit limits, and language error contract.
+- [CodeGrid Runtime API specification](runtime-api-spec.md): normative Full v6 lifecycle, request/response, generic step/work-unit limits, and language error contract.
 - [AI contribution rules](../AGENTS.md): project language, dependency direction, prohibited shortcuts, and verification requirements.
 - [Mandatory downstream synchronization](downstream-synchronization.md): required impact review and same-task updates to `C:/source/bf-steam-wt` after language changes.
 - [Shared error code specification](../spec/codegrid-error-codes.md) and [machine-readable registry](../spec/codegrid-error-codes.json): language identities and their generated language consumers. Game error identities are maintained by the Rust Game Runtime.
@@ -15,7 +15,7 @@ The current authority for levels, scenes, game metrics and scoring, host evaluat
 
 Former active `level-*`, `scene-*`, and game-specific `gas-*` content has moved to the Rust Game Runtime. Lang maintains no Gas/Size policy or history documents. Game scene examples and level/scene fixtures also live in the Rust Game Runtime, with no active game example or fixture trees remaining here.
 
-Raw instruction and VM transition semantics remain owned by the language specifications. Runtime API v5 exposes committed steps and generic host work-unit protections; game tick/Gas/Size policy, case aggregation, scene rules, game error identities, and result judgment belong to the Rust Game Runtime. Historical game decisions and application verification formerly mixed into Lang records are archived in the [Game Runtime history index](../../bf-steam-wt/doc/codegrid-lang-history/README.md).
+Raw instruction and VM transition semantics remain owned by the language specifications. Runtime API v6 exposes committed steps and generic host work-unit protections; game tick/Gas/Size policy, case aggregation, scene rules, game error identities, and result judgment belong to the Rust Game Runtime. Historical game decisions and application verification formerly mixed into Lang records are archived in the [Game Runtime history index](../../bf-steam-wt/doc/codegrid-lang-history/README.md).
 
 ## Language implementation and conformance
 
