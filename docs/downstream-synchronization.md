@@ -25,7 +25,8 @@ available at the pinned revision. Exact source and artifact identities are in
 the [Game Runtime synchronization record](../../bf-steam-wt/doc/codegrid-lang同步规则.md).
 
 This is a dated successful baseline, not the current suffix-Attachment integration
-status. The 2026-10-20 section below records the current dependency and rebuilt artifacts.
+status. The 2026-10-20 sections below record successive integrations; the later
+section is current.
 
 Game decision and verification history formerly stored here has moved to the
 [Game Runtime history archive](../../bf-steam-wt/doc/codegrid-lang-history/README.md).
@@ -92,6 +93,63 @@ initial-cursor, and result-dialog behavior. No product UI behavior was changed
 for these test updates. The final Steam type check also passes.
 Earlier missing-field compilation failures and stale Level artifact integrity
 failures are resolved by the immutable pin and actual rebuild above.
+
+## 2026-10-20 Folded Block invocation Attachments and Instruction Codes (synchronized)
+
+Lang commit `5aa85edd7281a6d1bb0ca967b36f0eb98dfaeb79` is pushed to
+`codex/game-domain-extraction`. IR format 5, Runtime API 6, and Server ABI 7
+are the current unpublished contracts. `$0`–`$9` use Instruction Codes 84–93;
+RETURN `]` remains a Primary but has no code. ReadCode is accepted on every
+valid Primary and is an inert, uncounted no-op when that Primary has no code.
+Folded Block calls accept ReadCode, WriteCode, and Repeat suffixes. Whole-call
+Repeat rechecks the call-site prefix; deferred call-site attachments run only
+after successful completion. A dynamically installed Folded Block call with
+no local definition reports structured VM error 3011,
+`FoldedBlockWithoutDefinition`.
+
+The Game Runtime and application consumers were updated against the immutable
+Lang revision without a local Cargo override. The downstream repository was
+already dirty at HEAD `b7ac7b6e8bff4da8ffc135e5bbd0ec149296884d` and remains
+dirty; its 302-file Rust tree SHA-256 is
+`d96ae9e23cb6b9a9d788891bd7f4962c115b72e0a2eea4e530e4f73d70ca7e0a`, and
+`rust/Cargo.lock` SHA-256 is
+`cb3b35cae5db45bca08bf69545ad91feb224df257cb06fb0f5af978e2d86377c`. Its
+Level evaluator identity is
+`game-runtime-source-sha256:e325494a2e130290eccd0ee9d87b3d0d27c6ef4dd7d0b612e8a497d1bc5aff25`.
+Four Level WASM copies (Steam, Web, Editor, API) are byte-identical: 2,119,887
+bytes, SHA-256
+`062511bd751bc6e7fb67d0b983c1b6d29b6d7ef97fcd8587f84e77213db96a5d`.
+Web and Steam use the same Full browser WASM (1,075,524 bytes,
+`9595332c368b837a022b4d9549830748fc50a4d700bbe44fcc09385b5f7a6d60`); API
+uses the Full no-import server WASM (1,069,910 bytes,
+`a24fbadc3544f3a093bdbf806c365a87103fad387af0cb538462e7e239a49d65`). Both
+Full artifacts were rebuilt from the pushed Lang commit with a 67,108,864-byte
+linear-memory maximum.
+
+The eight downstream manifests were hashed after the final rebuild:
+
+| Manifest | SHA-256 |
+| --- | --- |
+| Steam Level | `e1119a52f533ce79707401d5d5bc308ee8515e8552f81f76784234148c955a3f` |
+| Web Level | `a02af90cad803018876b43f84084d89b5d7cdf320a281d7f96b2a763f1ff9d3f` |
+| Editor Scene vendor | `21f8353e2f8f38368d49ae020d4d2800b58c2093fbda27eac30474629b70ae63` |
+| Editor Level provenance | `f3170d9187994a2cd8d747d9705896e6367de3374b2eeb104c92485aeffb6232` |
+| API Level | `94257e840e58abeddf09bcd551c5a0adba114033a71fc1b224475c66ea6b9b0c` |
+| Steam Full (Runtime API 6) | `6a1e4272bf998ede053028b5640a5201c17a1b13ac6bafbd510cd30b8a397642` |
+| Web Full (Runtime API 6) | `6a1e4272bf998ede053028b5640a5201c17a1b13ac6bafbd510cd30b8a397642` |
+| API Full (Runtime API 6 / Server ABI 7) | `d63aae49486147d695fea6be34410df2212e40839865055714acd65c78f4db7c` |
+
+Validation passes: Lang locked workspace tests, formatting, and error-registry
+catalog checks; all 109 shared Full fixtures in native CLI, Wasmtime 49.0.1,
+Node browser/server WASM, and actual Chromium browser WASM; locked downstream
+Rust tests and formatting; 95 actual Chromium Worker Scene API 2 executions
+with Debug traces; root TypeScript checks and 887 workspace tests including
+Workerd smoke; API Worker smoke and dry-run bundle; four application builds;
+Steam Full tests (16), Web-to-Workerd browser tests (5), and Editor offline
+WASM tests. The downstream worktree remains uncommitted; it was not cleaned or
+reset because it contains other user changes. The only untracked Lang file is
+`scripts/__pycache__/package_wasm_full.cpython-314.pyc`, outside Cargo and
+binding build inputs. No user release or production deployment was created.
 
 ## Historical VM work-unit smoke failure and current verification (2026-10-18)
 
