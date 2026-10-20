@@ -451,3 +451,7 @@ needed before publication.
 The obsolete `source.fold_attachment` diagnostic and its presentation catalog
 entry are removed, rather than reserved, under the unpublished-release policy.
 Folded and ordinary cells use the same IR Attachment compatibility validation.
+
+This decision applies to cells inside a Folded Block definition. The outer
+`$0`–`$9` invocation remains non-encodable and cannot carry a suffix Attachment;
+for example, `$0x3`, `$0*`, and `$0=` remain invalid source.
