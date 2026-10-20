@@ -1124,7 +1124,9 @@ fn folded_primary_allowed(primary: PrimaryInstruction, custom_owned: bool) -> bo
         PrimaryInstruction::FoldedBlock(_)
         | PrimaryInstruction::Call(_)
         | PrimaryInstruction::Return
-        | PrimaryInstruction::CustomReturn => false,
+        | PrimaryInstruction::CustomReturn
+        | PrimaryInstruction::Direction(_)
+        | PrimaryInstruction::RandomDirection => false,
         PrimaryInstruction::Custom(_) => !custom_owned,
         _ => true,
     }

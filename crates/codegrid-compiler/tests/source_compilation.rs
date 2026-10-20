@@ -5,9 +5,9 @@ use codegrid_syntax::{BoardPath, CodeGridPath};
 
 #[test]
 fn conditional_prefixes_preserve_references_and_fold_restrictions() {
-    let program = compile("@main\n~> ?0$0 ;\n@M0 ?0+ ?1?= ?2^\n@end main").unwrap();
+    let program = compile("@main\n~> ?0$0 ;\n@M0 ?0+ ?1?= _\n@end main").unwrap();
     let folded = &program.program().outer.main.folded_blocks[&slot(0)];
-    assert_eq!(folded.prefixes.len(), 3);
+    assert_eq!(folded.prefixes.len(), 2);
     assert_eq!(
         codegrid_compiler::ProgramView::from_verified(&program)
             .outer
@@ -20,7 +20,7 @@ fn conditional_prefixes_preserve_references_and_fold_restrictions() {
         "~> ?1[0 ;",
         "~> ?1#0 ;",
         "~> ?1] ;",
-        "@main\n~> $0 ;\n@M0 ?0+* ^ _\n@end main",
+        "@main\n~> $0 ;\n@M0 ?0+* _ _\n@end main",
     ] {
         assert!(compile(source).is_err(), "{source}");
     }
@@ -237,7 +237,7 @@ _  + > . _\n\
 _  _ _ _ _\n\
 _  _ _ _ _\n\
 _  _ _ _ _\n\n\
-@M0 + > _ ^ _\n";
+@M0 + _ _ _ _\n";
     let program = compile(source).expect("an implicit Main may define board-local M blocks");
 
     assert!(program.program().outer.functions.is_empty());
@@ -388,8 +388,8 @@ fn accepts_case_insensitive_local_and_qualified_end_names() {
         "@main\n~> #0\n@end main\n@C0\n~> #]\n@END c0\n",
         "@main\n~> [0\n@end main\n@main.F0\n~v ]\n@END MAIN.f0\n",
         "@main\n~> #0\n@end main\n@C0\n~> #]\n@C0.F0\n~v ]\n@END c0.f0\n@end C0\n",
-        "@main\n~> $0\n@M0\n+ >\n@END m0\n@end main\n",
-        "@main\n~> $0\n@end main\n@main.M0\n+ >\n@END MAIN.m0\n",
+        "@main\n~> $0\n@M0\n+ _\n@END m0\n@end main\n",
+        "@main\n~> $0\n@end main\n@main.M0\n+ _\n@END MAIN.m0\n",
     ];
 
     for source in cases {
@@ -403,17 +403,17 @@ fn accepts_case_insensitive_local_and_qualified_end_names() {
 fn accepts_named_end_aliases_for_custom_and_function_folded_blocks() {
     let cases = [
         // Custom Main Folded Block: local final segment.
-        "@main\n~> #0\n@end main\n@C0\n~> $0 #]\n@M0\n+ > _\n@END m0\n@end C0\n",
+        "@main\n~> #0\n@end main\n@C0\n~> $0 #]\n@M0\n+ _ _\n@END m0\n@end C0\n",
         // Custom Main Folded Block: complete qualified path.
-        "@main\n~> #0\n@end main\n@C0\n~> $0 #]\n@C0.M0\n+ > _\n@END C0.m0\n@end C0\n",
+        "@main\n~> #0\n@end main\n@C0\n~> $0 #]\n@C0.M0\n+ _ _\n@END C0.m0\n@end C0\n",
         // Outer Function Folded Block: local final segment.
-        "@main\n~> [0\n@end main\n@main.F0\n~> $0 ]\n@M0\n+ > _\n@END m0\n@end F0\n",
+        "@main\n~> [0\n@end main\n@main.F0\n~> $0 ]\n@M0\n+ _ _\n@END m0\n@end F0\n",
         // Outer Function Folded Block: complete qualified path.
-        "@main\n~> [0\n@end main\n@main.F0\n~> $0 ]\n@end main.F0\n@main.F0.M0\n+ > _\n@END MAIN.f0.m0\n",
+        "@main\n~> [0\n@end main\n@main.F0\n~> $0 ]\n@end main.F0\n@main.F0.M0\n+ _ _\n@END MAIN.f0.m0\n",
         // Custom Function Folded Block: local final segment.
-        "@main\n~> #0\n@end main\n@C0\n~> [0 #]\n@F0\n~> $0 ]\n@M0\n+ > _\n@END m0\n@end F0\n@end C0\n",
+        "@main\n~> #0\n@end main\n@C0\n~> [0 #]\n@F0\n~> $0 ]\n@M0\n+ _ _\n@END m0\n@end F0\n@end C0\n",
         // Custom Function Folded Block: complete qualified path.
-        "@main\n~> #0\n@end main\n@C0\n~> [0 #]\n@C0.F0\n~> $0 ]\n@end C0.F0\n@C0.F0.M0\n+ > _\n@END C0.F0.M0\n@end C0\n",
+        "@main\n~> #0\n@end main\n@C0\n~> [0 #]\n@C0.F0\n~> $0 ]\n@end C0.F0\n@C0.F0.M0\n+ _ _\n@END C0.F0.M0\n@end C0\n",
     ];
 
     for source in cases {
@@ -469,7 +469,7 @@ fn comments_and_crlf_do_not_create_rows_and_end_names_must_match() {
 
 #[test]
 fn compiles_board_local_folded_block_with_owner_width() {
-    let source = "@main\n~> $0\n@end\n@M0 + >\n";
+    let source = "@main\n~> $0\n@end\n@M0 + _\n";
     let program = compile(source).expect("valid Folded Block should compile");
 
     assert_eq!(
@@ -482,8 +482,8 @@ fn compiles_board_local_folded_block_with_owner_width() {
 
 #[test]
 fn single_line_and_multiline_fold_definitions_compile_equivalently() {
-    let single_line = "~> _ _ _ _\n@M0 + > _ ^ _\n";
-    let multiline = "~> _ _ _ _\n@M0\n+ > _ ^ _\n@end\n";
+    let single_line = "~> _ _ _ _\n@M0 + _ _ _ _\n";
+    let multiline = "~> _ _ _ _\n@M0\n+ _ _ _ _\n@end\n";
     let single_line_program = compile(single_line).expect("single-line Fold should compile");
     let multiline_program = compile(multiline).expect("multiline Fold should compile");
 
@@ -503,22 +503,16 @@ fn single_line_and_multiline_fold_definitions_compile_equivalently() {
             .iter()
             .map(|cell| cell.map(|primary| primary.token()))
             .collect::<Vec<_>>(),
-        vec![
-            Some("+".to_owned()),
-            Some(">".to_owned()),
-            None,
-            Some("^".to_owned()),
-            None,
-        ]
+        vec![Some("+".to_owned()), None, None, None, None,]
     );
 }
 
 #[test]
 fn resolves_folded_blocks_on_their_owning_function_board() {
     let source = "@main\n~> $0\n@end main\n\
-@main.M0 + >\n\
+@main.M0 + _\n\
 @main.F0\n~v $0\n@end F0\n\
-@main.F0.M0 - <\n";
+@main.F0.M0 - _\n";
     let program = compile(source).expect("Main and F boards may each own a local M0");
     let main_m = &program.program().outer.main.folded_blocks[&slot(0)].cells;
     let function_m = &program.program().outer.functions[&slot(0)].folded_blocks[&slot(0)].cells;
@@ -544,7 +538,7 @@ _  _ #0 _ _
 _  _ _  _ _
 _  _ _  _ ;
 
-@M0 + > _ ^ _
+@M0 + _ _ _ _
 
 @F0
 ~> _ _ _ _
@@ -581,7 +575,7 @@ _  _ _  _ _
 _  _ _  _ ;
 @end main
 
-@main.M0 + > _ ^ _
+@main.M0 + _ _ _ _
 
 @main.F0
 ~> _ _ _ _
@@ -619,15 +613,15 @@ fn identical_numbered_definitions_in_distinct_scopes_remain_distinct() {
     let source = "@size 2x1\n\
 @main\n~> _\n@end main\n\
 @main.F0\n~v ]\n@end main.F0\n\
-@main.M0 + >\n\
-@main.F0.M0 - <\n\
+@main.M0 + _\n\
+@main.F0.M0 - _\n\
 @C0\n~> _\n@end C0\n\
-@C0.M0 - >\n\
+@C0.M0 - _\n\
 @C0.F0\n~v ]\n@end C0.F0\n\
-@C0.F0.M0 + <\n\
+@C0.F0.M0 + _\n\
 @C1\n~> _\n@end C1\n\
 @C1.F0\n~v ]\n@end C1.F0\n\
-@C1.F0.M0 > -\n";
+@C1.F0.M0 _ -\n";
     let program = compile(source).expect("same IDs in separate scopes should compile");
     let outer = &program.program().outer;
     let custom_zero = &program.program().customs[&slot(0)].program;
@@ -970,8 +964,8 @@ fn validates_missing_extra_and_mismatched_end_closures() {
 #[test]
 fn accepts_every_primary_category_allowed_in_an_outer_folded_block() {
     let allowed = [
-        "_", "^", "v", "<", ">", "??", "?=", ",", ",", ",", ",", "!", "+", "-", "{", "}", ".", "(",
-        ")", "&", "%", "$&", "$(", "$)", "$+", "$-", "$<", "$>", ";", "#0",
+        "_", "?=", ",", ",", ",", ",", "!", "+", "-", "{", "}", ".", "(", ")", "&", "%", "$&",
+        "$(", "$)", "$+", "$-", "$<", "$>", ";", "#0",
     ];
     let mut main_cells = vec!["~>".to_owned(), "$0".to_owned()];
     main_cells.resize(allowed.len(), "_".to_owned());
@@ -1033,6 +1027,23 @@ fn rejects_every_forbidden_folded_block_form_and_custom_owned_calls() {
         &custom_owned_m[diagnostic.span.start..diagnostic.span.end],
         "#0"
     );
+
+    for token in ["<", ">", "^", "v", "??"] {
+        let source = format!("@main\n~> $0\n@end main\n@M0 _ {token}\n");
+        let diagnostics =
+            compile(&source).expect_err("forbidden M direction Primaries must be rejected");
+        let diagnostic = diagnostics
+            .iter()
+            .find(|diagnostic| diagnostic.code == "source.fold_primary")
+            .unwrap_or_else(|| {
+                panic!("{token}: expected a source.fold_primary diagnostic, got {diagnostics:?}")
+            });
+        assert_eq!(
+            &source[diagnostic.span.start..diagnostic.span.end],
+            token,
+            "{token}: diagnostic should highlight the forbidden direction"
+        );
+    }
 }
 
 #[test]
@@ -1798,10 +1809,10 @@ fn block_comments_accept_lf_and_crlf_but_reject_bare_cr_at_its_exact_span() {
 #[test]
 fn exposes_resolved_definition_and_reference_spans_for_editor_features() {
     let source = "@main\n~> [0 $0 #0\n@end main\n\
-@main.M0 + > #0 ^\n\
+@main.M0 + _ #0 _\n\
 @main.F0\n~> ]\n@end main.F0\n\
 @C0\n~> [0 $0\n@F0\n~> ]\n@end F0\n\
-@M0 + > _\n@end C0\n";
+@M0 + _ _\n@end C0\n";
     let compilation = compile_with_symbols(source).expect("valid symbols should compile");
     let function = SymbolKey::Function {
         codegrid: CodeGridPath::Main,

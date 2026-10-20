@@ -103,7 +103,7 @@ State effect: Compilation rejection: no executable IR or VM instance.
 | `source.fold_width` | A Folded Block width differs from its owner board width. |
 | `source.fold_entry` | An Entry appears in a Folded Block. |
 | `source.fold_attachment` | A suffix Attachment appears in a Folded Block; conditional prefixes are allowed. |
-| `source.fold_primary` | A Primary is forbidden in its Folded Block context. |
+| `source.fold_primary` | A Primary is forbidden in its Folded Block context, including direction changes and random directions. |
 | `source.return_scope` | RETURN appears on a Main board. |
 | `source.custom_return_scope` | CUSTOM_RETURN appears outside a Custom Main board. |
 | `source.custom_call_scope` | A Custom definition calls a Custom instruction. |
@@ -123,7 +123,7 @@ State effect: IR verification fails; unchecked IR cannot execute.
 | `ir.invalid_layout` | Dimensions are zero or do not match cell count. |
 | `ir.function_entry_count` | A Function has more than one explicit Entry. |
 | `ir.fold_width` | Folded Block length differs from board width. |
-| `ir.fold_primary` | A Folded Block contains a forbidden instruction. |
+| `ir.fold_primary` | A Folded Block contains a forbidden instruction, including direction changes and random directions. |
 | `ir.entry_instruction` | An Entry shares its cell with a Primary or Attachment. |
 | `ir.detached_attachment` | A prefix or suffix Attachment has no initial Primary (including an invalid folded prefix coordinate). |
 | `ir.repeat_count` | Repeat count is outside 2 through 9. |

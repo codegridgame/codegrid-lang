@@ -1918,7 +1918,7 @@ mod tests {
             folded_blocks: BTreeMap::from([(
                 slot,
                 FoldedBlock {
-                    prefixes: Default::default(), cells: vec![Some(PrimaryInstruction::Direction(Direction::Down)); 3],
+                    prefixes: Default::default(), cells: vec![None; 3],
                 },
             )]),
         };
@@ -1950,12 +1950,25 @@ mod tests {
         ));
         assert!(matches!(
             vm.snapshot().threads[0].phase,
-            super::ThreadPhaseSnapshot::FoldResume { .. }
+            super::ThreadPhaseSnapshot::Fold {
+                fold_id: id,
+                internal_position: Coordinate { x: 1, y: 0 },
+                internal_direction: Direction::Right,
+                saved_outer_direction: Direction::Right,
+            } if id == slot
+        ));
+        assert_eq!(vm.step().status, VmStatus::Running);
+        assert_eq!(vm.step().status, VmStatus::Running);
+        assert!(matches!(
+            vm.snapshot().threads[0].phase,
+            super::ThreadPhaseSnapshot::FoldResume {
+                saved_outer_direction: Direction::Right,
+            }
         ));
         assert_eq!(vm.step().status, VmStatus::Running);
         assert_eq!(vm.snapshot().threads[0].position.x, 2);
         assert_eq!(vm.step().status, VmStatus::Halted);
-        assert_eq!(vm.snapshot().metrics.committed_steps(), 4);
+        assert_eq!(vm.snapshot().metrics.committed_steps(), 6);
     }
 
     #[test]
@@ -2073,7 +2086,7 @@ mod tests {
                                     PointerDirection::Right,
                                 )),
                                 Some(PrimaryInstruction::MovePage(PageDirection::Increment)),
-                                Some(PrimaryInstruction::Direction(Direction::Down)),
+                                None,
                                 None,
                             ],
                         },
@@ -2089,7 +2102,7 @@ mod tests {
         vm.registers[1] = 17;
         vm.threads[0].data_stack.push(42);
 
-        for _ in 0..6 {
+        for _ in 0..7 {
             assert_eq!(vm.step().status, VmStatus::Running);
         }
 
@@ -2125,7 +2138,7 @@ mod tests {
                         FoldedBlock {
                             prefixes: Default::default(), cells: vec![
                                 Some(PrimaryInstruction::Encode),
-                                Some(PrimaryInstruction::Direction(Direction::Down)),
+                                None,
                                 None,
                                 None,
                             ],
@@ -2151,6 +2164,8 @@ mod tests {
         assert!(folded.threads[0].instruction_stack.is_empty());
         assert_eq!(folded.registers[0], add.code());
 
+        assert_eq!(vm.step().status, VmStatus::Running);
+        assert_eq!(vm.step().status, VmStatus::Running);
         assert_eq!(vm.step().status, VmStatus::Running);
         assert_eq!(vm.step().status, VmStatus::Running);
         assert_eq!(vm.snapshot().threads[0].position, Coordinate { x: 3, y: 0 });
@@ -2181,7 +2196,7 @@ mod tests {
                         FoldedBlock {
                             prefixes: Default::default(), cells: vec![
                                 Some(PrimaryInstruction::Push),
-                                Some(PrimaryInstruction::Direction(Direction::Down)),
+                                None,
                                 None,
                                 None,
                                 None,
@@ -2204,6 +2219,9 @@ mod tests {
 
         assert_eq!(vm.step().status, VmStatus::Running);
         assert_eq!(vm.snapshot().threads[0].data_stack, vec![0x2A]);
+        assert_eq!(vm.step().status, VmStatus::Running);
+        assert_eq!(vm.step().status, VmStatus::Running);
+        assert_eq!(vm.step().status, VmStatus::Running);
         assert_eq!(vm.step().status, VmStatus::Running);
         assert_eq!(vm.step().status, VmStatus::Running);
         assert_eq!(vm.snapshot().registers[0], 0);
@@ -2238,7 +2256,7 @@ mod tests {
                             prefixes: Default::default(), cells: vec![
                                 Some(PrimaryInstruction::Read),
                                 Some(PrimaryInstruction::Output),
-                                Some(PrimaryInstruction::Direction(Direction::Down)),
+                                None,
                             ],
                         },
                     )]),
@@ -2264,7 +2282,7 @@ mod tests {
     }
 
     #[test]
-    fn folded_block_randomness_advances_the_callers_thread_stream() {
+    fn folded_block_sweep_preserves_the_callers_random_stream() {
         use codegrid_ir::FoldedBlock;
         use codegrid_model::PrimaryInstruction;
 
@@ -2283,11 +2301,7 @@ mod tests {
                     folded_blocks: BTreeMap::from([(
                         fold_id,
                         FoldedBlock {
-                            prefixes: Default::default(), cells: vec![
-                                Some(PrimaryInstruction::RandomDirection),
-                                Some(PrimaryInstruction::Direction(Direction::Down)),
-                                Some(PrimaryInstruction::Direction(Direction::Down)),
-                            ],
+                            prefixes: Default::default(), cells: vec![None; 3],
                         },
                     )]),
                 },
@@ -2301,17 +2315,16 @@ mod tests {
 
         assert_eq!(vm.step().status, VmStatus::Running);
         let initial_state = vm.snapshot().threads[0].random_state;
-        let mut expected_rng = crate::SplitMix64::new(initial_state);
-        expected_rng.next_direction();
 
-        for _ in 0..3 {
+        for _ in 0..4 {
             assert_ne!(vm.step().status, VmStatus::Error);
         }
 
         let snapshot = vm.snapshot();
         assert_eq!(snapshot.threads[0].board, codegrid_ir::BoardId::Main);
         assert_eq!(snapshot.threads[0].position, Coordinate { x: 2, y: 0 });
-        assert_eq!(snapshot.threads[0].random_state, expected_rng.state());
+        assert_eq!(snapshot.threads[0].random_state, initial_state);
+        assert_eq!(vm.step().status, VmStatus::Halted);
     }
 
     #[test]
@@ -4932,7 +4945,7 @@ mod tests {
                         FoldedBlock {
                             prefixes: Default::default(), cells: vec![
                                 Some(PrimaryInstruction::Add),
-                                Some(PrimaryInstruction::Direction(Direction::Down)),
+                                None,
                                 None,
                                 None,
                                 None,
@@ -4986,6 +4999,9 @@ mod tests {
         ));
 
         assert_eq!(vm.step().status, VmStatus::Running);
+        assert_eq!(vm.step().status, VmStatus::Running);
+        assert_eq!(vm.step().status, VmStatus::Running);
+        assert_eq!(vm.step().status, VmStatus::Running);
         assert!(matches!(
             vm.snapshot().threads[0].phase,
             super::ThreadPhaseSnapshot::FoldResume {
@@ -5005,7 +5021,7 @@ mod tests {
         assert_eq!(snapshot.threads[0].direction, Direction::Right);
         assert_eq!(snapshot.threads[1].position, Coordinate { x: 2, y: 2 });
         assert_eq!(snapshot.threads[1].direction, Direction::Left);
-        assert_eq!(snapshot.committed_steps, 4);
+        assert_eq!(snapshot.committed_steps, 7);
     }
 
     #[test]
@@ -5044,7 +5060,7 @@ mod tests {
                             prefixes: Default::default(), cells: vec![
                                 Some(PrimaryInstruction::Add),
                                 Some(PrimaryInstruction::Output),
-                                Some(PrimaryInstruction::Direction(Direction::Down)),
+                                None,
                             ],
                         },
                     )]),

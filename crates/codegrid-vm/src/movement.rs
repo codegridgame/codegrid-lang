@@ -61,24 +61,21 @@ pub fn move_normal(
 
 /// Moves one cell in a one-row Folded Block.
 ///
-/// Horizontal movement wraps. A
-/// vertical direction produces the normative Fold Resume transition.
+/// A Folded Block never wraps. Movement that would leave the block — vertical
+/// in either direction, Left past the left edge, or Right past the right
+/// edge — produces the normative Fold Resume transition.
 pub fn move_folded(position: Coordinate, direction: Direction, width: usize) -> Option<FoldStep> {
     if width == 0 || position.y != 0 || position.x >= width {
         return None;
     }
     match direction {
         Direction::Up | Direction::Down => Some(FoldStep::VerticalExit(direction)),
-        Direction::Left if position.x == 0 => {
-            Some(FoldStep::Moved(Coordinate { x: width - 1, y: 0 }))
-        }
+        Direction::Left if position.x == 0 => Some(FoldStep::VerticalExit(direction)),
         Direction::Left => Some(FoldStep::Moved(Coordinate {
             x: position.x - 1,
             y: 0,
         })),
-        Direction::Right if position.x + 1 == width => {
-            Some(FoldStep::Moved(Coordinate { x: 0, y: 0 }))
-        }
+        Direction::Right if position.x + 1 == width => Some(FoldStep::VerticalExit(direction)),
         Direction::Right => Some(FoldStep::Moved(Coordinate {
             x: position.x + 1,
             y: 0,
@@ -139,18 +136,22 @@ mod tests {
     }
 
     #[test]
-    fn folded_horizontal_edges_wrap_and_vertical_motion_exits() {
+    fn folded_edges_exit_and_vertical_motion_exits() {
         assert_eq!(
             move_folded(Coordinate { x: 0, y: 0 }, Direction::Left, 4),
-            Some(FoldStep::Moved(Coordinate { x: 3, y: 0 }))
+            Some(FoldStep::VerticalExit(Direction::Left))
         );
         assert_eq!(
             move_folded(Coordinate { x: 3, y: 0 }, Direction::Right, 4),
-            Some(FoldStep::Moved(Coordinate { x: 0, y: 0 }))
+            Some(FoldStep::VerticalExit(Direction::Right))
         );
         assert_eq!(
             move_folded(Coordinate { x: 2, y: 0 }, Direction::Down, 4),
             Some(FoldStep::VerticalExit(Direction::Down))
+        );
+        assert_eq!(
+            move_folded(Coordinate { x: 2, y: 0 }, Direction::Right, 4),
+            Some(FoldStep::Moved(Coordinate { x: 3, y: 0 }))
         );
     }
 

@@ -181,7 +181,7 @@ Static validation checks each Primary against its owning CodeGrid and Board:
 - A Folded Block call `$n` resolves only to Folded Block `n` owned by the current Board. It cannot resolve to a Main Board or Function Board owned Folded Block in another scope.
 - A Custom call `#n` resolves to a declared Custom CodeGrid. Custom calls are permitted from outer CodeGrid code, including the outer Main Board, Function Boards, and outer-owned Folded Blocks. They are forbidden from inside a Custom CodeGrid, including its Main Board, Function Boards, and Folded Blocks.
 - Function and Folded Block IDs with the same digit in another CodeGrid or Board do not satisfy a reference.
-- Folded Blocks do not contain Entry markers, suffix Attachments, Function CALLs, Folded Block calls, Function RETURNs, or Custom RETURNs. Other Primary instructions are allowed subject to the Custom-call rule above.
+- Folded Blocks do not contain Entry markers, suffix Attachments, Function CALLs, Folded Block calls, Function RETURNs, Custom RETURNs, direction changes, or random directions. Other Primary instructions are allowed subject to the Custom-call rule above.
 
 Function tail-call eligibility is compiler analysis, not a source-validity condition: both navigation-only and side-effecting return paths may contain syntactically valid recursive calls. A compiler may annotate eligible calls according to the VM contract without rejecting other valid calls.
 

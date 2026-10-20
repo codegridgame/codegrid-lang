@@ -54,7 +54,7 @@ are unchanged.
 | --- | --- | --- |
 | Language surface | Full includes Main, Function, Custom, and Folded Block definitions; all Primary instructions; ReadCode, WriteCode, and Repeat Attachments; and the associated state and execution semantics. | Canonical inventory in [`codegrid-model`](../crates/codegrid-model/src/lib.rs) and the Full source contract. |
 | Board structure | Support scoped Function/Folded Block paths, including definitions nested in Custom CodeGrids. Main and Custom Main contexts may have multiple Entries; each Function Board has at most one explicit Entry. A board without Entries defaults to (0, 0), facing Right. | Source syntax and Entry-count rules are normative in the Full source specification. Board execution and resume behavior belong to the Full VM specification. |
-| Folded Blocks | A Folded Block is one row high and matches its owner's width; entry starts at internal position (0,0) facing Right, independent of the caller direction. Execution wraps horizontally and uses the specified vertical exit/Resume behavior. | The historical `concurrent_outer_folded_threads_keep_control_and_register_state_isolated` case confirms independent internal direction and saved caller direction; the Full VM specification now states this explicitly. |
+| Folded Blocks | A Folded Block is one row high and matches its owner's width; entry starts at internal position (0,0) facing Right, independent of the caller direction. The block never wraps: movement leaving the block exits through Fold Resume, and direction changes and random directions are forbidden inside it (see the Linear Folded Block sweep decision, 2026-10-20). | The historical `concurrent_outer_folded_threads_keep_control_and_register_state_isolated` case confirms independent internal direction and saved caller direction; the Full VM specification now states this explicitly. |
 | Concurrent outer transition | Threads evaluate from the same transition-start state. Their private state and shared effects are staged, conflicts are resolved deterministically, and the outer transition commits atomically or rolls back. Thread order is not a semantic write priority. | The Full VM specification defines the complete conflict, rollback, and ordering rules; direct integration coverage remains required. |
 | Calls and Repeat | Function CALL/RETURN and caller Resume behavior consume their specified VM transitions. Qualifying tail recursion reuses a frame. Repeat spreads Primary executions across transitions and moves after its final execution. | Execution timing, tail-call eligibility, and Repeat behavior are normative in the Full VM specification; direct conformance cases remain required. |
 | Custom | Each Custom invocation starts with isolated context/state, runs synchronous internal transitions within the outer transaction, and participates in caller-stack transactions. Every outer and Custom thread dispatch uses the same generic host work-unit budget; there is no language-level Custom cap. | Error priority, seed derivation, nested-call, rollback, and internal transition behavior are normative in the Full VM specification; direct conformance cases remain required. |
@@ -408,3 +408,23 @@ CALL and RETURN still reject Repeat. Immediate output accepts the same range.
 IR format version bump or compatibility reader is required before publication.
 Game-side authoring and acceptance history is preserved in the Game Runtime
 archive.
+
+## Linear Folded Block sweep (2026-10-20)
+
+The user approved two Folded Block changes. First, Folded Blocks no longer
+wrap: movement that would leave the block — vertical in either direction,
+Left past the left edge, or Right past the right edge — exits through a Fold
+Resume transition that retains the saved outer caller direction. Second,
+direction changes and random directions are forbidden inside Folded Blocks;
+the compiler rejects them with `source.fold_primary` and the IR verifier with
+`ir.fold_primary`. Folded Block execution is therefore a deterministic
+left-to-right sweep that exits at the right edge or through a prefix-gated
+Halt. This supersedes the retained horizontal wrapping in the 2026-10-11
+toroidal decision; ordinary boards remain toroidal.
+
+No error-number additions are required: both forbidden-direction diagnostics
+reuse the existing `source.fold_primary` (1040) and `ir.fold_primary` (2007)
+identities, whose trigger descriptions now include directions. Conformance
+fixtures that exercised in-fold wrapping or in-fold directions were rewritten
+for the linear sweep. Under the unpublished-release policy, current contracts
+are updated directly without aliases or compatibility layers.

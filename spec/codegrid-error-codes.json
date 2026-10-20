@@ -356,7 +356,7 @@
     {
       "layer": "source",
       "code": "source.fold_primary",
-      "condition": "A Primary is forbidden in its Folded Block context.",
+      "condition": "A Primary is forbidden in its Folded Block context, including direction changes and random directions.",
       "surface": "Diagnostic.code in core, CLI JSON, LSP diagnostics, browser/server diagnostics and debug diagnostics. CLI check renders [code].",
       "state_effect": "Compilation rejection: no executable IR or VM instance.",
       "code_type": "string",
@@ -455,7 +455,7 @@
     {
       "layer": "ir",
       "code": "ir.fold_primary",
-      "condition": "A Folded Block contains a forbidden instruction.",
+      "condition": "A Folded Block contains a forbidden instruction, including direction changes and random directions.",
       "surface": "IrError.code; compiler forwards the original IR code into Diagnostic.code with compiler source spans.",
       "state_effect": "IR verification fails; unchecked IR cannot execute.",
       "code_type": "string",

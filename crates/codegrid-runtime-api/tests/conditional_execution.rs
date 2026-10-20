@@ -158,7 +158,7 @@ fn cleared_code_retains_prefix_and_true_suffix_behavior() {
 
 #[test]
 fn fold_prefixes_and_custom_execution_are_supported() {
-    let mut folded = machine("@main\n~> $0 ;\n@M0 ?1+ ?0.3 ^\n@end main", &[]);
+    let mut folded = machine("@main\n~> $0 ;\n@M0 ?1+ ?0.3 _\n@end main", &[]);
     assert_eq!(folded.run(20), RunOutcome::Halted);
     assert_eq!(folded.snapshot().output, vec![3]);
     let mut custom = machine(

@@ -6,8 +6,9 @@ removes normal-board boundary selection and makes explicit Entry markers optiona
 Every ordinary Main and Function board wraps horizontally and vertically,
 including boards inside Customs. Crossing an edge preserves direction and the
 other coordinate, and uses the ordinary movement transition without an extra
-transition or operation. Folded Blocks retain horizontal wrapping and vertical exit
-through Fold Resume.
+transition or operation. Folded Blocks do not wrap: movement that leaves the
+block exits through Fold Resume, and direction Primaries are forbidden inside
+them (see the Linear Folded Block sweep decision, 2026-10-20).
 
 A board without explicit Entries starts at (0, 0), facing Right. Main and Custom
 Main create one default thread; Functions use the default call target. Explicit

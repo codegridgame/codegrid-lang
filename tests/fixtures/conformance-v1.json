@@ -545,7 +545,7 @@
     },
     {
       "id": "fold-entry-and-resume-transitions",
-      "source": "@main\n~> $0 . ;\n@end main\n@main.M0\n+ > _ ^\n@end M0\n",
+      "source": "@main\n~> $0 . ;\n@end main\n@main.M0\n+ _ _ _\n@end M0\n",
       "run": {
         "seed": "0",
         "input": [],
@@ -576,7 +576,7 @@
     },
     {
       "id": "fold-reentry-resets-local-control-state",
-      "source": "@main\n~> $0 $0 . ;\n@end main\n@main.M0\n+ > ^ _ _\n@end M0\n",
+      "source": "@main\n~> $0 $0 . ;\n@end main\n@main.M0\n+ _ _ _ _\n@end M0\n",
       "run": {
         "seed": "0",
         "input": [],
@@ -602,7 +602,7 @@
           0
         ],
         "error_codes": [],
-        "committed_steps": "11"
+        "committed_steps": "15"
       }
     },
     {
@@ -658,7 +658,7 @@
     },
     {
       "id": "fold-shares-caller-data-stack",
-      "source": "@main\n~> $0 ) . ;\n@end main\n@main.M0\n+ ( ^ _ _\n@end M0\n",
+      "source": "@main\n~> $0 ) . ;\n@end main\n@main.M0\n+ ( _ _ _\n@end M0\n",
       "run": {
         "seed": "0",
         "input": [],
@@ -684,70 +684,41 @@
           0
         ],
         "error_codes": [],
+        "committed_steps": "10"
+      }
+    },
+    {
+      "id": "fold-m-right-edge-exits",
+      "source": "@main\n~> + $0 ;\n@end main\n@main.M0\n?0- _ _ _\n@end M0\n",
+      "run": {
+        "seed": "0",
+        "input": [],
+        "max_steps": "10"
+      },
+      "expected": {
+        "process_exit_code": 0,
+        "status": "halted",
+        "vm_status": "halted",
+        "output": [],
+        "registers": [
+          1,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "error_codes": [],
         "committed_steps": "8"
       }
     },
     {
-      "id": "fold-m-right-wraps",
-      "source": "@main\n~> + $0 ;\n@end main\n@main.M0\n?0^ - > _\n@end M0\n",
-      "run": {
-        "seed": "0",
-        "input": [],
-        "max_steps": "10"
-      },
-      "expected": {
-        "process_exit_code": 0,
-        "status": "halted",
-        "vm_status": "halted",
-        "output": [],
-        "registers": [
-          0,
-          0,
-          0,
-          0,
-          0,
-          0,
-          0,
-          0,
-          0,
-          0
-        ],
-        "error_codes": [],
-        "committed_steps": "9"
-      }
-    },
-    {
-      "id": "fold-m-left-wraps",
-      "source": "@main\n~> $0 ;\n@end main\n@main.M0\n< _ ?0^\n@end M0\n",
-      "run": {
-        "seed": "0",
-        "input": [],
-        "max_steps": "10"
-      },
-      "expected": {
-        "process_exit_code": 0,
-        "status": "halted",
-        "vm_status": "halted",
-        "output": [],
-        "registers": [
-          0,
-          0,
-          0,
-          0,
-          0,
-          0,
-          0,
-          0,
-          0,
-          0
-        ],
-        "error_codes": [],
-        "committed_steps": "5"
-      }
-    },
-    {
       "id": "fold-resume-wraps-at-normal-board-edge",
-      "source": "@main\n~> $0\n@end main\n@main.M0\n^ _\n@end M0\n",
+      "source": "@main\n~> $0\n@end main\n@main.M0\n_ _\n@end M0\n",
       "run": {
         "seed": "0",
         "input": [],
@@ -775,8 +746,8 @@
       }
     },
     {
-      "id": "fold-entry-resets-local-position-and-direction",
-      "source": "@main\n~> $0 $0 . ;\n@end main\n@main.M0 + > ^ _ _\n",
+      "id": "fold-entry-resets-local-position",
+      "source": "@main\n~> $0 $0 . ;\n@end main\n@main.M0 + _ _ _ _\n",
       "run": {
         "seed": "0",
         "input": [],
@@ -802,7 +773,7 @@
           0
         ],
         "error_codes": [],
-        "committed_steps": "11"
+        "committed_steps": "15"
       }
     },
     {
@@ -2591,7 +2562,7 @@
     },
     {
       "id": "prefix-folded-body",
-      "source": "@main\n~> $0 ;\n@M0 ?1+ ?0.3 ^\n@end main\n",
+      "source": "@main\n~> $0 ;\n@M0 ?1+ ?0.3 _\n@end main\n",
       "run": {
         "seed": "0",
         "input": [],
@@ -3311,7 +3282,7 @@
     },
     {
       "id": "flag-fold-shares",
-      "source": "@main\n~> $0 ?!.1 ;\n@M0 ) ?!.3 ^ _\n@end main\n",
+      "source": "@main\n~> $0 ?!.1 ;\n@M0 ) ?!.3 _ _\n@end main\n",
       "run": {
         "seed": "0",
         "input": [],
@@ -3338,7 +3309,7 @@
           0
         ],
         "error_codes": [],
-        "committed_steps": "7"
+        "committed_steps": "8"
       }
     },
     {

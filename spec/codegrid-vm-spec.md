@@ -49,7 +49,7 @@ A Normal-phase dispatch evaluates the current cell and then makes the movement o
 
 Every normal board wraps in all four directions. Left and Right edge crossings preserve the row; Up and Down edge crossings preserve the column. Edge crossings preserve direction and use the ordinary single movement transition, without an extra transition or operation. This applies to Main and Function Boards, including Custom Main and Function Boards.
 
-A Folded Block has its owner's width and one row. Horizontal movement wraps inside it as its own fixed movement rule. Moving vertically exits the block through a Fold Resume transition.
+A Folded Block has its owner's width and one row. It never wraps: movement that would leave the block exits it through a Fold Resume transition.
 
 ## 4. Outer transition transaction
 
@@ -89,11 +89,11 @@ The phase records total repetitions and successful repetitions already completed
 
 Executing a Folded Block instruction enters the referenced block at internal position (0,0) facing Right, regardless of the caller thread's current direction. The caller direction is saved separately for Fold Resume. That same outer transition evaluates the first folded cell. The Folded Block shell and each visited block cell have distinct static cell identities.
 
-Horizontal movement wraps inside the block. A vertical direction exits the block and records a Fold Resume phase, retaining the direction the outer thread had when entering. The following outer transition consumes Fold Resume by moving once from the Folded Block call site in that saved outer direction, then returns to Normal. Direction changes inside the block do not replace the saved outer direction.
+A Folded Block never wraps. Movement that would leave the block — vertical in either direction, Left past the left edge, or Right past the right edge — records a Fold Resume phase, retaining the direction the outer thread had when entering. The following outer transition consumes Fold Resume by moving once from the Folded Block call site in that saved outer direction, then returns to Normal. Direction Primaries are forbidden inside Folded Blocks, so the internal sweep direction stays Right for the whole visit.
 
 Folded execution uses the caller thread's register pointer, registers, Page, data stack, instruction stack, input/output context, and PRNG stream. Changes are staged with the enclosing outer transition. A Custom call from an allowed outer Folded Block returns to the Folded Block execution state.
 
-The IR verifier rejects forbidden Primaries in Folded Blocks. They cannot contain nested Folded Block, CALL, RETURN, or CUSTOM_RETURN. Custom calls are permitted in outer Folded Blocks only.
+The IR verifier rejects forbidden Primaries in Folded Blocks. They cannot contain nested Folded Block, CALL, RETURN, CUSTOM_RETURN, direction changes, or random directions. Custom calls are permitted in outer Folded Blocks only.
 
 ### 5.4 Function call and Resume
 
