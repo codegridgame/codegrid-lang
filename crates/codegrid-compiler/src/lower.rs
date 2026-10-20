@@ -90,6 +90,7 @@ fn lower_board(
             ir::FoldedBlock {
                 cells: folded_cells,
                 prefixes: folded.value.prefixes,
+                attachments: folded.value.attachments,
             },
         );
     }

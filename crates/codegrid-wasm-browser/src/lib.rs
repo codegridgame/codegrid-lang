@@ -34,7 +34,7 @@ pub struct BrowserRuntime {
 
 const MIN_RESPONSE_BYTES: u32 = 256;
 const MIN_INSTANCE_STATE_BYTES: u32 = 256;
-const RESPONSE_LIMIT_ERROR: &str = r#"{"api_version":4,"error":{"code":"response_payload_limit_exceeded","error_number":"7019","message":"serialized response exceeds the configured byte limit"}}"#;
+const RESPONSE_LIMIT_ERROR: &str = r#"{"api_version":5,"error":{"code":"response_payload_limit_exceeded","error_number":"7019","message":"serialized response exceeds the configured byte limit"}}"#;
 
 #[derive(Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -1388,9 +1388,9 @@ mod tests {
     }
 
     #[test]
-    fn check_and_compile_use_runtime_api_v4_for_full_source() {
+    fn check_and_compile_use_runtime_api_v5_for_full_source() {
         let mut adapter = runtime();
-        assert_eq!(adapter.runtime.api_version(), 4);
+        assert_eq!(adapter.runtime.api_version(), 5);
 
         let checked = parse(&adapter.check_source("~x\n".to_owned()));
         assert_eq!(checked["api_version"], RUNTIME_API_VERSION);
@@ -1400,7 +1400,7 @@ mod tests {
 
         let compiled =
             parse(&adapter.compile_source(include_str!("../../../examples/echo.cg").to_owned()));
-        assert_eq!(compiled["api_version"], 4);
+        assert_eq!(compiled["api_version"], 5);
         assert_eq!(compiled["outcome"]["kind"], "compiled");
         assert_eq!(compiled["outcome"]["program"], "1");
         assert!(compiled["outcome"].get("view").is_none());
@@ -1438,7 +1438,7 @@ mod tests {
             ));
             let instance = created["instance"].as_str().unwrap().to_owned();
             let result = parse(&adapter.run_handle(&instance, run["max_steps"].as_str().unwrap()));
-            assert_eq!(result["api_version"], 4, "{id}: API version");
+            assert_eq!(result["api_version"], 5, "{id}: API version");
             let expected = &fixture["expected"];
             let expected_status = match expected["status"].as_str().unwrap() {
                 "step_limit_reached" => {
@@ -1486,7 +1486,7 @@ mod tests {
             })
             .expect("live program view exists");
         let actual = parse(&adapter.program_view_handle(&program.get().to_string()));
-        assert_eq!(actual["api_version"], 4);
+        assert_eq!(actual["api_version"], 5);
         assert_eq!(actual["view"], program_view_json(&response.view));
     }
 
@@ -1505,7 +1505,7 @@ mod tests {
         let instance = created["instance"].as_str().unwrap().to_owned();
 
         let first_step = parse(&adapter.step_handle(&instance));
-        assert_eq!(first_step["api_version"], 4);
+        assert_eq!(first_step["api_version"], 5);
         assert_eq!(first_step["result"]["attempted_transition_id"], "1");
         assert_eq!(first_step["result"]["committed_steps"], "1");
         assert_eq!(first_step["result"]["status"], "running");
@@ -1531,11 +1531,11 @@ mod tests {
 
         assert_eq!(
             parse(&adapter.release_instance_handle(&instance))["api_version"],
-            4
+            5
         );
         assert_eq!(
             parse(&adapter.release_program_handle(&program))["api_version"],
-            4
+            5
         );
         assert_eq!(
             parse(&adapter.snapshot_handle(&instance))["error"]["code"],

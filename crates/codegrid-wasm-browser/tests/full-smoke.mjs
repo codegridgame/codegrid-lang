@@ -1,17 +1,17 @@
-export const RUNTIME_API_VERSION = 4;
+export const RUNTIME_API_VERSION = 5;
 
 export function runFullSmoke(BrowserRuntime, suite, baseline, assert, deepEqual) {
   assert(suite.schema_version === 1, "the shared Full fixture suite must use schema version 1");
   assert(Array.isArray(suite.cases) && suite.cases.length > 0, "Full fixtures must be available");
   assert(baseline?.schema === "codegrid.native-cli.full-run-baseline", "the generated Native CLI baseline must be available");
-  assert(baseline.schema_version === 1 && baseline.api_version === RUNTIME_API_VERSION, "the Native CLI baseline must target Runtime API v4");
+  assert(baseline.schema_version === 1 && baseline.api_version === RUNTIME_API_VERSION, "the Native CLI baseline must target Runtime API v5");
   assert(baseline.suite_id === suite.suite_id, "the Native CLI baseline must belong to this fixture suite");
   assert(baseline.max_work_units_per_call === "10000", "the baseline must use the shared deterministic work-unit ceiling");
   assert(Array.isArray(baseline.cases) && baseline.cases.length === suite.cases.length, "the Native CLI baseline must cover every Full fixture");
   deepEqual(baseline.cases.map(({ id }) => id), suite.cases.map(({ id }) => id), "Native CLI baseline fixture IDs");
 
   const runtime = createRuntime(BrowserRuntime);
-  assert(runtime.api_version() === RUNTIME_API_VERSION, "the adapter must expose Runtime API v4");
+  assert(runtime.api_version() === RUNTIME_API_VERSION, "the adapter must expose Runtime API v5");
 
   for (const [atom, reason] of [[".3*", "ReadCode"], ["?0.3*", "ReadCode"], [".3x10", "2 through 9"], ["[0x3", "Function CALL"]]) {
     const response = parseJson(runtime.compile(`~> ${atom} ;\n`), `${atom}: diagnostic`);
@@ -246,7 +246,7 @@ function parseJson(value, operation) {
 }
 
 function assertSuccess(response, operation, assert) {
-  assert(response.api_version === RUNTIME_API_VERSION && !response.error, `${operation}: expected Runtime API v4 success`);
+  assert(response.api_version === RUNTIME_API_VERSION && !response.error, `${operation}: expected Runtime API v5 success`);
 }
 
 function scalarOrArray(actual, expected, assert, operation) {
@@ -269,6 +269,9 @@ function assertFullSnapshot(snapshot, expected, id, assert, deepEqual) {
 
   if ("remaining_input" in expected) deepEqual(snapshot.remaining_input, expected.remaining_input, `${id}: remaining input`);
   if ("memory" in expected) deepEqual(snapshot.memory, expected.memory, `${id}: memory`);
+  if ("runtime_folded_block_tokens" in expected) {
+    deepEqual(snapshot.runtime_program.main.folded_blocks, expected.runtime_folded_block_tokens, `${id}: Folded Block code`);
+  }
   if ("thread_direction" in expected) assert(snapshot.threads[0].direction === expected.thread_direction, `${id}: thread direction`);
   if ("thread_random_state" in expected) assert(snapshot.threads[0].random_state === expected.thread_random_state, `${id}: thread random state`);
   if ("threads" in expected) {

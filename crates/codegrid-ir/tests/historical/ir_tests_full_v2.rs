@@ -117,7 +117,11 @@ mod tests {
         let mut invalid_fold_width = program(vec![Cell::entry(Direction::Right), Cell::empty()], 2);
         invalid_fold_width.outer.main.folded_blocks.insert(
             Slot::new(0).expect("zero is a valid Fold ID"),
-            FoldedBlock { cells: vec![None] },
+            FoldedBlock {
+                cells: vec![None],
+                prefixes: BTreeMap::new(),
+                attachments: BTreeMap::new(),
+            },
         );
 
         let mut invalid_fold_content =
@@ -125,6 +129,8 @@ mod tests {
         invalid_fold_content.outer.main.folded_blocks.insert(
             Slot::new(0).expect("zero is a valid Fold ID"),
             FoldedBlock {
+                prefixes: BTreeMap::new(),
+                attachments: BTreeMap::new(),
                 cells: vec![Some(PrimaryInstruction::Return), None],
             },
         );
@@ -220,6 +226,8 @@ mod tests {
         custom_main.folded_blocks.insert(
             function_zero,
             FoldedBlock {
+                prefixes: BTreeMap::new(),
+                attachments: BTreeMap::new(),
                 cells: vec![Some(PrimaryInstruction::Custom(custom_one))],
             },
         );

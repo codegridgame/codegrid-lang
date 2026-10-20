@@ -43,6 +43,7 @@ pub struct Board {
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct FoldedBlock {
     pub prefixes: BTreeMap<usize, ConditionPrefix>,
+    pub attachments: BTreeMap<usize, AttachmentInstruction>,
     pub cells: Vec<Spanned<Option<PrimaryInstruction>>>,
 }
 

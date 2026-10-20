@@ -212,7 +212,7 @@ suite('Native Run and Debug', () => {
   });
 
   test('Folded Block column breakpoints use compiler-owned source cells', async () => {
-    const program = file('@main\n@size 4x1\n~> $0 . ;\n@M0 + + _ ^\n@end main\n');
+    const program = file('@main\n@size 4x1\n~> $0 . ;\n@M0 + + _ _\n@end main\n');
     await client.launch(program);
     const breakpoints = await client.request('setBreakpoints', { source: { path: program }, breakpoints: [{ line: 4, column: 9 }] });
     assert.strictEqual(breakpoints.breakpoints[0].verified, true);
@@ -222,6 +222,29 @@ suite('Native Run and Debug', () => {
     assert.strictEqual(trace.stackFrames[0].line, 4);
     assert.strictEqual(trace.stackFrames[0].column, 9);
     assert.strictEqual((await client.request('evaluate', { expression: 'registers[0]' })).result, '2');
+  });
+
+  test('Folded Block Repeat frames stay at the compiler-owned internal cell', async () => {
+    await client.launch(file('@main\n@size 4x1\n~> $0 . ;\n@M0 +x3 _ _ _\n@end main\n'));
+    for (let step = 0; step < 2; step++) {
+      const mark = client.messages.length;
+      await client.request('next', { threadId: 1 });
+      await client.wait((message) => message.event === 'stopped', mark);
+    }
+    for (let completed = 1; completed <= 2; completed++) {
+      assert.strictEqual((await client.request('evaluate', { expression: 'thread.phase.kind' })).result, 'fold_repeat');
+      assert.strictEqual((await client.request('evaluate', { expression: 'registers[0]' })).result, String(completed));
+      const trace = await client.request('stackTrace', { threadId: 1 });
+      assert.strictEqual(trace.stackFrames[0].line, 4);
+      assert.strictEqual(trace.stackFrames[0].column, 5);
+      const mark = client.messages.length;
+      await client.request('next', { threadId: 1 });
+      await client.wait((message) => message.event === 'stopped', mark);
+    }
+    const trace = await client.request('stackTrace', { threadId: 1 });
+    assert.strictEqual(trace.stackFrames[0].line, 4);
+    assert.strictEqual(trace.stackFrames[0].column, 9);
+    assert.strictEqual((await client.request('evaluate', { expression: 'registers[0]' })).result, '3');
   });
 
   test('a sibling thread breakpoint selects that thread and advances all threads atomically', async () => {

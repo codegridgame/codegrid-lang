@@ -83,7 +83,7 @@ Primary-before-Attachment is the rule for ordinary instructions with WriteCode: 
 
 Repeat(N) executes its attached Primary N times over N transitions, for N in 2 through 9. The first execution occurs on the transition that reaches the cell. While repetitions remain, the thread stays at that cell and does not move; it reexecutes the Primary on each following transition. Before each attempted execution, reevaluate the fixed prefix against that context's transition-start selected register. A false condition cancels remaining repetitions, returns to Normal, and moves once in the current direction. After the final successful execution it moves once in the resulting direction and returns to Normal.
 
-The phase records total repetitions and successful repetitions already completed. A failed transition does not advance this phase. Each Primary execution counts separately in Operation Count. Repeat itself is not an operation kind.
+The phase records total repetitions and successful repetitions already completed. A failed transition does not advance this phase. Each Primary execution counts separately in Operation Count. Repeat itself is not an operation kind. When attached inside a Folded Block, Repeat stays at the same internal Folded Block cell, applies the same prefix recheck and cancellation rules, and then resumes the Folded Block sweep.
 
 ### 5.3 Fold
 
@@ -91,9 +91,9 @@ Executing a Folded Block instruction enters the referenced block at internal pos
 
 A Folded Block never wraps. Movement that would leave the block — vertical in either direction, Left past the left edge, or Right past the right edge — records a Fold Resume phase, retaining the direction the outer thread had when entering. The following outer transition consumes Fold Resume by moving once from the Folded Block call site in that saved outer direction, then returns to Normal. Direction Primaries are forbidden inside Folded Blocks, so the internal sweep direction stays Right for the whole visit.
 
-Folded execution uses the caller thread's register pointer, registers, Page, data stack, instruction stack, input/output context, and PRNG stream. Changes are staged with the enclosing outer transition. A Custom call from an allowed outer Folded Block returns to the Folded Block execution state.
+Folded execution uses the caller thread's register pointer, registers, Page, data stack, instruction stack, input/output context, and PRNG stream. Changes are staged with the enclosing outer transition. A Custom call from an allowed outer Folded Block returns to the Folded Block execution state. Folded cells may carry the same compatible suffix Attachments as other cells. ReadCode and WriteCode run after the cell's Primary on the same transition; Repeat uses a FoldRepeat phase that retains the block, internal cell, directions, total, and completed count across transitions.
 
-The IR verifier rejects forbidden Primaries in Folded Blocks. They cannot contain nested Folded Block, CALL, RETURN, CUSTOM_RETURN, direction changes, or random directions. Custom calls are permitted in outer Folded Blocks only.
+The IR verifier rejects forbidden Primaries in Folded Blocks. They cannot contain nested Folded Block, CALL, RETURN, CUSTOM_RETURN, direction changes, or random directions. Custom calls are permitted in outer Folded Blocks only. Attachments remain subject to the ordinary Primary/Attachment compatibility matrix and are permitted only when the cell's Primary is permitted in that Folded Block.
 
 ### 5.4 Function call and Resume
 
@@ -239,11 +239,13 @@ WriteCode replaces only Primary, retaining prefix and suffix. ReadCode and DECOD
 
 ### 8.1 ReadCode
 
-ReadCode reads the Primary at the same static cell from the transition-start mutable code snapshot and pushes its Instruction Stack item onto the executing thread's Instruction Stack. If that Primary is EMPTY, it pushes the EMPTY stack item (Instruction Code 32). It is an operation distinct from the Primary.
+ReadCode reads the Primary at the same static cell from the transition-start mutable code snapshot and pushes its Instruction Stack item onto the executing thread's Instruction Stack. If that Primary is EMPTY, it pushes the EMPTY stack item (Instruction Code 32). This applies to normal and Folded Block cells, using the cell's complete static identity. It is an operation distinct from the Primary.
 
 ### 8.2 WriteCode
 
-When the executing thread's Instruction Stack is nonempty, WriteCode pops its top item and stages replacement of the attached cell's Primary. EMPTY clears the Primary; an encodable Primary replaces it. With an empty stack, the Attachment is a counted no-op and leaves the cell unchanged.
+When the executing thread's Instruction Stack is nonempty, WriteCode pops its top item and stages replacement of the attached cell's Primary. EMPTY clears the Primary; an encodable Primary replaces it. With an empty stack, the Attachment is a counted no-op and leaves the cell unchanged. This applies to normal and Folded Block cells; a Folded Block write targets that cell's Primary and retains its prefix and suffix.
+
+If the top item is a Primary forbidden in the target Folded Block, the complete WriteCode operation is skipped: it does not pop the item, record a WriteCode operation, stage a code write, or participate in code-write conflicts. The existing Primary remains unchanged. EMPTY and every Primary permitted in the target Folded Block are handled normally.
 
 A WriteCode change affects later visits, not the already executed Primary. It changes only the Primary field; the prefix and suffix remain attached, including after clearing the Primary. All threads in one execution context observe transition-start code for that transition. Multiple writes to the same static cell in one context transition conflict even when replacement values are equal.
 
@@ -251,7 +253,7 @@ WriteCode modifies the current mutable code copy. In a Custom invocation it chan
 
 ### 8.3 Repeat
 
-Repeat(N) reexecutes its attached Primary N times over separate transitions, for N in 2 through 9, as in Section 5.2. The verifier rejects unsupported counts and Repeat on CALL or RETURN. Since a cell has only one suffix Attachment, Repeat cannot combine with ReadCode or WriteCode.
+Repeat(N) reexecutes its attached Primary N times over separate transitions, for N in 2 through 9, as in Section 5.2. In a Folded Block it retains the internal cell and resumes the sweep only after completion or a false-prefix cancellation. The verifier rejects unsupported counts and Repeat on CALL or RETURN. Since a cell has only one suffix Attachment, Repeat cannot combine with ReadCode or WriteCode.
 
 ### 8.4 CALL and RETURN timing
 
@@ -367,7 +369,7 @@ Owned snapshots and borrowed read-only views expose the same semantic state with
 
 - overall status and committed outer transition count;
 - ten outer registers, outer sparse memory, remaining input, accumulated output, and the mutable outer program copy;
-- each outer thread's ID, board, coordinate, direction, register pointer, status_flag (0 or 1), Page, data and instruction stacks, call frames, phase, and PRNG state;
+- each outer thread's ID, board, coordinate, direction, register pointer, status_flag (0 or 1), Page, data and instruction stacks, call frames, phase (including FoldRepeat identity and progress), and PRNG state;
 - the committed-step summary, structured runtime errors, and any VM fault.
 
 A successful step may emit ordered events for reached cells, consumed input, committed register/memory/code changes, and thread changes. Failed or rolled-back transitions emit no events and no newly committed output. A state-change event is emitted only when the committed value changes. Empty input, empty-stack WriteCode, and invalid DECODE no-ops do not emit a change event.
@@ -497,11 +499,12 @@ The VM decisions recorded in [Full Language Decisions](../docs/decisions.md#reso
 1. Multiple Custom internal threads returning on different and matching transitions, including a surviving thread, same-transition Halt, error, and host work-limit interruption rollback.
 2. CALL ReadCode and WriteCode on AfterCall, inert RETURN attachments, and CALL-site mutation by a callee.
 3. ReadCode's EMPTY behavior is not reachable from verified IR: Attachments require an initial Primary, each cell has at most one suffix Attachment, and WriteCode changes only that cell's Primary while retaining its Attachment. Preserve the specified defensive EMPTY result (Instruction Code 32), but do not require an impossible self-modify-then-ReadCode execution case. Cover ReadCode's transition-start Primary and stack usage, WriteCode clearing while retaining its Attachment, and Instruction Code 32 through reachable DECODE/ENCODE behavior.
-4. Empty and nonempty POPADD/NAND register, stack, movement, and candidate
+4. Folded Block ReadCode, WriteCode, and Repeat execution, static cell identities and events, prefix rechecks during FoldRepeat, and a forbidden dynamic WriteCode that preserves the Primary and stack item without counting or staging the rejected Attachment.
+5. Empty and nonempty POPADD/NAND register, stack, movement, and candidate
    operation-footprint behavior.
-5. Custom READ from empty and nonempty caller stacks, direction, register preservation, caller-stack conflicts, and coexistence with Custom OUTPUT.
-6. The full cross-effect conflict matrix, canonical multi-error order, successful and failed event-order golden cases, and the stack high-water formula at outer and aligned Custom transitions.
-7. One-unit-per-dispatch accounting across Outer and Custom threads, one shared budget across a bounded `run`, exact-ceiling commit, pre-dispatch interruption, full candidate-transition rollback without metric changes, and preservation of earlier committed transitions.
+6. Custom READ from empty and nonempty caller stacks, direction, register preservation, caller-stack conflicts, and coexistence with Custom OUTPUT.
+7. The full cross-effect conflict matrix, canonical multi-error order, successful and failed event-order golden cases, and the stack high-water formula at outer and aligned Custom transitions.
+8. One-unit-per-dispatch accounting across Outer and Custom threads, one shared budget across a bounded `run`, exact-ceiling commit, pre-dispatch interruption, full candidate-transition rollback without metric changes, and preservation of earlier committed transitions.
 
 Tail-call eligibility follow the verifier metadata and rules in Sections 5.4–5.5. Keep them aligned with direct VM cases; any discovered conflict must be recorded and resolved before changing either contract.
 
@@ -531,4 +534,4 @@ Core source spans remain UTF-8 byte offsets; conversion for editors is outside t
 
 ## 18. Encoding migration (2026-10-03)
 
-Instruction Codes follow single-symbol ASCII values or the sum of both symbols' ASCII values. RandomDirection is 126 and CMP is 124. All other retained encodings and EMPTY 32 remain unchanged. Codes 63, 95, 97, 129, and 153 are no longer decoded and are not reused; DECODE handles them by the existing invalid-byte counted-no-op rule. Prefixes and suffixes are not encodable Primaries. Existing non-encodable structural, immediate-output, and Halt forms remain excluded. This migration introduced IR format 2. Current executable IR format 3 rejects formats 1 and 2 after the Function/NEG semantic change.
+Instruction Codes follow single-symbol ASCII values or the sum of both symbols' ASCII values. RandomDirection is 126 and CMP is 124. All other retained encodings and EMPTY 32 remain unchanged. Codes 63, 95, 97, 129, and 153 are no longer decoded and are not reused; DECODE handles them by the existing invalid-byte counted-no-op rule. Prefixes and suffixes are not encodable Primaries. Existing non-encodable structural, immediate-output, and Halt forms remain excluded. This migration introduced IR format 2. Executable IR format 3 later rejected formats 1 and 2 after the Function/NEG semantic change; current IR format 4 adds Folded Block suffix Attachments and rejects formats 1 through 3.

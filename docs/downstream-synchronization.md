@@ -1,6 +1,6 @@
 # Mandatory downstream synchronization
 
-## Current boundary and synchronization status (2026-10-18)
+## Boundary and last fully synchronized baseline (2026-10-18)
 
 The game-domain implementation has been moved out of this repository in the
 current working trees. `codegrid-lang` retains `.cg` syntax, compilation,
@@ -16,7 +16,7 @@ one visible source test index; the runtime steps that case, compares its output
 with its expectation, and stops with that case's result. It does not aggregate
 or judge the full level. Generic language debugging remains in Lang.
 
-The source split and current consumers are verified against immutable Lang
+The source split and consumers at this baseline were verified against immutable Lang
 revision `e27e29b1a8b0bf1fd8957c0ad5a25d1e6bada1e6`. The Game Runtime Cargo
 manifest and lockfile pin this revision. Its current Rust workspace and four
 Level WASM artifacts were rebuilt with `--locked` and without a local Cargo
@@ -24,8 +24,64 @@ override. The neutral prepared-step APIs consumed by the Game Runtime are
 available at the pinned revision. Exact source and artifact identities are in
 the [Game Runtime synchronization record](../../bf-steam-wt/doc/codegrid-lang同步规则.md).
 
+This is a dated successful baseline, not the current suffix-Attachment integration
+status. The 2026-10-20 section below records the newer dependency and pending build.
+
 Game decision and verification history formerly stored here has moved to the
 [Game Runtime history archive](../../bf-steam-wt/doc/codegrid-lang-history/README.md).
+
+## 2026-10-20 Folded Block Attachments — downstream synchronization incomplete
+
+Full source and verified IR now allow each Folded Block cell to carry any
+compatible suffix Attachment. Repeat follows its normal per-transition rules
+while preserving Folded Block progress. WriteCode skips a Primary forbidden in
+the target Folded Block as a complete no-op: the Primary and instruction-stack
+item remain, and no WriteCode metric or code-write effect is recorded. The
+current contracts are IR format 4, Runtime API 5, and Server ABI 6.
+
+The Web, Steam sandbox, API contract, and Worker consumers now target Full v5.
+Their browser and server artifacts were rebuilt from Lang commit
+`8e42e77602371ccde56ce4e8a60d4dc9ce64481d` with `source_dirty=true`,
+`wasm-bindgen 0.2.129`, and a 67,108,864-byte linear-memory ceiling. The
+browser WASM hash is `8c73a65e1e9df0d637ad372d2f4100dfb01dc0139a53727127438df264e8e98c`;
+the server WASM hash is `c87672d43f7f849cc6df09f14515085dd01385dd3a6944cb486e1e6dda8a6bc4`.
+Both new Folded Block cases pass native CLI, Wasmtime, browser Node/browser, and
+server Node checks; all 106 shared fixtures match the native CLI result.
+Downstream type checks, Steam tests, Web and Steam builds, API build, local
+Workerd smoke, and five Web-to-Workerd browser tests pass.
+
+The follow-up review removed the obsolete folded-suffix diagnostic from the
+registry and all generated ten-locale catalogs, shared the ordinary/folded IR
+Attachment validator, and fixed VS Code FoldRepeat source frames. The actual
+Extension Host full run reports 138 passing and one initially pending optional
+LSP test; a four-test follow-up with the actual LSP passes, including that case.
+The seven encodable
+forbidden Primary forms are checked for WriteCode no-op behavior. Current
+documentation indexes, task status, API dimension guidance, and downstream
+provenance now distinguish the successful language hosts from the pending
+Game Runtime build. Rebuilt Full artifact hashes are recorded above. Steam's
+11-test sandbox boundary suite and actual Worker folded Repeat/forbidden-write
+probes pass.
+
+The Rust Game Runtime source now validates Folded Block suffix Attachments and
+includes them in static instruction-kind metrics and instruction limits. Its
+Cargo manifest still pins immutable Lang revision
+`8e42e77602371ccde56ce4e8a60d4dc9ce64481d`, which predates the new
+`FoldedBlock.attachments` IR field. `cargo test --locked -p
+codegrid-game-runtime` therefore fails because that pinned dependency has no
+`attachments` field. The four Game Runtime Level WASM artifacts cannot be
+rebuilt or truthfully marked as containing the new semantics until a new
+immutable Lang revision is available and pinned. The downstream Web artifact
+integrity suite consequently reports two failures for stale Game Runtime
+provenance; the Full v5 artifact checks pass.
+
+The old Full v4 browser and server files remain in their former directories;
+active consumers use the new v5 paths. Removing those generated directories
+was refused by the command safety policy, so the no-old-artifacts requirement
+is also incomplete. Do not report the cross-repository change as fully
+synchronized until the Game Runtime is rebuilt from a new immutable Lang
+revision, the v4 files are safely removed, and the complete downstream suite
+passes.
 
 ## Historical VM work-unit smoke failure and current verification (2026-10-18)
 

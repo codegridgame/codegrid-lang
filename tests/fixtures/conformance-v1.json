@@ -3636,6 +3636,46 @@
         "error_codes": [],
         "committed_steps": "6"
       }
+    },
+    {
+      "id": "folded-repeat-reexecutes-primary-before-resuming-sweep",
+      "source": "@main\n~> $0 . ;\n@end main\n@main.M0\n+x3 _ _ _\n@end main.M0\n",
+      "run": {
+        "seed": "0",
+        "input": [],
+        "max_steps": "20"
+      },
+      "expected": {
+        "process_exit_code": 0,
+        "status": "halted",
+        "vm_status": "halted",
+        "output": [3],
+        "registers": [3, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        "error_codes": [],
+        "committed_steps": "10",
+        "runtime_folded_block_tokens": {"0": ["+x3", null, null, null]},
+        "thread_instruction_stack_sizes": [0]
+      }
+    },
+    {
+      "id": "folded-forbidden-write-preserves-code-and-stack",
+      "source": "@main\n~> , & $0 . ;\n@end main\n@main.M0\n+= _ _ _ _ _\n@end main.M0\n",
+      "run": {
+        "seed": "0",
+        "input": [62],
+        "max_steps": "20"
+      },
+      "expected": {
+        "process_exit_code": 0,
+        "status": "halted",
+        "vm_status": "halted",
+        "output": [63],
+        "registers": [63, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        "error_codes": [],
+        "committed_steps": "12",
+        "runtime_folded_block_tokens": {"0": ["+=", null, null, null, null, null]},
+        "thread_instruction_stack_sizes": [1]
+      }
     }
   ]
 }

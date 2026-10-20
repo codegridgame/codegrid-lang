@@ -33,7 +33,7 @@ for (const name of [
 
 const instance = await WebAssembly.instantiate(module, {});
 const abi = instance.exports;
-assert.equal(abi.codegrid_server_abi_version(), 5, "server ABI version must be 5");
+assert.equal(abi.codegrid_server_abi_version(), 6, "server ABI version must be 6");
 assert.equal(abi.codegrid_server_alloc_buffer(0), 0, "zero-length buffers must be rejected");
 assert.equal(abi.codegrid_server_alloc_buffer(8 * 1024 * 1024 + 1), 0, "oversized buffers must be rejected");
 assert.equal(abi.codegrid_server_free_buffer(0), 0, "unknown pointers must not be freed");
@@ -166,8 +166,8 @@ assert.notEqual(fullRequestPointer, 0, "maximum request buffer must be allocated
 assert.notEqual(retainedFillerPointer, 0, "maximum filler buffer must be allocated");
 const initializePayload = Buffer.from(
   JSON.stringify({
-    abi_version: 5,
-    api_version: 4,
+    abi_version: 6,
+    api_version: 5,
     operation: "initialize",
     host_limits: hostLimits(),
   }),
@@ -191,8 +191,8 @@ assert.equal(
 );
 const checkAfterResponseAllocationFailure = dispatch(
   {
-    abi_version: 5,
-    api_version: 4,
+    abi_version: 6,
+    api_version: 5,
     operation: "check",
     source: "~x\n",
   },
@@ -206,8 +206,8 @@ assert.equal(
 );
 const initialized = dispatch(
   {
-    abi_version: 5,
-    api_version: 4,
+    abi_version: 6,
+    api_version: 5,
     operation: "initialize",
     host_limits: hostLimits(),
   },
@@ -220,8 +220,8 @@ const allocationRecoveryInstance = await WebAssembly.instantiate(module, {});
 const allocationRecoveryAbi = allocationRecoveryInstance.exports;
 const allocationRecoveryDispatch = (request) => dispatch(request, allocationRecoveryAbi);
 const allocationRecoveryInitialized = allocationRecoveryDispatch({
-  abi_version: 5,
-  api_version: 4,
+  abi_version: 6,
+  api_version: 5,
   operation: "initialize",
   host_limits: {
     ...hostLimits(),
@@ -239,8 +239,8 @@ assert.equal(
 
 const allocationRecoverySource = "~> + ;\n";
 const allocationRecoveryCompile = {
-  abi_version: 5,
-  api_version: 4,
+  abi_version: 6,
+  api_version: 5,
   operation: "compile",
   source: allocationRecoverySource,
 };
@@ -254,8 +254,8 @@ assert.equal(recoveredCompile.status, "compiled", "failed compile response reser
 assert.equal(recoveredCompile.program, "1", "compile retry must allocate the first program handle");
 
 const allocationRecoveryCreate = {
-  abi_version: 5,
-  api_version: 4,
+  abi_version: 6,
+  api_version: 5,
   operation: "create_instance",
   program: recoveredCompile.program,
   input: [],
@@ -267,15 +267,15 @@ const recoveredCreate = allocationRecoveryDispatch(allocationRecoveryCreate);
 assert.equal(recoveredCreate.instance, "1", "failed create response reservation must not consume an instance slot");
 
 const allocationRecoveryStep = {
-  abi_version: 5,
-  api_version: 4,
+  abi_version: 6,
+  api_version: 5,
   operation: "step",
   instance: recoveredCreate.instance,
 };
 assertResponseReservationFails(allocationRecoveryStep, allocationRecoveryAbi);
 const stepAfterReservationFailure = allocationRecoveryDispatch({
-  abi_version: 5,
-  api_version: 4,
+  abi_version: 6,
+  api_version: 5,
   operation: "snapshot",
   instance: recoveredCreate.instance,
 });
@@ -288,16 +288,16 @@ const recoveredStep = allocationRecoveryDispatch(allocationRecoveryStep);
 assert.equal(recoveredStep.result.committed_steps, "1", "step retry must apply exactly one transition");
 
 const allocationRecoveryRun = {
-  abi_version: 5,
-  api_version: 4,
+  abi_version: 6,
+  api_version: 5,
   operation: "run",
   instance: recoveredCreate.instance,
   max_steps: "10",
 };
 assertResponseReservationFails(allocationRecoveryRun, allocationRecoveryAbi);
 const runAfterReservationFailure = allocationRecoveryDispatch({
-  abi_version: 5,
-  api_version: 4,
+  abi_version: 6,
+  api_version: 5,
   operation: "snapshot",
   instance: recoveredCreate.instance,
 });
@@ -312,7 +312,7 @@ assert.equal(recoveredRun.snapshot.committed_steps, "3", "run retry must apply o
 
 const unsupportedAbi = dispatch({
   abi_version: 99,
-  api_version: 4,
+  api_version: 5,
   operation: "check",
   source: "~> ;\n",
 });
@@ -343,6 +343,7 @@ function assertPresentExpectedFields(fixture, result) {
     remaining_input: snapshot.remaining_input,
     runtime_main_attachment_tokens: snapshot.runtime_program.main.cells.map((cell) => cell.attachment),
     runtime_main_primary_tokens: snapshot.runtime_program.main.cells.map((cell) => cell.primary),
+    runtime_folded_block_tokens: snapshot.runtime_program.main.folded_blocks,
     thread_call_stack_sizes: threads.map((thread) => thread.call_frames.length),
     thread_data_stack_sizes: threads.map((thread) => thread.data_stack.length),
     thread_direction: threads[0]?.direction,
@@ -359,22 +360,22 @@ function assertPresentExpectedFields(fixture, result) {
 
 for (const fixture of suite.cases) {
   const compilation = dispatch({
-    abi_version: 5,
-    api_version: 4,
+    abi_version: 6,
+    api_version: 5,
     operation: "compile",
     source: fixture.source,
   });
   assert.equal(compilation.status, "compiled", `${fixture.id}: compilation`);
   const viewedProgram = dispatch({
-    abi_version: 5,
-    api_version: 4,
+    abi_version: 6,
+    api_version: 5,
     operation: "program_view",
     program: compilation.program,
   });
   assert.deepEqual(viewedProgram.view, compilation.view, `${fixture.id}: program_view returns canonical Full code`);
   const created = dispatch({
-    abi_version: 5,
-    api_version: 4,
+    abi_version: 6,
+    api_version: 5,
     operation: "create_instance",
     program: compilation.program,
     input: fixture.run.input,
@@ -382,15 +383,15 @@ for (const fixture of suite.cases) {
     initial_memory: fixture.run.initial_memory ?? [],
   });
   const result = dispatch({
-    abi_version: 5,
-    api_version: 4,
+    abi_version: 6,
+    api_version: 5,
     operation: "run",
     instance: created.instance,
     max_steps: fixture.run.max_steps,
   });
   const repeatedCreated = dispatch({
-    abi_version: 5,
-    api_version: 4,
+    abi_version: 6,
+    api_version: 5,
     operation: "create_instance",
     program: compilation.program,
     input: fixture.run.input,
@@ -398,16 +399,16 @@ for (const fixture of suite.cases) {
     initial_memory: fixture.run.initial_memory ?? [],
   });
   const repeatedResult = dispatch({
-    abi_version: 5,
-    api_version: 4,
+    abi_version: 6,
+    api_version: 5,
     operation: "run",
     instance: repeatedCreated.instance,
     max_steps: fixture.run.max_steps,
   });
   assert.deepEqual(repeatedResult.snapshot, result.snapshot, `${fixture.id}: deterministic repeated run`);
   const expected = fixture.expected;
-  assert.equal(result.abi_version, 5, `${fixture.id}: server ABI version`);
-  assert.equal(result.api_version, 4, `${fixture.id}: Runtime API version`);
+  assert.equal(result.abi_version, 6, `${fixture.id}: server ABI version`);
+  assert.equal(result.api_version, 5, `${fixture.id}: Runtime API version`);
   assert.equal(result.operation, "run", `${fixture.id}: operation`);
   assert.equal(result.status, expected.status, `${fixture.id}: run status`);
   assert.equal(result.snapshot.status, expected.vm_status, `${fixture.id}: VM status`);
@@ -424,22 +425,22 @@ for (const fixture of suite.cases) {
   assert(Array.isArray(result.newly_emitted_output), `${fixture.id}: run returns output delta`);
   assertPresentExpectedFields(fixture, result);
   const releasedInstance = dispatch({
-    abi_version: 5,
-    api_version: 4,
+    abi_version: 6,
+    api_version: 5,
     operation: "release_instance",
     instance: created.instance,
   });
   assert.equal(releasedInstance.operation, "release_instance", `${fixture.id}: release instance`);
   const releasedRepeatedInstance = dispatch({
-    abi_version: 5,
-    api_version: 4,
+    abi_version: 6,
+    api_version: 5,
     operation: "release_instance",
     instance: repeatedCreated.instance,
   });
   assert.equal(releasedRepeatedInstance.operation, "release_instance", `${fixture.id}: release repeated instance`);
   const releasedProgram = dispatch({
-    abi_version: 5,
-    api_version: 4,
+    abi_version: 6,
+    api_version: 5,
     operation: "release_program",
     program: compilation.program,
   });
@@ -450,8 +451,8 @@ const limitedInstance = await WebAssembly.instantiate(module, {});
 const limitedAbi = limitedInstance.exports;
 const limitedDispatch = (request) => dispatch(request, limitedAbi);
 const limitedInit = limitedDispatch({
-  abi_version: 5,
-  api_version: 4,
+  abi_version: 6,
+  api_version: 5,
   operation: "initialize",
   host_limits: {
     ...hostLimits(),
@@ -467,31 +468,31 @@ const limitedInit = limitedDispatch({
 });
 assert.equal(limitedInit.status, "initialized", "all accepted host ceilings must initialize");
 const sourceOverLimit = limitedDispatch({
-  abi_version: 5,
-  api_version: 4,
+  abi_version: 6,
+  api_version: 5,
   operation: "compile",
   source: `${" ".repeat(65)}`,
 });
 assert.equal(sourceOverLimit.error.code, "source_payload_limit_exceeded", "source bytes must obey the configured ceiling");
 assert.equal(sourceOverLimit.error.error_number, "7508", "server transport alias retains its scoped numeric identity");
 const limitedProgram = limitedDispatch({
-  abi_version: 5,
-  api_version: 4,
+  abi_version: 6,
+  api_version: 5,
   operation: "compile",
   source: simpleWrapSource,
 });
 assert.equal(limitedProgram.status, "compiled");
 assert.equal(typeof limitedProgram.program, "string", "program handles must use exact decimal strings");
 const programOverLimit = limitedDispatch({
-  abi_version: 5,
-  api_version: 4,
+  abi_version: 6,
+  api_version: 5,
   operation: "compile",
   source: simpleWrapSource,
 });
 assert.equal(programOverLimit.error.code, "program_limit_reached", "compiled-program count must obey its configured ceiling");
 const inputOverLimit = limitedDispatch({
-  abi_version: 5,
-  api_version: 4,
+  abi_version: 6,
+  api_version: 5,
   operation: "create_instance",
   program: limitedProgram.program,
   input: [1, 2],
@@ -500,8 +501,8 @@ const inputOverLimit = limitedDispatch({
 });
 assert.equal(inputOverLimit.error.code, "input_payload_limit_exceeded", "input bytes must obey the configured ceiling");
 const initialMemoryOverLimit = limitedDispatch({
-  abi_version: 5,
-  api_version: 4,
+  abi_version: 6,
+  api_version: 5,
   operation: "create_instance",
   program: limitedProgram.program,
   input: [],
@@ -513,8 +514,8 @@ const initialMemoryOverLimit = limitedDispatch({
 });
 assert.equal(initialMemoryOverLimit.error.code, "initial_memory_limit_exceeded", "initial memory entries must obey their configured ceiling");
 const limitedCreate = () => limitedDispatch({
-  abi_version: 5,
-  api_version: 4,
+  abi_version: 6,
+  api_version: 5,
   operation: "create_instance",
   program: limitedProgram.program,
   input: [],
@@ -526,16 +527,16 @@ const totalLimited = limitedCreate();
 assert.equal(typeof workLimited.instance, "string", "instance handles must use exact decimal strings");
 assert.equal(limitedCreate().error.code, "instance_limit_reached", "instance count must obey its configured ceiling");
 const perCallOverLimit = limitedDispatch({
-  abi_version: 5,
-  api_version: 4,
+  abi_version: 6,
+  api_version: 5,
   operation: "run",
   instance: workLimited.instance,
   max_steps: "5",
 });
 assert.equal(perCallOverLimit.error.code, "run_step_budget_exceeded", "per-call steps must obey their configured ceiling");
 const workYield = limitedDispatch({
-  abi_version: 5,
-  api_version: 4,
+  abi_version: 6,
+  api_version: 5,
   operation: "run",
   instance: workLimited.instance,
   max_steps: "2",
@@ -545,8 +546,8 @@ assert.equal(workYield.snapshot.committed_steps, "1", "work exhaustion must pres
 assert.equal(typeof workYield.snapshot.metrics.committed_steps, "string", "step metrics must use exact decimal strings");
 for (let step = 0; step < 2; step += 1) {
   const result = limitedDispatch({
-    abi_version: 5,
-    api_version: 4,
+    abi_version: 6,
+    api_version: 5,
     operation: "run",
     instance: totalLimited.instance,
     max_steps: "1",
@@ -554,8 +555,8 @@ for (let step = 0; step < 2; step += 1) {
   assert.equal(result.snapshot.committed_steps, String(step + 1), "total step limits must be scoped to each instance");
 }
 const totalOverLimit = limitedDispatch({
-  abi_version: 5,
-  api_version: 4,
+  abi_version: 6,
+  api_version: 5,
   operation: "run",
   instance: totalLimited.instance,
   max_steps: "1",
@@ -565,8 +566,8 @@ assert.equal(totalOverLimit.error.code, "instance_step_budget_exceeded", "total 
 const boundedResponseInstance = await WebAssembly.instantiate(module, {});
 const boundedResponseDispatch = (request) => dispatch(request, boundedResponseInstance.exports);
 const boundedResponseInit = boundedResponseDispatch({
-  abi_version: 5,
-  api_version: 4,
+  abi_version: 6,
+  api_version: 5,
   operation: "initialize",
   host_limits: {
     ...hostLimits(),
@@ -576,22 +577,22 @@ const boundedResponseInit = boundedResponseDispatch({
 });
 assert.equal(boundedResponseInit.status, "initialized");
 const oversizedDiagnostics = boundedResponseDispatch({
-  abi_version: 5,
-  api_version: 4,
+  abi_version: 6,
+  api_version: 5,
   operation: "check",
   source: "~x\n".repeat(100),
 });
 assert.equal(oversizedDiagnostics.error.code, "response_payload_limit_exceeded", "response serialization must return a complete bounded error");
 const boundedProgram = boundedResponseDispatch({
-  abi_version: 5,
-  api_version: 4,
+  abi_version: 6,
+  api_version: 5,
   operation: "compile",
   source: "~> ;\n",
 });
 assert.equal(boundedProgram.status, "compiled");
 const oversizedState = boundedResponseDispatch({
-  abi_version: 5,
-  api_version: 4,
+  abi_version: 6,
+  api_version: 5,
   operation: "create_instance",
   program: boundedProgram.program,
   input: [],
@@ -601,16 +602,16 @@ const oversizedState = boundedResponseDispatch({
 assert.equal(oversizedState.error.code, "instance_state_limit_exceeded", "retained snapshot state must obey its configured ceiling");
 
 const lifecycleProgram = dispatch({
-  abi_version: 5,
-  api_version: 4,
+  abi_version: 6,
+  api_version: 5,
   operation: "compile",
   source: "~> , . ;\n",
 });
 assert.equal(lifecycleProgram.status, "compiled", "lifecycle source must compile");
 function createLifecycleInstance(input) {
   return dispatch({
-    abi_version: 5,
-    api_version: 4,
+    abi_version: 6,
+    api_version: 5,
     operation: "create_instance",
     program: lifecycleProgram.program,
     input,
@@ -625,22 +626,22 @@ const isolatedModule = await WebAssembly.instantiate(module, {});
 const isolatedAbi = isolatedModule.exports;
 const isolatedDispatch = (request) => dispatch(request, isolatedAbi);
 const isolatedInit = isolatedDispatch({
-  abi_version: 5,
-  api_version: 4,
+  abi_version: 6,
+  api_version: 5,
   operation: "initialize",
   host_limits: { ...hostLimits(), max_compiled_programs: 1, max_instances: 1 },
 });
 assert.equal(isolatedInit.status, "initialized", "a second module instance must initialize independently");
 const isolatedProgram = isolatedDispatch({
-  abi_version: 5,
-  api_version: 4,
+  abi_version: 6,
+  api_version: 5,
   operation: "compile",
   source: "~> , . ;\n",
 });
 assert.equal(isolatedProgram.status, "compiled", "the second module must own an independent program registry");
 const isolatedCreated = isolatedDispatch({
-  abi_version: 5,
-  api_version: 4,
+  abi_version: 6,
+  api_version: 5,
   operation: "create_instance",
   program: isolatedProgram.program,
   input: [7],
@@ -648,44 +649,44 @@ const isolatedCreated = isolatedDispatch({
   initial_memory: [],
 });
 const isolatedResult = isolatedDispatch({
-  abi_version: 5,
-  api_version: 4,
+  abi_version: 6,
+  api_version: 5,
   operation: "run",
   instance: isolatedCreated.instance,
   max_steps: "10",
 });
 assert.deepEqual(isolatedResult.snapshot.output, [7], "the second module must execute its own instance state");
 const foreignProgramHandle = isolatedDispatch({
-  abi_version: 5,
-  api_version: 4,
+  abi_version: 6,
+  api_version: 5,
   operation: "release_program",
   program: lifecycleProgram.program,
 });
 assert.equal(foreignProgramHandle.error.code, "unknown_program_handle", "program handles must not cross module sessions");
 const isolatedOverLimit = isolatedDispatch({
-  abi_version: 5,
-  api_version: 4,
+  abi_version: 6,
+  api_version: 5,
   operation: "compile",
   source: "~> , . ;\n",
 });
 assert.equal(isolatedOverLimit.error.code, "program_limit_reached", "the second module must enforce its own configured quota");
 const primaryWithinLimit = dispatch({
-  abi_version: 5,
-  api_version: 4,
+  abi_version: 6,
+  api_version: 5,
   operation: "compile",
   source: "~> , . ;\n",
 });
 assert.equal(primaryWithinLimit.status, "compiled", "another module's quota must not restrict this module");
 assert.equal(
-  dispatch({ abi_version: 5, api_version: 4, operation: "release_program", program: primaryWithinLimit.program }).operation,
+  dispatch({ abi_version: 6, api_version: 5, operation: "release_program", program: primaryWithinLimit.program }).operation,
   "release_program",
 );
-const isolatedShutdown = isolatedDispatch({ abi_version: 5, api_version: 4, operation: "shutdown" });
+const isolatedShutdown = isolatedDispatch({ abi_version: 6, api_version: 5, operation: "shutdown" });
 assert.equal(isolatedShutdown.status, "closed", "the second module must shut down independently");
 
 const firstStep = dispatch({
-  abi_version: 5,
-  api_version: 4,
+  abi_version: 6,
+  api_version: 5,
   operation: "step",
   instance: firstInstance.instance,
 });
@@ -701,14 +702,14 @@ assert.deepEqual(
   "step result must expose Full state and events",
 );
 const firstSnapshot = dispatch({
-  abi_version: 5,
-  api_version: 4,
+  abi_version: 6,
+  api_version: 5,
   operation: "snapshot",
   instance: firstInstance.instance,
 });
 const secondSnapshot = dispatch({
-  abi_version: 5,
-  api_version: 4,
+  abi_version: 6,
+  api_version: 5,
   operation: "snapshot",
   instance: secondInstance.instance,
 });
@@ -716,33 +717,33 @@ assert.equal(firstSnapshot.snapshot.committed_steps, "1", "first instance state 
 assert.equal(secondSnapshot.snapshot.committed_steps, "0", "second instance state must remain isolated");
 assert(Array.isArray(firstSnapshot.snapshot.threads), "snapshot must expose Full per-thread details");
 assert.equal(
-  dispatch({ abi_version: 5, api_version: 4, operation: "snapshot", instance: firstInstance.instance }).snapshot.committed_steps,
+  dispatch({ abi_version: 6, api_version: 5, operation: "snapshot", instance: firstInstance.instance }).snapshot.committed_steps,
   "1",
   "shutting down another module must not affect this module's live instances",
 );
 dispatch({
-  abi_version: 5,
-  api_version: 4,
+  abi_version: 6,
+  api_version: 5,
   operation: "release_program",
   program: lifecycleProgram.program,
 });
 for (const [created, expectedByte] of [[firstInstance, 41], [secondInstance, 99]]) {
   const result = dispatch({
-    abi_version: 5,
-    api_version: 4,
+    abi_version: 6,
+    api_version: 5,
     operation: "run",
     instance: created.instance,
     max_steps: "10",
   });
   assert.deepEqual(result.snapshot.output, [expectedByte], "released program must not invalidate created instances");
   dispatch({
-    abi_version: 5,
-    api_version: 4,
+    abi_version: 6,
+    api_version: 5,
     operation: "release_instance",
     instance: created.instance,
   });
 }
-const shutdown = dispatch({ abi_version: 5, api_version: 4, operation: "shutdown" });
+const shutdown = dispatch({ abi_version: 6, api_version: 5, operation: "shutdown" });
 assert.equal(shutdown.status, "closed", "runtime shutdown must release its session");
 
 const maximumPages = Number(actualMemoryBytes / 65_536n);

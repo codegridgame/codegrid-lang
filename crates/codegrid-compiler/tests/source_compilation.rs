@@ -5,7 +5,7 @@ use codegrid_syntax::{BoardPath, CodeGridPath};
 
 #[test]
 fn conditional_prefixes_preserve_references_and_fold_restrictions() {
-    let program = compile("@main\n~> ?0$0 ;\n@M0 ?0+ ?1?= _\n@end main").unwrap();
+    let program = compile("@main\n~> ?0$0 ;\n@M0 ?0+* ?1?= _\n@end main").unwrap();
     let folded = &program.program().outer.main.folded_blocks[&slot(0)];
     assert_eq!(folded.prefixes.len(), 2);
     assert_eq!(
@@ -16,12 +16,7 @@ fn conditional_prefixes_preserve_references_and_fold_restrictions() {
             .as_deref(),
         Some("?1?=")
     );
-    for source in [
-        "~> ?1[0 ;",
-        "~> ?1#0 ;",
-        "~> ?1] ;",
-        "@main\n~> $0 ;\n@M0 ?0+* _ _\n@end main",
-    ] {
+    for source in ["~> ?1[0 ;", "~> ?1#0 ;", "~> ?1] ;"] {
         assert!(compile(source).is_err(), "{source}");
     }
 }
@@ -840,6 +835,29 @@ fn compiles_every_resolved_attachment_pair_for_each_encodable_primary() {
 }
 
 #[test]
+fn folded_blocks_accept_and_project_all_suffix_attachments() {
+    let source = "@main\n~> $0 ;\n@end main\n@M0 ?0+* ?1-= +x3\n";
+    let program =
+        compile(source).expect("compatible suffix Attachments are valid in Folded Blocks");
+    let folded = &program.program().outer.main.folded_blocks[&slot(0)];
+
+    assert_eq!(folded.attachments[&0], AttachmentInstruction::ReadCode);
+    assert_eq!(folded.attachments[&1], AttachmentInstruction::WriteCode);
+    assert_eq!(folded.attachments[&2], AttachmentInstruction::Repeat(3));
+    assert_eq!(folded.prefixes.len(), 2);
+    assert_eq!(
+        codegrid_compiler::ProgramView::from_verified(&program)
+            .outer
+            .main
+            .folded_blocks[&0]
+            .iter()
+            .map(Option::as_deref)
+            .collect::<Vec<_>>(),
+        [Some("?0+*"), Some("?1-="), Some("+x3")]
+    );
+}
+
+#[test]
 fn compiles_every_primary_in_the_canonical_full_inventory() {
     for primary in PrimaryInstruction::source_forms() {
         let token = primary.token();
@@ -987,7 +1005,7 @@ fn accepts_every_primary_category_allowed_in_an_outer_folded_block() {
 
 #[test]
 fn rejects_every_forbidden_folded_block_form_and_custom_owned_calls() {
-    let invalid_outer_forms = ["$0", "[0", "]", "#]", "~>", "+*"];
+    let invalid_outer_forms = ["$0", "[0", "]", "#]", "~>"];
     for token in invalid_outer_forms {
         let source = format!("@main\n~> $0\n@end main\n@M0 {token} _\n");
         let diagnostics = compile(&source).expect_err("forbidden M forms must be rejected");
@@ -997,7 +1015,6 @@ fn rejects_every_forbidden_folded_block_form_and_custom_owned_calls() {
                 diagnostic
                     .message
                     .contains("not allowed inside this Folded Block")
-                    || diagnostic.message.contains("Attachments are not allowed")
                     || diagnostic.message.contains("Entry markers are not allowed")
             })
             .unwrap_or_else(|| {
@@ -1630,12 +1647,6 @@ fn rejects_the_required_source_validation_failures() {
             "@main\n~> _\n@end\n@main.M0 [0 _\n@main.F0\n~> ]\n@end\n",
             "not allowed inside this Folded Block",
             "[0",
-        ),
-        (
-            "Attachment inside M",
-            "@main\n~> _\n@end\n@main.M0 +* _\n",
-            "Attachments are not allowed inside a Folded Block",
-            "+*",
         ),
         (
             "multiple Attachments",

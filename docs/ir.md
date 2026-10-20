@@ -22,7 +22,7 @@ UTF-8 source
 
 Full IR represents all executable CodeGrids, board relationships and paths, dimensions, row-major cells, Entry markers, Primary instructions, Attachments, and static execution metadata. It does not contain mutable thread state, input/output cursors, memory contents, stacks, or other per-instance runtime data.
 
-The current executable Full IR format is 3; older formats are rejected. Cells store fixed conditional prefixes independently of their Primary and suffix, and Folded Blocks store prefix metadata by occupied cell index. Rust struct layout is not a host interchange format. No adapter may expose it as a byte ABI or treat its in-memory representation as stable serialization.
+The current executable Full IR format is 4; older formats are rejected. Cells store fixed conditional prefixes independently of their Primary and suffix, and Folded Blocks store prefix and suffix Attachment metadata by occupied cell index. Rust struct layout is not a host interchange format. No adapter may expose it as a byte ABI or treat its in-memory representation as stable serialization.
 
 ## Verification boundary
 
@@ -38,7 +38,7 @@ The verifier returns structured errors for malformed external IR. Any decoder, c
 
 ## Version boundaries
 
-Source profile, IR format, CLI result JSON, debug protocol, Runtime API, and WASM ABIs are separate contracts. Current versions are executable IR 3, CLI run-result schema 1, debug protocol 2, Runtime API 4, browser API 4, and server ABI 5. Never infer accepted source syntax from an IR/API/ABI version, and never pass wide integers through imprecise JavaScript numbers.
+Source profile, IR format, CLI result JSON, debug protocol, Runtime API, and WASM ABIs are separate contracts. Current versions are executable IR 4, CLI run-result schema 1, debug protocol 2, Runtime API 5, browser API 5, and server ABI 6. Never infer accepted source syntax from an IR/API/ABI version, and never pass wide integers through imprecise JavaScript numbers.
 
 ## Historical: conditional prefix and CMP migration (2026-10-03)
 

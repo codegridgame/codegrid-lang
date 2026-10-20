@@ -1,7 +1,7 @@
 # CodeGrid Browser WebAssembly Adapter
 
 This crate exposes the shared compiler and VM through a browser and Node
-WebAssembly binding. The host-neutral contract is [Runtime API v4](../../docs/runtime-api-spec.md).
+WebAssembly binding. The host-neutral contract is [Runtime API v5](../../docs/runtime-api-spec.md).
 The adapter converts JavaScript values, applies browser resource limits, and
 manages runtime handles; it does not define source syntax or execution behavior.
 
@@ -32,7 +32,7 @@ instead of converting them to JavaScript `Number`.
 
 The binding exposes `api_version`, `check`, `compile`, `program_view`,
 `create_instance`, `step`, `run`, `snapshot`, `release_instance`, and
-`release_program`. Every response uses `api_version: 4`. No game-level Gas,
+`release_program`. Every response uses `api_version: 5`. No game-level Gas,
 game counter policy, selection, or host repositioning operation is exposed.
 
 `compile(source)` returns a runtime-local program handle. Create an instance
@@ -104,7 +104,7 @@ node crates/codegrid-wasm-browser/tests/run-browser-smoke.mjs
 ~~~
 
 The Node and headless Chrome/Edge runners execute the shared Full fixtures
-against generated bindings and compare the Runtime API v4 projections. Run the
+against generated bindings and compare the Runtime API v5 projections. Run the
 server harness separately when a native baseline is needed. Native unit tests
 and Node smoke tests do not establish production-browser memory or concurrency
 safety.

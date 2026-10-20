@@ -1918,7 +1918,8 @@ mod tests {
             folded_blocks: BTreeMap::from([(
                 slot,
                 FoldedBlock {
-                    prefixes: Default::default(), cells: vec![None; 3],
+                    prefixes: Default::default(),
+            attachments: Default::default(), cells: vec![None; 3],
                 },
             )]),
         };
@@ -1972,6 +1973,293 @@ mod tests {
     }
 
     #[test]
+    fn folded_repeat_stays_on_its_cell_until_the_requested_count() {
+        use codegrid_ir::FoldedBlock;
+        use codegrid_model::{AttachmentInstruction, PrimaryInstruction};
+
+        let fold_id = codegrid_model::Slot::new(0).expect("zero is a valid Folded Block ID");
+        let program = VerifiedProgram::new(Program {
+            format_version: IR_FORMAT_VERSION,
+            outer: ScopedProgram {
+                main: Board {
+                    width: 3,
+                    height: 1,
+                    cells: vec![
+                        Cell::entry(Direction::Right),
+                        Cell::instruction(PrimaryInstruction::FoldedBlock(fold_id), None),
+                        Cell::instruction(PrimaryInstruction::Halt, None),
+                    ],
+                    folded_blocks: BTreeMap::from([(
+                        fold_id,
+                        FoldedBlock {
+                            prefixes: Default::default(),
+                            attachments: BTreeMap::from([(
+                                0,
+                                AttachmentInstruction::Repeat(3),
+                            )]),
+                            cells: vec![
+                                Some(PrimaryInstruction::Add),
+                                Some(PrimaryInstruction::Sub),
+                                None,
+                            ],
+                        },
+                    )]),
+                },
+                functions: BTreeMap::new(),
+            },
+            customs: BTreeMap::new(),
+        })
+        .expect("the Folded Block attachment is valid");
+        let mut vm = Vm::new(program, [], config()).expect("one initial thread fits in u64");
+
+        assert_eq!(vm.step().status, VmStatus::Running);
+        assert_eq!(vm.step().status, VmStatus::Running);
+        let snapshot = vm.snapshot();
+        assert_eq!(snapshot.registers[0], 1);
+        assert_eq!(
+            snapshot.threads[0].phase,
+            super::ThreadPhaseSnapshot::FoldRepeat {
+                fold_id,
+                internal_position: Coordinate { x: 0, y: 0 },
+                internal_direction: Direction::Right,
+                saved_outer_direction: Direction::Right,
+                total: 3,
+                completed: 1,
+            }
+        );
+
+        let repeated = vm.prepare_step();
+        assert_eq!(
+            repeated
+                .report()
+                .footprint
+                .operations
+                .get(&crate::InstructionKind::Add),
+            Some(&1)
+        );
+        repeated.commit();
+        let snapshot = vm.snapshot();
+        assert_eq!(snapshot.registers[0], 2);
+        assert!(matches!(
+            snapshot.threads[0].phase,
+            super::ThreadPhaseSnapshot::FoldRepeat {
+                internal_position: Coordinate { x: 0, y: 0 },
+                completed: 2,
+                ..
+            }
+        ));
+        assert_eq!(vm.step().status, VmStatus::Running);
+        let snapshot = vm.snapshot();
+        assert_eq!(snapshot.registers[0], 3);
+        assert!(matches!(
+            snapshot.threads[0].phase,
+            super::ThreadPhaseSnapshot::Fold { internal_position: Coordinate { x: 1, y: 0 }, .. }
+        ));
+    }
+
+    #[test]
+    fn folded_repeat_rechecks_its_prefix_before_each_execution() {
+        use codegrid_ir::FoldedBlock;
+        use codegrid_model::{AttachmentInstruction, ConditionPrefix, PrimaryInstruction};
+
+        let fold_id = codegrid_model::Slot::new(0).expect("zero is a valid Folded Block ID");
+        let program = VerifiedProgram::new(Program {
+            format_version: IR_FORMAT_VERSION,
+            outer: ScopedProgram {
+                main: Board {
+                    width: 3,
+                    height: 1,
+                    cells: vec![
+                        Cell::entry(Direction::Right),
+                        Cell::instruction(PrimaryInstruction::FoldedBlock(fold_id), None),
+                        Cell::instruction(PrimaryInstruction::Halt, None),
+                    ],
+                    folded_blocks: BTreeMap::from([(
+                        fold_id,
+                        FoldedBlock {
+                            prefixes: BTreeMap::from([(0, ConditionPrefix::Zero)]),
+                            attachments: BTreeMap::from([(
+                                0,
+                                AttachmentInstruction::Repeat(3),
+                            )]),
+                            cells: vec![Some(PrimaryInstruction::Add), None, None],
+                        },
+                    )]),
+                },
+                functions: BTreeMap::new(),
+            },
+            customs: BTreeMap::new(),
+        })
+        .expect("the Folded Block attachment is valid");
+        let mut vm = Vm::new(program, [], config()).expect("one initial thread fits in u64");
+
+        assert_eq!(vm.step().status, VmStatus::Running);
+        assert_eq!(vm.step().status, VmStatus::Running);
+        assert!(matches!(
+            vm.snapshot().threads[0].phase,
+            super::ThreadPhaseSnapshot::FoldRepeat { completed: 1, .. }
+        ));
+        assert_eq!(vm.step().status, VmStatus::Running);
+        let snapshot = vm.snapshot();
+        assert_eq!(snapshot.registers[0], 1);
+        assert!(matches!(
+            snapshot.threads[0].phase,
+            super::ThreadPhaseSnapshot::Fold {
+                internal_position: Coordinate { x: 1, y: 0 },
+                ..
+            }
+        ));
+    }
+
+    #[test]
+    fn forbidden_folded_write_keeps_code_stack_item_and_write_metric_unchanged() {
+        use codegrid_ir::FoldedBlock;
+        use codegrid_model::{AttachmentInstruction, InstructionStackItem, PrimaryInstruction};
+
+        let fold_id = codegrid_model::Slot::new(0).expect("zero is a valid Folded Block ID");
+        let program = VerifiedProgram::new(Program {
+            format_version: IR_FORMAT_VERSION,
+            outer: ScopedProgram {
+                main: Board {
+                    width: 3,
+                    height: 1,
+                    cells: vec![
+                        Cell::entry(Direction::Right),
+                        Cell::instruction(PrimaryInstruction::FoldedBlock(fold_id), None),
+                        Cell::instruction(PrimaryInstruction::Halt, None),
+                    ],
+                    folded_blocks: BTreeMap::from([(
+                        fold_id,
+                        FoldedBlock {
+                            prefixes: Default::default(),
+                            attachments: BTreeMap::from([(
+                                0,
+                                AttachmentInstruction::WriteCode,
+                            )]),
+                            cells: vec![
+                                Some(PrimaryInstruction::Add),
+                                Some(PrimaryInstruction::Sub),
+                                None,
+                            ],
+                        },
+                    )]),
+                },
+                functions: BTreeMap::new(),
+            },
+            customs: BTreeMap::new(),
+        })
+        .expect("the Folded Block attachment is valid");
+        for primary in [
+            PrimaryInstruction::Direction(Direction::Up),
+            PrimaryInstruction::Direction(Direction::Down),
+            PrimaryInstruction::Direction(Direction::Left),
+            PrimaryInstruction::Direction(Direction::Right),
+            PrimaryInstruction::RandomDirection,
+            PrimaryInstruction::Call(fold_id),
+            PrimaryInstruction::Return,
+        ] {
+            let forbidden = InstructionStackItem::from_primary(primary)
+                .expect("the forbidden Primary has an instruction code");
+            let mut vm = Vm::new(program.clone(), [], config())
+                .expect("one initial thread fits in u64");
+            assert_eq!(vm.step().status, VmStatus::Running);
+            vm.threads[0].instruction_stack.push(forbidden);
+            let pending = vm.prepare_step();
+            assert_eq!(
+                pending.report().footprint.operations.get(&crate::InstructionKind::WriteCode),
+                None,
+                "{primary:?}"
+            );
+            let result = pending.commit();
+            assert_eq!(result.status, VmStatus::Running, "{primary:?}");
+            assert!(!result.events.iter().any(|event| matches!(event, crate::VmEvent::CodeChanged { .. })));
+            let snapshot = vm.snapshot();
+            assert_eq!(snapshot.registers[0], 1, "the original Primary still executes");
+            assert_eq!(
+                snapshot.runtime_program.main.folded_blocks[&fold_id].cells[0],
+                Some(PrimaryInstruction::Add),
+                "{primary:?}"
+            );
+            assert_eq!(snapshot.threads[0].instruction_stack, vec![forbidden]);
+        }
+    }
+
+    #[test]
+    fn folded_read_code_and_write_code_use_folded_cells() {
+        use codegrid_ir::FoldedBlock;
+        use codegrid_model::{AttachmentInstruction, InstructionStackItem, PrimaryInstruction};
+
+        let fold_id = codegrid_model::Slot::new(0).expect("zero is a valid Folded Block ID");
+        let program = VerifiedProgram::new(Program {
+            format_version: IR_FORMAT_VERSION,
+            outer: ScopedProgram {
+                main: Board {
+                    width: 3,
+                    height: 1,
+                    cells: vec![
+                        Cell::entry(Direction::Right),
+                        Cell::instruction(PrimaryInstruction::FoldedBlock(fold_id), None),
+                        Cell::instruction(PrimaryInstruction::Halt, None),
+                    ],
+                    folded_blocks: BTreeMap::from([(
+                        fold_id,
+                        FoldedBlock {
+                            prefixes: Default::default(),
+                            attachments: BTreeMap::from([
+                                (0, AttachmentInstruction::ReadCode),
+                                (1, AttachmentInstruction::WriteCode),
+                            ]),
+                            cells: vec![
+                                Some(PrimaryInstruction::Decode),
+                                Some(PrimaryInstruction::Add),
+                                None,
+                            ],
+                        },
+                    )]),
+                },
+                functions: BTreeMap::new(),
+            },
+            customs: BTreeMap::new(),
+        })
+        .expect("the Folded Block attachments are valid");
+        let mut vm = Vm::new(program, [], config()).expect("one initial thread fits in u64");
+        vm.registers[0] = 32;
+
+        assert_eq!(vm.step().status, VmStatus::Running);
+        assert_eq!(vm.step().status, VmStatus::Running);
+        assert_eq!(
+            vm.snapshot().threads[0].instruction_stack,
+            vec![
+                InstructionStackItem::Empty,
+                InstructionStackItem::from_primary(PrimaryInstruction::Decode)
+                    .expect("Decode is encodable"),
+            ]
+        );
+        let rewrite = vm.step();
+        assert_eq!(rewrite.status, VmStatus::Running);
+        assert!(rewrite.events.iter().any(|event| matches!(
+            event,
+            crate::VmEvent::CodeChanged {
+                cell,
+                old: Some(PrimaryInstruction::Add),
+                new: Some(PrimaryInstruction::Decode),
+                ..
+            } if cell.folded_block == Some(fold_id) && cell.position.x == 1
+        )));
+        let snapshot = vm.snapshot();
+        let folded = &snapshot.runtime_program.main.folded_blocks[&fold_id];
+        assert_eq!(folded.cells[1], Some(PrimaryInstruction::Decode));
+        assert_eq!(
+            folded.attachments[&1],
+            AttachmentInstruction::WriteCode
+        );
+        assert_eq!(
+            snapshot.threads[0].instruction_stack,
+            vec![InstructionStackItem::Empty]
+        );
+    }
+
+    #[test]
     fn custom_return_inside_outer_fold_moves_in_saved_fold_direction() {
         use codegrid_ir::{CustomDefinition, FoldedBlock};
         use codegrid_model::PrimaryInstruction;
@@ -1992,7 +2280,8 @@ mod tests {
                     folded_blocks: BTreeMap::from([(
                         fold_id,
                         FoldedBlock {
-                            prefixes: Default::default(), cells: vec![
+                            prefixes: Default::default(),
+            attachments: Default::default(), cells: vec![
                                 Some(PrimaryInstruction::Custom(custom_id)),
                                 Some(PrimaryInstruction::Halt),
                                 None,
@@ -2081,7 +2370,8 @@ mod tests {
                     folded_blocks: BTreeMap::from([(
                         fold_id,
                         FoldedBlock {
-                            prefixes: Default::default(), cells: vec![
+                            prefixes: Default::default(),
+            attachments: Default::default(), cells: vec![
                                 Some(PrimaryInstruction::MoveRegisterPointer(
                                     PointerDirection::Right,
                                 )),
@@ -2136,7 +2426,8 @@ mod tests {
                     folded_blocks: BTreeMap::from([(
                         fold_id,
                         FoldedBlock {
-                            prefixes: Default::default(), cells: vec![
+                            prefixes: Default::default(),
+            attachments: Default::default(), cells: vec![
                                 Some(PrimaryInstruction::Encode),
                                 None,
                                 None,
@@ -2194,7 +2485,8 @@ mod tests {
                     folded_blocks: BTreeMap::from([(
                         fold_id,
                         FoldedBlock {
-                            prefixes: Default::default(), cells: vec![
+                            prefixes: Default::default(),
+            attachments: Default::default(), cells: vec![
                                 Some(PrimaryInstruction::Push),
                                 None,
                                 None,
@@ -2253,7 +2545,8 @@ mod tests {
                     folded_blocks: BTreeMap::from([(
                         fold_id,
                         FoldedBlock {
-                            prefixes: Default::default(), cells: vec![
+                            prefixes: Default::default(),
+            attachments: Default::default(), cells: vec![
                                 Some(PrimaryInstruction::Read),
                                 Some(PrimaryInstruction::Output),
                                 None,
@@ -2301,7 +2594,8 @@ mod tests {
                     folded_blocks: BTreeMap::from([(
                         fold_id,
                         FoldedBlock {
-                            prefixes: Default::default(), cells: vec![None; 3],
+                            prefixes: Default::default(),
+            attachments: Default::default(), cells: vec![None; 3],
                         },
                     )]),
                 },
@@ -4943,7 +5237,8 @@ mod tests {
                     folded_blocks: BTreeMap::from([(
                         fold_id,
                         FoldedBlock {
-                            prefixes: Default::default(), cells: vec![
+                            prefixes: Default::default(),
+            attachments: Default::default(), cells: vec![
                                 Some(PrimaryInstruction::Add),
                                 None,
                                 None,
@@ -5057,7 +5352,8 @@ mod tests {
                     folded_blocks: BTreeMap::from([(
                         fold_id,
                         FoldedBlock {
-                            prefixes: Default::default(), cells: vec![
+                            prefixes: Default::default(),
+            attachments: Default::default(), cells: vec![
                                 Some(PrimaryInstruction::Add),
                                 Some(PrimaryInstruction::Output),
                                 None,

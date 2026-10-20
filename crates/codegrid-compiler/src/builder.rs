@@ -1033,6 +1033,7 @@ fn finalize_board(
         }
         let mut cells = Vec::with_capacity(row.cells.len());
         let mut prefixes = BTreeMap::new();
+        let mut attachments = BTreeMap::new();
         for cell in row.cells {
             let primary = match cell.value {
                 CellToken::Empty => None,
@@ -1049,13 +1050,6 @@ fn finalize_board(
                     primary,
                     attachment,
                 } => {
-                    if attachment.is_some() {
-                        diagnostics.push(Diagnostic::error(
-                            "source.fold_attachment",
-                            "Attachments are not allowed inside a Folded Block.",
-                            cell.span,
-                        ));
-                    }
                     if !folded_primary_allowed(primary, custom_owned) {
                         diagnostics.push(Diagnostic::error(
                             "source.fold_primary",
@@ -1065,6 +1059,9 @@ fn finalize_board(
                     }
                     if let Some(prefix) = prefix {
                         prefixes.insert(cells.len(), prefix);
+                    }
+                    if let Some(attachment) = attachment {
+                        attachments.insert(cells.len(), attachment);
                     }
                     Some(primary)
                 }
@@ -1077,7 +1074,11 @@ fn finalize_board(
         folded_blocks.insert(
             slot,
             hir::Spanned {
-                value: hir::FoldedBlock { cells, prefixes },
+                value: hir::FoldedBlock {
+                    cells,
+                    prefixes,
+                    attachments,
+                },
                 span: raw_fold.span,
             },
         );

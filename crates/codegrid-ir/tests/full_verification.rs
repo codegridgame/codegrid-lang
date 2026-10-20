@@ -66,6 +66,7 @@ mod tests {
             FoldedBlock {
                 cells: vec![None],
                 prefixes: BTreeMap::from([(1, ConditionPrefix::Zero)]),
+                attachments: BTreeMap::new(),
             },
         );
         assert!(VerifiedProgram::new(malformed)
@@ -171,6 +172,7 @@ mod tests {
             Slot::new(0).expect("zero is a valid Fold ID"),
             FoldedBlock {
                 prefixes: Default::default(),
+                attachments: Default::default(),
                 cells: vec![None],
             },
         );
@@ -181,6 +183,7 @@ mod tests {
             Slot::new(0).expect("zero is a valid Fold ID"),
             FoldedBlock {
                 prefixes: Default::default(),
+                attachments: Default::default(),
                 cells: vec![Some(PrimaryInstruction::Return), None],
             },
         );
@@ -277,6 +280,7 @@ mod tests {
             function_zero,
             FoldedBlock {
                 prefixes: Default::default(),
+                attachments: Default::default(),
                 cells: vec![Some(PrimaryInstruction::Custom(custom_one))],
             },
         );

@@ -1033,7 +1033,7 @@ impl ServerAdapter {
             "release_instance" => self.release_instance(&object, api_version),
             _ => self.respond(error_response(
                 "unsupported_operation",
-                "operation is not supported by server adapter ABI v5",
+                "operation is not supported by server adapter ABI v6",
                 json!({"operation": operation}),
             )),
         }
@@ -1635,7 +1635,7 @@ mod tests {
     fn oversized_input_arrays_are_rejected_while_parsing_without_value_nodes() {
         let mut request = String::with_capacity(MAX_INPUT_BYTES * 2 + 96);
         request.push_str(
-            r#"{"abi_version":5,"api_version":4,"operation":"create_instance","input":["#,
+            r#"{"abi_version":6,"api_version":5,"operation":"create_instance","input":["#,
         );
         for index in 0..=MAX_INPUT_BYTES {
             if index != 0 {
@@ -1678,7 +1678,7 @@ mod tests {
     fn request_parser_preserves_input_errors_and_ignores_nested_unknown_values() {
         let nested = "0,".repeat(20_000);
         let request = format!(
-            r#"{{"abi_version":5,"api_version":4,"operation":"check","source":"~> ;","input":{{"ignored":[{nested}0]}},"unknown":{{"deep":[[{nested}0]]}}}}"#
+            r#"{{"abi_version":6,"api_version":5,"operation":"check","source":"~> ;","input":{{"ignored":[{nested}0]}},"unknown":{{"deep":[[{nested}0]]}}}}"#
         );
         let ParsedRequest::Object(RequestObject { fields, input, .. }) =
             serde_json::from_str(&request).expect("nested unknown values are valid JSON")
@@ -1695,7 +1695,7 @@ mod tests {
         );
 
         let request =
-            r#"{"abi_version":5,"api_version":4,"operation":"create_instance","input":[0,256]}"#;
+            r#"{"abi_version":6,"api_version":5,"operation":"create_instance","input":[0,256]}"#;
         let ParsedRequest::Object(RequestObject { input, .. }) =
             serde_json::from_str(request).expect("byte value is valid JSON")
         else {
@@ -1728,7 +1728,7 @@ mod tests {
     fn host_limit_parser_skips_unrecognized_nested_data() {
         let nested = "0,".repeat(20_000);
         let request = format!(
-            r#"{{"abi_version":5,"api_version":4,"operation":"initialize","host_limits":{{"max_source_bytes":4096,"max_compiled_programs":8,"max_instances":8,"max_input_bytes":1024,"max_initial_memory_entries":65536,"max_run_steps_per_call":"100","max_total_steps_per_instance":"1000","max_work_units_per_call":"1000","max_response_bytes":1048576,"max_instance_state_bytes":524288,"ignored":{{"deep":[[{nested}0]]}}}}}}"#
+            r#"{{"abi_version":6,"api_version":5,"operation":"initialize","host_limits":{{"max_source_bytes":4096,"max_compiled_programs":8,"max_instances":8,"max_input_bytes":1024,"max_initial_memory_entries":65536,"max_run_steps_per_call":"100","max_total_steps_per_instance":"1000","max_work_units_per_call":"1000","max_response_bytes":1048576,"max_instance_state_bytes":524288,"ignored":{{"deep":[[{nested}0]]}}}}}}"#
         );
         let ParsedRequest::Object(RequestObject { fields, .. }) = serde_json::from_str(&request)
             .expect("host limits with nested extension are valid JSON")

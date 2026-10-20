@@ -1120,10 +1120,8 @@ fn committed_state_events(
         .map(|write| write.cell)
         .collect::<BTreeSet<_>>();
     for cell in code_cells {
-        let old = runtime_cell(before_runtime, cell.board, cell.position)
-            .and_then(|source_cell| source_cell.primary);
-        let new = runtime_cell(runtime, cell.board, cell.position)
-            .and_then(|source_cell| source_cell.primary);
+        let old = runtime_static_primary(before_runtime, cell).flatten();
+        let new = runtime_static_primary(runtime, cell).flatten();
         if old != new {
             events.push(VmEvent::CodeChanged {
                 scope,
@@ -1339,6 +1337,24 @@ fn runtime_cell(
     runtime_board(program, board)?.cell(position.x, position.y)
 }
 
+fn runtime_static_primary(
+    program: &ScopedProgram,
+    cell: StaticCellId,
+) -> Option<Option<PrimaryInstruction>> {
+    let board = runtime_board(program, cell.board)?;
+    match cell.folded_block {
+        Some(fold_id) => Some(
+            board
+                .folded_blocks
+                .get(&fold_id)?
+                .cells
+                .get(cell.position.x)
+                .copied()?,
+        ),
+        None => Some(runtime_cell(program, cell.board, cell.position)?.primary),
+    }
+}
+
 fn commit_effects(
     registers: &mut [Value; 10],
     threads: &mut [ThreadState],
@@ -1399,9 +1415,19 @@ fn commit_effects(
             BoardId::Function(slot) => runtime.functions.get_mut(&slot),
         };
         if let Some(board) = board {
-            let index = write.cell.position.y * board.width + write.cell.position.x;
-            if let Some(cell) = board.cells.get_mut(index) {
-                cell.primary = write.primary;
+            if let Some(fold_id) = write.cell.folded_block {
+                if let Some(primary) = board
+                    .folded_blocks
+                    .get_mut(&fold_id)
+                    .and_then(|fold| fold.cells.get_mut(write.cell.position.x))
+                {
+                    *primary = write.primary;
+                }
+            } else {
+                let index = write.cell.position.y * board.width + write.cell.position.x;
+                if let Some(cell) = board.cells.get_mut(index) {
+                    cell.primary = write.primary;
+                }
             }
         }
     }

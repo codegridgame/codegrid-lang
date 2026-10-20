@@ -42,8 +42,7 @@ Generated from [codegrid-error-codes.json](codegrid-error-codes.json). Numbers a
 | `1036` | source | `source.function_entry_count` | A Function board has more than one explicit Entry. |
 | `1037` | source | `source.fold_width` | A Folded Block width differs from its owner board width. |
 | `1038` | source | `source.fold_entry` | An Entry appears in a Folded Block. |
-| `1039` | source | `source.fold_attachment` | A suffix Attachment appears in a Folded Block; conditional prefixes are allowed. |
-| `1040` | source | `source.fold_primary` | A Primary is forbidden in its Folded Block context. |
+| `1040` | source | `source.fold_primary` | A Primary is forbidden in its Folded Block context, including direction changes and random directions. |
 | `1041` | source | `source.return_scope` | RETURN appears on a Main board. |
 | `1042` | source | `source.custom_return_scope` | CUSTOM_RETURN appears outside a Custom Main board. |
 | `1043` | source | `source.custom_call_scope` | A Custom definition calls a Custom instruction. |
@@ -54,7 +53,7 @@ Generated from [codegrid-error-codes.json](codegrid-error-codes.json). Numbers a
 | `2003` | ir | `ir.invalid_layout` | Dimensions are zero or do not match cell count. |
 | `2005` | ir | `ir.function_entry_count` | A Function board has more than one explicit Entry. |
 | `2006` | ir | `ir.fold_width` | Folded Block length differs from board width. |
-| `2007` | ir | `ir.fold_primary` | A Folded Block contains a forbidden instruction. |
+| `2007` | ir | `ir.fold_primary` | A Folded Block contains a forbidden instruction, including direction changes and random directions. |
 | `2008` | ir | `ir.entry_instruction` | An Entry shares its cell with a Primary or Attachment. |
 | `2009` | ir | `ir.detached_attachment` | A prefix or suffix Attachment has no initial Primary (including an invalid folded prefix coordinate). |
 | `2010` | ir | `ir.repeat_count` | Repeat count is outside 2 through 9. |
@@ -77,7 +76,7 @@ Generated from [codegrid-error-codes.json](codegrid-error-codes.json). Numbers a
 | `3100` | fault | `metric_counter_overflow` | A normative metric counter cannot represent the attempted increment. |
 | `3101` | fault | `committed_steps_overflow` | The committed-step counter cannot represent another step. |
 | `3102` | fault | `internal_invariant_violation` | A VM internal invariant fails. |
-| `4000` | api | `unsupported_version` | Request Runtime API version differs from 4. |
+| `4000` | api | `unsupported_version` | Request Runtime API version differs from 5. |
 | `4001` | api | `source_limit_exceeded` | Source UTF-8 bytes exceed the configured maximum. |
 | `4002` | api | `program_limit_reached` | The runtime compiled-program registry is full. |
 | `4003` | api | `instance_limit_reached` | The runtime instance registry is full. |
@@ -161,7 +160,7 @@ Generated from [codegrid-error-codes.json](codegrid-error-codes.json). Numbers a
 | `7504` | server | `invalid_decimal_integer` | A required u64 string is noncanonical or out of range. |
 | `7505` | server | `invalid_memory_address` | Initial-memory address spelling is invalid. |
 | `7506` | server | `invalid_request_field` | Required request field is missing or has the wrong type. |
-| `7507` | server | `unsupported_api_version` | Request Runtime API version differs from 4. |
+| `7507` | server | `unsupported_api_version` | Request Runtime API version differs from 5. |
 | `7508` | server | `source_payload_limit_exceeded` | Source bytes exceed the runtime source ceiling. |
 | `7509` | server | `input_payload_limit_exceeded` | Input bytes exceed the configured ceiling. |
 | `7510` | server | `vm_initialization_error` | VM initialization fails (server alias of vm_initialization_failed). |
@@ -171,7 +170,7 @@ Generated from [codegrid-error-codes.json](codegrid-error-codes.json). Numbers a
 | `7514` | server | `request_payload_limit_exceeded` | Request bytes exceed the adapter request ceiling. |
 | `7515` | server | `invalid_request_json` | Request bytes are not one valid UTF-8 JSON value. |
 | `7516` | server | `invalid_request` | Top-level request is not a valid object. |
-| `7517` | server | `unsupported_abi_version` | Request Server ABI version differs from 5. |
+| `7517` | server | `unsupported_abi_version` | Request Server ABI version differs from 6. |
 | `7518` | server | `runtime_closed` | A request targets a permanently shut-down module session. |
 | `7519` | server | `runtime_not_initialized` | A runtime operation occurs before initialization. |
 | `7520` | server | `unsupported_operation` | The requested operation is not recognized. |

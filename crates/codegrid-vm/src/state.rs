@@ -318,6 +318,21 @@ impl ThreadSnapshotView<'_> {
                 internal_direction,
                 saved_outer_direction,
             },
+            ExecutionPhase::FoldRepeat {
+                fold_id,
+                internal_position,
+                internal_direction,
+                saved_outer_direction,
+                total,
+                completed,
+            } => ThreadPhaseSnapshot::FoldRepeat {
+                fold_id,
+                internal_position,
+                internal_direction,
+                saved_outer_direction,
+                total,
+                completed,
+            },
             ExecutionPhase::FoldResume {
                 saved_outer_direction,
             } => ThreadPhaseSnapshot::FoldResume {
@@ -380,6 +395,14 @@ pub enum ThreadPhaseSnapshot {
         internal_direction: Direction,
         saved_outer_direction: Direction,
     },
+    FoldRepeat {
+        fold_id: codegrid_model::Slot,
+        internal_position: Coordinate,
+        internal_direction: Direction,
+        saved_outer_direction: Direction,
+        total: u8,
+        completed: u8,
+    },
     FoldResume {
         saved_outer_direction: Direction,
     },
@@ -431,6 +454,21 @@ impl From<&ThreadState> for ThreadSnapshot {
                 internal_position,
                 internal_direction,
                 saved_outer_direction,
+            },
+            ExecutionPhase::FoldRepeat {
+                fold_id,
+                internal_position,
+                internal_direction,
+                saved_outer_direction,
+                total,
+                completed,
+            } => ThreadPhaseSnapshot::FoldRepeat {
+                fold_id,
+                internal_position,
+                internal_direction,
+                saved_outer_direction,
+                total,
+                completed,
             },
             ExecutionPhase::FoldResume {
                 saved_outer_direction,

@@ -255,6 +255,13 @@ fn cli_matches_all_shared_full_runtime_fixtures() {
                 assert_eq!(actual_tokens, *expected_tokens, "{id}: {field}");
             }
         }
+        if !expected["runtime_folded_block_tokens"].is_null() {
+            assert_eq!(
+                result["snapshot"]["runtime_program"]["main"]["folded_blocks"],
+                expected["runtime_folded_block_tokens"],
+                "{id}: Folded Block code"
+            );
+        }
         if let Some(direction) = expected["thread_direction"].as_str() {
             assert_eq!(
                 result["snapshot"]["threads"][0]["direction"], direction,

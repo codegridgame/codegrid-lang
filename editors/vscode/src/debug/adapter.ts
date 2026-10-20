@@ -247,7 +247,7 @@ export class CodeGridDebugAdapter implements vscode.DebugAdapter {
   private boardPath(thread: any): string { return thread.board.kind === 'main' ? '@main' : `@main.F${thread.board.id}`; }
   private cellPath(thread: any, board = thread.board, position = thread.position): string {
     const prefix = board.kind === 'main' ? '@main' : `@main.F${board.id}`;
-    if (board === thread.board && thread.phase.kind === 'fold') return `${prefix}.M${thread.phase.fold_id}[${thread.phase.internal_position.x}]`;
+    if (board === thread.board && ['fold', 'fold_repeat'].includes(thread.phase.kind)) return `${prefix}.M${thread.phase.fold_id}[${thread.phase.internal_position.x}]`;
     const runtimeBoard = board.kind === 'main' ? this.snapshot.runtime_program.main : this.snapshot.runtime_program.functions[String(board.id)];
     return `${prefix}[${position.y * Number(runtimeBoard.width) + position.x}]`;
   }

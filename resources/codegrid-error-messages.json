@@ -636,22 +636,6 @@
         "ru": "Entry запрещена внутри Folded Block."
       }
     },
-    "1039": {
-      "layer": "source",
-      "code": "source.fold_attachment",
-      "messages": {
-        "en": "Attachments are not allowed inside a Folded Block.",
-        "de": "Anhänge sind in einem Folded Block nicht erlaubt.",
-        "fr": "Les pièces jointes sont interdites dans un Folded Block.",
-        "es": "Los adjuntos no se permiten dentro de un Folded Block.",
-        "zh-tw": "Folded Block 內不可使用附加指令。",
-        "ja": "Folded Block 内でアタッチメントは使用できません。",
-        "zh-cn": "Folded Block 内不能使用附加指令。",
-        "ko": "Folded Block 내부에서는 첨부를 사용할 수 없습니다.",
-        "pt-br": "Anexos não são permitidos dentro de Folded Block.",
-        "ru": "Дополнения запрещены внутри Folded Block."
-      }
-    },
     "1040": {
       "layer": "source",
       "code": "source.fold_primary",

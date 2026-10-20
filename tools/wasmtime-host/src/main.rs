@@ -11,8 +11,8 @@ use wasmtime::{
 };
 
 const WASM_PAGE_BYTES: u64 = 65_536;
-const ABI_VERSION: u32 = 5;
-const API_VERSION: u32 = 4;
+const ABI_VERSION: u32 = 6;
+const API_VERSION: u32 = 5;
 const MAX_RESPONSE_BYTES: usize = 8 * 1024 * 1024;
 const DEFAULT_FUEL_PER_CALL: u64 = 1_000_000_000;
 const ABI_HELPER_FUEL: u64 = 1_000_000;
@@ -274,7 +274,7 @@ fn main() -> Result<()> {
     verify_low_fuel_discards_session(&engine, &module, memory_limit_bytes, loop_fixture)?;
 
     println!(
-        "PASS: Wasmtime 49.0.1 server ABI v5 / Runtime API v4, all {} Full fixtures with complete native CLI parity, step/work budget errors, memory/stack limits, and low-fuel session discard. Native full-result baseline: {}",
+        "PASS: Wasmtime 49.0.1 server ABI v6 / Runtime API v5, all {} Full fixtures with complete native CLI parity, step/work budget errors, memory/stack limits, and low-fuel session discard. Native full-result baseline: {}",
         cases.len(),
         baseline_path.display()
     );
@@ -513,6 +513,15 @@ fn compare_fixture_expectations(
         snapshot["metrics"] == json!({"committed_steps": expected["committed_steps"]}),
         "fixture `{fixture_id}` language metrics must expose committed step count only"
     );
+    if !expected["runtime_folded_block_tokens"].is_null() {
+        ensure!(
+            snapshot["runtime_program"]["main"]["folded_blocks"]
+                == expected["runtime_folded_block_tokens"],
+            "fixture `{fixture_id}` Folded Block code does not match the expected value: expected {}, got {}",
+            expected["runtime_folded_block_tokens"],
+            snapshot["runtime_program"]["main"]["folded_blocks"]
+        );
+    }
     let actual_error_codes = snapshot["errors"]
         .as_array()
         .context("server snapshot errors must be an array")?

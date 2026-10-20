@@ -630,7 +630,19 @@ fn board_json(board: &Board) -> JsonValue {
         })).collect::<Vec<_>>(),
         "folded_blocks": board.folded_blocks.iter().map(|(slot, block)| {
             (slot.get().to_string(), json!(
-                block.cells.iter().enumerate().map(|(index, cell)| cell.map(|primary| format!("{}{}", block.prefixes.get(&index).map_or("", |prefix| prefix.token()), primary.token()))).collect::<Vec<_>>()
+                block.cells.iter().enumerate().map(|(index, primary)| {
+                    let prefix = block.prefixes.get(&index).map_or_else(String::new, |prefix| prefix.token().to_owned());
+                    let instruction = primary.map_or_else(String::new, PrimaryInstruction::token);
+                    let attachment = block
+                        .attachments
+                        .get(&index)
+                        .map_or_else(String::new, |attachment| attachment.token());
+                    if primary.is_some() || !prefix.is_empty() || !attachment.is_empty() {
+                        Some(format!("{prefix}{instruction}{attachment}"))
+                    } else {
+                        None
+                    }
+                }).collect::<Vec<_>>()
             ))
         }).collect::<serde_json::Map<_, _>>(),
     })
@@ -723,6 +735,22 @@ fn phase_json(phase: ThreadPhaseSnapshot) -> JsonValue {
             "internal_position": coordinate_json(internal_position),
             "internal_direction": direction_name(internal_direction),
             "saved_outer_direction": direction_name(saved_outer_direction),
+        }),
+        ThreadPhaseSnapshot::FoldRepeat {
+            fold_id,
+            internal_position,
+            internal_direction,
+            saved_outer_direction,
+            total,
+            completed,
+        } => json!({
+            "kind": "fold_repeat",
+            "fold_id": fold_id.get(),
+            "internal_position": coordinate_json(internal_position),
+            "internal_direction": direction_name(internal_direction),
+            "saved_outer_direction": direction_name(saved_outer_direction),
+            "total": total,
+            "completed": completed,
         }),
         ThreadPhaseSnapshot::FoldResume {
             saved_outer_direction,

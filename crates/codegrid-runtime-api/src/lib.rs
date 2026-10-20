@@ -30,7 +30,7 @@ use codegrid_vm::{
 };
 
 /// Version of the host-neutral operation and request/response contract.
-pub const RUNTIME_API_VERSION: u32 = 4;
+pub const RUNTIME_API_VERSION: u32 = 5;
 
 /// Operational safeguards supplied by the embedding host.
 ///

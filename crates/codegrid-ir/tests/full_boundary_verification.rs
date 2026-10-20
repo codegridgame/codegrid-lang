@@ -71,6 +71,7 @@ fn program_with_attachment_candidate(
                 Slot::new(id).unwrap(),
                 FoldedBlock {
                     prefixes: Default::default(),
+                    attachments: Default::default(),
                     cells: vec![Some(P::Add); outer_cells.len()],
                 },
             )
@@ -192,6 +193,7 @@ fn resolves_highest_structural_ids_in_outer_and_custom_scopes() {
         id,
         FoldedBlock {
             prefixes: Default::default(),
+            attachments: Default::default(),
             cells: vec![Some(P::Add), None, None, None],
         },
     );
@@ -216,6 +218,7 @@ fn resolves_highest_structural_ids_in_outer_and_custom_scopes() {
         id,
         FoldedBlock {
             prefixes: Default::default(),
+            attachments: Default::default(),
             cells: vec![Some(P::Add), None],
         },
     );
@@ -564,6 +567,7 @@ fn accepts_full_primary_inventory_in_scoped_programs() {
         fold_id,
         codegrid_ir::FoldedBlock {
             prefixes: Default::default(),
+            attachments: Default::default(),
             cells: folded_cells,
         },
     );
@@ -580,6 +584,7 @@ fn accepts_full_primary_inventory_in_scoped_programs() {
         fold_id,
         codegrid_ir::FoldedBlock {
             prefixes: Default::default(),
+            attachments: Default::default(),
             cells: vec![Some(P::Add), None],
         },
     );

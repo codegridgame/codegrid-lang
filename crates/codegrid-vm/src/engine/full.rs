@@ -262,6 +262,34 @@ pub(super) fn evaluate_thread(
             internal_position,
             internal_direction,
             saved_outer_direction,
+            None,
+            budget,
+        ),
+        ExecutionPhase::FoldRepeat {
+            fold_id,
+            internal_position,
+            internal_direction,
+            saved_outer_direction,
+            total,
+            completed,
+        } => execute_fold_cell(
+            thread,
+            step,
+            registers,
+            memory,
+            input,
+            caller_stack,
+            runtime,
+            verified_program,
+            config,
+            metrics,
+            draft,
+            mode,
+            fold_id,
+            internal_position,
+            internal_direction,
+            saved_outer_direction,
+            Some((total, completed)),
             budget,
         ),
         ExecutionPhase::FoldResume {
@@ -309,6 +337,9 @@ fn execute_normal(
             if draft.fault.is_some() {
                 return;
             }
+        } else if matches!(cell.attachment, Some(AttachmentInstruction::Repeat(_))) {
+            // A previous WriteCode may have cleared this cell. Repeat has no
+            // Primary to execute, so it is skipped with the empty cell.
         } else if cell.attachment.is_some() {
             draft.fault = Some(VmFault::InternalInvariantViolation);
             return;
@@ -381,10 +412,6 @@ fn execute_repeat(
         draft.fault = Some(VmFault::InternalInvariantViolation);
         return;
     };
-    let Some(primary) = cell.primary else {
-        draft.fault = Some(VmFault::InternalInvariantViolation);
-        return;
-    };
     if cell.attachment != Some(AttachmentInstruction::Repeat(total)) || completed >= total {
         draft.fault = Some(VmFault::InternalInvariantViolation);
         return;
@@ -401,6 +428,11 @@ fn execute_repeat(
         move_normal_cell(thread, step, runtime, config, draft, mode);
         return;
     }
+    let Some(primary) = cell.primary else {
+        thread.phase = ExecutionPhase::Normal;
+        move_normal_cell(thread, step, runtime, config, draft, mode);
+        return;
+    };
     record_primary(primary, metrics, draft);
     if draft.fault.is_some() {
         return;
@@ -482,6 +514,7 @@ fn execute_fold_cell(
     position: Coordinate,
     direction: Direction,
     saved_outer_direction: Direction,
+    repetition: Option<(u8, u8)>,
     budget: &mut ExecutionWorkBudget,
 ) {
     let Some(board) = runtime_board(runtime, thread.board) else {
@@ -496,14 +529,16 @@ fn execute_fold_cell(
         draft.fault = Some(VmFault::InternalInvariantViolation);
         return;
     };
+    let attachment = block.attachments.get(&position.x).copied();
+    if let Some((total, completed)) = repetition {
+        if attachment != Some(AttachmentInstruction::Repeat(total)) || completed >= total {
+            draft.fault = Some(VmFault::InternalInvariantViolation);
+            return;
+        }
+    }
     thread.direction = direction;
-    record_cell_visit(
-        metrics,
-        draft,
-        thread,
-        cell_id(mode.code_grid, thread.board, Some(fold_id), position),
-        mode.scope,
-    );
+    let cell = cell_id(mode.code_grid, thread.board, Some(fold_id), position);
+    record_cell_visit(metrics, draft, thread, cell, mode.scope);
     let matched = condition_matches(
         block.prefixes.get(&position.x).copied(),
         thread,
@@ -538,6 +573,57 @@ fn execute_fold_cell(
     if draft.fault.is_some() || flow != Flow::Move {
         return;
     }
+    if matched {
+        match (attachment, repetition) {
+            (Some(AttachmentInstruction::Repeat(total)), None) if primary.is_some() => {
+                thread.phase = ExecutionPhase::FoldRepeat {
+                    fold_id,
+                    internal_position: position,
+                    internal_direction: thread.direction,
+                    saved_outer_direction,
+                    total,
+                    completed: 1,
+                };
+                return;
+            }
+            (Some(AttachmentInstruction::Repeat(total)), Some((_, completed)))
+                if primary.is_some() =>
+            {
+                let completed = completed + 1;
+                if completed < total {
+                    thread.phase = ExecutionPhase::FoldRepeat {
+                        fold_id,
+                        internal_position: position,
+                        internal_direction: thread.direction,
+                        saved_outer_direction,
+                        total,
+                        completed,
+                    };
+                    return;
+                }
+            }
+            (
+                Some(
+                    attachment @ (AttachmentInstruction::ReadCode
+                    | AttachmentInstruction::WriteCode),
+                ),
+                None,
+            ) => {
+                execute_attachment(thread, attachment, cell, primary, metrics, draft);
+                if draft.fault.is_some() {
+                    return;
+                }
+            }
+            (_, Some(_)) => {}
+            _ => {}
+        }
+    }
+    thread.phase = ExecutionPhase::Fold {
+        fold_id,
+        internal_position: position,
+        internal_direction: thread.direction,
+        saved_outer_direction,
+    };
     let next_direction = thread.direction;
     match move_folded(position, next_direction, block.cells.len()) {
         Some(FoldStep::Moved(next)) => {
@@ -797,6 +883,7 @@ fn execute_primary(
                 Coordinate { x: 0, y: 0 },
                 Direction::Right,
                 saved_outer_direction,
+                None,
                 budget,
             );
             return Flow::Stay;
@@ -835,6 +922,20 @@ fn execute_attachment(
     metrics: &mut crate::RuntimeMetrics,
     draft: &mut StepDraft,
 ) {
+    if attachment == AttachmentInstruction::WriteCode {
+        if let (Some(_), Some(item)) = (cell.folded_block, thread.instruction_stack.last()) {
+            if item.primary().is_some_and(|primary| {
+                !codegrid_ir::folded_primary_allowed(
+                    primary,
+                    matches!(cell.code_grid, CodeGridId::Outer),
+                )
+            }) {
+                // A forbidden Folded Block write is not an executed
+                // WriteCode: retain both the current code and stack item.
+                return;
+            }
+        }
+    }
     let Some(kind) = InstructionKind::from_attachment(attachment) else {
         draft.fault = Some(VmFault::InternalInvariantViolation);
         return;

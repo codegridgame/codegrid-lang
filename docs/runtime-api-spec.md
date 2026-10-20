@@ -1,12 +1,12 @@
-# Full Runtime API v4
+# Full Runtime API v5
 
-Runtime API v4 is the host-neutral lifecycle and snapshot contract for compiling
+Runtime API v5 is the host-neutral lifecycle and snapshot contract for compiling
 source and running isolated VM instances. It contains language-runtime state
 and generic host protections. Game rules, game counters, resource budgets, scoring, selection,
 and game-specific execution quotas belong to game hosts.
 
-The API version is `4`. Browser and server adapters must reject other API
-versions. The server byte ABI has its own version, currently `5`.
+The API version is `5`. Browser and server adapters must reject other API
+versions. The server byte ABI has its own version, currently `6`.
 
 ## Host limits and configuration
 
@@ -69,6 +69,15 @@ through the Rust VM prepared-step API; they are not accumulated or projected
 through Runtime API, CLI, browser, or server JSON. No game resource or counter
 metrics are part of this API.
 
+Thread snapshots distinguish `fold`, `fold_repeat`, and `fold_resume` phases.
+`fold_repeat` contains `fold_id`, `internal_position`, `internal_direction`,
+`saved_outer_direction`, `total`, and `completed`. The thread stays at that
+internal cell until the Repeat completes or its conditional prefix cancels it.
+Debug and source-location consumers must resolve both `fold` and `fold_repeat`
+against the Folded Block's internal cell, rather than its outer call site.
+Mutable `runtime_program.folded_blocks` tokens retain each cell's prefix and
+suffix when WriteCode changes or clears its Primary.
+
 Runtime error objects contain `code`, `error_number`, `transition_id`,
 `scope`, and structured `details`. Custom scope reports `internal_step`.
 Host/API errors remain separate from VM errors. Relevant execution-budget API
@@ -77,11 +86,11 @@ error codes are `zero_step_budget`, `run_step_budget_exceeded`,
 
 ## Host adapters
 
-The browser adapter exposes Runtime API v4 through JavaScript and applies
+The browser adapter exposes Runtime API v5 through JavaScript and applies
 request, response, retained-state, step, and work-unit ceilings. It uses decimal
 strings for wide integer inputs and outputs.
 
-The server adapter exposes Runtime API v4 over the no-import byte ABI v5. Its
-JSON requests include both `abi_version: 5` and `api_version: 4`; its responses
+The server adapter exposes Runtime API v5 over the no-import byte ABI v6. Its
+JSON requests include both `abi_version: 6` and `api_version: 5`; its responses
 include both versions. Buffer ownership and response bounds are server-host
 transport concerns and do not change VM semantics.

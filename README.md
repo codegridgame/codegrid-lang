@@ -5,7 +5,13 @@ explicitly publishes a release, update contracts and consumers directly without
 backward-compatibility requirements. Internal version numbers and historical
 verification reports are not release baselines. See [repository rules](AGENTS.md#release-and-compatibility-policy).
 
-The current language includes fixed conditional prefixes `?0`–`?2` and `?!` (F=1), CMP `?=`, and random direction `??`; READ is directionless `,` (code 44), with F=0 on success and F=1 on exhaustion; Function registers are private copies and `$!` provides NEG (code 69); executable IR is format 3. See the [migration manual](docs/conditional-prefix-migration.md) for semantics, retired forms, compatibility, and verification.
+The current language includes fixed conditional prefixes `?0`–`?2` and `?!` (F=1), CMP `?=`, and random direction `??`; READ is directionless `,` (code 44), with F=0 on success and F=1 on exhaustion; Function registers are private copies and `$!` provides NEG (code 69); executable IR is format 4. See the [migration manual](docs/conditional-prefix-migration.md) for semantics, retired forms, compatibility, and verification.
+
+Folded Blocks sweep one row without wrapping and allow compatible ReadCode,
+WriteCode, and Repeat suffixes. Repeat stays on its internal cell until it
+completes or its prefix cancels it. WriteCode attempts that would install a
+forbidden Folded Block Primary preserve the code and stack item and record no
+WriteCode operation. See the [decision log](docs/decisions.md#folded-block-attachments-2026-10-20).
 
 All normal boards wrap horizontally and vertically. Main, Function and Custom
 boards without an explicit Entry start at `(0, 0)`, facing Right. Explicit
@@ -17,7 +23,7 @@ CodeGrid is a grid-based programming language built around a shared Rust compile
 
 ## Full language development status
 
-The workspace implements the complete Full language across the shared Rust compiler and deterministic VM, native CLI, LSP/editor, Runtime API v4, and browser/server WebAssembly adapters. The local task book records the implementation and host verification evidence. Final acceptance requires all shared Full fixtures to produce matching observable results in native, browser-WASM, and server-WASM hosts.
+The workspace implements the complete Full language across the shared Rust compiler and deterministic VM, native CLI, LSP/editor, Runtime API v5, and browser/server WebAssembly adapters. The local task book records the implementation and host verification evidence. Final acceptance requires all shared Full fixtures to produce matching observable results in native, browser-WASM, and server-WASM hosts.
 
 The existing native CLI provides:
 

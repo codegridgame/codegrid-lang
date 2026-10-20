@@ -72,7 +72,7 @@ fn create_instance(
 #[test]
 fn v4_compile_and_program_view_use_verified_handle_lifecycle() {
     let mut api = runtime();
-    assert_eq!(api.api_version(), 4);
+    assert_eq!(api.api_version(), 5);
     assert!(api
         .check(CheckRequest {
             api_version: RUNTIME_API_VERSION,
@@ -89,7 +89,7 @@ fn v4_compile_and_program_view_use_verified_handle_lifecycle() {
             program,
         })
         .expect("live program can be inspected through a borrowed view");
-    assert_eq!(borrowed.view.ir_format_version(), 3);
+    assert_eq!(borrowed.view.ir_format_version(), 4);
     assert_eq!(borrowed.view.program().customs.len(), 1);
     let owned = borrowed.into_owned();
     assert_eq!(owned.api_version, RUNTIME_API_VERSION);

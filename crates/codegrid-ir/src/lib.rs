@@ -10,7 +10,7 @@ use codegrid_model::{
     MAX_BOARD_DIMENSION,
 };
 
-pub const IR_FORMAT_VERSION: u32 = 3;
+pub const IR_FORMAT_VERSION: u32 = 4;
 
 #[derive(Clone, Copy, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
 pub enum CodeGridId {
@@ -72,6 +72,7 @@ impl Cell {
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct FoldedBlock {
     pub prefixes: BTreeMap<usize, ConditionPrefix>,
+    pub attachments: BTreeMap<usize, AttachmentInstruction>,
     pub cells: Vec<Option<PrimaryInstruction>>,
 }
 
@@ -467,6 +468,15 @@ fn validate_board(
                 ));
             }
         }
+        for index in folded.attachments.keys() {
+            if folded.cells.get(*index).and_then(|p| *p).is_none() {
+                errors.push(error(
+                    &format!("{fold_path}[{index}]"),
+                    "ir.detached_attachment",
+                    "A folded Attachment requires a Primary at a valid cell.",
+                ));
+            }
+        }
         for (index, primary) in folded.cells.iter().enumerate() {
             if let Some(primary) = primary {
                 let outer_context = matches!(
@@ -490,8 +500,52 @@ fn validate_board(
                     board,
                     errors,
                 );
+                if let Some(attachment) = folded.attachments.get(&index) {
+                    validate_attachment(
+                        *primary,
+                        *attachment,
+                        &format!("{fold_path}[{index}]"),
+                        errors,
+                    );
+                }
             }
         }
+    }
+}
+
+fn validate_attachment(
+    primary: PrimaryInstruction,
+    attachment: AttachmentInstruction,
+    path: &str,
+    errors: &mut Vec<IrError>,
+) {
+    if matches!(attachment, AttachmentInstruction::Repeat(count) if !(2..=9).contains(&count)) {
+        errors.push(error(
+            path,
+            "ir.repeat_count",
+            "Repeat count must be from 2 through 9.",
+        ));
+    }
+    let immediate_repeat = matches!(primary, PrimaryInstruction::OutputImmediate(_))
+        && matches!(attachment, AttachmentInstruction::Repeat(_));
+    if !primary.is_encodable() && !immediate_repeat {
+        errors.push(error(
+            path,
+            "ir.attachment_primary",
+            "This Primary instruction cannot have an Attachment.",
+        ));
+    }
+    if matches!(attachment, AttachmentInstruction::Repeat(_))
+        && matches!(
+            primary,
+            PrimaryInstruction::Call(_) | PrimaryInstruction::Return
+        )
+    {
+        errors.push(error(
+            path,
+            "ir.repeat_call_return",
+            "Repeat is not allowed on CALL or RETURN.",
+        ));
     }
 }
 
@@ -522,35 +576,7 @@ fn validate_cell(
     }
     if let Some(primary) = cell.primary {
         if let Some(attachment) = cell.attachment {
-            if matches!(attachment, AttachmentInstruction::Repeat(count) if !(2..=9).contains(&count))
-            {
-                errors.push(error(
-                    path,
-                    "ir.repeat_count",
-                    "Repeat count must be from 2 through 9.",
-                ));
-            }
-            let immediate_repeat = matches!(primary, PrimaryInstruction::OutputImmediate(_))
-                && matches!(attachment, AttachmentInstruction::Repeat(_));
-            if !primary.is_encodable() && !immediate_repeat {
-                errors.push(error(
-                    path,
-                    "ir.attachment_primary",
-                    "This Primary instruction cannot have an Attachment.",
-                ));
-            }
-            if matches!(attachment, AttachmentInstruction::Repeat(_))
-                && matches!(
-                    primary,
-                    PrimaryInstruction::Call(_) | PrimaryInstruction::Return
-                )
-            {
-                errors.push(error(
-                    path,
-                    "ir.repeat_call_return",
-                    "Repeat is not allowed on CALL or RETURN.",
-                ));
-            }
+            validate_attachment(primary, attachment, path, errors);
         }
         if matches!(primary, PrimaryInstruction::Return)
             && !matches!(
@@ -617,7 +643,9 @@ fn validate_reference(
     }
 }
 
-fn folded_primary_allowed(primary: PrimaryInstruction, outer: bool) -> bool {
+/// Returns whether a Primary may execute inside a Folded Block in this context.
+/// `outer` indicates that the Folded Block belongs to an outer Main or Function board.
+pub fn folded_primary_allowed(primary: PrimaryInstruction, outer: bool) -> bool {
     match primary {
         PrimaryInstruction::FoldedBlock(_)
         | PrimaryInstruction::Call(_)

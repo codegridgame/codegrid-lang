@@ -88,15 +88,21 @@ fn board_view(board: &Board) -> BoardView {
                         .iter()
                         .enumerate()
                         .map(|(index, primary)| {
-                            primary.as_ref().map(|instruction| {
-                                format!(
-                                    "{}{}",
-                                    fold.prefixes
-                                        .get(&index)
-                                        .map_or("", |prefix| prefix.token()),
-                                    instruction.token()
-                                )
-                            })
+                            let prefix = fold
+                                .prefixes
+                                .get(&index)
+                                .map_or_else(String::new, |p| p.token().to_owned());
+                            let instruction =
+                                primary.as_ref().map_or_else(String::new, |p| p.token());
+                            let attachment = fold
+                                .attachments
+                                .get(&index)
+                                .map_or_else(String::new, |a| a.token());
+                            if primary.is_some() || !prefix.is_empty() || !attachment.is_empty() {
+                                Some(format!("{prefix}{instruction}{attachment}"))
+                            } else {
+                                None
+                            }
                         })
                         .collect(),
                 )
@@ -138,7 +144,7 @@ mod tests {
         let program = compile(source).expect("Full view fixture must compile");
         let view = ProgramView::from_verified(&program);
 
-        assert_eq!(view.ir_format_version, 3);
+        assert_eq!(view.ir_format_version, 4);
         assert_eq!(view.outer.main.width, 4);
         assert_eq!(view.outer.main.height, 1);
         assert_eq!(view.outer.main.cells[0].entry.as_deref(), Some("~>"));

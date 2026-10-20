@@ -2,7 +2,7 @@
 
 This log records language and VM decisions only. The current normative
 contracts are the [source specification](../spec/codegrid-source-spec.md),
-[VM specification](../spec/codegrid-vm-spec.md), and [Runtime API v4](runtime-api-spec.md).
+[VM specification](../spec/codegrid-vm-spec.md), and [Runtime API v5](runtime-api-spec.md).
 Historical host versions and behavior descriptions remain dated evidence; they
 do not replace current specifications. Game-only decisions and game-specific
 verification excerpts are archived in the sibling
@@ -12,7 +12,7 @@ verification excerpts are archived in the sibling
 
 - [`spec/codegrid-source-spec.md`](../spec/codegrid-source-spec.md) is the normative Full authority for source syntax and static acceptance. Source-language choices are resolved below, and the source/compiler plus IR implementation gates have focused conformance coverage.
 - [`spec/codegrid-vm-spec.md`](../spec/codegrid-vm-spec.md) is the Full execution authority. The choices in the table below resolve its former implementation gates; direct conformance coverage remains required.
-- [`runtime-api-spec.md`](runtime-api-spec.md) defines the normative host-neutral Full Runtime API v4 contract. Browser bindings and server ABI use separately versioned transport contracts.
+- [`runtime-api-spec.md`](runtime-api-spec.md) defines the normative host-neutral Full Runtime API v5 contract. Browser bindings and server ABI use separately versioned transport contracts.
 - Historical compiler, IR, and VM tests plus retained Full examples are evidence to review, not automatic replacements for normative rules.
 
 ## Stable error identifiers (2026-09-30)
@@ -94,15 +94,15 @@ The local native CLI contract is specified in [`docs/cli.md`](cli.md). Its comma
 | --- | --- | --- |
 | Commands and bounds | Keep `check <program.cg>` and `run <program.cg>`. `run` requires `--seed`, `--max-steps`, and `--max-work-units`; both limits are positive `u64` values. Input is optional and comes from exactly one of `--input` or `--input-file`; initial Outer memory is optional via `--initial-memory-file`. | Current command and bound names are specified in [`docs/cli.md`](cli.md); focused argument and shared Full fixture checks cover the language CLI. Former game execution quotas are in the Game Runtime history archive. |
 | Input representation | Inline input is a comma-separated byte list; file input is a JSON byte array. Initial memory is a JSON array of unique `{address, value}` entries; addresses are canonical signed decimal strings and values are bytes. Zero-valued initial entries are accepted and normalized away. | Implemented and covered for both input forms, malformed values, duplicate addresses, empty input, wide addresses, and memory normalization. |
-| Run result | Use `schema: "codegrid.cli.run-result"`, `schema_version: 1`, with distinct `source_error`, `halted`, `runtime_error`, `yielded`, and `vm_fault` outcomes, complete Full snapshots, committed events/output, and the effective configuration. | Implemented with full snapshots, events, metrics, errors, yields, and deterministic JSON checks; this schema remains independent from the current Runtime API v4 and adapter wire schemas. |
+| Run result | Use `schema: "codegrid.cli.run-result"`, `schema_version: 1`, with distinct `source_error`, `halted`, `runtime_error`, `yielded`, and `vm_fault` outcomes, complete Full snapshots, committed events/output, and the effective configuration. | Implemented with full snapshots, events, metrics, errors, yields, and deterministic JSON checks; this schema remains independent from the current Runtime API v5 and adapter wire schemas. |
 | Wide integers and ordering | Encode every `u64`, arbitrary-precision signed integer, and UTF-8 source byte offset as a canonical decimal string. Keep bytes and bounded values as exact JSON numbers. Serialize identity collections in canonical VM order. | Implemented and covered by wide seed/address and shared Full conformance checks. |
 | Process behavior | `check` uses human-readable output. `run` emits one complete JSON result on stdout whenever source reaches the compiler; human diagnostics go to stderr. Exit codes are fixed: 0 success/halt/help, 2 invalid arguments or host data, 3 I/O or source decoding, 4 source rejection, 5 VM runtime error, 6 step-limit yield, 7 work-unit yield, and 8 VM fault. | Implemented and exercised by focused CLI tests; step/work yields and VM faults remain distinct from normal halt and runtime errors. |
 
-## Historical server Runtime API adapter contract (2026-09-30; superseded by Runtime API v4 / Server ABI v5)
+## Historical server Runtime API adapter contract (2026-09-30; superseded by Runtime API v5 / Server ABI v6)
 
 The following records the earlier v3/v4 adapter decision and its verification.
-The current host-neutral contract is [Runtime API v4](runtime-api-spec.md);
-the current server transport uses ABI v5.
+The current host-neutral contract is [Runtime API v5](runtime-api-spec.md);
+the current server transport uses ABI v6.
 
 The no-import server adapter uses its own Server ABI v4 over host-neutral
 Runtime API v3. ABI v3's reduced request and snapshot fields are incompatible
@@ -428,3 +428,26 @@ identities, whose trigger descriptions now include directions. Conformance
 fixtures that exercised in-fold wrapping or in-fold directions were rewritten
 for the linear sweep. Under the unpublished-release policy, current contracts
 are updated directly without aliases or compatibility layers.
+
+## Folded Block Attachments (2026-10-20)
+
+The user approved ReadCode, WriteCode, and Repeat suffix Attachments on Folded
+Block cells wherever the ordinary Primary/Attachment compatibility matrix and
+Folded Block Primary restrictions permit them. ReadCode and WriteCode execute
+after the Primary on the same transition. Repeat follows ordinary Repeat
+semantics: it stays on the internal cell, rechecks its prefix every transition,
+and resumes the Folded Block sweep after completion or cancellation.
+
+WriteCode can dynamically place a Primary that is forbidden in Folded Blocks.
+In that case the complete WriteCode operation is ignored: the current Primary
+and Instruction Stack item remain unchanged, no WriteCode operation is counted,
+and no code-write effect or conflict is created. EMPTY and allowed Primary
+items follow normal WriteCode behavior. Folded runtime writes retain their
+prefix and Attachment. Folded suffixes are represented in current HIR and IR;
+the executable IR format advances to 4. The observable FoldRepeat snapshot phase
+advances Runtime API to 5 and the server ABI to 6. No compatibility reader is
+needed before publication.
+
+The obsolete `source.fold_attachment` diagnostic and its presentation catalog
+entry are removed, rather than reserved, under the unpublished-release policy.
+Folded and ordinary cells use the same IR Attachment compatibility validation.

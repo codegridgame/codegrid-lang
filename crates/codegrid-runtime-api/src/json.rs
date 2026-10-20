@@ -571,6 +571,22 @@ impl Serialize for ThreadPhaseProjection {
                 "internal_direction" => direction_name(internal_direction),
                 "saved_outer_direction" => direction_name(saved_outer_direction),
             }),
+            ThreadPhaseSnapshot::FoldRepeat {
+                fold_id,
+                internal_position,
+                internal_direction,
+                saved_outer_direction,
+                total,
+                completed,
+            } => serialize_object!(serializer, {
+                "kind" => "fold_repeat",
+                "fold_id" => fold_id.get(),
+                "internal_position" => CoordinateProjection(internal_position),
+                "internal_direction" => direction_name(internal_direction),
+                "saved_outer_direction" => direction_name(saved_outer_direction),
+                "total" => total,
+                "completed" => completed,
+            }),
             ThreadPhaseSnapshot::FoldResume {
                 saved_outer_direction,
             } => serialize_object!(serializer, {

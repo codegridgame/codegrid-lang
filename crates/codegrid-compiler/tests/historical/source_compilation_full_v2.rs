@@ -1342,12 +1342,6 @@ fn rejects_the_required_source_validation_failures() {
             "[0",
         ),
         (
-            "Attachment inside M",
-            "@main\n~> _\n@end\n@main.M0 +* _\n",
-            "Attachments are not allowed inside a Folded Block",
-            "+*",
-        ),
-        (
             "multiple Attachments",
             "~> +*x2\n",
             "more than one Attachment",

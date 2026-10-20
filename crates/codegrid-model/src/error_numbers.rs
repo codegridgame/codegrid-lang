@@ -40,7 +40,6 @@ pub const ERROR_NUMBERS: &[(&str, &str, &str)] = &[
     ("source", "source.function_entry_count", "1036"),
     ("source", "source.fold_width", "1037"),
     ("source", "source.fold_entry", "1038"),
-    ("source", "source.fold_attachment", "1039"),
     ("source", "source.fold_primary", "1040"),
     ("source", "source.return_scope", "1041"),
     ("source", "source.custom_return_scope", "1042"),

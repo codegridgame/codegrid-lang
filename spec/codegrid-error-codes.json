@@ -346,15 +346,6 @@
     },
     {
       "layer": "source",
-      "code": "source.fold_attachment",
-      "condition": "A suffix Attachment appears in a Folded Block; conditional prefixes are allowed.",
-      "surface": "Diagnostic.code in core, CLI JSON, LSP diagnostics, browser/server diagnostics and debug diagnostics. CLI check renders [code].",
-      "state_effect": "Compilation rejection: no executable IR or VM instance.",
-      "code_type": "string",
-      "error_number": "1039"
-    },
-    {
-      "layer": "source",
       "code": "source.fold_primary",
       "condition": "A Primary is forbidden in its Folded Block context, including direction changes and random directions.",
       "surface": "Diagnostic.code in core, CLI JSON, LSP diagnostics, browser/server diagnostics and debug diagnostics. CLI check renders [code].",
@@ -671,8 +662,8 @@
     {
       "layer": "api",
       "code": "unsupported_version",
-      "condition": "Request Runtime API version differs from 4.",
-      "surface": "ApiError.code(); Runtime API v4 adapter error.code. Server aliases are listed separately.",
+      "condition": "Request Runtime API version differs from 5.",
+      "surface": "ApiError.code(); Runtime API v5 adapter error.code. Server aliases are listed separately.",
       "state_effect": "Rejected requests do not advance the VM; a work-limited step rolls back its interrupted transition.",
       "code_type": "string",
       "error_number": "4000"
@@ -681,7 +672,7 @@
       "layer": "api",
       "code": "source_limit_exceeded",
       "condition": "Source UTF-8 bytes exceed the configured maximum.",
-      "surface": "ApiError.code(); Runtime API v4 adapter error.code. Server aliases are listed separately.",
+      "surface": "ApiError.code(); Runtime API v5 adapter error.code. Server aliases are listed separately.",
       "state_effect": "Rejected requests do not advance the VM; a work-limited step rolls back its interrupted transition.",
       "code_type": "string",
       "error_number": "4001"
@@ -690,7 +681,7 @@
       "layer": "api",
       "code": "program_limit_reached",
       "condition": "The runtime compiled-program registry is full.",
-      "surface": "ApiError.code(); Runtime API v4 adapter error.code. Server aliases are listed separately.",
+      "surface": "ApiError.code(); Runtime API v5 adapter error.code. Server aliases are listed separately.",
       "state_effect": "Rejected requests do not advance the VM; a work-limited step rolls back its interrupted transition.",
       "code_type": "string",
       "error_number": "4002"
@@ -699,7 +690,7 @@
       "layer": "api",
       "code": "instance_limit_reached",
       "condition": "The runtime instance registry is full.",
-      "surface": "ApiError.code(); Runtime API v4 adapter error.code. Server aliases are listed separately.",
+      "surface": "ApiError.code(); Runtime API v5 adapter error.code. Server aliases are listed separately.",
       "state_effect": "Rejected requests do not advance the VM; a work-limited step rolls back its interrupted transition.",
       "code_type": "string",
       "error_number": "4003"
@@ -708,7 +699,7 @@
       "layer": "api",
       "code": "input_limit_exceeded",
       "condition": "Input length exceeds the configured byte maximum.",
-      "surface": "ApiError.code(); Runtime API v4 adapter error.code. Server aliases are listed separately.",
+      "surface": "ApiError.code(); Runtime API v5 adapter error.code. Server aliases are listed separately.",
       "state_effect": "Rejected requests do not advance the VM; a work-limited step rolls back its interrupted transition.",
       "code_type": "string",
       "error_number": "4004"
@@ -717,7 +708,7 @@
       "layer": "api",
       "code": "initial_memory_limit_exceeded",
       "condition": "Initial-memory entry count exceeds its maximum.",
-      "surface": "ApiError.code(); Runtime API v4 adapter error.code. Server aliases are listed separately.",
+      "surface": "ApiError.code(); Runtime API v5 adapter error.code. Server aliases are listed separately.",
       "state_effect": "Rejected requests do not advance the VM; a work-limited step rolls back its interrupted transition.",
       "code_type": "string",
       "error_number": "4005"
@@ -726,7 +717,7 @@
       "layer": "api",
       "code": "duplicate_initial_memory_address",
       "condition": "Initial memory contains duplicate addresses.",
-      "surface": "ApiError.code(); Runtime API v4 adapter error.code. Server aliases are listed separately.",
+      "surface": "ApiError.code(); Runtime API v5 adapter error.code. Server aliases are listed separately.",
       "state_effect": "Rejected requests do not advance the VM; a work-limited step rolls back its interrupted transition.",
       "code_type": "string",
       "error_number": "4006"
@@ -735,7 +726,7 @@
       "layer": "api",
       "code": "invalid_configuration",
       "condition": "An execution setting is invalid; details identify the field.",
-      "surface": "ApiError.code(); Runtime API v4 adapter error.code. Server aliases are listed separately.",
+      "surface": "ApiError.code(); Runtime API v5 adapter error.code. Server aliases are listed separately.",
       "state_effect": "Rejected requests do not advance the VM; a work-limited step rolls back its interrupted transition.",
       "code_type": "string",
       "error_number": "4007"
@@ -744,7 +735,7 @@
       "layer": "api",
       "code": "unknown_program_handle",
       "condition": "Program handle is unknown, released, foreign or otherwise unavailable.",
-      "surface": "ApiError.code(); Runtime API v4 adapter error.code. Server aliases are listed separately.",
+      "surface": "ApiError.code(); Runtime API v5 adapter error.code. Server aliases are listed separately.",
       "state_effect": "Rejected requests do not advance the VM; a work-limited step rolls back its interrupted transition.",
       "code_type": "string",
       "error_number": "4008"
@@ -753,7 +744,7 @@
       "layer": "api",
       "code": "unknown_instance_handle",
       "condition": "Instance handle is unknown, released, foreign or otherwise unavailable.",
-      "surface": "ApiError.code(); Runtime API v4 adapter error.code. Server aliases are listed separately.",
+      "surface": "ApiError.code(); Runtime API v5 adapter error.code. Server aliases are listed separately.",
       "state_effect": "Rejected requests do not advance the VM; a work-limited step rolls back its interrupted transition.",
       "code_type": "string",
       "error_number": "4009"
@@ -762,7 +753,7 @@
       "layer": "api",
       "code": "zero_step_budget",
       "condition": "A bounded run requests zero steps.",
-      "surface": "ApiError.code(); Runtime API v4 adapter error.code. Server aliases are listed separately.",
+      "surface": "ApiError.code(); Runtime API v5 adapter error.code. Server aliases are listed separately.",
       "state_effect": "Rejected requests do not advance the VM; a work-limited step rolls back its interrupted transition.",
       "code_type": "string",
       "error_number": "4010"
@@ -771,7 +762,7 @@
       "layer": "api",
       "code": "run_step_budget_exceeded",
       "condition": "The requested per-call step budget exceeds the host maximum.",
-      "surface": "ApiError.code(); Runtime API v4 adapter error.code. Server aliases are listed separately.",
+      "surface": "ApiError.code(); Runtime API v5 adapter error.code. Server aliases are listed separately.",
       "state_effect": "Rejected requests do not advance the VM; a work-limited step rolls back its interrupted transition.",
       "code_type": "string",
       "error_number": "4011"
@@ -780,7 +771,7 @@
       "layer": "api",
       "code": "instance_step_budget_exceeded",
       "condition": "The requested run exceeds the instance remaining total step budget.",
-      "surface": "ApiError.code(); Runtime API v4 adapter error.code. Server aliases are listed separately.",
+      "surface": "ApiError.code(); Runtime API v5 adapter error.code. Server aliases are listed separately.",
       "state_effect": "Rejected requests do not advance the VM; a work-limited step rolls back its interrupted transition.",
       "code_type": "string",
       "error_number": "4012"
@@ -789,7 +780,7 @@
       "layer": "api",
       "code": "work_unit_budget_exceeded",
       "condition": "A step needs more dispatches than the per-call deterministic work-unit ceiling.",
-      "surface": "ApiError.code(); Runtime API v4 adapter error.code. Server aliases are listed separately.",
+      "surface": "ApiError.code(); Runtime API v5 adapter error.code. Server aliases are listed separately.",
       "state_effect": "Rejected requests do not advance the VM; a work-limited step rolls back its interrupted transition.",
       "code_type": "string",
       "error_number": "4013"
@@ -798,7 +789,7 @@
       "layer": "api",
       "code": "handle_space_exhausted",
       "condition": "No new opaque handle can be allocated.",
-      "surface": "ApiError.code(); Runtime API v4 adapter error.code. Server aliases are listed separately.",
+      "surface": "ApiError.code(); Runtime API v5 adapter error.code. Server aliases are listed separately.",
       "state_effect": "Rejected requests do not advance the VM; a work-limited step rolls back its interrupted transition.",
       "code_type": "string",
       "error_number": "4014"
@@ -807,7 +798,7 @@
       "layer": "api",
       "code": "vm_initialization_failed",
       "condition": "VM initialization fails; reason identifies InitialThreadIdOverflow.",
-      "surface": "ApiError.code(); Runtime API v4 adapter error.code. Server aliases are listed separately.",
+      "surface": "ApiError.code(); Runtime API v5 adapter error.code. Server aliases are listed separately.",
       "state_effect": "Rejected requests do not advance the VM; a work-limited step rolls back its interrupted transition.",
       "code_type": "string",
       "error_number": "4015"
@@ -1185,7 +1176,7 @@
       "layer": "browser",
       "code": "invalid_source",
       "condition": "Source payload is not a JavaScript string.",
-      "surface": "Browser adapter error.code (API v4). Runtime API errors also use the API table.",
+      "surface": "Browser adapter error.code (API v5). Runtime API errors also use the API table.",
       "state_effect": "Pre-copy validation failures do not dispatch; oversized retained-state instances are released; response limits produce complete structured errors.",
       "code_type": "string",
       "error_number": "7000"
@@ -1194,7 +1185,7 @@
       "layer": "browser",
       "code": "invalid_input",
       "condition": "Input is not a Uint8Array.",
-      "surface": "Browser adapter error.code (API v4). Runtime API errors also use the API table.",
+      "surface": "Browser adapter error.code (API v5). Runtime API errors also use the API table.",
       "state_effect": "Pre-copy validation failures do not dispatch; oversized retained-state instances are released; response limits produce complete structured errors.",
       "code_type": "string",
       "error_number": "7001"
@@ -1203,7 +1194,7 @@
       "layer": "browser",
       "code": "input_allocation_failed",
       "condition": "Input buffer cannot be reserved before copying.",
-      "surface": "Browser adapter error.code (API v4). Runtime API errors also use the API table.",
+      "surface": "Browser adapter error.code (API v5). Runtime API errors also use the API table.",
       "state_effect": "Pre-copy validation failures do not dispatch; oversized retained-state instances are released; response limits produce complete structured errors.",
       "code_type": "string",
       "error_number": "7002"
@@ -1212,7 +1203,7 @@
       "layer": "browser",
       "code": "request_allocation_failed",
       "condition": "A request buffer cannot be reserved.",
-      "surface": "Browser adapter error.code (API v4). Runtime API errors also use the API table.",
+      "surface": "Browser adapter error.code (API v5). Runtime API errors also use the API table.",
       "state_effect": "Pre-copy validation failures do not dispatch; oversized retained-state instances are released; response limits produce complete structured errors.",
       "code_type": "string",
       "error_number": "7003"
@@ -1221,7 +1212,7 @@
       "layer": "browser",
       "code": "source_payload_limit_exceeded",
       "condition": "Source UTF-8 bytes exceed the adapter payload ceiling.",
-      "surface": "Browser adapter error.code (API v4). Runtime API errors also use the API table.",
+      "surface": "Browser adapter error.code (API v5). Runtime API errors also use the API table.",
       "state_effect": "Pre-copy validation failures do not dispatch; oversized retained-state instances are released; response limits produce complete structured errors.",
       "code_type": "string",
       "error_number": "7004"
@@ -1230,7 +1221,7 @@
       "layer": "browser",
       "code": "input_payload_limit_exceeded",
       "condition": "Input bytes exceed the adapter payload ceiling.",
-      "surface": "Browser adapter error.code (API v4). Runtime API errors also use the API table.",
+      "surface": "Browser adapter error.code (API v5). Runtime API errors also use the API table.",
       "state_effect": "Pre-copy validation failures do not dispatch; oversized retained-state instances are released; response limits produce complete structured errors.",
       "code_type": "string",
       "error_number": "7005"
@@ -1239,7 +1230,7 @@
       "layer": "browser",
       "code": "request_payload_limit_exceeded",
       "condition": "Request JSON/strings or combined request bytes exceed the adapter ceiling.",
-      "surface": "Browser adapter error.code (API v4). Runtime API errors also use the API table.",
+      "surface": "Browser adapter error.code (API v5). Runtime API errors also use the API table.",
       "state_effect": "Pre-copy validation failures do not dispatch; oversized retained-state instances are released; response limits produce complete structured errors.",
       "code_type": "string",
       "error_number": "7006"
@@ -1248,7 +1239,7 @@
       "layer": "browser",
       "code": "invalid_request_field",
       "condition": "A required request field has the wrong JavaScript type.",
-      "surface": "Browser adapter error.code (API v4). Runtime API errors also use the API table.",
+      "surface": "Browser adapter error.code (API v5). Runtime API errors also use the API table.",
       "state_effect": "Pre-copy validation failures do not dispatch; oversized retained-state instances are released; response limits produce complete structured errors.",
       "code_type": "string",
       "error_number": "7007"
@@ -1257,7 +1248,7 @@
       "layer": "browser",
       "code": "invalid_program_handle",
       "condition": "Program handle spelling is not a canonical nonzero u64 decimal string.",
-      "surface": "Browser adapter error.code (API v4). Runtime API errors also use the API table.",
+      "surface": "Browser adapter error.code (API v5). Runtime API errors also use the API table.",
       "state_effect": "Pre-copy validation failures do not dispatch; oversized retained-state instances are released; response limits produce complete structured errors.",
       "code_type": "string",
       "error_number": "7008"
@@ -1266,7 +1257,7 @@
       "layer": "browser",
       "code": "invalid_initial_memory",
       "condition": "Initial-memory JSON has an invalid shape or invalid entry.",
-      "surface": "Browser adapter error.code (API v4). Runtime API errors also use the API table.",
+      "surface": "Browser adapter error.code (API v5). Runtime API errors also use the API table.",
       "state_effect": "Pre-copy validation failures do not dispatch; oversized retained-state instances are released; response limits produce complete structured errors.",
       "code_type": "string",
       "error_number": "7009"
@@ -1275,7 +1266,7 @@
       "layer": "browser",
       "code": "invalid_configuration",
       "condition": "Configuration is invalid under the runtime contract.",
-      "surface": "Browser adapter error.code (API v4). Runtime API errors also use the API table.",
+      "surface": "Browser adapter error.code (API v5). Runtime API errors also use the API table.",
       "state_effect": "Pre-copy validation failures do not dispatch; oversized retained-state instances are released; response limits produce complete structured errors.",
       "code_type": "string",
       "error_number": "7010"
@@ -1284,7 +1275,7 @@
       "layer": "browser",
       "code": "invalid_request",
       "condition": "A request value cannot be accepted by the binding.",
-      "surface": "Browser adapter error.code (API v4). Runtime API errors also use the API table.",
+      "surface": "Browser adapter error.code (API v5). Runtime API errors also use the API table.",
       "state_effect": "Pre-copy validation failures do not dispatch; oversized retained-state instances are released; response limits produce complete structured errors.",
       "code_type": "string",
       "error_number": "7011"
@@ -1293,7 +1284,7 @@
       "layer": "browser",
       "code": "invalid_instance_configuration",
       "condition": "Configuration JSON has an invalid shape or required fields.",
-      "surface": "Browser adapter error.code (API v4). Runtime API errors also use the API table.",
+      "surface": "Browser adapter error.code (API v5). Runtime API errors also use the API table.",
       "state_effect": "Pre-copy validation failures do not dispatch; oversized retained-state instances are released; response limits produce complete structured errors.",
       "code_type": "string",
       "error_number": "7012"
@@ -1302,7 +1293,7 @@
       "layer": "browser",
       "code": "invalid_instance_handle",
       "condition": "Instance handle spelling is not a canonical nonzero u64 decimal string.",
-      "surface": "Browser adapter error.code (API v4). Runtime API errors also use the API table.",
+      "surface": "Browser adapter error.code (API v5). Runtime API errors also use the API table.",
       "state_effect": "Pre-copy validation failures do not dispatch; oversized retained-state instances are released; response limits produce complete structured errors.",
       "code_type": "string",
       "error_number": "7013"
@@ -1311,7 +1302,7 @@
       "layer": "browser",
       "code": "invalid_step_limit",
       "condition": "Requested max_steps value is not a canonical u64 decimal string.",
-      "surface": "Browser adapter error.code (API v4). Runtime API errors also use the API table.",
+      "surface": "Browser adapter error.code (API v5). Runtime API errors also use the API table.",
       "state_effect": "Pre-copy validation failures do not dispatch; oversized retained-state instances are released; response limits produce complete structured errors.",
       "code_type": "string",
       "error_number": "7014"
@@ -1320,7 +1311,7 @@
       "layer": "browser",
       "code": "instance_state_limit_exceeded",
       "condition": "Canonical retained snapshot bytes exceed the configured instance quota.",
-      "surface": "Browser adapter error.code (API v4). Runtime API errors also use the API table.",
+      "surface": "Browser adapter error.code (API v5). Runtime API errors also use the API table.",
       "state_effect": "Pre-copy validation failures do not dispatch; oversized retained-state instances are released; response limits produce complete structured errors.",
       "code_type": "string",
       "error_number": "7015"
@@ -1329,7 +1320,7 @@
       "layer": "browser",
       "code": "invalid_memory_address",
       "condition": "An initial-memory address is not a canonical arbitrary-precision signed decimal string.",
-      "surface": "Browser adapter error.code (API v4). Runtime API errors also use the API table.",
+      "surface": "Browser adapter error.code (API v5). Runtime API errors also use the API table.",
       "state_effect": "Pre-copy validation failures do not dispatch; oversized retained-state instances are released; response limits produce complete structured errors.",
       "code_type": "string",
       "error_number": "7016"
@@ -1338,7 +1329,7 @@
       "layer": "browser",
       "code": "invalid_configuration_integer",
       "condition": "Seed is not a valid canonical u64 decimal string.",
-      "surface": "Browser adapter error.code (API v4). Runtime API errors also use the API table.",
+      "surface": "Browser adapter error.code (API v5). Runtime API errors also use the API table.",
       "state_effect": "Pre-copy validation failures do not dispatch; oversized retained-state instances are released; response limits produce complete structured errors.",
       "code_type": "string",
       "error_number": "7018"
@@ -1347,7 +1338,7 @@
       "layer": "browser",
       "code": "response_payload_limit_exceeded",
       "condition": "The full response cannot fit the configured response ceiling.",
-      "surface": "Browser adapter error.code (API v4). Runtime API errors also use the API table.",
+      "surface": "Browser adapter error.code (API v5). Runtime API errors also use the API table.",
       "state_effect": "Pre-copy validation failures do not dispatch; oversized retained-state instances are released; response limits produce complete structured errors.",
       "code_type": "string",
       "error_number": "7019"
@@ -1365,7 +1356,7 @@
       "layer": "server",
       "code": "invalid_input",
       "condition": "Input is not a JSON array.",
-      "surface": "Server ABI v5 / Runtime API v4 JSON error.code, scoped to the server adapter.",
+      "surface": "Server ABI v6 / Runtime API v5 JSON error.code, scoped to the server adapter.",
       "state_effect": "Invalid/over-limit requests do not execute; work-unit limit rolls back; oversized retained instances are released; shutdown permanently closes the session.",
       "code_type": "string",
       "error_number": "7500"
@@ -1374,7 +1365,7 @@
       "layer": "server",
       "code": "invalid_input_byte",
       "condition": "An input element is not an exact byte integer.",
-      "surface": "Server ABI v5 / Runtime API v4 JSON error.code, scoped to the server adapter.",
+      "surface": "Server ABI v6 / Runtime API v5 JSON error.code, scoped to the server adapter.",
       "state_effect": "Invalid/over-limit requests do not execute; work-unit limit rolls back; oversized retained instances are released; shutdown permanently closes the session.",
       "code_type": "string",
       "error_number": "7501"
@@ -1383,7 +1374,7 @@
       "layer": "server",
       "code": "invalid_host_limit",
       "condition": "A required host ceiling is invalid or nonpositive where required.",
-      "surface": "Server ABI v5 / Runtime API v4 JSON error.code, scoped to the server adapter.",
+      "surface": "Server ABI v6 / Runtime API v5 JSON error.code, scoped to the server adapter.",
       "state_effect": "Invalid/over-limit requests do not execute; work-unit limit rolls back; oversized retained instances are released; shutdown permanently closes the session.",
       "code_type": "string",
       "error_number": "7502"
@@ -1392,7 +1383,7 @@
       "layer": "server",
       "code": "host_limit_exceeds_adapter_ceiling",
       "condition": "A configured host limit exceeds the adapter hard ceiling.",
-      "surface": "Server ABI v5 / Runtime API v4 JSON error.code, scoped to the server adapter.",
+      "surface": "Server ABI v6 / Runtime API v5 JSON error.code, scoped to the server adapter.",
       "state_effect": "Invalid/over-limit requests do not execute; work-unit limit rolls back; oversized retained instances are released; shutdown permanently closes the session.",
       "code_type": "string",
       "error_number": "7503"
@@ -1401,7 +1392,7 @@
       "layer": "server",
       "code": "invalid_decimal_integer",
       "condition": "A required u64 string is noncanonical or out of range.",
-      "surface": "Server ABI v5 / Runtime API v4 JSON error.code, scoped to the server adapter.",
+      "surface": "Server ABI v6 / Runtime API v5 JSON error.code, scoped to the server adapter.",
       "state_effect": "Invalid/over-limit requests do not execute; work-unit limit rolls back; oversized retained instances are released; shutdown permanently closes the session.",
       "code_type": "string",
       "error_number": "7504"
@@ -1410,7 +1401,7 @@
       "layer": "server",
       "code": "invalid_memory_address",
       "condition": "Initial-memory address spelling is invalid.",
-      "surface": "Server ABI v5 / Runtime API v4 JSON error.code, scoped to the server adapter.",
+      "surface": "Server ABI v6 / Runtime API v5 JSON error.code, scoped to the server adapter.",
       "state_effect": "Invalid/over-limit requests do not execute; work-unit limit rolls back; oversized retained instances are released; shutdown permanently closes the session.",
       "code_type": "string",
       "error_number": "7505"
@@ -1419,7 +1410,7 @@
       "layer": "server",
       "code": "invalid_request_field",
       "condition": "Required request field is missing or has the wrong type.",
-      "surface": "Server ABI v5 / Runtime API v4 JSON error.code, scoped to the server adapter.",
+      "surface": "Server ABI v6 / Runtime API v5 JSON error.code, scoped to the server adapter.",
       "state_effect": "Invalid/over-limit requests do not execute; work-unit limit rolls back; oversized retained instances are released; shutdown permanently closes the session.",
       "code_type": "string",
       "error_number": "7506"
@@ -1427,8 +1418,8 @@
     {
       "layer": "server",
       "code": "unsupported_api_version",
-      "condition": "Request Runtime API version differs from 4.",
-      "surface": "Server ABI v5 / Runtime API v4 JSON error.code, scoped to the server adapter.",
+      "condition": "Request Runtime API version differs from 5.",
+      "surface": "Server ABI v6 / Runtime API v5 JSON error.code, scoped to the server adapter.",
       "state_effect": "Invalid/over-limit requests do not execute; work-unit limit rolls back; oversized retained instances are released; shutdown permanently closes the session.",
       "code_type": "string",
       "error_number": "7507"
@@ -1437,7 +1428,7 @@
       "layer": "server",
       "code": "source_payload_limit_exceeded",
       "condition": "Source bytes exceed the runtime source ceiling.",
-      "surface": "Server ABI v5 / Runtime API v4 JSON error.code, scoped to the server adapter.",
+      "surface": "Server ABI v6 / Runtime API v5 JSON error.code, scoped to the server adapter.",
       "state_effect": "Invalid/over-limit requests do not execute; work-unit limit rolls back; oversized retained instances are released; shutdown permanently closes the session.",
       "code_type": "string",
       "error_number": "7508"
@@ -1446,7 +1437,7 @@
       "layer": "server",
       "code": "input_payload_limit_exceeded",
       "condition": "Input bytes exceed the configured ceiling.",
-      "surface": "Server ABI v5 / Runtime API v4 JSON error.code, scoped to the server adapter.",
+      "surface": "Server ABI v6 / Runtime API v5 JSON error.code, scoped to the server adapter.",
       "state_effect": "Invalid/over-limit requests do not execute; work-unit limit rolls back; oversized retained instances are released; shutdown permanently closes the session.",
       "code_type": "string",
       "error_number": "7509"
@@ -1455,7 +1446,7 @@
       "layer": "server",
       "code": "vm_initialization_error",
       "condition": "VM initialization fails (server alias of vm_initialization_failed).",
-      "surface": "Server ABI v5 / Runtime API v4 JSON error.code, scoped to the server adapter.",
+      "surface": "Server ABI v6 / Runtime API v5 JSON error.code, scoped to the server adapter.",
       "state_effect": "Invalid/over-limit requests do not execute; work-unit limit rolls back; oversized retained instances are released; shutdown permanently closes the session.",
       "code_type": "string",
       "error_number": "7510"
@@ -1464,7 +1455,7 @@
       "layer": "server",
       "code": "invalid_initial_memory",
       "condition": "Initial-memory payload is not an array.",
-      "surface": "Server ABI v5 / Runtime API v4 JSON error.code, scoped to the server adapter.",
+      "surface": "Server ABI v6 / Runtime API v5 JSON error.code, scoped to the server adapter.",
       "state_effect": "Invalid/over-limit requests do not execute; work-unit limit rolls back; oversized retained instances are released; shutdown permanently closes the session.",
       "code_type": "string",
       "error_number": "7511"
@@ -1473,7 +1464,7 @@
       "layer": "server",
       "code": "initial_memory_payload_limit_exceeded",
       "condition": "Initial-memory payload/entry collection exceeds the adapter ceiling.",
-      "surface": "Server ABI v5 / Runtime API v4 JSON error.code, scoped to the server adapter.",
+      "surface": "Server ABI v6 / Runtime API v5 JSON error.code, scoped to the server adapter.",
       "state_effect": "Invalid/over-limit requests do not execute; work-unit limit rolls back; oversized retained instances are released; shutdown permanently closes the session.",
       "code_type": "string",
       "error_number": "7512"
@@ -1482,7 +1473,7 @@
       "layer": "server",
       "code": "invalid_initial_memory_entry",
       "condition": "An initial-memory entry has invalid fields, address, or value.",
-      "surface": "Server ABI v5 / Runtime API v4 JSON error.code, scoped to the server adapter.",
+      "surface": "Server ABI v6 / Runtime API v5 JSON error.code, scoped to the server adapter.",
       "state_effect": "Invalid/over-limit requests do not execute; work-unit limit rolls back; oversized retained instances are released; shutdown permanently closes the session.",
       "code_type": "string",
       "error_number": "7513"
@@ -1491,7 +1482,7 @@
       "layer": "server",
       "code": "request_payload_limit_exceeded",
       "condition": "Request bytes exceed the adapter request ceiling.",
-      "surface": "Server ABI v5 / Runtime API v4 JSON error.code, scoped to the server adapter.",
+      "surface": "Server ABI v6 / Runtime API v5 JSON error.code, scoped to the server adapter.",
       "state_effect": "Invalid/over-limit requests do not execute; work-unit limit rolls back; oversized retained instances are released; shutdown permanently closes the session.",
       "code_type": "string",
       "error_number": "7514"
@@ -1500,7 +1491,7 @@
       "layer": "server",
       "code": "invalid_request_json",
       "condition": "Request bytes are not one valid UTF-8 JSON value.",
-      "surface": "Server ABI v5 / Runtime API v4 JSON error.code, scoped to the server adapter.",
+      "surface": "Server ABI v6 / Runtime API v5 JSON error.code, scoped to the server adapter.",
       "state_effect": "Invalid/over-limit requests do not execute; work-unit limit rolls back; oversized retained instances are released; shutdown permanently closes the session.",
       "code_type": "string",
       "error_number": "7515"
@@ -1509,7 +1500,7 @@
       "layer": "server",
       "code": "invalid_request",
       "condition": "Top-level request is not a valid object.",
-      "surface": "Server ABI v5 / Runtime API v4 JSON error.code, scoped to the server adapter.",
+      "surface": "Server ABI v6 / Runtime API v5 JSON error.code, scoped to the server adapter.",
       "state_effect": "Invalid/over-limit requests do not execute; work-unit limit rolls back; oversized retained instances are released; shutdown permanently closes the session.",
       "code_type": "string",
       "error_number": "7516"
@@ -1517,8 +1508,8 @@
     {
       "layer": "server",
       "code": "unsupported_abi_version",
-      "condition": "Request Server ABI version differs from 5.",
-      "surface": "Server ABI v5 / Runtime API v4 JSON error.code, scoped to the server adapter.",
+      "condition": "Request Server ABI version differs from 6.",
+      "surface": "Server ABI v6 / Runtime API v5 JSON error.code, scoped to the server adapter.",
       "state_effect": "Invalid/over-limit requests do not execute; work-unit limit rolls back; oversized retained instances are released; shutdown permanently closes the session.",
       "code_type": "string",
       "error_number": "7517"
@@ -1527,7 +1518,7 @@
       "layer": "server",
       "code": "runtime_closed",
       "condition": "A request targets a permanently shut-down module session.",
-      "surface": "Server ABI v5 / Runtime API v4 JSON error.code, scoped to the server adapter.",
+      "surface": "Server ABI v6 / Runtime API v5 JSON error.code, scoped to the server adapter.",
       "state_effect": "Invalid/over-limit requests do not execute; work-unit limit rolls back; oversized retained instances are released; shutdown permanently closes the session.",
       "code_type": "string",
       "error_number": "7518"
@@ -1536,7 +1527,7 @@
       "layer": "server",
       "code": "runtime_not_initialized",
       "condition": "A runtime operation occurs before initialization.",
-      "surface": "Server ABI v5 / Runtime API v4 JSON error.code, scoped to the server adapter.",
+      "surface": "Server ABI v6 / Runtime API v5 JSON error.code, scoped to the server adapter.",
       "state_effect": "Invalid/over-limit requests do not execute; work-unit limit rolls back; oversized retained instances are released; shutdown permanently closes the session.",
       "code_type": "string",
       "error_number": "7519"
@@ -1545,7 +1536,7 @@
       "layer": "server",
       "code": "unsupported_operation",
       "condition": "The requested operation is not recognized.",
-      "surface": "Server ABI v5 / Runtime API v4 JSON error.code, scoped to the server adapter.",
+      "surface": "Server ABI v6 / Runtime API v5 JSON error.code, scoped to the server adapter.",
       "state_effect": "Invalid/over-limit requests do not execute; work-unit limit rolls back; oversized retained instances are released; shutdown permanently closes the session.",
       "code_type": "string",
       "error_number": "7520"
@@ -1554,7 +1545,7 @@
       "layer": "server",
       "code": "runtime_already_initialized",
       "condition": "Initialize is called twice.",
-      "surface": "Server ABI v5 / Runtime API v4 JSON error.code, scoped to the server adapter.",
+      "surface": "Server ABI v6 / Runtime API v5 JSON error.code, scoped to the server adapter.",
       "state_effect": "Invalid/over-limit requests do not execute; work-unit limit rolls back; oversized retained instances are released; shutdown permanently closes the session.",
       "code_type": "string",
       "error_number": "7521"
@@ -1563,7 +1554,7 @@
       "layer": "server",
       "code": "invalid_program_handle",
       "condition": "Program handle spelling is invalid.",
-      "surface": "Server ABI v5 / Runtime API v4 JSON error.code, scoped to the server adapter.",
+      "surface": "Server ABI v6 / Runtime API v5 JSON error.code, scoped to the server adapter.",
       "state_effect": "Invalid/over-limit requests do not execute; work-unit limit rolls back; oversized retained instances are released; shutdown permanently closes the session.",
       "code_type": "string",
       "error_number": "7522"
@@ -1572,7 +1563,7 @@
       "layer": "server",
       "code": "invalid_instance_handle",
       "condition": "Instance handle spelling is invalid.",
-      "surface": "Server ABI v5 / Runtime API v4 JSON error.code, scoped to the server adapter.",
+      "surface": "Server ABI v6 / Runtime API v5 JSON error.code, scoped to the server adapter.",
       "state_effect": "Invalid/over-limit requests do not execute; work-unit limit rolls back; oversized retained instances are released; shutdown permanently closes the session.",
       "code_type": "string",
       "error_number": "7524"
@@ -1581,7 +1572,7 @@
       "layer": "server",
       "code": "invalid_host_limits",
       "condition": "Initialization host_limits is not an object.",
-      "surface": "Server ABI v5 / Runtime API v4 JSON error.code, scoped to the server adapter.",
+      "surface": "Server ABI v6 / Runtime API v5 JSON error.code, scoped to the server adapter.",
       "state_effect": "Invalid/over-limit requests do not execute; work-unit limit rolls back; oversized retained instances are released; shutdown permanently closes the session.",
       "code_type": "string",
       "error_number": "7525"
@@ -1590,7 +1581,7 @@
       "layer": "server",
       "code": "response_payload_limit_exceeded",
       "condition": "The full response exceeds the configured response ceiling.",
-      "surface": "Server ABI v5 / Runtime API v4 JSON error.code, scoped to the server adapter.",
+      "surface": "Server ABI v6 / Runtime API v5 JSON error.code, scoped to the server adapter.",
       "state_effect": "Invalid/over-limit requests do not execute; work-unit limit rolls back; oversized retained instances are released; shutdown permanently closes the session.",
       "code_type": "string",
       "error_number": "7526"
@@ -1599,7 +1590,7 @@
       "layer": "server",
       "code": "instance_state_limit_exceeded",
       "condition": "Canonical retained instance state exceeds its configured quota.",
-      "surface": "Server ABI v5 / Runtime API v4 JSON error.code, scoped to the server adapter.",
+      "surface": "Server ABI v6 / Runtime API v5 JSON error.code, scoped to the server adapter.",
       "state_effect": "Invalid/over-limit requests do not execute; work-unit limit rolls back; oversized retained instances are released; shutdown permanently closes the session.",
       "code_type": "string",
       "error_number": "7527"
@@ -1608,7 +1599,7 @@
       "layer": "server",
       "code": "program_limit_reached",
       "condition": "The runtime compiled-program registry is full.",
-      "surface": "Server ABI v5 / Runtime API v4 JSON error.code, scoped to the server adapter.",
+      "surface": "Server ABI v6 / Runtime API v5 JSON error.code, scoped to the server adapter.",
       "state_effect": "Invalid/over-limit requests do not execute; work-unit limit rolls back; oversized retained instances are released; shutdown permanently closes the session.",
       "code_type": "string",
       "error_number": "7528"
@@ -1617,7 +1608,7 @@
       "layer": "server",
       "code": "instance_limit_reached",
       "condition": "The runtime instance registry is full.",
-      "surface": "Server ABI v5 / Runtime API v4 JSON error.code, scoped to the server adapter.",
+      "surface": "Server ABI v6 / Runtime API v5 JSON error.code, scoped to the server adapter.",
       "state_effect": "Invalid/over-limit requests do not execute; work-unit limit rolls back; oversized retained instances are released; shutdown permanently closes the session.",
       "code_type": "string",
       "error_number": "7529"
@@ -1626,7 +1617,7 @@
       "layer": "server",
       "code": "initial_memory_limit_exceeded",
       "condition": "Initial-memory entry count exceeds its maximum.",
-      "surface": "Server ABI v5 / Runtime API v4 JSON error.code, scoped to the server adapter.",
+      "surface": "Server ABI v6 / Runtime API v5 JSON error.code, scoped to the server adapter.",
       "state_effect": "Invalid/over-limit requests do not execute; work-unit limit rolls back; oversized retained instances are released; shutdown permanently closes the session.",
       "code_type": "string",
       "error_number": "7530"
@@ -1635,7 +1626,7 @@
       "layer": "server",
       "code": "duplicate_initial_memory_address",
       "condition": "Initial memory contains duplicate addresses.",
-      "surface": "Server ABI v5 / Runtime API v4 JSON error.code, scoped to the server adapter.",
+      "surface": "Server ABI v6 / Runtime API v5 JSON error.code, scoped to the server adapter.",
       "state_effect": "Invalid/over-limit requests do not execute; work-unit limit rolls back; oversized retained instances are released; shutdown permanently closes the session.",
       "code_type": "string",
       "error_number": "7531"
@@ -1644,7 +1635,7 @@
       "layer": "server",
       "code": "invalid_configuration",
       "condition": "An execution setting is invalid; details identify the field.",
-      "surface": "Server ABI v5 / Runtime API v4 JSON error.code, scoped to the server adapter.",
+      "surface": "Server ABI v6 / Runtime API v5 JSON error.code, scoped to the server adapter.",
       "state_effect": "Invalid/over-limit requests do not execute; work-unit limit rolls back; oversized retained instances are released; shutdown permanently closes the session.",
       "code_type": "string",
       "error_number": "7532"
@@ -1653,7 +1644,7 @@
       "layer": "server",
       "code": "unknown_program_handle",
       "condition": "Program handle is unknown, released, foreign or otherwise unavailable.",
-      "surface": "Server ABI v5 / Runtime API v4 JSON error.code, scoped to the server adapter.",
+      "surface": "Server ABI v6 / Runtime API v5 JSON error.code, scoped to the server adapter.",
       "state_effect": "Invalid/over-limit requests do not execute; work-unit limit rolls back; oversized retained instances are released; shutdown permanently closes the session.",
       "code_type": "string",
       "error_number": "7533"
@@ -1662,7 +1653,7 @@
       "layer": "server",
       "code": "unknown_instance_handle",
       "condition": "Instance handle is unknown, released, foreign or otherwise unavailable.",
-      "surface": "Server ABI v5 / Runtime API v4 JSON error.code, scoped to the server adapter.",
+      "surface": "Server ABI v6 / Runtime API v5 JSON error.code, scoped to the server adapter.",
       "state_effect": "Invalid/over-limit requests do not execute; work-unit limit rolls back; oversized retained instances are released; shutdown permanently closes the session.",
       "code_type": "string",
       "error_number": "7534"
@@ -1671,7 +1662,7 @@
       "layer": "server",
       "code": "zero_step_budget",
       "condition": "A bounded run requests zero steps.",
-      "surface": "Server ABI v5 / Runtime API v4 JSON error.code, scoped to the server adapter.",
+      "surface": "Server ABI v6 / Runtime API v5 JSON error.code, scoped to the server adapter.",
       "state_effect": "Invalid/over-limit requests do not execute; work-unit limit rolls back; oversized retained instances are released; shutdown permanently closes the session.",
       "code_type": "string",
       "error_number": "7535"
@@ -1680,7 +1671,7 @@
       "layer": "server",
       "code": "run_step_budget_exceeded",
       "condition": "The requested per-call step budget exceeds the host maximum.",
-      "surface": "Server ABI v5 / Runtime API v4 JSON error.code, scoped to the server adapter.",
+      "surface": "Server ABI v6 / Runtime API v5 JSON error.code, scoped to the server adapter.",
       "state_effect": "Invalid/over-limit requests do not execute; work-unit limit rolls back; oversized retained instances are released; shutdown permanently closes the session.",
       "code_type": "string",
       "error_number": "7536"
@@ -1689,7 +1680,7 @@
       "layer": "server",
       "code": "instance_step_budget_exceeded",
       "condition": "The requested run exceeds the instance remaining total step budget.",
-      "surface": "Server ABI v5 / Runtime API v4 JSON error.code, scoped to the server adapter.",
+      "surface": "Server ABI v6 / Runtime API v5 JSON error.code, scoped to the server adapter.",
       "state_effect": "Invalid/over-limit requests do not execute; work-unit limit rolls back; oversized retained instances are released; shutdown permanently closes the session.",
       "code_type": "string",
       "error_number": "7537"
@@ -1698,7 +1689,7 @@
       "layer": "server",
       "code": "work_unit_budget_exceeded",
       "condition": "A step needs more dispatches than the per-call deterministic work ceiling.",
-      "surface": "Server ABI v5 / Runtime API v4 JSON error.code, scoped to the server adapter.",
+      "surface": "Server ABI v6 / Runtime API v5 JSON error.code, scoped to the server adapter.",
       "state_effect": "Invalid/over-limit requests do not execute; work-unit limit rolls back; oversized retained instances are released; shutdown permanently closes the session.",
       "code_type": "string",
       "error_number": "7538"
@@ -1707,7 +1698,7 @@
       "layer": "server",
       "code": "handle_space_exhausted",
       "condition": "No new opaque handle can be allocated.",
-      "surface": "Server ABI v5 / Runtime API v4 JSON error.code, scoped to the server adapter.",
+      "surface": "Server ABI v6 / Runtime API v5 JSON error.code, scoped to the server adapter.",
       "state_effect": "Invalid/over-limit requests do not execute; work-unit limit rolls back; oversized retained instances are released; shutdown permanently closes the session.",
       "code_type": "string",
       "error_number": "7539"
