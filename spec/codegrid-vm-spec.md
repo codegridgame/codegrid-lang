@@ -87,7 +87,7 @@ The phase records total repetitions and successful repetitions already completed
 
 ### 5.3 Fold
 
-Executing a Folded Block instruction enters the referenced block at internal position (0,0) facing Right, regardless of the caller thread's current direction. The caller direction is saved separately for Fold Resume. That same outer transition evaluates the first folded cell. The Folded Block shell and each visited block cell have distinct static cell identities.
+Executing a Folded Block instruction enters the referenced block at internal position (0,0) facing Right, regardless of the caller thread's current direction. The caller direction is saved separately for Fold Resume. That same outer transition evaluates the first populated folded cell. Empty cells (`_`, with no Primary) are layout slots: entry and subsequent movement skip them without a dispatch, cell visit, operation, or committed transition. Coordinates remain those of the original row. An entirely empty block enters Fold Resume on the call transition. Skipping applies only inside Folded Blocks; empty ordinary board cells retain their existing transition behavior. The Folded Block shell and each visited block cell have distinct static cell identities.
 
 A Folded Block never wraps. Movement that would leave the block — vertical in either direction, Left past the left edge, or Right past the right edge — records a Fold Resume phase, retaining the direction the outer thread had when entering. The following outer transition consumes Fold Resume by moving once from the Folded Block call site in that saved outer direction, then returns to Normal. Direction Primaries are forbidden inside Folded Blocks, so the internal sweep direction stays Right for the whole visit.
 

@@ -1903,6 +1903,42 @@ mod tests {
     }
 
     #[test]
+    fn sparse_folded_rows_dispatch_only_populated_cells() {
+        use codegrid_ir::FoldedBlock;
+        use codegrid_model::PrimaryInstruction;
+        let slot = codegrid_model::Slot::new(0).unwrap();
+        for occupied in [[0, 1], [0, 2], [1, 2]] {
+            let mut cells = vec![None; 3];
+            for index in occupied { cells[index] = Some(PrimaryInstruction::Add); }
+            let program = VerifiedProgram::new(Program {
+                format_version: IR_FORMAT_VERSION,
+                outer: ScopedProgram {
+                    main: Board {
+                        width: 3, height: 1,
+                        cells: vec![Cell::entry(Direction::Right), Cell::instruction(PrimaryInstruction::FoldedBlock(slot), None), Cell::instruction(PrimaryInstruction::Halt, None)],
+                        folded_blocks: BTreeMap::from([(slot, FoldedBlock { cells, prefixes: Default::default(), attachments: Default::default() })]),
+                    }, functions: BTreeMap::new(),
+                }, customs: BTreeMap::new(),
+            }).unwrap();
+            let mut vm = Vm::new(program, [], config()).unwrap();
+            let mut visited = Vec::new();
+            for _ in 0..5 {
+                let report = vm.step();
+                for event in report.events {
+                    if let crate::VmEvent::CellReached { cell, .. } = event {
+                        if cell.folded_block == Some(slot) { visited.push(cell.position.x); }
+                    }
+                }
+            }
+            assert_eq!(visited, occupied);
+            let snapshot = vm.snapshot();
+            assert_eq!(snapshot.registers[0], 2);
+            assert_eq!(snapshot.status, VmStatus::Halted);
+            assert_eq!(snapshot.committed_steps, 5);
+        }
+    }
+
+    #[test]
     fn folded_block_enters_immediately_and_uses_a_resume_step() {
         use codegrid_ir::FoldedBlock;
         use codegrid_model::PrimaryInstruction;
@@ -1939,29 +1975,9 @@ mod tests {
         assert_eq!(vm.step().status, VmStatus::Running);
         let fold_entry = vm.step();
         assert_eq!(fold_entry.status, VmStatus::Running);
-        assert!(matches!(
-            fold_entry.events.as_slice(),
-            [
-                crate::VmEvent::CellReached { cell: shell, .. },
-                crate::VmEvent::CellReached { cell: folded, .. },
-                crate::VmEvent::ThreadChanged { .. },
-            ] if shell.folded_block.is_none()
-                && shell.position.x == 1
-                && folded.folded_block == Some(slot)
-                && folded.position.x == 0
-        ));
-        assert!(matches!(
-            vm.snapshot().threads[0].phase,
-            super::ThreadPhaseSnapshot::Fold {
-                fold_id: id,
-                internal_position: Coordinate { x: 1, y: 0 },
-                internal_direction: Direction::Right,
-                saved_outer_direction: Direction::Right,
-                ..
-            } if id == slot
-        ));
-        assert_eq!(vm.step().status, VmStatus::Running);
-        assert_eq!(vm.step().status, VmStatus::Running);
+        assert!(!fold_entry.events.iter().any(|event| matches!(event,
+            crate::VmEvent::CellReached { cell, .. } if cell.folded_block.is_some()
+        )));
         assert!(matches!(
             vm.snapshot().threads[0].phase,
             super::ThreadPhaseSnapshot::FoldResume {
@@ -1972,7 +1988,7 @@ mod tests {
         assert_eq!(vm.step().status, VmStatus::Running);
         assert_eq!(vm.snapshot().threads[0].position.x, 2);
         assert_eq!(vm.step().status, VmStatus::Halted);
-        assert_eq!(vm.snapshot().metrics.committed_steps(), 6);
+        assert_eq!(vm.snapshot().metrics.committed_steps(), 4);
     }
 
     #[test]
@@ -2108,8 +2124,7 @@ mod tests {
         assert_eq!(snapshot.registers[0], 1);
         assert!(matches!(
             snapshot.threads[0].phase,
-            super::ThreadPhaseSnapshot::Fold {
-                internal_position: Coordinate { x: 1, y: 0 },
+            super::ThreadPhaseSnapshot::FoldResume {
                 ..
             }
         ));
@@ -2152,58 +2167,15 @@ mod tests {
         let mut vm = Vm::new(program, [], config()).expect("one initial thread fits in u64");
 
         assert_eq!(vm.step().status, VmStatus::Running);
-        assert_eq!(vm.step().status, VmStatus::Running);
-        assert_eq!(vm.snapshot().registers[0], 1);
-        assert!(matches!(
-            vm.snapshot().threads[0].phase,
-            super::ThreadPhaseSnapshot::Fold {
-                outer_repeat: Some(super::RepeatProgress {
-                    total: 3,
-                    completed: 0,
-                }),
-                ..
-            }
-        ));
-
-        assert_eq!(vm.step().status, VmStatus::Running);
-        assert_eq!(vm.step().status, VmStatus::Running);
-        assert!(matches!(
-            vm.snapshot().threads[0].phase,
-            super::ThreadPhaseSnapshot::FoldResume {
-                outer_repeat: Some(super::RepeatProgress {
-                    total: 3,
-                    completed: 1,
-                }),
-                ..
-            }
-        ));
-        assert_eq!(vm.step().status, VmStatus::Running);
-        assert_eq!(vm.snapshot().registers[0], 2);
-        assert!(matches!(
-            vm.snapshot().threads[0].phase,
-            super::ThreadPhaseSnapshot::Fold {
-                outer_repeat: Some(super::RepeatProgress {
-                    total: 3,
-                    completed: 1,
-                }),
-                ..
-            }
-        ));
-
-        for _ in 0..5 {
+        for completed in 1..=3 {
             assert_eq!(vm.step().status, VmStatus::Running);
+            assert_eq!(vm.snapshot().registers[0], completed);
+            assert!(matches!(vm.snapshot().threads[0].phase,
+                super::ThreadPhaseSnapshot::FoldResume {
+                    outer_repeat: Some(super::RepeatProgress { total: 3, completed: n }), ..
+                } if n == completed
+            ));
         }
-        assert_eq!(vm.snapshot().registers[0], 3);
-        assert!(matches!(
-            vm.snapshot().threads[0].phase,
-            super::ThreadPhaseSnapshot::FoldResume {
-                outer_repeat: Some(super::RepeatProgress {
-                    total: 3,
-                    completed: 3,
-                }),
-                ..
-            }
-        ));
         assert_eq!(vm.step().status, VmStatus::Running);
         assert_eq!(vm.snapshot().threads[0].position.x, 2);
         assert_eq!(vm.step().status, VmStatus::Halted);
@@ -2250,8 +2222,6 @@ mod tests {
         assert_eq!(vm.step().status, VmStatus::Running);
         assert_eq!(vm.step().status, VmStatus::Running);
         assert_eq!(vm.step().status, VmStatus::Running);
-        assert_eq!(vm.step().status, VmStatus::Running);
-        assert_eq!(vm.step().status, VmStatus::Running);
         assert_eq!(vm.snapshot().registers[0], 1);
         assert_eq!(vm.snapshot().threads[0].position.x, 2);
         assert_eq!(vm.snapshot().threads[0].phase, super::ThreadPhaseSnapshot::Normal);
@@ -2292,7 +2262,7 @@ mod tests {
         })
         .expect("a Folded Block call may use ReadCode");
         let mut vm = Vm::new(program, [], config()).expect("one initial thread fits in u64");
-        for _ in 0..4 {
+        for _ in 0..2 {
             assert_eq!(vm.step().status, VmStatus::Running);
         }
         assert!(matches!(
@@ -2353,7 +2323,7 @@ mod tests {
         })
         .expect("a Folded Block call may use WriteCode");
         let mut vm = Vm::new(program, [], config()).expect("one initial thread fits in u64");
-        for _ in 0..4 {
+        for _ in 0..2 {
             assert_eq!(vm.step().status, VmStatus::Running);
         }
         assert!(matches!(
@@ -2884,7 +2854,7 @@ mod tests {
         vm.registers[1] = 17;
         vm.threads[0].data_stack.push(42);
 
-        for _ in 0..7 {
+        for _ in 0..5 {
             assert_eq!(vm.step().status, VmStatus::Running);
         }
 
@@ -2948,9 +2918,6 @@ mod tests {
         assert_eq!(folded.registers[0], add.code());
 
         assert_eq!(vm.step().status, VmStatus::Running);
-        assert_eq!(vm.step().status, VmStatus::Running);
-        assert_eq!(vm.step().status, VmStatus::Running);
-        assert_eq!(vm.step().status, VmStatus::Running);
         assert_eq!(vm.snapshot().threads[0].position, Coordinate { x: 3, y: 0 });
         assert_eq!(vm.step().status, VmStatus::Halted);
     }
@@ -3004,10 +2971,6 @@ mod tests {
         assert_eq!(vm.step().status, VmStatus::Running);
         assert_eq!(vm.snapshot().threads[0].data_stack, vec![0x2A]);
         assert_eq!(vm.step().status, VmStatus::Running);
-        assert_eq!(vm.step().status, VmStatus::Running);
-        assert_eq!(vm.step().status, VmStatus::Running);
-        assert_eq!(vm.step().status, VmStatus::Running);
-        assert_eq!(vm.step().status, VmStatus::Running);
         assert_eq!(vm.snapshot().registers[0], 0);
         assert_eq!(vm.step().status, VmStatus::Running);
 
@@ -3054,7 +3017,7 @@ mod tests {
         let mut vm = Vm::new(program, [0xA5], config())
             .expect("one initial thread fits in u64");
 
-        for _ in 0..5 {
+        for _ in 0..4 {
             assert_ne!(vm.step().status, VmStatus::Error);
         }
 
@@ -5797,27 +5760,19 @@ mod tests {
         assert_eq!(snapshot.registers[0..2], [1, 1]);
         assert!(matches!(
             snapshot.threads[0].phase,
-            super::ThreadPhaseSnapshot::Fold {
-                fold_id: id,
-                internal_position: Coordinate { x: 1, y: 0 },
+            super::ThreadPhaseSnapshot::FoldResume {
                 saved_outer_direction: Direction::Right,
                 ..
-            } if id == fold_id
+            }
         ));
         assert!(matches!(
             snapshot.threads[1].phase,
-            super::ThreadPhaseSnapshot::Fold {
-                fold_id: id,
-                internal_position: Coordinate { x: 1, y: 0 },
+            super::ThreadPhaseSnapshot::FoldResume {
                 saved_outer_direction: Direction::Left,
                 ..
-            } if id == fold_id
+            }
         ));
 
-        assert_eq!(vm.step().status, VmStatus::Running);
-        assert_eq!(vm.step().status, VmStatus::Running);
-        assert_eq!(vm.step().status, VmStatus::Running);
-        assert_eq!(vm.step().status, VmStatus::Running);
         assert!(matches!(
             vm.snapshot().threads[0].phase,
             super::ThreadPhaseSnapshot::FoldResume {
@@ -5839,7 +5794,7 @@ mod tests {
         assert_eq!(snapshot.threads[0].direction, Direction::Right);
         assert_eq!(snapshot.threads[1].position, Coordinate { x: 2, y: 2 });
         assert_eq!(snapshot.threads[1].direction, Direction::Left);
-        assert_eq!(snapshot.committed_steps, 7);
+        assert_eq!(snapshot.committed_steps, 3);
     }
 
     #[test]
@@ -5926,7 +5881,7 @@ mod tests {
                 })
                 .count()
         });
-        assert_eq!(folded_visits_by_caller, [3, 3]);
+        assert_eq!(folded_visits_by_caller, [2, 2]);
 
         let snapshot = vm.snapshot();
         assert_eq!(snapshot.threads[0].data_stack, vec![1]);

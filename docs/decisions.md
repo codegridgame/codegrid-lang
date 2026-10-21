@@ -498,3 +498,7 @@ The executable IR format advances from 4 to 5 for the changed Instruction
 Code and Attachment contract; Runtime API advances from 5 to 6 and server ABI
 from 6 to 7 for invocation-repeat progress. Earlier formats are rejected under
 the pre-publication policy.
+
+## 2026-10-21: Empty Folded Block layout slots
+
+The user requires a three-slot Folded Block containing two instructions to execute only those two instructions. Empty Folded Block cells are skipped during entry and movement, including leading, interior and trailing holes. Preserve physical coordinates and the existing call/resume and Repeat phases; an all-empty invocation moves directly to FoldResume. Normal board blanks remain dispatches. This replaces the prior empty-fold-cell dispatch behavior before any user-published release.

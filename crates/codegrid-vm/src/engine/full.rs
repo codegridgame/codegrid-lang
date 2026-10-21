@@ -607,7 +607,7 @@ fn execute_fold_cell(
     draft: &mut StepDraft,
     mode: ExecutionMode,
     fold_id: Slot,
-    position: Coordinate,
+    mut position: Coordinate,
     direction: Direction,
     saved_outer_direction: Direction,
     repetition: Option<(u8, u8)>,
@@ -622,6 +622,32 @@ fn execute_fold_cell(
         draft.fault = Some(VmFault::InternalInvariantViolation);
         return;
     };
+    if block.cells.get(position.x) == Some(&None) {
+        match advance_folded(position, direction, &block.cells) {
+            Some(FoldStep::Moved(next)) => {
+                position = next;
+                thread.phase = ExecutionPhase::Fold {
+                    fold_id,
+                    internal_position: position,
+                    internal_direction: direction,
+                    saved_outer_direction,
+                    outer_repeat,
+                };
+            }
+            Some(FoldStep::VerticalExit(_)) => {
+                thread.direction = saved_outer_direction;
+                thread.phase = ExecutionPhase::FoldResume {
+                    saved_outer_direction,
+                    outer_repeat,
+                };
+                return;
+            }
+            None => {
+                draft.fault = Some(VmFault::InternalInvariantViolation);
+                return;
+            }
+        }
+    }
     let Some(primary) = block.cells.get(position.x).copied() else {
         draft.fault = Some(VmFault::InternalInvariantViolation);
         return;
@@ -726,7 +752,7 @@ fn execute_fold_cell(
         outer_repeat,
     };
     let next_direction = thread.direction;
-    match move_folded(position, next_direction, block.cells.len()) {
+    match advance_folded(position, next_direction, &block.cells) {
         Some(FoldStep::Moved(next)) => {
             thread.phase = ExecutionPhase::Fold {
                 fold_id,
@@ -744,6 +770,21 @@ fn execute_fold_cell(
             };
         }
         None => draft.fault = Some(VmFault::InternalInvariantViolation),
+    }
+}
+
+/// Empty Folded Block cells are layout slots, not instruction dispatches.
+fn advance_folded(
+    position: Coordinate,
+    direction: Direction,
+    cells: &[Option<PrimaryInstruction>],
+) -> Option<FoldStep> {
+    let mut position = position;
+    loop {
+        match move_folded(position, direction, cells.len())? {
+            FoldStep::Moved(next) if cells[next.x].is_none() => position = next,
+            movement => return Some(movement),
+        }
     }
 }
 
@@ -1431,7 +1472,7 @@ fn move_current(
             draft.fault = Some(VmFault::InternalInvariantViolation);
             return;
         };
-        match move_folded(internal_position, thread.direction, block.cells.len()) {
+        match advance_folded(internal_position, thread.direction, &block.cells) {
             Some(FoldStep::Moved(next)) => {
                 thread.phase = ExecutionPhase::Fold {
                     fold_id,

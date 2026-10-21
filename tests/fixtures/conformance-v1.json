@@ -571,7 +571,7 @@
           0
         ],
         "error_codes": [],
-        "committed_steps": "8"
+        "committed_steps": "5"
       }
     },
     {
@@ -602,7 +602,7 @@
           0
         ],
         "error_codes": [],
-        "committed_steps": "15"
+        "committed_steps": "7"
       }
     },
     {
@@ -684,7 +684,7 @@
           0
         ],
         "error_codes": [],
-        "committed_steps": "10"
+        "committed_steps": "7"
       }
     },
     {
@@ -713,7 +713,7 @@
           0
         ],
         "error_codes": [],
-        "committed_steps": "8"
+        "committed_steps": "5"
       }
     },
     {
@@ -773,7 +773,7 @@
           0
         ],
         "error_codes": [],
-        "committed_steps": "15"
+        "committed_steps": "7"
       }
     },
     {
@@ -2589,7 +2589,7 @@
         ],
         "remaining_input": [],
         "error_codes": [],
-        "committed_steps": "6"
+        "committed_steps": "5"
       }
     },
     {
@@ -3309,7 +3309,7 @@
           0
         ],
         "error_codes": [],
-        "committed_steps": "8"
+        "committed_steps": "6"
       }
     },
     {
@@ -3649,12 +3649,34 @@
         "process_exit_code": 0,
         "status": "halted",
         "vm_status": "halted",
-        "output": [3],
-        "registers": [3, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        "output": [
+          3
+        ],
+        "registers": [
+          3,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
         "error_codes": [],
-        "committed_steps": "10",
-        "runtime_folded_block_tokens": {"0": ["+x3", null, null, null]},
-        "thread_instruction_stack_sizes": [0]
+        "committed_steps": "7",
+        "runtime_folded_block_tokens": {
+          "0": [
+            "+x3",
+            null,
+            null,
+            null
+          ]
+        },
+        "thread_instruction_stack_sizes": [
+          0
+        ]
       }
     },
     {
@@ -3662,19 +3684,45 @@
       "source": "@main\n~> , & $0 . ;\n@end main\n@main.M0\n+= _ _ _ _ _\n@end main.M0\n",
       "run": {
         "seed": "0",
-        "input": [62],
+        "input": [
+          62
+        ],
         "max_steps": "20"
       },
       "expected": {
         "process_exit_code": 0,
         "status": "halted",
         "vm_status": "halted",
-        "output": [63],
-        "registers": [63, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        "output": [
+          63
+        ],
+        "registers": [
+          63,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
         "error_codes": [],
-        "committed_steps": "12",
-        "runtime_folded_block_tokens": {"0": ["+=", null, null, null, null, null]},
-        "thread_instruction_stack_sizes": [1]
+        "committed_steps": "7",
+        "runtime_folded_block_tokens": {
+          "0": [
+            "+=",
+            null,
+            null,
+            null,
+            null,
+            null
+          ]
+        },
+        "thread_instruction_stack_sizes": [
+          1
+        ]
       }
     },
     {
@@ -3689,10 +3737,23 @@
         "process_exit_code": 0,
         "status": "halted",
         "vm_status": "halted",
-        "output": [3],
-        "registers": [3, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        "output": [
+          3
+        ],
+        "registers": [
+          3,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
         "error_codes": [],
-        "committed_steps": "16"
+        "committed_steps": "7"
       }
     },
     {
@@ -3707,8 +3768,21 @@
         "process_exit_code": 0,
         "status": "halted",
         "vm_status": "halted",
-        "output": [7],
-        "registers": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        "output": [
+          7
+        ],
+        "registers": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
         "error_codes": [],
         "committed_steps": "3"
       }
@@ -3718,7 +3792,9 @@
       "source": "@main\n~> , & $0= <\n@end main\n@main.M0\n_ _ _ _ _\n@end main.M0\n",
       "run": {
         "seed": "0",
-        "input": [93],
+        "input": [
+          93
+        ],
         "max_steps": "20"
       },
       "expected": {
@@ -3726,9 +3802,146 @@
         "status": "runtime_error",
         "vm_status": "error",
         "output": [],
-        "registers": [93, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-        "error_codes": ["FoldedBlockWithoutDefinition"],
-        "committed_steps": "10"
+        "registers": [
+          93,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "error_codes": [
+          "FoldedBlockWithoutDefinition"
+        ],
+        "committed_steps": "6"
+      }
+    },
+    {
+      "id": "sparse-fold-trailing-empty",
+      "source": "@main\n$0 . ;\n@M0 + + _\n@end main\n",
+      "run": {
+        "seed": "0",
+        "input": [],
+        "max_steps": "10"
+      },
+      "expected": {
+        "process_exit_code": 0,
+        "status": "halted",
+        "vm_status": "halted",
+        "output": [
+          2
+        ],
+        "registers": [
+          2,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "error_codes": [],
+        "committed_steps": "5"
+      }
+    },
+    {
+      "id": "sparse-fold-middle-empty",
+      "source": "@main\n$0 . ;\n@M0 + _ +\n@end main\n",
+      "run": {
+        "seed": "0",
+        "input": [],
+        "max_steps": "10"
+      },
+      "expected": {
+        "process_exit_code": 0,
+        "status": "halted",
+        "vm_status": "halted",
+        "output": [
+          2
+        ],
+        "registers": [
+          2,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "error_codes": [],
+        "committed_steps": "5"
+      }
+    },
+    {
+      "id": "sparse-fold-leading-empty",
+      "source": "@main\n$0 . ;\n@M0 _ + +\n@end main\n",
+      "run": {
+        "seed": "0",
+        "input": [],
+        "max_steps": "10"
+      },
+      "expected": {
+        "process_exit_code": 0,
+        "status": "halted",
+        "vm_status": "halted",
+        "output": [
+          2
+        ],
+        "registers": [
+          2,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "error_codes": [],
+        "committed_steps": "5"
+      }
+    },
+    {
+      "id": "sparse-fold-all-empty",
+      "source": "@main\n$0 . ;\n@M0 _ _ _\n@end main\n",
+      "run": {
+        "seed": "0",
+        "input": [],
+        "max_steps": "10"
+      },
+      "expected": {
+        "process_exit_code": 0,
+        "status": "halted",
+        "vm_status": "halted",
+        "output": [
+          0
+        ],
+        "registers": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "error_codes": [],
+        "committed_steps": "4"
       }
     }
   ]
