@@ -321,3 +321,7 @@ If a repository, toolchain, required host, or check is unavailable, report
 **downstream synchronization incomplete**, naming the affected files, blocker,
 completed work, and remaining verification. Do not silently skip the consumer
 or report the overall mechanism change as fully complete.
+
+## 2026-10-21 Empty Folded Block slots
+
+The game workspace pins pushed implementation revision `0336b6bdf5ce0952afe362aea9da199dbe9f4809`. Empty folded cells are skipped without dispatching or changing their physical coordinates. Full browser/server WASM and the four Game Runtime Level consumers have been rebuilt from the pin, with no local Cargo override. Native language workspace tests, VM tests and formatting pass. All 113 shared fixtures pass against native CLI, Wasmtime, Node browser/server WASM and actual Chromium WASM. The game-side synchronization record contains exact artifact identities and the separately reported pre-existing game workspace test/format failures. No user-published release or production deployment was made.

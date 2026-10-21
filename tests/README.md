@@ -15,7 +15,7 @@ PRNG vectors and mutable-code scope.
 
 ## Existing host smoke cases
 
-The shared Full runtime suite contains 105 cases. The earlier 81-case native/browser/Node/Wasmtime acceptance is historical; the current server WASM smoke has an open generic VM work-unit failure recorded in [downstream synchronization](../docs/downstream-synchronization.md). The smoke harnesses compare the observable run projection, including events, output deltas, snapshots, threads, stacks, Page, mutable code, memory, errors, faults, and committed-step counts.
+The shared Full runtime suite contains 113 cases, including leading, interior, trailing and all-empty Folded Block layouts. The earlier 81-case native/browser/Node/Wasmtime acceptance is historical; the current server WASM smoke has an open generic VM work-unit failure recorded in [downstream synchronization](../docs/downstream-synchronization.md). The smoke harnesses compare the observable run projection, including events, output deltas, snapshots, threads, stacks, Page, mutable code, memory, errors, faults, and committed-step counts.
 
 ## Full acceptance suite
 
