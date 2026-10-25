@@ -114,8 +114,8 @@ fn nested_functions_copy_all_registers_restore_pointer_and_share_thread_stack() 
     assert_eq!(entered.threads[0].register_pointer, 9);
     assert_eq!(vm.run(40), RunOutcome::Halted);
     let state = vm.snapshot();
-    assert_eq!(state.output, [245, 11, 10, 21]);
-    assert_eq!(state.registers, [1, 2, 3, 4, 5, 6, 7, 8, 9, 21]);
+    assert_eq!(state.output, [245, 11, 10, 10]);
+    assert_eq!(state.registers, [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
     assert_eq!(state.threads[0].register_pointer, 9);
     assert_eq!(state.threads[0].private_registers, None);
     assert!(state.threads[0].data_stack.is_empty());

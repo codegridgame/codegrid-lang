@@ -229,8 +229,8 @@
       }
     },
     {
-      "id": "clear-resets-register-before-output",
-      "source": "~> , ! . ;\n",
+      "id": "pop-clear-pops-and-zeros-before-output",
+      "source": "~> , ( ! . ;\n",
       "run": {
         "seed": "0",
         "input": [
@@ -258,7 +258,7 @@
           0
         ],
         "error_codes": [],
-        "committed_steps": "5"
+        "committed_steps": "6"
       }
     },
     {
@@ -2845,10 +2845,10 @@
         "status": "halted",
         "vm_status": "halted",
         "output": [
-          251
+          0
         ],
         "registers": [
-          251,
+          0,
           0,
           0,
           0,

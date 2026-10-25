@@ -839,7 +839,11 @@ fn execute_primary(
                 thread.status_flag = u8::from(value.is_none());
             }
         }
-        PrimaryInstruction::Clear => stage_register(thread, 0, draft),
+        PrimaryInstruction::PopClear => {
+            if thread.data_stack.pop().is_some() {
+                stage_register(thread, 0, draft);
+            }
+        }
         PrimaryInstruction::Add => {
             thread.status_flag = u8::from(value == 255);
             stage_register(thread, value.wrapping_add(1), draft);

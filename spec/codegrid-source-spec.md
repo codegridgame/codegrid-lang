@@ -121,7 +121,7 @@ Every Primary token in the canonical language inventory is listed here. Instruct
 | `??` | Choose a random direction. |
 | `?=` | Compare thread Data Stack top A without popping with selected register B; write 0 if equal, 1 if A > B, or 2 if A < B. Empty stack preserves the register. |
 | `,` | Read a byte and set F=0; on exhaustion retain the register and set F=1. Direction is unchanged. |
-| `!` | Clear the current register. |
+| `!` | If the Data Stack is nonempty, pop one byte and clear the current register; on an empty stack, do nothing. |
 | `+`, `-` | Add to or subtract from the current register. |
 | `$!` | NEG: replace the selected byte with its additive inverse modulo 256. |
 | `{`, `}` | Move the register pointer left or right. |

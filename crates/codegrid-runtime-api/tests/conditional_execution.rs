@@ -145,15 +145,15 @@ fn cleared_code_retains_prefix_and_true_suffix_behavior() {
         Some(ConditionPrefix::Zero)
     );
     assert_eq!(state.output, vec![32]);
-    let mut cleared = machine("~> , & ! ?0+= ;", &[32]);
+    let mut cleared = machine("~> , ( & ! ?0+= ;", &[32]);
     assert_eq!(cleared.run(20), RunOutcome::Halted);
     let state = cleared.snapshot();
-    assert!(state.runtime_program.main.cells[4].primary.is_none());
+    assert!(state.runtime_program.main.cells[5].primary.is_none());
     assert_eq!(
-        state.runtime_program.main.cells[4].prefix,
+        state.runtime_program.main.cells[5].prefix,
         Some(ConditionPrefix::Zero)
     );
-    assert!(state.runtime_program.main.cells[4].attachment.is_some());
+    assert!(state.runtime_program.main.cells[5].attachment.is_some());
 }
 
 #[test]
@@ -199,19 +199,19 @@ fn obsolete_instruction_bytes_no_longer_decode() {
 #[test]
 fn cleared_cells_recheck_conditions_before_the_retained_suffix() {
     for (primary, expected_register) in [("!", 0), ("+", 1)] {
-        let source = format!("~> , & ! ?0{primary}= <");
+        let source = format!("~> , ( & ! ?0{primary}= <");
         let mut vm = machine(&source, &[32]);
-        for _ in 0..6 {
+        for _ in 0..7 {
             vm.step();
         }
         let before = vm.snapshot();
-        assert!(before.runtime_program.main.cells[4].primary.is_none());
+        assert!(before.runtime_program.main.cells[5].primary.is_none());
         assert_eq!(before.registers[0], expected_register);
         vm.step();
         let after = vm.snapshot();
-        assert_eq!(after.threads[0].position.x, 3);
+        assert_eq!(after.threads[0].position.x, 4);
         assert_eq!(
-            after.runtime_program.main.cells[4].prefix,
+            after.runtime_program.main.cells[5].prefix,
             Some(ConditionPrefix::Zero)
         );
     }

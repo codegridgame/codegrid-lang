@@ -14,7 +14,7 @@ pub enum InstructionKind {
     Compare,
     Condition,
     Read,
-    Clear,
+    PopClear,
     Add,
     Sub,
     MoveRegisterPointer,
@@ -48,7 +48,7 @@ impl InstructionKind {
             PrimaryInstruction::RandomDirection => Some(Self::RandomDirection),
             PrimaryInstruction::Compare => Some(Self::Compare),
             PrimaryInstruction::Read => Some(Self::Read),
-            PrimaryInstruction::Clear => Some(Self::Clear),
+            PrimaryInstruction::PopClear => Some(Self::PopClear),
             PrimaryInstruction::Add => Some(Self::Add),
             PrimaryInstruction::Sub => Some(Self::Sub),
             PrimaryInstruction::MoveRegisterPointer(_) => Some(Self::MoveRegisterPointer),
@@ -415,7 +415,7 @@ mod tests {
                 }
                 PrimaryInstruction::Shift(_) => Some(InstructionKind::Shift),
                 PrimaryInstruction::Halt => Some(InstructionKind::Halt),
-                PrimaryInstruction::Clear => Some(InstructionKind::Clear),
+                PrimaryInstruction::PopClear => Some(InstructionKind::PopClear),
                 PrimaryInstruction::MoveRegisterPointer(_) => {
                     Some(InstructionKind::MoveRegisterPointer)
                 }
@@ -449,7 +449,7 @@ mod tests {
             InstructionKind::Output,
             InstructionKind::Shift,
             InstructionKind::Halt,
-            InstructionKind::Clear,
+            InstructionKind::PopClear,
             InstructionKind::MoveRegisterPointer,
             InstructionKind::Push,
             InstructionKind::PopAdd,

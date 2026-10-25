@@ -2932,12 +2932,11 @@ mod tests {
             format_version: IR_FORMAT_VERSION,
             outer: ScopedProgram {
                 main: Board {
-                    width: 5,
+                    width: 4,
                     height: 1,
                     cells: vec![
                         Cell::entry(Direction::Right),
                         Cell::instruction(PrimaryInstruction::FoldedBlock(fold_id), None),
-                        Cell::instruction(PrimaryInstruction::Clear, None),
                         Cell::instruction(PrimaryInstruction::PopAdd, None),
                         Cell::instruction(PrimaryInstruction::Halt, None),
                     ],
@@ -2945,9 +2944,9 @@ mod tests {
                         fold_id,
                         FoldedBlock {
                             prefixes: Default::default(),
-            attachments: Default::default(), cells: vec![
+                            attachments: Default::default(),
+                            cells: vec![
                                 Some(PrimaryInstruction::Push),
-                                None,
                                 None,
                                 None,
                                 None,
@@ -2971,11 +2970,8 @@ mod tests {
         assert_eq!(vm.step().status, VmStatus::Running);
         assert_eq!(vm.snapshot().threads[0].data_stack, vec![0x2A]);
         assert_eq!(vm.step().status, VmStatus::Running);
-        assert_eq!(vm.snapshot().registers[0], 0);
-        assert_eq!(vm.step().status, VmStatus::Running);
-
         let after_pop = vm.snapshot();
-        assert_eq!(after_pop.registers[0], 0x2A);
+        assert_eq!(after_pop.registers[0], 0x54);
         assert!(after_pop.threads[0].data_stack.is_empty());
         assert_eq!(vm.step().status, VmStatus::Halted);
     }
@@ -5205,18 +5201,20 @@ mod tests {
     }
 
     #[test]
-    fn clear_resets_a_nonzero_register() {
+    fn pop_clear_consumes_a_data_value_and_zeros_the_register() {
         use codegrid_model::PrimaryInstruction;
 
         let program = verified_cells(
             vec![
                 Cell::entry(Direction::Right),
                 Cell::instruction(PrimaryInstruction::Read, None),
-                Cell::instruction(PrimaryInstruction::Clear, None),
+                Cell::instruction(PrimaryInstruction::Push, None),
+                Cell::instruction(PrimaryInstruction::Read, None),
+                Cell::instruction(PrimaryInstruction::PopClear, None),
                 Cell::instruction(PrimaryInstruction::Output, None),
                 Cell::instruction(PrimaryInstruction::Halt, None),
             ],
-            5,
+            7,
         );
         let mut vm = Vm::new(program, [37], config())
             .expect("one initial thread fits in u64");
@@ -5225,12 +5223,48 @@ mod tests {
         assert_eq!(vm.step().status, VmStatus::Running);
         assert_eq!(vm.snapshot().registers[0], 37);
         assert_eq!(vm.step().status, VmStatus::Running);
+        assert_eq!(vm.snapshot().threads[0].data_stack, vec![37]);
+        assert_eq!(vm.step().status, VmStatus::Running);
+        assert_eq!(vm.snapshot().threads[0].status_flag, 1);
+        assert_eq!(vm.step().status, VmStatus::Running);
         assert_eq!(vm.snapshot().registers[0], 0);
+        assert!(vm.snapshot().threads[0].data_stack.is_empty());
+        assert_eq!(vm.snapshot().threads[0].status_flag, 1);
         assert_eq!(vm.step().status, VmStatus::Running);
         assert_eq!(vm.step().status, VmStatus::Halted);
 
         let snapshot = vm.snapshot();
         assert_eq!(snapshot.output, vec![0]);
+    }
+
+    #[test]
+    fn pop_clear_on_an_empty_stack_preserves_the_register_and_flag() {
+        use codegrid_model::PrimaryInstruction;
+
+        let program = verified_cells(
+            vec![
+                Cell::entry(Direction::Right),
+                Cell::instruction(PrimaryInstruction::Read, None),
+                Cell::instruction(PrimaryInstruction::Read, None),
+                Cell::instruction(PrimaryInstruction::PopClear, None),
+                Cell::instruction(PrimaryInstruction::Output, None),
+                Cell::instruction(PrimaryInstruction::Halt, None),
+            ],
+            6,
+        );
+        let mut vm = Vm::new(program, [37], config())
+            .expect("one initial thread fits in u64");
+
+        for _ in 0..4 {
+            assert_eq!(vm.step().status, VmStatus::Running);
+        }
+        let snapshot = vm.snapshot();
+        assert_eq!(snapshot.registers[0], 37);
+        assert!(snapshot.threads[0].data_stack.is_empty());
+        assert_eq!(snapshot.threads[0].status_flag, 1);
+        assert_eq!(vm.step().status, VmStatus::Running);
+        assert_eq!(vm.step().status, VmStatus::Halted);
+        assert_eq!(vm.snapshot().output, vec![37]);
     }
 
     #[test]
@@ -6164,7 +6198,7 @@ mod tests {
         outer_cells[6] = Cell::entry(Direction::Right);
         outer_cells[7] = Cell::instruction(PrimaryInstruction::Custom(custom_id), None);
         outer_cells[9] = Cell::entry(Direction::Right);
-        outer_cells[10] = Cell::instruction(PrimaryInstruction::Clear, None);
+        outer_cells[10] = Cell::instruction(PrimaryInstruction::PopClear, None);
         outer_cells[11] = Cell::instruction(PrimaryInstruction::Call(function_id), None);
         outer_cells[12] = Cell::entry(Direction::Left);
 
@@ -6239,6 +6273,7 @@ mod tests {
         vm.threads[0].data_stack.push(5);
         vm.threads[1].data_stack.push(7);
         vm.threads[2].data_stack.push(encoded_add);
+        vm.threads[3].data_stack.push(9);
 
         assert_eq!(vm.step().status, VmStatus::Running);
         let before_failure = vm.snapshot();

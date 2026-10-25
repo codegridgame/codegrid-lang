@@ -64,7 +64,7 @@ Metric kind = Neg
 Code 69 was previously unassigned. The ASCII sum 36+33 motivates this
 assignment; the explicit normative table remains authoritative, not a
 generic ASCII-sum decoder. Preserve every existing code and token, including
-`!` for CLEAR and `$&` for NAND. No negative integer type or new error is
+`!` for PopClear and `$&` for NAND. No negative integer type or new error is
 introduced. Existing decrement `-` remains unchanged.
 
 | Input | NEG result |
