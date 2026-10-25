@@ -502,3 +502,13 @@ the pre-publication policy.
 ## 2026-10-21: Empty Folded Block layout slots
 
 The user requires a three-slot Folded Block containing two instructions to execute only those two instructions. Empty Folded Block cells are skipped during entry and movement, including leading, interior and trailing holes. Preserve physical coordinates and the existing call/resume and Repeat phases; an all-empty invocation moves directly to FoldResume. Normal board blanks remain dispatches. This replaces the prior empty-fold-cell dispatch behavior before any user-published release.
+
+## 2026-10-25: NEG uses eight-bit bitwise complement
+
+The user changes `$!` / NEG from additive inverse modulo 256 to bitwise
+complement of the selected byte: `NEG(x) = x XOR 255 = 255 - x`. Thus
+`0 → 255`, `170 → 85`, `5 → 250`, and `255 → 0`; applying NEG twice restores
+every byte. Keep token `$!`, Instruction Code 69, metric kind `Neg`, capability
+`NEG`, movement, and all Attachment rules. The change affects execution only;
+the encoded Primary and IR structure do not change. No backward-compatibility
+layer or version bump is required before a user-published release.

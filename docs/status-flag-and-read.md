@@ -12,7 +12,7 @@ Custom READ follows the same rules using the invoking outer thread's data stack:
 
 READ has Instruction Code 44. Remove the old directional READ mappings; their codes are not reserved for compatibility. Bytes absent from the current instruction table follow the existing invalid-DECODE counted-no-op rule. Other current codes are unchanged by this design. `?!` has ASCII sum 96, which also belongs to `$<`; this is harmless because prefixes are not Primary Instruction Codes and are never encoded on the Instruction Stack. ReadCode/WriteCode still represent only Primary, preserving the fixed prefix and suffix.
 
-Keep CMP `?=` and its unsigned comparison semantics, permissions and code 124. CMP preserves F. Keep `+`, `-`, NEG `$!`, and NAND `$&` spellings and existing arithmetic semantics. Do not add a standalone POP, CMP alternative, EOF, or Carry instruction.
+Keep CMP `?=` and its unsigned comparison semantics, permissions and code 124. CMP preserves F. Keep `+`, `-`, NEG `$!`, and NAND `$&` spellings; NEG uses the eight-bit complement defined by the current source and VM specifications. Do not add a standalone POP, CMP alternative, EOF, or Carry instruction.
 
 ## F updates
 

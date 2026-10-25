@@ -36,7 +36,7 @@ fn machine(main: Board, functions: Vec<Board>, input: &[u8]) -> Vm {
 }
 
 #[test]
-fn neg_all_bytes_and_double_negation_use_selected_register_and_step_run_parity() {
+fn neg_all_bytes_bitwise_complement_and_double_negation_use_selected_register() {
     for value in 0..=255u8 {
         let main = board(&["~>", "}", ",", "$!", ".", "$!", ".", ";"]);
         let mut stepped = machine(main.clone(), vec![], &[value]);
@@ -47,7 +47,7 @@ fn neg_all_bytes_and_double_negation_use_selected_register_and_step_run_parity()
         assert_eq!(bounded.run(20), RunOutcome::Halted);
         assert_eq!(stepped.snapshot(), bounded.snapshot());
         let state = bounded.snapshot();
-        assert_eq!(state.output, [value.wrapping_neg(), value]);
+        assert_eq!(state.output, [!value, value]);
         assert_eq!(state.registers[0], 0);
         assert_eq!(state.registers[1], value);
         assert_eq!(state.threads[0].register_pointer, 1);
@@ -58,8 +58,8 @@ fn neg_all_bytes_and_double_negation_use_selected_register_and_step_run_parity()
 fn neg_repeat_rechecks_conditions_and_counts_each_execution() {
     for (prefix, count, value, expected) in [
         (None, 2, 37, 37),
-        (None, 3, 37, 219),
-        (Some(ConditionPrefix::One), 3, 1, 255),
+        (None, 3, 37, 218),
+        (Some(ConditionPrefix::One), 3, 1, 254),
     ] {
         let mut main = board(&["~>", ",", "$!", ".", ";"]);
         main.cells[2].prefix = prefix;
@@ -78,14 +78,14 @@ fn neg_code_round_trip_and_stack_subtraction() {
         &[10, 3, 69],
     );
     assert_eq!(vm.run(30), RunOutcome::Halted);
-    assert_eq!(vm.snapshot().output, [7, 69]);
+    assert_eq!(vm.snapshot().output, [6, 69]);
     let mut wrapping = machine(
         board(&["~>", ",", "(", ",", "$!", ")", ".", ";"]),
         vec![],
         &[3, 10],
     );
     assert_eq!(wrapping.run(20), RunOutcome::Halted);
-    assert_eq!(wrapping.snapshot().output, [249]);
+    assert_eq!(wrapping.snapshot().output, [248]);
 }
 
 #[test]
@@ -114,7 +114,7 @@ fn nested_functions_copy_all_registers_restore_pointer_and_share_thread_stack() 
     assert_eq!(entered.threads[0].register_pointer, 9);
     assert_eq!(vm.run(40), RunOutcome::Halted);
     let state = vm.snapshot();
-    assert_eq!(state.output, [245, 11, 10, 10]);
+    assert_eq!(state.output, [244, 11, 10, 10]);
     assert_eq!(state.registers, [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
     assert_eq!(state.threads[0].register_pointer, 9);
     assert_eq!(state.threads[0].private_registers, None);
@@ -189,7 +189,7 @@ fn work_yield_restores_function_state_and_private_changes_have_thread_events() {
     let before = vm.snapshot();
     let result = vm.run_with_work_limit(10, NonZeroU64::new(1).unwrap());
     assert!(result.is_err());
-    assert_eq!(vm.snapshot().threads[0].private_registers.unwrap()[0], 251);
+    assert_eq!(vm.snapshot().threads[0].private_registers.unwrap()[0], 250);
     let current = vm.snapshot();
     assert_eq!(vm.step().status, VmStatus::Running);
     assert_eq!(vm.snapshot().registers, before.registers);

@@ -203,7 +203,7 @@ Every ordinary Primary except Halt is followed by its defined movement or contro
 | Read | Consume the next outer input byte or Custom caller-stack top and write the selected register with F=0; on exhaustion preserve the register with F=1. Preserve direction in both cases. |
 | PopClear | When the Data Stack is nonempty, pop one byte and set the selected register to zero; with an empty stack, preserve the register and perform the counted no-op. Preserve F in either case. |
 | Add / Sub | Increment / decrement the selected register modulo 256. |
-| Neg | Set the selected byte to `(0 - value) mod 256`, equivalently `0u8.wrapping_sub(value)`. Preserve the pointer and every other register; use ordinary movement. |
+| Neg | Set the selected byte to its eight-bit complement, `!value` or `255 - value`. Preserve the pointer and every other register; use ordinary movement. |
 | MoveRegisterPointer(left/right) | Move the thread pointer one slot in the encoded direction, wrapping between R0 and R9. |
 | Output | Outer context: stage the selected byte into the shared output sequence. Custom context: stage a push onto the caller's data stack. |
 | OutputImmediate(digit 0 through 9) | Stage the literal raw byte into outer output, or onto the Custom caller's data stack. Preserve all registers and the register pointer. Use ordinary Output movement, conflicts, rollback, transition and work accounting. |
@@ -308,8 +308,8 @@ bank. Register conflict identity includes bank ownership: writes to R0 in
 different Function invocations, or to Function R0 and Main R0, do not conflict.
 Input, output, memory, mutable-code and Custom caller-stack conflicts are
 unchanged. Private writes roll back when any shared effect rejects the transition.
-NEG is a write even for fixed points 0 and 128; it obeys existing equal-value
-write conflict rules. Main threads still share the Main bank.
+NEG changes every selected byte to a different value and participates in the
+existing register write conflicts. Main threads still share the Main bank.
 
 OutputImmediate has no Instruction Code and accepts inert ReadCode suffixes and Repeat suffixes x2 through x9; conditional prefixes are permitted. Repeat uses the ordinary per-transition Primary execution, movement, conflicts, rollback, work accounting, and Custom caller-stack routing. WriteCode remains invalid. It cannot
 be represented on the Instruction Stack. Existing Instruction Codes remain

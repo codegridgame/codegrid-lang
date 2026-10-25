@@ -1,6 +1,8 @@
 # Function register scope and NEG
 
-Status: implemented and verified on 2026-10-08.
+Function register scope was implemented on 2026-10-08. NEG's current
+bitwise-complement semantics were approved on 2026-10-25 and are verified by
+the current source and VM contracts.
 
 The [source contract](../spec/codegrid-source-spec.md), [VM contract](../spec/codegrid-vm-spec.md), and dated [decisions](decisions.md) define these rules.
 
@@ -56,7 +58,7 @@ context memory, with their existing rules.
 `$!` is the canonical token for `Neg`, an ordinary encodable Primary:
 
 ```text
-selected_register = (0 - selected_register) mod 256
+selected_register = bitwise_not(selected_register) = 255 - selected_register
 Instruction Code = 69
 Metric kind = Neg
 ```
@@ -69,25 +71,27 @@ introduced. Existing decrement `-` remains unchanged.
 
 | Input | NEG result |
 | ---: | ---: |
-| 0 | 0 |
-| 1 | 255 |
-| 5 | 251 |
-| 127 | 129 |
-| 128 | 128 |
-| 255 | 1 |
+| 0 | 255 |
+| 1 | 254 |
+| 5 | 250 |
+| 127 | 128 |
+| 128 | 127 |
+| 170 | 85 |
+| 255 | 0 |
 
-For all byte values, `x + NEG(x) == 0 mod 256` and `NEG(NEG(x)) == x`.
+NEG inverts all eight bits: `NEG(x) = x XOR 255 = 255 - x`. For all byte
+values, `NEG(NEG(x)) == x`.
 NEG changes only its selected register as a Primary effect. It then performs
 ordinary movement and any allowed suffix effect. It does not freeze position.
-Unchanged-value writes still participate in conflict detection; change events
-are emitted only if the committed value actually changes.
+Every NEG changes the selected byte and participates in existing register
+write conflicts.
 
 NEG accepts `?0`, `?1`, `?2`, ReadCode `*`, WriteCode `=`, and Repeat `x2` to
 `x9` using existing rules. Canonical examples are `?0$!`, `$!*`, `$!=`,
 `$!x2`, and `?1$!x3`. Conditions are rechecked on each repeat transition;
 therefore an even count restores the original value only if all repetitions
 execute. Without a prefix, `$!x2` restores 37 after two transitions and
-`$!x3` produces 219 after three. Neither Unicode `×` nor detached suffixes
+`$!x3` produces 218 after three. Neither Unicode `×` nor detached suffixes
 are source syntax.
 
 NEG works in outer and Custom Main/Function Boards and in Folded Blocks

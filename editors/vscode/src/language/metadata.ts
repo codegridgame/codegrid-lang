@@ -60,7 +60,7 @@ export const PRIMARIES: PrimaryInfo[] = [
     primary(`[${slot}`, `CALL ${slot}`, 139 + slot, 'call')
   ),
   primary(']', 'RETURN', 93, 'return'),
-  primary('$!', 'NEG', 69, 'arithmetic', 'Replaces the selected byte with its additive inverse modulo 256.'),
+  primary('$!', 'NEG', 69, 'arithmetic', 'Inverts all eight bits of the selected byte (255 minus its value).'),
   primary('$&', 'NAND', 74, 'nand'),
   primary('$(', 'MEMORY_LOAD', 76, 'memory'),
   primary('$)', 'MEMORY_STORE', 77, 'memory'),

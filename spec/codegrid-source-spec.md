@@ -123,7 +123,7 @@ Every Primary token in the canonical language inventory is listed here. Instruct
 | `,` | Read a byte and set F=0; on exhaustion retain the register and set F=1. Direction is unchanged. |
 | `!` | If the Data Stack is nonempty, pop one byte and clear the current register; on an empty stack, do nothing. |
 | `+`, `-` | Add to or subtract from the current register. |
-| `$!` | NEG: replace the selected byte with its additive inverse modulo 256. |
+| `$!` | NEG: invert all eight bits of the selected byte (`255 - value`). |
 | `{`, `}` | Move the register pointer left or right. |
 | `.` | Output the current register. |
 | `.0`–`.9` | Output the raw byte 0–9 without changing registers or the register pointer. |

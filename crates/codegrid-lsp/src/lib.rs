@@ -644,7 +644,7 @@ fn primary_description(primary: PrimaryInstruction) -> String {
             "Pop a byte and replace the selected register with the 8-bit complement of its AND with that byte; an empty stack does nothing."
                 .to_owned()
         }
-        PrimaryInstruction::Neg => "Replace the selected byte with its additive inverse modulo 256; preserve the pointer and use ordinary movement.".to_owned(),
+        PrimaryInstruction::Neg => "Invert all eight bits of the selected byte (255 minus its value); preserve the pointer and use ordinary movement.".to_owned(),
         PrimaryInstruction::MemoryLoad => {
             "Read the byte at Page × 256 plus the selected register and push it onto the data stack."
                 .to_owned()
