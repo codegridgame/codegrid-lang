@@ -1,5 +1,40 @@
 # Mandatory downstream synchronization
 
+## 2026-10-25 Register-count Repeat and independent game permissions
+
+The user authorized committing and pushing XR implementation commit
+`03a2325b3fc0b19ce89bcd689bcac8e5eaa0b8ab`. Game Runtime Cargo.toml and
+Cargo.lock pin that immutable revision without local overrides. XR captures
+the selected byte after a passing conditional prefix; zero skips the Primary,
+one executes once, and larger counts reuse Repeat phases. IR format is 6;
+Runtime API 6 and Server ABI 7 retain their field shapes.
+
+The game Editor independently configures `REPEAT_REGISTER` (xr) and `REPEAT`
+(x2-x9). Rust validates these separate permissions. Steam uses one allowed-only
+Tab group, defaulting to xr when enabled. Both Full browser consumers, the Full
+server consumer and all four Level WASM consumers have rebuilt artifacts.
+Full browser SHA-256: `ae5bf25ad7fb22f39e5561bcd52ad73bf45367881256488fbdf8a304005751fb`.
+Full server SHA-256: `6134086019914334f94994cde1d74b7e7a55fe9b635fbe80443993cb0a1d6909`.
+Full memory maximum: 67108864 bytes. Level SHA-256:
+`7eb52834eaca9d92fbcb88ad96169404335ca2336319cbd240c1ebf2cdb6a299`;
+Level memory maximum: 268435456 bytes. Actual evaluator identity:
+`game-runtime-source-sha256:3c1ba5f911f3375849538b1d46ea6a4d2e357ed6e5950429edc9dc60ff03fe3e`.
+Only an untracked Python bytecode cache remained dirty during the Lang builds;
+all source inputs are from the implementation commit.
+
+Lang workspace tests and formatting pass. All 120 Full fixtures pass across
+native CLI/Wasmtime, Node browser/server WASM and actual Chromium. The real
+Level Chromium Worker passes 105 API-2 cases with Debug traces. Four Steam
+browser cases verify permission combinations, default variants, Tab cycling
+and board drops. Downstream architecture checks, all four application builds,
+and actual local Workerd Full/Level smoke pass. Existing game scene-protocol,
+folded dwell, Steam type-check and Rust formatting failures are recorded in
+the game synchronization document; no full downstream green result is claimed.
+VS Code extension compilation completed, but the installed Extension Host
+became unresponsive and its test run was cancelled. No release or deployment
+was made.
+
+
 ## Boundary and last fully synchronized baseline (2026-10-18)
 
 The game-domain implementation has been moved out of this repository in the
