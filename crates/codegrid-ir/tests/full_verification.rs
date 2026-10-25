@@ -38,7 +38,9 @@ mod tests {
                 result.is_ok(),
                 matches!(
                     attachment,
-                    AttachmentInstruction::ReadCode | AttachmentInstruction::Repeat(_)
+                    AttachmentInstruction::ReadCode
+                        | AttachmentInstruction::Repeat(_)
+                        | AttachmentInstruction::RepeatRegister
                 ),
                 "{attachment:?}"
             );
@@ -57,12 +59,14 @@ mod tests {
                     .is_err()
             );
         }
-        let mut old = program(vec![Cell::entry(Direction::Right)], 1);
-        old.format_version = 1;
-        assert_eq!(
-            VerifiedProgram::new(old).unwrap_err()[0].code,
-            "ir.unsupported_version"
-        );
+        for version in 1..IR_FORMAT_VERSION {
+            let mut old = program(vec![Cell::entry(Direction::Right)], 1);
+            old.format_version = version;
+            assert_eq!(
+                VerifiedProgram::new(old).unwrap_err()[0].code,
+                "ir.unsupported_version"
+            );
+        }
         let mut malformed = program(vec![Cell::entry(Direction::Right)], 1);
         malformed.outer.main.folded_blocks.insert(
             Slot::new(0).unwrap(),

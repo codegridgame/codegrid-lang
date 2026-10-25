@@ -509,6 +509,202 @@
       }
     },
     {
+      "id": "repeat-register-captures-selected-byte",
+      "source": "~> , +xr . ;\n",
+      "run": {
+        "seed": "0",
+        "input": [
+          3
+        ],
+        "max_steps": "20"
+      },
+      "expected": {
+        "process_exit_code": 0,
+        "status": "halted",
+        "vm_status": "halted",
+        "output": [
+          6
+        ],
+        "registers": [
+          6,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "error_codes": [],
+        "committed_steps": "7"
+      }
+    },
+    {
+      "id": "repeat-register-zero-skips-primary-after-prefix",
+      "source": "~> , ?0+xr . ;\n",
+      "run": {
+        "seed": "0",
+        "input": [],
+        "max_steps": "10"
+      },
+      "expected": {
+        "process_exit_code": 0,
+        "status": "halted",
+        "vm_status": "halted",
+        "output": [
+          0
+        ],
+        "registers": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "error_codes": [],
+        "committed_steps": "5"
+      }
+    },
+    {
+      "id": "repeat-register-prefix-failure-skips-primary",
+      "source": "~> , ?1+xr . ;\n",
+      "run": {
+        "seed": "0",
+        "input": [
+          2
+        ],
+        "max_steps": "10"
+      },
+      "expected": {
+        "process_exit_code": 0,
+        "status": "halted",
+        "vm_status": "halted",
+        "output": [
+          2
+        ],
+        "registers": [
+          2,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "error_codes": [],
+        "committed_steps": "5"
+      }
+    },
+    {
+      "id": "repeat-register-supports-maximum-byte-count",
+      "source": "~> , +xr . ;\n",
+      "run": {
+        "seed": "0",
+        "input": [
+          255
+        ],
+        "max_steps": "300"
+      },
+      "expected": {
+        "process_exit_code": 0,
+        "status": "halted",
+        "vm_status": "halted",
+        "output": [
+          254
+        ],
+        "registers": [
+          254,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "error_codes": [],
+        "committed_steps": "259"
+      }
+    },
+    {
+      "id": "repeat-register-repeats-whole-folded-invocation",
+      "source": "@main\n~> , $0xr . ;\n@end main\n@main.M0\n+ _ _ _ _\n@end main.M0\n",
+      "run": {
+        "seed": "0",
+        "input": [
+          2
+        ],
+        "max_steps": "20"
+      },
+      "expected": {
+        "process_exit_code": 0,
+        "status": "halted",
+        "vm_status": "halted",
+        "output": [
+          4
+        ],
+        "registers": [
+          4,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "error_codes": [],
+        "committed_steps": "7"
+      }
+    },
+    {
+      "id": "repeat-register-works-inside-folded-block",
+      "source": "@main\n~> , $0 . ;\n@end main\n@main.M0\n+xr _ _ _ _\n@end main.M0\n",
+      "run": {
+        "seed": "0",
+        "input": [
+          3
+        ],
+        "max_steps": "20"
+      },
+      "expected": {
+        "process_exit_code": 0,
+        "status": "halted",
+        "vm_status": "halted",
+        "output": [
+          6
+        ],
+        "registers": [
+          6,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "error_codes": [],
+        "committed_steps": "8"
+      }
+    },
+    {
       "id": "repeat-read-consumes-one-input-per-execution",
       "source": "~> ,x3 . ;\n",
       "run": {

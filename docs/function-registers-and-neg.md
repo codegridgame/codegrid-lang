@@ -87,8 +87,8 @@ Every NEG changes the selected byte and participates in existing register
 write conflicts.
 
 NEG accepts `?0`, `?1`, `?2`, ReadCode `*`, WriteCode `=`, and Repeat `x2` to
-`x9` using existing rules. Canonical examples are `?0$!`, `$!*`, `$!=`,
-`$!x2`, and `?1$!x3`. Conditions are rechecked on each repeat transition;
+`x9` or `xr` using existing rules. Canonical examples are `?0$!`, `$!*`, `$!=`,
+`$!x2`, `?1$!x3`, and `$!xr`. Conditions are rechecked on each repeat transition;
 therefore an even count restores the original value only if all repetitions
 execute. Without a prefix, `$!x2` restores 37 after two transitions and
 `$!x3` produces 218 after three. Neither Unicode `×` nor detached suffixes

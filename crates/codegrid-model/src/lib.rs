@@ -521,10 +521,11 @@ pub enum AttachmentInstruction {
     ReadCode,
     WriteCode,
     Repeat(u8),
+    RepeatRegister,
 }
 
 impl AttachmentInstruction {
-    pub const ALL: [Self; 10] = [
+    pub const ALL: [Self; 11] = [
         Self::ReadCode,
         Self::WriteCode,
         Self::Repeat(2),
@@ -535,6 +536,7 @@ impl AttachmentInstruction {
         Self::Repeat(7),
         Self::Repeat(8),
         Self::Repeat(9),
+        Self::RepeatRegister,
     ];
 
     pub fn from_token(token: &str) -> Option<Self> {
@@ -549,8 +551,13 @@ impl AttachmentInstruction {
             "x7" => Some(Self::Repeat(7)),
             "x8" => Some(Self::Repeat(8)),
             "x9" => Some(Self::Repeat(9)),
+            "xr" => Some(Self::RepeatRegister),
             _ => None,
         }
+    }
+
+    pub const fn is_repeat(self) -> bool {
+        matches!(self, Self::Repeat(_) | Self::RepeatRegister)
     }
 
     pub fn token(self) -> String {
@@ -558,6 +565,7 @@ impl AttachmentInstruction {
             Self::ReadCode => "*".to_owned(),
             Self::WriteCode => "=".to_owned(),
             Self::Repeat(count) => format!("x{count}"),
+            Self::RepeatRegister => "xr".to_owned(),
         }
     }
 }
@@ -717,13 +725,13 @@ mod tests {
 
     #[test]
     fn every_attachment_has_one_exact_source_token() {
-        assert_eq!(AttachmentInstruction::ALL.len(), 10);
+        assert_eq!(AttachmentInstruction::ALL.len(), 11);
         for attachment in AttachmentInstruction::ALL {
             let token = attachment.token();
             assert_eq!(AttachmentInstruction::from_token(&token), Some(attachment));
             assert_eq!(PrimaryInstruction::from_token(&token), None);
         }
-        for token in ["x0", "x1", "x10", "x９", "x2x3", "*x2"] {
+        for token in ["x0", "x1", "x10", "x９", "x2x3", "*x2", "xR", "xrr"] {
             assert_eq!(AttachmentInstruction::from_token(token), None, "{token}");
         }
     }

@@ -699,6 +699,7 @@ fn attachment_description(attachment: AttachmentInstruction) -> &'static str {
             9 => "Repeat x9",
             _ => "Repeat",
         },
+        AttachmentInstruction::RepeatRegister => "Repeat by the selected register value (xr)",
     }
 }
 
@@ -1139,7 +1140,7 @@ mod tests {
             .into_iter()
             .map(|candidate| candidate.label)
             .collect::<Vec<_>>();
-        for supported in ["[0", "$0", "??", "!", ",*", "+x2"] {
+        for supported in ["[0", "$0", "??", "!", ",*", "+x2", "+xr"] {
             assert!(all_labels.iter().any(|label| label == supported));
         }
 
@@ -1215,6 +1216,11 @@ mod tests {
             .as_str()
             .unwrap()
             .contains("Repeat x3"));
+        let register_repeat = super::hover_cell("+xr", &LineIndex::new("+xr"), 2);
+        assert!(register_repeat["contents"]["value"]
+            .as_str()
+            .unwrap()
+            .contains("selected register value (xr)"));
     }
 
     #[test]

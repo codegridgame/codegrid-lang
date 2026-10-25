@@ -512,3 +512,24 @@ every byte. Keep token `$!`, Instruction Code 69, metric kind `Neg`, capability
 `NEG`, movement, and all Attachment rules. The change affects execution only;
 the encoded Primary and IR structure do not change. No backward-compatibility
 layer or version bump is required before a user-published release.
+
+## 2026-10-25: Register-count Repeat (`xr`)
+
+The user selects `xr` as a dynamic Repeat suffix. It captures the executing
+thread's selected byte from the context's transition-start register bank after
+the cell's conditional prefix passes, then uses that byte as the total number
+of Primary executions. A false prefix skips the Primary and suffix without
+resolving either instruction's operands, including the `xr` count. A count of
+0 skips the Primary and moves once; 1 executes once; 2 through 255 uses the
+existing multi-transition Repeat phase. The captured count is not recalculated
+even if a repeated Primary changes the selected register or pointer. Later
+prefix checks still run before each attempted Primary execution and cancel
+remaining repetitions on false.
+
+`xr` uses the existing Repeat compatibility matrix and execution accounting,
+including immediate output, Folded Block cells, and whole Folded Block calls;
+Function CALL and RETURN remain excluded. Each actual Primary execution counts
+normally, while Repeat itself adds no operation. Adding the verified attachment
+value advances executable IR from format 5 to format 6; the Runtime API and
+Server ABI field shapes remain unchanged, so their current versions remain in
+place under the pre-publication policy.

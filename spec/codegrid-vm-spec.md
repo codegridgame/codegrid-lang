@@ -83,6 +83,8 @@ Primary-before-Attachment is the rule for ordinary instructions with WriteCode: 
 
 Repeat(N) executes its attached Primary N times over N transitions, for N in 2 through 9. The first execution occurs on the transition that reaches the cell. While repetitions remain, the thread stays at that cell and does not move; it reexecutes the Primary on each following transition. Before each attempted execution, reevaluate the fixed prefix against that context's transition-start selected register. A false condition cancels remaining repetitions, returns to Normal, and moves once in the current direction. After the final successful execution it moves once in the resulting direction and returns to Normal.
 
+The `xr` Attachment uses the selected register byte in the context's transition-start register bank as the total execution count. On the first dispatch, resolve this count only after the cell's prefix passes and before executing its Primary. If that prefix fails, skip the Primary and suffix without resolving the `xr` operand, then move once. A count of 0 skips the Primary and moves once; a count of 1 executes the Primary once with ordinary control-flow behavior; a count from 2 through 255 follows Repeat(N) phase behavior. The count is captured on that first successful prefix check and is not recalculated on later repeat transitions, even if the Primary changes the selected register or register pointer. Later prefix checks still occur before each Primary execution; a false result cancels the remaining executions and moves once without resolving the count again.
+
 The phase records total repetitions and successful repetitions already completed. A failed transition does not advance this phase. Each Primary execution counts separately in Operation Count. Repeat itself is not an operation kind. When attached inside a Folded Block, Repeat stays at the same internal Folded Block cell, applies the same prefix recheck and cancellation rules, and then resumes the Folded Block sweep.
 
 ### 5.3 Fold
@@ -235,7 +237,7 @@ A cell has at most one conditional prefix and one suffix Attachment.
 
 ### 8.0 Conditional prefixes
 
-Before executing a cell's Primary, evaluate its fixed `?0`, `?1`, or `?2` prefix against the executing thread's selected register in the context transition-start snapshot, or `?!` against its active transition-start F=1. Testing F preserves it. Every evaluation counts one operation and the shared Condition instruction kind, including false results. On false, skip both Primary and suffix and move once in the current direction; normal boundary and Fold movement rules still apply. The visited cell, dispatch, and transition are still counted. Skipped effects, calls, PRNG draws, Halt requests, and skipped instruction metrics do not occur.
+Before executing a cell's Primary, evaluate its fixed `?0`, `?1`, or `?2` prefix against the executing thread's selected register in the context transition-start snapshot, or `?!` against its active transition-start F=1. Testing F preserves it. Every evaluation counts one operation and the shared Condition instruction kind, including false results. On false, skip both Primary and suffix and move once in the current direction; do not resolve operands of either instruction. Normal boundary and Fold movement rules still apply. The visited cell, dispatch, and transition are still counted. Skipped effects, calls, PRNG draws, Halt requests, operand reads, and skipped instruction metrics do not occur.
 
 Repeat rechecks before each Primary execution. A false result cancels remaining repetitions, restores Normal phase, and moves once. CALL checks only before invocation; AfterCall runs its existing deferred suffix and movement without rechecking. FoldResume for a Folded Block call with Repeat rechecks the call-site prefix before each later invocation; final FoldResume and FoldResume for calls without Repeat do not recheck it. Prefixes are allowed on all otherwise valid Primaries, including Folded Block contents, but do not relax static restrictions.
 
@@ -257,7 +259,7 @@ WriteCode modifies the current mutable code copy. In a Custom invocation it chan
 
 ### 8.3 Repeat
 
-Repeat(N) reexecutes its attached Primary N times over separate transitions, for N in 2 through 9, as in Section 5.2. In a Folded Block it retains the internal cell and resumes the sweep only after completion or a false-prefix cancellation. The verifier rejects unsupported counts and Repeat on CALL or RETURN. Since a cell has only one suffix Attachment, Repeat cannot combine with ReadCode or WriteCode.
+Repeat(N) reexecutes its attached Primary N times over separate transitions, for N in 2 through 9, as in Section 5.2. The `xr` Attachment captures the selected register's transition-start byte as N, allowing 0 through 255; prefix evaluation precedes this operand lookup. In a Folded Block it retains the internal cell and resumes the sweep only after completion or a false-prefix cancellation. A Folded Block call with `xr` repeats the whole invocation using the captured count and existing call-site prefix rechecks. The verifier rejects unsupported numeric counts and Repeat on Function CALL or RETURN. Since a cell has only one suffix Attachment, Repeat cannot combine with ReadCode or WriteCode.
 
 ### 8.4 CALL and RETURN timing
 
@@ -311,7 +313,7 @@ unchanged. Private writes roll back when any shared effect rejects the transitio
 NEG changes every selected byte to a different value and participates in the
 existing register write conflicts. Main threads still share the Main bank.
 
-OutputImmediate has no Instruction Code and accepts inert ReadCode suffixes and Repeat suffixes x2 through x9; conditional prefixes are permitted. Repeat uses the ordinary per-transition Primary execution, movement, conflicts, rollback, work accounting, and Custom caller-stack routing. WriteCode remains invalid. It cannot
+OutputImmediate has no Instruction Code and accepts inert ReadCode suffixes and Repeat suffixes x2 through x9 or xr; conditional prefixes are permitted. Repeat uses the ordinary per-transition Primary execution, movement, conflicts, rollback, work accounting, and Custom caller-stack routing. WriteCode remains invalid. It cannot
 be represented on the Instruction Stack. Existing Instruction Codes remain
 unchanged. All immediate forms count as the existing Output metric kind, not
 as separate kinds for each digit.
@@ -379,8 +381,8 @@ Owned snapshots and borrowed read-only views expose the same semantic state with
 
 For JSON thread snapshots, each `fold`, `fold_repeat`, and `fold_resume` phase
 contains `outer_repeat`. Its value is `null` when the Folded Block call has no
-Repeat suffix, or `{ "total": number, "completed": number }` while whole-call
-Repeat is active. `total` is 2 through 9 and is the requested number of
+active whole-call Repeat, or `{ "total": number, "completed": number }` while
+whole-call Repeat is active. `total` is 2 through 255 and is the requested number of
 invocations; `completed` is the number of successful whole-block invocations
 completed so far, from 0 through `total`. `fold_repeat`'s own `total` and
 `completed` continue to describe Repeat on its current internal cell; the two
@@ -508,7 +510,7 @@ Determinism requires transition-start snapshots for shared reads; conflict and c
 
 `function_registers_and_neg.rs` covers all byte values, stack returns, nested/private banks and pointers, concurrent Main/private writes, rollback, work yields and self-tail reuse. Five additional shared fixtures compare complete state across native CLI, browser, Node and Wasmtime, including private snapshots and Custom calls.
 
-The VM decisions recorded in [Full Language Decisions](../docs/decisions.md#resolved-vm-semantic-decisions) are normative. The historical evidence identified there is not a substitute for direct acceptance coverage. Before claiming Full conformance, add deterministic cases for:
+The VM decisions recorded in [Full Language Decisions](../docs/decisions.md#resolved-vm-semantic-decisions) are normative. The historical evidence identified there is not a substitute for direct acceptance coverage. Register-count Repeat coverage was added on 2026-10-25: `failed_prefix_skips_primary_operands_and_does_not_read_repeat_operand` and `failed_folded_prefix_skips_primary_and_repeat_operands` verify prefix short-circuiting before Primary/suffix operand work; `repeat_register_captures_the_first_selected_byte_and_counts_each_execution`, `repeat_register_supports_one_and_maximum_byte_counts`, `repeat_register_rechecks_prefix_before_each_repeated_primary`, and `repeat_register_applies_inside_folded_blocks_and_to_whole_invocations` cover capture, bounds, cancellation and supported contexts. Shared fixtures cover immediate output and whole-invocation behavior. These cases close the `xr` coverage requirement. The following other deterministic cases remain required before claiming Full conformance:
 
 1. Multiple Custom internal threads returning on different and matching transitions, including a surviving thread, same-transition Halt, error, and host work-limit interruption rollback.
 2. CALL ReadCode and WriteCode on AfterCall, inert RETURN attachments, and CALL-site mutation by a callee.
@@ -550,4 +552,4 @@ Core source spans remain UTF-8 byte offsets; conversion for editors is outside t
 
 ## 18. Encoding migration (2026-10-03)
 
-Instruction Codes follow single-symbol ASCII values or the sum of both symbols' ASCII values. RandomDirection is 126 and CMP is 124. Folded Block calls `$0` through `$9` use codes 84 through 93. RETURN has no code; code 93 decodes to `$9`. All other retained encodings and EMPTY 32 remain unchanged. Codes 63, 95, 97, 129, and 153 are no longer decoded and are not reused; DECODE handles them by the existing invalid-byte counted-no-op rule. Prefixes and suffixes are not encodable Primaries. Custom calls, Custom returns, immediate output, and Halt remain excluded. This migration introduced IR format 2. Executable IR format 3 later rejected formats 1 and 2 after the Function/NEG semantic change; IR format 4 added Folded Block cell suffix Attachments and rejected formats 1 through 3. Current IR format 5 adds Folded Block call-site Attachments and rejects formats 1 through 4.
+Instruction Codes follow single-symbol ASCII values or the sum of both symbols' ASCII values. RandomDirection is 126 and CMP is 124. Folded Block calls `$0` through `$9` use codes 84 through 93. RETURN has no code; code 93 decodes to `$9`. All other retained encodings and EMPTY 32 remain unchanged. Codes 63, 95, 97, 129, and 153 are no longer decoded and are not reused; DECODE handles them by the existing invalid-byte counted-no-op rule. Prefixes and suffixes are not encodable Primaries. Custom calls, Custom returns, immediate output, and Halt remain excluded. This migration introduced IR format 2. Executable IR format 3 later rejected formats 1 and 2 after the Function/NEG semantic change; IR format 4 added Folded Block cell suffix Attachments and rejected formats 1 through 3; format 5 added Folded Block call-site Attachments and rejected formats 1 through 4. Current IR format 6 adds register-count Repeat `xr` and rejects formats 1 through 5.

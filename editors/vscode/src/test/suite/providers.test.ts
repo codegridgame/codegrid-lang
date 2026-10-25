@@ -44,7 +44,7 @@ suite('Full standalone providers', () => {
 
   test('completion offers only the applicable static attachment spellings', async () => {
     const add = await complete(await openDoc('~> +x'), 0, 5);
-    assert.deepStrictEqual(add.sort(), ['+x2', '+x3', '+x4', '+x5', '+x6', '+x7', '+x8', '+x9'].sort());
+    assert.deepStrictEqual(add.sort(), ['+x2', '+x3', '+x4', '+x5', '+x6', '+x7', '+x8', '+x9', '+xr'].sort());
 
     const call = await complete(await openDoc('~> [0'), 0, 5);
     assert.ok(call.includes('[0*'));
@@ -56,8 +56,11 @@ suite('Full standalone providers', () => {
     assert.ok(ret.includes(']='));
     assert.ok(!ret.includes(']x2'), 'Repeat is not offered on RETURN');
 
-    const unencodable = await complete(await openDoc('~> $0'), 0, 5);
-    assert.ok(!unencodable.some((label) => label.startsWith('$0*') || label.startsWith('$0=') || label.startsWith('$0x')));
+    const foldedCall = await complete(await openDoc('~> $0'), 0, 5);
+    assert.ok(foldedCall.includes('$0*'));
+    assert.ok(foldedCall.includes('$0='));
+    assert.ok(foldedCall.includes('$0x2'));
+    assert.ok(foldedCall.includes('$0xr'));
   });
 
   test('prefix completion returns matching Full instruction tokens', async () => {

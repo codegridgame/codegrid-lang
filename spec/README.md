@@ -1,8 +1,8 @@
 # Full Language Specification Status
 
 The current language includes conditional prefixes `?0`–`?2` and `?!`, CMP
-`?=`, random direction `??`, directionless READ and Function-private registers;
-executable IR is format 5. The language specifications below define syntax,
+`?=`, random direction `??`, directionless READ, Function-private registers,
+and register-count Repeat; executable IR is format 6. The language specifications below define syntax,
 compiler acceptance, VM transitions, and the Runtime API.
 
 - [Error code specification](codegrid-error-codes.md) and [machine-readable registry](codegrid-error-codes.json): language identities and generated language consumers. Game-level error/result policy is documented in the Rust Game Runtime repository.

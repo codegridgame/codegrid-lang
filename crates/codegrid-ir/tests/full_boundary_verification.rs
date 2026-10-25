@@ -24,8 +24,8 @@ fn program(main: Board) -> Program {
 }
 
 #[test]
-fn old_shared_function_register_ir_versions_are_rejected() {
-    for version in [1, 2] {
+fn all_older_ir_versions_are_rejected() {
+    for version in 1..codegrid_ir::IR_FORMAT_VERSION {
         let mut old = program(board(vec![Cell::entry(Direction::Right)], 1, 1));
         old.format_version = version;
         assert!(VerifiedProgram::new(old).is_err());
@@ -463,7 +463,7 @@ fn verifies_the_complete_full_primary_attachment_compatibility_matrix() {
 
     for primary in PrimaryInstruction::source_forms() {
         for attachment in Attachment::ALL {
-            let repeat_on_call_or_return = matches!(attachment, Attachment::Repeat(_))
+            let repeat_on_call_or_return = attachment.is_repeat()
                 && matches!(
                     primary,
                     PrimaryInstruction::Call(_) | PrimaryInstruction::Return
@@ -474,7 +474,7 @@ fn verifies_the_complete_full_primary_attachment_compatibility_matrix() {
                 && matches!(attachment, Attachment::WriteCode);
             let compatible = (primary.is_encodable()
                 || (matches!(primary, PrimaryInstruction::OutputImmediate(_))
-                    && matches!(attachment, Attachment::Repeat(_)))
+                    && attachment.is_repeat())
                 || inert_unencoded_read
                 || inert_return_write)
                 && !repeat_on_call_or_return;

@@ -36,6 +36,14 @@ fn immediate_outputs_allow_read_code_or_repeat_suffixes() {
                 );
             }
         }
+        for prefix in ["", "?0", "?1", "?2", "?!"] {
+            let token = format!("{prefix}.{digit}xr");
+            let program = compile(&format!("~> {token} ;\n")).unwrap();
+            assert_eq!(
+                program.program().outer.main.cells[1].attachment,
+                Some(AttachmentInstruction::RepeatRegister)
+            );
+        }
     }
     for atom in [
         ".10", ".00", ".-1", ".９", ".3=", ".3x1", ".3x10", ".3x3*", ".3x3x2",
@@ -816,13 +824,13 @@ fn compiles_every_resolved_primary_attachment_compatibility_pair() {
             let inert_read_code = matches!(attachment, AttachmentInstruction::ReadCode);
             let inert_return_write_code = matches!(primary, PrimaryInstruction::Return)
                 && matches!(attachment, AttachmentInstruction::WriteCode);
-            let immediate_repeat = matches!(primary, PrimaryInstruction::OutputImmediate(_))
-                && matches!(attachment, AttachmentInstruction::Repeat(_));
+            let immediate_repeat =
+                matches!(primary, PrimaryInstruction::OutputImmediate(_)) && attachment.is_repeat();
             if !(primary.is_encodable()
                 || inert_read_code
                 || inert_return_write_code
                 || immediate_repeat)
-                || (matches!(attachment, AttachmentInstruction::Repeat(_))
+                || (attachment.is_repeat()
                     && matches!(
                         primary,
                         PrimaryInstruction::Call(_) | PrimaryInstruction::Return

@@ -10,7 +10,7 @@ use codegrid_model::{
     MAX_BOARD_DIMENSION,
 };
 
-pub const IR_FORMAT_VERSION: u32 = 5;
+pub const IR_FORMAT_VERSION: u32 = 6;
 
 #[derive(Clone, Copy, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
 pub enum CodeGridId {
@@ -526,8 +526,8 @@ fn validate_attachment(
             "Repeat count must be from 2 through 9.",
         ));
     }
-    let immediate_repeat = matches!(primary, PrimaryInstruction::OutputImmediate(_))
-        && matches!(attachment, AttachmentInstruction::Repeat(_));
+    let immediate_repeat =
+        matches!(primary, PrimaryInstruction::OutputImmediate(_)) && attachment.is_repeat();
     let inert_read_code =
         !primary.is_encodable() && matches!(attachment, AttachmentInstruction::ReadCode);
     let inert_return_write_code = matches!(primary, PrimaryInstruction::Return)
@@ -540,7 +540,7 @@ fn validate_attachment(
             "This Primary instruction cannot have an Attachment.",
         ));
     }
-    if matches!(attachment, AttachmentInstruction::Repeat(_))
+    if attachment.is_repeat()
         && matches!(
             primary,
             PrimaryInstruction::Call(_) | PrimaryInstruction::Return

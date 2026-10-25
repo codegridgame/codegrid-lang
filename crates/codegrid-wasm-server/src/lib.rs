@@ -586,7 +586,7 @@ mod tests {
         compile["source"] = json!(source);
         let compiled = dispatch(&mut adapter, compile);
         assert_eq!(compiled["status"], "compiled");
-        assert_eq!(compiled["view"]["ir_format_version"], 5);
+        assert_eq!(compiled["view"]["ir_format_version"], 6);
         let program = compiled["program"].as_str().unwrap().to_owned();
         let mut program_view_request = operation("program_view");
         program_view_request["program"] = json!(program.clone());

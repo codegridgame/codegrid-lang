@@ -89,8 +89,8 @@ fn parse_attached_primary(token: &str) -> Result<CellToken, CellTokenError> {
         let Some(primary) = PrimaryInstruction::from_token(primary_token) else {
             continue;
         };
-        let immediate_repeat = matches!(primary, PrimaryInstruction::OutputImmediate(_))
-            && matches!(attachment, AttachmentInstruction::Repeat(_));
+        let immediate_repeat =
+            matches!(primary, PrimaryInstruction::OutputImmediate(_)) && attachment.is_repeat();
         let inert_read_code =
             !primary.is_encodable() && matches!(attachment, AttachmentInstruction::ReadCode);
         let inert_return_write_code = matches!(primary, PrimaryInstruction::Return)
@@ -103,14 +103,14 @@ fn parse_attached_primary(token: &str) -> Result<CellToken, CellTokenError> {
             return Err(CellTokenError {
                 code: "source.invalid_cell",
                 message: match primary {
-                    PrimaryInstruction::OutputImmediate(_) => "Immediate output .0 through .9 allows ReadCode (*) or Repeat x2 through x9; WriteCode (=) is not allowed.",
+                    PrimaryInstruction::OutputImmediate(_) => "Immediate output .0 through .9 allows ReadCode (*) or Repeat x2 through x9 / xr; WriteCode (=) is not allowed.",
                     PrimaryInstruction::Halt => "HALT (;) allows only inert ReadCode (*), not WriteCode (=) or Repeat.",
                     PrimaryInstruction::Custom(_) | PrimaryInstruction::CustomReturn => "A Custom call or return allows only inert ReadCode (*).",
                     _ => "This Primary instruction cannot carry a suffix Attachment.",
                 },
             });
         }
-        if matches!(attachment, AttachmentInstruction::Repeat(_))
+        if attachment.is_repeat()
             && matches!(
                 primary,
                 PrimaryInstruction::Call(_) | PrimaryInstruction::Return
@@ -118,7 +118,7 @@ fn parse_attached_primary(token: &str) -> Result<CellToken, CellTokenError> {
         {
             return Err(CellTokenError {
                 code: "source.invalid_cell",
-                message: "Repeat is not allowed on Function CALL ([0 through [9) or RETURN (]); use an ordinary call/return without x2 through x9.",
+                message: "Repeat is not allowed on Function CALL ([0 through [9) or RETURN (]); use an ordinary call/return without x2 through x9 or xr.",
             });
         }
         return Ok(CellToken::Instruction {
@@ -166,14 +166,14 @@ fn invalid_token_message(token: &str) -> &'static str {
     if let Some((primary, count)) = token.rsplit_once('x') {
         if PrimaryInstruction::from_token(primary).is_some() {
             return if !count.is_empty() && count.bytes().all(|byte| byte.is_ascii_digit()) {
-                "Repeat count must be a single digit from 2 through 9; use x2 through x9."
+                "Repeat count must be a single digit from 2 through 9; use x2 through x9 or xr."
             } else {
-                "Malformed Repeat suffix; use x2 through x9 immediately after the Primary."
+                "Malformed Repeat suffix; use x2 through x9 or xr immediately after the Primary."
             };
         }
     }
     if token.starts_with('.') && token != "." {
-        return "Immediate output must be .0 through .9 with exactly one ASCII digit; only an optional Repeat suffix x2 through x9 is allowed.";
+        return "Immediate output must be .0 through .9 with exactly one ASCII digit; only an optional Repeat suffix x2 through x9 or xr is allowed.";
     }
     if token.starts_with('[') || token.starts_with('$') || token.starts_with('#') {
         return "Unknown or malformed Primary reference; Function CALL uses [0 through [9, Folded Block CALL uses $0 through $9, and Custom CALL uses #0 through #9 or #] for return.";
@@ -284,8 +284,8 @@ mod tests {
                     || inert_read_code
                     || inert_return_write_code
                     || (matches!(primary, PrimaryInstruction::OutputImmediate(_))
-                        && matches!(attachment, AttachmentInstruction::Repeat(_))))
-                    && (!matches!(attachment, AttachmentInstruction::Repeat(_))
+                        && attachment.is_repeat()))
+                    && (!attachment.is_repeat()
                         || !matches!(
                             primary,
                             PrimaryInstruction::Call(_) | PrimaryInstruction::Return

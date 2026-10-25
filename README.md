@@ -5,7 +5,7 @@ explicitly publishes a release, update contracts and consumers directly without
 backward-compatibility requirements. Internal version numbers and historical
 verification reports are not release baselines. See [repository rules](AGENTS.md#release-and-compatibility-policy).
 
-The current language includes fixed conditional prefixes `?0`–`?2` and `?!` (F=1), CMP `?=`, and random direction `??`; READ is directionless `,` (code 44), with F=0 on success and F=1 on exhaustion; Function registers are private copies and `$!` provides eight-bit bitwise NEG (code 69); executable IR is format 5. See the [migration manual](docs/conditional-prefix-migration.md) for semantics, retired forms, compatibility, and verification.
+The current language includes fixed conditional prefixes `?0`–`?2` and `?!` (F=1), CMP `?=`, random direction `??`, and register-count Repeat `xr`; READ is directionless `,` (code 44), with F=0 on success and F=1 on exhaustion; Function registers are private copies and `$!` provides eight-bit bitwise NEG (code 69); executable IR is format 6. See the [migration manual](docs/conditional-prefix-migration.md) for semantics, retired forms, compatibility, and verification.
 
 Folded Blocks sweep one row without wrapping and allow compatible ReadCode,
 WriteCode, and Repeat suffixes. Repeat stays on its internal cell until it

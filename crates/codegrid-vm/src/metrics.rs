@@ -78,7 +78,7 @@ impl InstructionKind {
         match attachment {
             AttachmentInstruction::ReadCode => Some(Self::ReadCode),
             AttachmentInstruction::WriteCode => Some(Self::WriteCode),
-            AttachmentInstruction::Repeat(_) => None,
+            AttachmentInstruction::Repeat(_) | AttachmentInstruction::RepeatRegister => None,
         }
     }
 }

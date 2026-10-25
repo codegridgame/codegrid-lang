@@ -38,6 +38,28 @@ enum CustomOutcome {
     WorkLimit,
 }
 
+fn repeat_total(
+    attachment: Option<AttachmentInstruction>,
+    thread: &ThreadState,
+    registers: &[Value; 10],
+) -> Option<u8> {
+    match attachment {
+        Some(AttachmentInstruction::Repeat(total)) => Some(total),
+        Some(AttachmentInstruction::RepeatRegister) => {
+            Some(registers[usize::from(thread.register_pointer)])
+        }
+        _ => None,
+    }
+}
+
+fn repeat_attachment_matches_total(attachment: Option<AttachmentInstruction>, total: u8) -> bool {
+    match attachment {
+        Some(AttachmentInstruction::Repeat(configured)) => configured == total,
+        Some(AttachmentInstruction::RepeatRegister) => total >= 2,
+        _ => false,
+    }
+}
+
 /// The complete semantic state of one synchronous Custom invocation. Metrics
 /// and staged observations are deliberately excluded: neither affects future
 /// execution, and both are discarded if a work ceiling interrupts the step.
@@ -341,6 +363,7 @@ fn execute_normal(
     };
     let id = cell_id(mode.code_grid, thread.board, None, thread.position);
     record_cell_visit(metrics, draft, thread, id, mode.scope);
+    // Keep this before resolving Primary or Attachment operands.
     if !condition_matches(cell.prefix, thread, registers, metrics, draft) {
         move_normal_cell(thread, step, runtime, config, draft, mode);
         return;
@@ -354,7 +377,10 @@ fn execute_normal(
             if draft.fault.is_some() {
                 return;
             }
-        } else if matches!(cell.attachment, Some(AttachmentInstruction::Repeat(_))) {
+        } else if cell
+            .attachment
+            .is_some_and(AttachmentInstruction::is_repeat)
+        {
             // A previous WriteCode may have cleared this cell. Repeat has no
             // Primary to execute, so it is skipped with the empty cell.
         } else if cell.attachment.is_some() {
@@ -364,6 +390,12 @@ fn execute_normal(
         move_normal_cell(thread, step, runtime, config, draft, mode);
         return;
     };
+
+    let total = repeat_total(cell.attachment, thread, registers);
+    if total == Some(0) {
+        move_normal_cell(thread, step, runtime, config, draft, mode);
+        return;
+    }
 
     record_primary(primary, metrics, draft);
     if draft.fault.is_some() {
@@ -383,31 +415,25 @@ fn execute_normal(
         metrics,
         draft,
         mode,
-        match cell.attachment {
-            Some(AttachmentInstruction::Repeat(total)) => Some((total, 1)),
-            _ => None,
-        },
+        total.filter(|total| *total > 1).map(|total| (total, 1)),
         budget,
     );
     if draft.fault.is_some() || flow != Flow::Move {
         return;
     }
 
-    match cell.attachment {
-        Some(AttachmentInstruction::Repeat(total)) => {
-            thread.phase = ExecutionPhase::Repeat {
-                total,
-                completed: 1,
-            };
+    if let Some(total) = total.filter(|total| *total > 1) {
+        thread.phase = ExecutionPhase::Repeat {
+            total,
+            completed: 1,
+        };
+        return;
+    }
+    if let Some(attachment) = cell.attachment.filter(|attachment| !attachment.is_repeat()) {
+        execute_attachment(thread, attachment, id, cell.primary, metrics, draft);
+        if draft.fault.is_some() {
             return;
         }
-        Some(attachment) => {
-            execute_attachment(thread, attachment, id, cell.primary, metrics, draft);
-            if draft.fault.is_some() {
-                return;
-            }
-        }
-        None => {}
     }
     move_current(thread, step, runtime, config, draft, mode);
 }
@@ -433,7 +459,7 @@ fn execute_repeat(
         draft.fault = Some(VmFault::InternalInvariantViolation);
         return;
     };
-    if cell.attachment != Some(AttachmentInstruction::Repeat(total)) || completed >= total {
+    if !repeat_attachment_matches_total(cell.attachment, total) || completed >= total {
         draft.fault = Some(VmFault::InternalInvariantViolation);
         return;
     }
@@ -581,7 +607,7 @@ fn execute_fold_resume(
         );
     } else if cell
         .attachment
-        .is_some_and(|attachment| !matches!(attachment, AttachmentInstruction::Repeat(_)))
+        .is_some_and(|attachment| !attachment.is_repeat())
     {
         draft.fault = Some(VmFault::InternalInvariantViolation);
         return;
@@ -654,7 +680,7 @@ fn execute_fold_cell(
     };
     let attachment = block.attachments.get(&position.x).copied();
     if let Some((total, completed)) = repetition {
-        if attachment != Some(AttachmentInstruction::Repeat(total)) || completed >= total {
+        if !repeat_attachment_matches_total(attachment, total) || completed >= total {
             draft.fault = Some(VmFault::InternalInvariantViolation);
             return;
         }
@@ -662,6 +688,7 @@ fn execute_fold_cell(
     thread.direction = direction;
     let cell = cell_id(mode.code_grid, thread.board, Some(fold_id), position);
     record_cell_visit(metrics, draft, thread, cell, mode.scope);
+    // Keep this before resolving either instruction's operands.
     let matched = condition_matches(
         block.prefixes.get(&position.x).copied(),
         thread,
@@ -669,7 +696,13 @@ fn execute_fold_cell(
         metrics,
         draft,
     );
-    let flow = if let Some(primary) = primary.filter(|_| matched) {
+    let total = repetition.map(|(total, _)| total).or_else(|| {
+        matched
+            .then(|| repeat_total(attachment, thread, registers))
+            .flatten()
+    });
+    let skip_for_zero_repeat = total == Some(0);
+    let flow = if let Some(primary) = primary.filter(|_| matched && !skip_for_zero_repeat) {
         record_primary(primary, metrics, draft);
         if draft.fault.is_some() {
             return;
@@ -698,8 +731,10 @@ fn execute_fold_cell(
         return;
     }
     if matched {
-        match (attachment, repetition) {
-            (Some(AttachmentInstruction::Repeat(total)), None) if primary.is_some() => {
+        match (attachment, repetition, total) {
+            (Some(attachment), None, Some(total))
+                if attachment.is_repeat() && total > 1 && primary.is_some() =>
+            {
                 thread.phase = ExecutionPhase::FoldRepeat {
                     fold_id,
                     internal_position: position,
@@ -711,8 +746,8 @@ fn execute_fold_cell(
                 };
                 return;
             }
-            (Some(AttachmentInstruction::Repeat(total)), Some((_, completed)))
-                if primary.is_some() =>
+            (Some(attachment), Some((total, completed)), Some(total_from_phase))
+                if attachment.is_repeat() && total == total_from_phase && primary.is_some() =>
             {
                 let completed = completed + 1;
                 if completed < total {
@@ -734,13 +769,15 @@ fn execute_fold_cell(
                     | AttachmentInstruction::WriteCode),
                 ),
                 None,
+                _,
             ) => {
                 execute_attachment(thread, attachment, cell, primary, metrics, draft);
                 if draft.fault.is_some() {
                     return;
                 }
             }
-            (_, Some(_)) => {}
+            (Some(attachment), Some(_), _) if attachment.is_repeat() => {}
+            (_, Some(_), _) => {}
             _ => {}
         }
     }
@@ -1139,7 +1176,7 @@ fn execute_attachment(
                 });
             }
         }
-        AttachmentInstruction::Repeat(_) => {
+        AttachmentInstruction::Repeat(_) | AttachmentInstruction::RepeatRegister => {
             draft.fault = Some(VmFault::InternalInvariantViolation);
         }
     }

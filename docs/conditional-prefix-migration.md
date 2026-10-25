@@ -35,7 +35,7 @@ Implementation evidence reviewed includes the canonical model inventory, HIR cel
 | Random direction | `?` is RandomDirection | Rename the token to `??`; decide encoding compatibility separately. |
 | Comparison | No CMP Primary exists in the current canonical inventory | Add `?=` as a Primary with a non-consuming Data Stack comparison; decide empty-stack behavior and encoding. |
 | Cell shape | One Primary and at most one suffix Attachment | A prefix needs its own field and compatibility rules if it can coexist with a suffix. |
-| Suffixes | `*`, `=`, `x2`–`x9` | They run after the Primary, with special CALL/RETURN timing. |
+| Suffixes | `*`, `=`, `x2`–`x9`, `xr` | They run after the Primary, with special CALL/RETURN timing. `xr` captures the selected register value after a passing prefix. |
 | Suffix restrictions | Encodable Primaries only; Repeat excludes CALL/RETURN | Prefix eligibility must be specified independently. |
 | Folded Blocks | Attachments are forbidden; structural restrictions also apply | Allowing prefixes requires a specific exception without permitting forbidden Primaries. |
 | Register reads | Context transition-start register snapshot; thread-local pointer | A condition should use the selected register, not hard-code R0 or see sibling writes. |
@@ -66,7 +66,7 @@ Confirmed: all D1–D15. No language-semantic question remains open. Concrete in
 | D12 | What compatibility is required? | Reject removed source forms in the new language; reserve removed Instruction Codes and old random code 63 without reuse or decoding; invalidate old executable IR via a version change. Preserve unrelated published error identities and transport aliases. Decide separately which observable host schemas require version changes. |
 | D13 | What does CMP compare and write? | Confirmed: `?=` compares Data Stack top A with selected register B without popping; writes 0 if equal, 1 if A > B, and 2 if A < B. |
 | D14 | What does CMP do on an empty Data Stack? | Preserve the register and stack, count the executed Primary, and move normally, consistent with existing empty-stack POPADD/NAND behavior. |
-| D15 | How is CMP encoded and accounted for? | ASCII-sum numbering: CMP `?=` is 124 and RandomDirection `??` is 126. The earlier decision retained existing non-encodable forms; the 2026-10-20 Folded Block invocation decision supersedes that exclusion for `$0`–`$9`. CMP supports `*`, `=`, and `x2`–`x9`; each execution counts one operation and one CMP runtime kind, with independent `CMP` Primary capability. |
+| D15 | How is CMP encoded and accounted for? | ASCII-sum numbering: CMP `?=` is 124 and RandomDirection `??` is 126. The earlier decision retained existing non-encodable forms; the 2026-10-20 Folded Block invocation decision supersedes that exclusion for `$0`–`$9`. CMP supports `*`, `=`, `x2`–`x9`, and `xr`; each execution counts one operation and one CMP runtime kind, with independent `CMP` Primary capability. |
 
 ### ASCII-sum numbering audit
 

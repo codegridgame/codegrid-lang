@@ -71,8 +71,8 @@ metrics are part of this API.
 
 Thread snapshots distinguish `fold`, `fold_repeat`, and `fold_resume` phases.
 All three phases contain `outer_repeat`, which is `null` when the Folded Block
-call has no Repeat suffix, or `{ "total": number, "completed": number }` while
-an outer Repeat is in progress. `total` is 2 through 9 and is the requested
+call has no active whole-call Repeat, or `{ "total": number, "completed": number }` while
+an outer Repeat is in progress. `total` is 2 through 255 and is the requested
 number of whole-block invocations; `completed` is the number of successful
 invocations completed so far, from 0 through `total`. `fold_repeat` also
 contains `fold_id`, `internal_position`,

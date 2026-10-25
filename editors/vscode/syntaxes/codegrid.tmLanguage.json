@@ -108,7 +108,7 @@
           }
         },
         {
-          "match": "(\\?[012!])?(,)([*=]|x[2-9])?(?=$|\\s)",
+          "match": "(\\?[012!])?(,)([*=]|x[2-9]|xr)?(?=$|\\s)",
           "captures": {
             "1": {
               "name": "storage.modifier.condition.codegrid"
@@ -144,7 +144,7 @@
           }
         },
         {
-          "match": "(\\?[012!])?(\\$!)([*=]|x[2-9])?(?=$|\\s)",
+          "match": "(\\?[012!])?(\\$!)([*=]|x[2-9]|xr)?(?=$|\\s)",
           "captures": {
             "1": {
               "name": "storage.modifier.condition.codegrid"
@@ -158,7 +158,7 @@
           }
         },
         {
-          "match": "(\\?[012!])?(\\$&)([*=]|x[2-9])?(?=$|\\s)",
+          "match": "(\\?[012!])?(\\$&)([*=]|x[2-9]|xr)?(?=$|\\s)",
           "captures": {
             "1": {
               "name": "storage.modifier.condition.codegrid"
@@ -172,7 +172,7 @@
           }
         },
         {
-          "match": "(\\?[012!])?(\\$[()])([*=]|x[2-9])?(?=$|\\s)",
+          "match": "(\\?[012!])?(\\$[()])([*=]|x[2-9]|xr)?(?=$|\\s)",
           "captures": {
             "1": {
               "name": "storage.modifier.condition.codegrid"
@@ -186,7 +186,7 @@
           }
         },
         {
-          "match": "(\\?[012!])?(\\$[+-])([*=]|x[2-9])?(?=$|\\s)",
+          "match": "(\\?[012!])?(\\$[+-])([*=]|x[2-9]|xr)?(?=$|\\s)",
           "captures": {
             "1": {
               "name": "storage.modifier.condition.codegrid"
@@ -200,7 +200,7 @@
           }
         },
         {
-          "match": "(\\?[012!])?(\\$[<>])([*=]|x[2-9])?(?=$|\\s)",
+          "match": "(\\?[012!])?(\\$[<>])([*=]|x[2-9]|xr)?(?=$|\\s)",
           "captures": {
             "1": {
               "name": "storage.modifier.condition.codegrid"
@@ -214,13 +214,16 @@
           }
         },
         {
-          "match": "(\\?[012!])?(\\$[0-9])(?=$|\\s)",
+          "match": "(\\?[012!])?(\\$[0-9])([*=]|x[2-9]|xr)?(?=$|\\s)",
           "captures": {
             "1": {
               "name": "storage.modifier.condition.codegrid"
             },
             "2": {
               "name": "keyword.control.folded-call.codegrid"
+            },
+            "3": {
+              "name": "storage.modifier.attachment.codegrid"
             }
           }
         },
@@ -253,7 +256,7 @@
           }
         },
         {
-          "match": "(\\?[012!])?(\\$[<>&])([*=]|x[2-9])?(?=$|\\s)",
+          "match": "(\\?[012!])?(\\$[<>&])([*=]|x[2-9]|xr)?(?=$|\\s)",
           "captures": {
             "1": {
               "name": "storage.modifier.condition.codegrid"
@@ -267,7 +270,7 @@
           }
         },
         {
-          "match": "(\\?[012!])?([v\\^<>])([*=]|x[2-9])?(?=$|\\s)",
+          "match": "(\\?[012!])?([v\\^<>])([*=]|x[2-9]|xr)?(?=$|\\s)",
           "captures": {
             "1": {
               "name": "storage.modifier.condition.codegrid"
@@ -281,7 +284,7 @@
           }
         },
         {
-          "match": "(\\?[012!])?(\\?\\?)([*=]|x[2-9])?(?=$|\\s)",
+          "match": "(\\?[012!])?(\\?\\?)([*=]|x[2-9]|xr)?(?=$|\\s)",
           "captures": {
             "1": {
               "name": "storage.modifier.condition.codegrid"
@@ -295,7 +298,7 @@
           }
         },
         {
-          "match": "(\\?[012!])?(!)([*=]|x[2-9])?(?=$|\\s)",
+          "match": "(\\?[012!])?(!)([*=]|x[2-9]|xr)?(?=$|\\s)",
           "captures": {
             "1": {
               "name": "storage.modifier.condition.codegrid"
@@ -309,7 +312,7 @@
           }
         },
         {
-          "match": "(\\?[012!])?([+\\-])([*=]|x[2-9])?(?=$|\\s)",
+          "match": "(\\?[012!])?([+\\-])([*=]|x[2-9]|xr)?(?=$|\\s)",
           "captures": {
             "1": {
               "name": "storage.modifier.condition.codegrid"
@@ -323,7 +326,7 @@
           }
         },
         {
-          "match": "(\\?[012!])?([{}])([*=]|x[2-9])?(?=$|\\s)",
+          "match": "(\\?[012!])?([{}])([*=]|x[2-9]|xr)?(?=$|\\s)",
           "captures": {
             "1": {
               "name": "storage.modifier.condition.codegrid"
@@ -337,7 +340,7 @@
           }
         },
         {
-          "match": "(\\?[012!])?(\\.[0-9])(x[2-9])?(?=$|\\s)",
+          "match": "(\\?[012!])?(\\.[0-9])(x[2-9]|xr)?(?=$|\\s)",
           "captures": {
             "1": {
               "name": "storage.modifier.condition.codegrid"
@@ -351,7 +354,7 @@
           }
         },
         {
-          "match": "(\\?[012!])?(\\.)([*=]|x[2-9])?(?=$|\\s)",
+          "match": "(\\?[012!])?(\\.)([*=]|x[2-9]|xr)?(?=$|\\s)",
           "captures": {
             "1": {
               "name": "storage.modifier.condition.codegrid"
@@ -365,7 +368,7 @@
           }
         },
         {
-          "match": "(\\?[012!])?([()])([*=]|x[2-9])?(?=$|\\s)",
+          "match": "(\\?[012!])?([()])([*=]|x[2-9]|xr)?(?=$|\\s)",
           "captures": {
             "1": {
               "name": "storage.modifier.condition.codegrid"
@@ -379,7 +382,7 @@
           }
         },
         {
-          "match": "(\\?[012!])?([&%])([*=]|x[2-9])?(?=$|\\s)",
+          "match": "(\\?[012!])?([&%])([*=]|x[2-9]|xr)?(?=$|\\s)",
           "captures": {
             "1": {
               "name": "storage.modifier.condition.codegrid"
@@ -404,7 +407,7 @@
           }
         },
         {
-          "match": "(\\?[012!])?(\\?=)([*=]|x[2-9])?(?=$|\\s)",
+          "match": "(\\?[012!])?(\\?=)([*=]|x[2-9]|xr)?(?=$|\\s)",
           "captures": {
             "1": {
               "name": "storage.modifier.condition.codegrid"

@@ -50,7 +50,7 @@ export const PRIMARIES: PrimaryInfo[] = [
   primary('.', 'OUTPUT', 46, 'output', 'Appends the current R0 byte to output.'),
   ...Array.from({ length: 10 }, (_, digit) =>
     primary(`.${digit}`, `Immediate Output ${digit}`, null, 'output',
-      'Outputs a literal byte without changing registers or the register pointer. In Custom code, pushes onto the caller stack. Repeat x2 through x9 and conditional prefixes are allowed; no Instruction Code, ReadCode or WriteCode.')
+      'Outputs a literal byte without changing registers or the register pointer. In Custom code, pushes onto the caller stack. Repeat x2 through x9, xr and conditional prefixes are allowed; no Instruction Code, ReadCode or WriteCode.')
   ),
   primary('(', 'PUSH', 40, 'stack'),
   primary(')', 'POP_ADD', 41, 'stack'),
@@ -69,7 +69,7 @@ export const PRIMARIES: PrimaryInfo[] = [
   primary('$<', 'SHIFT_LEFT', 96, 'shift', 'Shifts R0 left by one bit; the high bit is discarded and zero enters the low bit.'),
   primary('$>', 'SHIFT_RIGHT', 98, 'shift', 'Shifts R0 right logically by one bit; zero enters the high bit.'),
   ...Array.from({ length: 10 }, (_, slot) =>
-    primary(`$${slot}`, `FOLDED_BLOCK ${slot}`, null, 'folded')
+    primary(`$${slot}`, `FOLDED_BLOCK ${slot}`, 84 + slot, 'folded')
   ),
   ...Array.from({ length: 10 }, (_, slot) =>
     primary(`#${slot}`, `CUSTOM ${slot}`, null, 'custom')
@@ -98,7 +98,7 @@ export type CellToken =
 export type ConditionToken = '?0' | '?1' | '?2' | '?!';
 export const CONDITIONS: ConditionToken[] = ['?0', '?1', '?2', '?!'];
 
-export type AttachmentToken = '*' | '=' | 'x2' | 'x3' | 'x4' | 'x5' | 'x6' | 'x7' | 'x8' | 'x9';
+export type AttachmentToken = '*' | '=' | 'x2' | 'x3' | 'x4' | 'x5' | 'x6' | 'x7' | 'x8' | 'x9' | 'xr';
 
 export interface PrimaryCellSpelling {
   token: string;
@@ -120,6 +120,7 @@ export const PRIMARY_CELL_SPELLINGS: PrimaryCellSpelling[] = PRIMARIES.flatMap((
       const attachment = `x${count}` as AttachmentToken;
       spellings.push({ token: `${item.token}${attachment}`, primary: item, attachment });
     }
+    spellings.push({ token: `${item.token}xr`, primary: item, attachment: 'xr' });
   }
   return spellings.flatMap((spelling) => [spelling, ...CONDITIONS.map((prefix) => ({ ...spelling, token: `${prefix}${spelling.token}`, prefix }))]);
 });
