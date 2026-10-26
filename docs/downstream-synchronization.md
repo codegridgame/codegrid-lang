@@ -1,5 +1,55 @@
 # Mandatory downstream synchronization
 
+## 2026-10-26 Register-only CLEAR synchronization
+
+The user changed `!` to CLEAR: it unconditionally zeros the selected register,
+preserving other registers, all stacks, the pointer, Page and F. Normal movement,
+compatible Attachments, token `!` and Instruction Code 33 remain unchanged.
+The canonical Rust instruction and footprint category are `Clear`. Game authoring
+uses independent `CLEAR` permissions and limits; STACK contains only PUSH and
+POP_ADD, and the UNARY count group includes CLEAR. Steam displays a separate
+zero-value tool, outside the four-item stack Tab group. Current fixtures,
+Editor/API catalogs, prompts and instruction references are synchronized without
+an obsolete permission alias or saved-player-data migration.
+
+The user authorized committing and pushing the Lang implementation, now pinned
+by Game Runtime Cargo.toml/Cargo.lock at `0e532b123e1f1313af601805021c533369f8f6b1`.
+Dependencies resolve from that pushed Git revision with no local override.
+IR format 6, Runtime API 6, Server ABI 7 and Level API 2 keep their current shapes.
+The game worktree already contained unrelated changes and remains uncommitted.
+
+Full browser WASM (Steam/Web) SHA-256: `0be942d990f3c832bb96a5cf0222270bb655804d713937e275313f812a2f0484`.
+Full server WASM (API) SHA-256: `d34d906195334cfc25ca9d1130115737b0d67eb39a27b8a4a5b2fec149ecf65d`.
+Their memory maximum is 67108864 bytes. All four Level WASM consumers
+(Steam/Web/Editor/API) use the same 2318289-byte module,
+SHA-256 `5860b30efd8468cf4f00120d1f9d72fbe9c0d10ca2a3c9ab6dd0ab9338f482d3`, maximum 268435456 bytes.
+Evaluator identity: `game-runtime-source-sha256:4e58b4ead2cadd2a6e7906f5401255347186f269785798a51583d62395dc80fb`.
+The 323-file dirty Rust tree SHA-256 is
+`e18f41899ee29a005e7f3fc17bb802c7493ed9eee561e31401d7d12541b75bd9`; Cargo.lock SHA-256 is
+`20a625b2587779d03d5f21bb31b4cee1d46abf6999542ca381d14f51fafa7f7c`. All vendor manifests record actual hashes,
+the Git dependency, dirty source paths and evaluator identity. Editor/API retain
+the explicit-local-byte JavaScript patch and narrow host declarations.
+
+Verification passed: Lang workspace tests and formatting; 121 Full fixtures
+with complete native CLI/Wasmtime parity, Node browser/server WASM and actual
+Chromium; VS Code compilation and six real Extension Host metadata/hover tests;
+Game Runtime evaluator tests (35) and instruction-limit tests (9); actual
+Chromium module Worker with 109 Level API-2 executions and Debug traces,
+including empty/nonempty CLEAR in Official and Debug; client-application (150),
+API-contract (38), Steam toolbox (14), Editor runtime/authoring tests (8), Web
+artifact-integrity checks (3), and API Level evaluation tests (10). Architecture
+checking, Editor/Web/Steam/API builds, and local Workerd Full/Level smoke pass.
+
+Existing unrelated failures remain: Game Runtime's full library run has five
+mechanical-arm scene-protocol failures (76 pass); Level API has one terminal
+maximum-input fixture failure (four other terminal tests pass); selected Steam
+Full/Official WASM tests have one folded-return dwell failure (23 pass). Root
+type checking reports six Loom tuple errors and one old terminal fixture missing
+welcomeMessage; the other workspaces type-check successfully. Rust formatting
+reports existing differences in scene_evaluate.rs, scene_session.rs,
+schema/fixed.rs, scene_snapshot_json.rs and scene integration tests. No full
+workspace green result, product release or deployment is claimed.
+
 ## 2026-10-25 Register-count Repeat and independent game permissions
 
 The user authorized committing and pushing XR implementation commit
