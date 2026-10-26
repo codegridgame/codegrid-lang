@@ -1,5 +1,62 @@
 # Mandatory downstream synchronization
 
+## 2026-10-26 Register-selected Function and Folded Block calls
+
+Lang implementation `f60eeafaa815b6cefb27176bb023d4576c4948ef` is pushed and pinned by Game
+Runtime Cargo.toml/Cargo.lock without local overrides. `$r` selects a board-local
+M slot and `[r` a Function in the current CodeGrid using the active register
+byte after a passing prefix. Bytes above 9 skip without an error. Repeated `$r`
+calls reread the target and pointer; `xr` captures the total once, and skipped
+passes still consume one repetition. Empty M slots enter FoldResume; empty F
+slots run empty wrapping boards and never synthesize a return. Unfilled slots
+remain sparse; implicit F geometry matches the CodeGrid Main. Literal static
+reference checks remain unchanged. Dynamic Function calls do not reuse static
+tail-call proofs. Codes are `$r` = 150 and `[r` = 205. CALL_REGISTER has the
+ordinary call Gas price; register-fold calls remain structural shells.
+
+Game authoring exposes independent CALL_REGISTER and FOLDED_BLOCK_REGISTER
+permissions and limits, including the CUSTOMIZATION count group. Current
+catalogs, prompts, fixed-cell rules, source projection, selection metadata and
+Steam artwork include the new tokens. Both are excluded from folded contents,
+and Function register calls reject Repeat. Steam's `$r` popover can edit M0–M9
+without inserting a literal call; this editor choice never controls execution.
+IR format 6, Runtime API 6, Server ABI 7 and Level API 2 field shapes are unchanged.
+
+Full browser SHA-256: `7d06375648216d53629aaa1af0ef0d09c7a96f81debf3a1166184be412b244ee`.
+Full server SHA-256: `c24180421b4e0f86e8418fd96fb06c8e1c5f339ea59b555bcad01eaec4d1c7bf`.
+Both have a 67108864-byte memory maximum. Four Level WASM copies
+(Steam/Web/Editor/API) are identical: 2319887 bytes,
+SHA-256 `7f89d085bd76f174503a40593637421016b7b0ed635cfc052ded35cd2cb5214f`, maximum 268435456 bytes.
+Evaluator: `game-runtime-source-sha256:d41d98539dcb23adb790bc9dbd0cab8601a397e98f9c15332808ea263aedb828`.
+The dirty 338-file Rust tree hash is
+`72023600ed0fb46d3be543f0be70a90959062baa568bb2260534bb94767a73f0`; Cargo.lock SHA-256 is
+`88875a3827b89cc8b4dcbd622a2159671ad0447953d7469b7e8ad21ed7d12201`. Vendor manifests retain exact source and binary
+identities, explicit local-byte host patches and narrow declarations. The
+unrelated dirty game worktree is preserved and remains uncommitted.
+
+Passed: Lang workspace tests and formatting, including 16 focused register-call
+tests; 135 Full fixtures with complete native CLI/Wasmtime parity, Node
+browser/server WASM and actual Chromium; real VS Code Extension Host metadata
+and hover tests (6) and grammar tests (87). Game Runtime evaluator, fixed-cell,
+instruction-limit and register-call integration suites pass 50 tests. Actual
+Chromium module Worker passes 123 Level API-2 executions and Debug traces,
+including register calls, empty targets, range skips and separate permissions.
+Client-application passes 150 tests; API-contract 38; Steam toolbox and source/
+fold-editor checks 17; Editor authoring/runtime 9; Web artifact integrity 3;
+API evaluator 17 (seven register-call scenarios). Architecture checking and
+Editor/Web/Steam/API builds pass. Local Workerd passes Full/Level smoke,
+including three new Full HTTP register-call cases. No production deployment
+or user-published release was made.
+
+Existing unrelated failures remain: five Game Runtime mechanical-arm protocol
+assertions (76 other library tests pass), one Level API terminal maximum-input
+assertion (four other terminal tests pass), one Steam folded-return dwell
+assertion (23 other selected Full/Official WASM tests pass), six Loom tuple
+type errors and one terminal fixture missing welcomeMessage. Other workspaces
+type-check. Rust formatting reports existing scene_evaluate.rs,
+scene_session.rs, schema/fixed.rs, scene_snapshot_json.rs and scene integration
+test differences. These checks do not constitute a globally green game workspace.
+
 ## 2026-10-26 Register-only CLEAR synchronization
 
 The user changed `!` to CLEAR: it unconditionally zeros the selected register,
