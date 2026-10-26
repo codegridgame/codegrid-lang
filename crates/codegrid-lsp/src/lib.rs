@@ -636,6 +636,8 @@ fn primary_description(primary: PrimaryInstruction) -> String {
         PrimaryInstruction::Call(slot) => {
             format!("Call Function F{} in the current CodeGrid.", slot.get())
         }
+        PrimaryInstruction::CallRegister => "Call the Function selected by the current register byte (0 through 9); larger values skip the call. Empty slots run empty wrapping boards.".to_owned(),
+        PrimaryInstruction::FoldedBlockRegister => "Call the board-local Folded Block selected by the current register byte (0 through 9); larger values skip the call. Each repeated invocation rereads the target.".to_owned(),
         PrimaryInstruction::Return => {
             "Return through the current Function call frame; caller movement occurs on a separate AfterCall transition."
                 .to_owned()

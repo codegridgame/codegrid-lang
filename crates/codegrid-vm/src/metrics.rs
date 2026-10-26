@@ -24,6 +24,7 @@ pub enum InstructionKind {
     Decode,
     Encode,
     Call,
+    CallRegister,
     Return,
     Neg,
     Nand,
@@ -44,6 +45,7 @@ impl InstructionKind {
         match instruction {
             PrimaryInstruction::Direction(_)
             | PrimaryInstruction::FoldedBlock(_)
+            | PrimaryInstruction::FoldedBlockRegister
             | PrimaryInstruction::Custom(_) => None,
             PrimaryInstruction::RandomDirection => Some(Self::RandomDirection),
             PrimaryInstruction::Compare => Some(Self::Compare),
@@ -60,6 +62,7 @@ impl InstructionKind {
             PrimaryInstruction::Decode => Some(Self::Decode),
             PrimaryInstruction::Encode => Some(Self::Encode),
             PrimaryInstruction::Call(_) => Some(Self::Call),
+            PrimaryInstruction::CallRegister => Some(Self::CallRegister),
             PrimaryInstruction::Return => Some(Self::Return),
             PrimaryInstruction::Neg => Some(Self::Neg),
             PrimaryInstruction::Nand => Some(Self::Nand),
@@ -404,6 +407,7 @@ mod tests {
             let expected = match instruction {
                 PrimaryInstruction::Direction(_)
                 | PrimaryInstruction::FoldedBlock(_)
+                | PrimaryInstruction::FoldedBlockRegister
                 | PrimaryInstruction::Custom(_) => None,
                 PrimaryInstruction::RandomDirection => Some(InstructionKind::RandomDirection),
                 PrimaryInstruction::Compare => Some(InstructionKind::Compare),
@@ -424,6 +428,7 @@ mod tests {
                 PrimaryInstruction::Decode => Some(InstructionKind::Decode),
                 PrimaryInstruction::Encode => Some(InstructionKind::Encode),
                 PrimaryInstruction::Call(_) => Some(InstructionKind::Call),
+                PrimaryInstruction::CallRegister => Some(InstructionKind::CallRegister),
                 PrimaryInstruction::Return => Some(InstructionKind::Return),
                 PrimaryInstruction::Neg => Some(InstructionKind::Neg),
                 PrimaryInstruction::Nand => Some(InstructionKind::Nand),
@@ -456,6 +461,7 @@ mod tests {
             InstructionKind::Decode,
             InstructionKind::Encode,
             InstructionKind::Call,
+            InstructionKind::CallRegister,
             InstructionKind::Return,
             InstructionKind::Neg,
             InstructionKind::Nand,

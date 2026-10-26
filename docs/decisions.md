@@ -8,6 +8,38 @@ do not replace current specifications. Game-only decisions and game-specific
 verification excerpts are archived in the sibling
 [Game Runtime history index](../../bf-steam-wt/doc/codegrid-lang-history/README.md).
 
+## Register-selected calls (2026-10-26)
+
+Explicit user decision: `$r` calls the current board's Folded Block selected
+by the active register byte; `[r` calls that Function in the current CodeGrid.
+Values 10 through 255 skip the call without an error, frame or resume phase.
+A passing prefix is checked first; target selection reads the active bank's
+transition-start selected register. It preserves registers, pointer, Page,
+stacks and F except for the normal effects of a successful invocation.
+Each `$r` repeated invocation rereads the target and pointer. `xr` captures its
+total once; an out-of-range pass still consumes one repetition. Compatible
+non-repeat suffixes execute immediately on a skipped call; on successful calls
+they retain the existing deferred FoldResume/AfterCall timing.
+
+Unfilled dynamic target slots are logical empty content, not missing-target
+errors. An unfilled M slot enters FoldResume immediately. An unfilled F slot
+starts at (0,0) facing Right on a logical empty board with its CodeGrid Main's
+geometry, and wraps indefinitely. Explicit empty Functions use their declared
+geometry. Implicit empty slots remain sparse in program views and do not add
+authored cells or definitions. Literal-call static reference checks remain
+unchanged. No all-slots allocation or host-side interpreter is introduced.
+
+Both Primaries are encodable: `$r` is 150 (ASCII 36 + 114), `[r` is 205
+(ASCII 91 + 114). ReadCode reads the dynamic Primary, not the selected literal
+call. `$r` accepts ReadCode, WriteCode and Repeat; `[r` accepts ReadCode and
+WriteCode but not Repeat. Both are forbidden inside Folded Blocks, including
+dynamic WriteCode installation. Dynamic Function calls never use static tail
+proofs, even when mutation installs them at a former proven call site.
+Game capabilities `FOLDED_BLOCK_REGISTER` and `CALL_REGISTER` are independent
+of literal-call capabilities. CALL_REGISTER costs the ordinary call Gas price;
+Folded Block register calls remain structural shells, as literal folds are.
+Current IR format 6, Runtime API 6 and Server ABI 7 field shapes stay unchanged.
+
 ## CLEAR replaces POPCLEAR (2026-10-26)
 
 Explicit user decision: `!` is CLEAR. It unconditionally sets the selected

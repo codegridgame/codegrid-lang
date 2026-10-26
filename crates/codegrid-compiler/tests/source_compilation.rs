@@ -833,7 +833,9 @@ fn compiles_every_resolved_primary_attachment_compatibility_pair() {
                 || (attachment.is_repeat()
                     && matches!(
                         primary,
-                        PrimaryInstruction::Call(_) | PrimaryInstruction::Return
+                        PrimaryInstruction::Call(_)
+                            | PrimaryInstruction::CallRegister
+                            | PrimaryInstruction::Return
                     ))
             {
                 continue;

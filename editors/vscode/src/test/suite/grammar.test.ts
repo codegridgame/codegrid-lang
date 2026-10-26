@@ -49,6 +49,8 @@ suite('TextMate grammar', () => {
   }
 
   const VALID: [string, string, string][] = [
+    ['$rxr [r*', '$r', 'keyword.control.folded-call.codegrid'],
+    ['$rxr [r*', '[r', 'keyword.control.function-call.codegrid'],
     ['.0 .9', '.0', 'keyword.operator.output.codegrid'],
     ['.0 .9', '.9', 'keyword.operator.output.codegrid'],
     ['@main', '@main', 'keyword.directive.main.codegrid'],

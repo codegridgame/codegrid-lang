@@ -4215,6 +4215,466 @@
         "error_codes": [],
         "committed_steps": "4"
       }
+    },
+    {
+      "id": "register-function-selected-r3",
+      "source": "@main\n~> } } } , [r . ;\n@F6\n~> + . ]\n@end F6\n@end main\n",
+      "run": {
+        "seed": "0",
+        "input": [
+          6
+        ],
+        "max_steps": "50"
+      },
+      "expected": {
+        "process_exit_code": 0,
+        "status": "halted",
+        "vm_status": "halted",
+        "output": [
+          7,
+          6
+        ],
+        "registers": [
+          0,
+          0,
+          0,
+          6,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "error_codes": [],
+        "committed_steps": "13"
+      }
+    },
+    {
+      "id": "register-fold-selected-r3",
+      "source": "@main\n~> } } } , $r . ;\n@M6\n.6 _ _ _ _ _ _ _\n@end M6\n@end main\n",
+      "run": {
+        "seed": "0",
+        "input": [
+          6
+        ],
+        "max_steps": "50"
+      },
+      "expected": {
+        "process_exit_code": 0,
+        "status": "halted",
+        "vm_status": "halted",
+        "output": [
+          6,
+          6
+        ],
+        "registers": [
+          0,
+          0,
+          0,
+          6,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "error_codes": [],
+        "committed_steps": "9"
+      }
+    },
+    {
+      "id": "register-fold-repeat-rereads-target",
+      "source": "@main\n~> , $rx3 . ;\n@M1\n+ _ _ _ _\n@end M1\n@M2\n+ _ _ _ _\n@end M2\n@M3\n.3 _ _ _ _\n@end M3\n@end main\n",
+      "run": {
+        "seed": "0",
+        "input": [
+          1
+        ],
+        "max_steps": "50"
+      },
+      "expected": {
+        "process_exit_code": 0,
+        "status": "halted",
+        "vm_status": "halted",
+        "output": [
+          3,
+          3
+        ],
+        "registers": [
+          3,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "error_codes": [],
+        "committed_steps": "8"
+      }
+    },
+    {
+      "id": "register-fold-repeat-rereads-pointer",
+      "source": "@main\n~> , } , { $rx2 . ;\n@M1\n} _ _ _ _ _ _ _\n@end M1\n@M2\n.2 _ _ _ _ _ _ _\n@end M2\n@end main\n",
+      "run": {
+        "seed": "0",
+        "input": [
+          1,
+          2
+        ],
+        "max_steps": "50"
+      },
+      "expected": {
+        "process_exit_code": 0,
+        "status": "halted",
+        "vm_status": "halted",
+        "output": [
+          2,
+          2
+        ],
+        "registers": [
+          1,
+          2,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "error_codes": [],
+        "committed_steps": "10"
+      }
+    },
+    {
+      "id": "register-fold-xr-captures-count-rereads-target",
+      "source": "@main\n~> , $rxr . ;\n@M2\n+ _ _ _ _\n@end M2\n@M3\n.3 _ _ _ _\n@end M3\n@end main\n",
+      "run": {
+        "seed": "0",
+        "input": [
+          2
+        ],
+        "max_steps": "50"
+      },
+      "expected": {
+        "process_exit_code": 0,
+        "status": "halted",
+        "vm_status": "halted",
+        "output": [
+          3,
+          3
+        ],
+        "registers": [
+          3,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "error_codes": [],
+        "committed_steps": "7"
+      }
+    },
+    {
+      "id": "register-fold-xr-invalid-later-pass",
+      "source": "@main\n~> , $rxr . ;\n@M2\n$! _ _ _ _\n@end M2\n@end main\n",
+      "run": {
+        "seed": "0",
+        "input": [
+          2
+        ],
+        "max_steps": "50"
+      },
+      "expected": {
+        "process_exit_code": 0,
+        "status": "halted",
+        "vm_status": "halted",
+        "output": [
+          253
+        ],
+        "registers": [
+          253,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "error_codes": [],
+        "committed_steps": "6"
+      }
+    },
+    {
+      "id": "register-call-invalid-range-skips",
+      "source": "~> , [r $r . ;\n",
+      "run": {
+        "seed": "0",
+        "input": [
+          255
+        ],
+        "max_steps": "50"
+      },
+      "expected": {
+        "process_exit_code": 0,
+        "status": "halted",
+        "vm_status": "halted",
+        "output": [
+          255
+        ],
+        "registers": [
+          255,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "error_codes": [],
+        "committed_steps": "6"
+      }
+    },
+    {
+      "id": "register-fold-invalid-repeat-counts-passes",
+      "source": "~> , $rx3 . ;\n",
+      "run": {
+        "seed": "0",
+        "input": [
+          10
+        ],
+        "max_steps": "50"
+      },
+      "expected": {
+        "process_exit_code": 0,
+        "status": "halted",
+        "vm_status": "halted",
+        "output": [
+          10
+        ],
+        "registers": [
+          10,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "error_codes": [],
+        "committed_steps": "7"
+      }
+    },
+    {
+      "id": "register-fold-empty-slot-resumes",
+      "source": "~> $r ;\n",
+      "run": {
+        "seed": "0",
+        "input": [],
+        "max_steps": "50"
+      },
+      "expected": {
+        "process_exit_code": 0,
+        "status": "halted",
+        "vm_status": "halted",
+        "output": [],
+        "registers": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "error_codes": [],
+        "committed_steps": "4"
+      }
+    },
+    {
+      "id": "register-function-empty-slot-wraps",
+      "source": "~> , [r ;\n",
+      "run": {
+        "seed": "0",
+        "input": [
+          6
+        ],
+        "max_steps": "10"
+      },
+      "expected": {
+        "process_exit_code": 6,
+        "status": "step_limit_reached",
+        "vm_status": "running",
+        "output": [],
+        "registers": [
+          6,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "error_codes": [],
+        "committed_steps": "10",
+        "thread_call_stack_sizes": [
+          1
+        ]
+      }
+    },
+    {
+      "id": "register-function-dynamic-recursion-keeps-frames",
+      "source": "@main\n~> [r ;\n@F0\n~> [r ]\n@end F0\n@end main\n",
+      "run": {
+        "seed": "0",
+        "input": [],
+        "max_steps": "20"
+      },
+      "expected": {
+        "process_exit_code": 6,
+        "status": "step_limit_reached",
+        "vm_status": "running",
+        "output": [],
+        "registers": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "error_codes": [],
+        "committed_steps": "20",
+        "thread_call_stack_sizes": [
+          10
+        ]
+      }
+    },
+    {
+      "id": "register-function-read-code-invalid-skip",
+      "source": "~> , [r* % . ;\n",
+      "run": {
+        "seed": "0",
+        "input": [
+          10
+        ],
+        "max_steps": "50"
+      },
+      "expected": {
+        "process_exit_code": 0,
+        "status": "halted",
+        "vm_status": "halted",
+        "output": [
+          205
+        ],
+        "registers": [
+          205,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "error_codes": [],
+        "committed_steps": "6"
+      }
+    },
+    {
+      "id": "register-fold-read-code-on-resume",
+      "source": "@main\n~> , $r* % . ;\n@M1\n+ _ _ _ _ _\n@end M1\n@end main\n",
+      "run": {
+        "seed": "0",
+        "input": [
+          1
+        ],
+        "max_steps": "50"
+      },
+      "expected": {
+        "process_exit_code": 0,
+        "status": "halted",
+        "vm_status": "halted",
+        "output": [
+          150
+        ],
+        "registers": [
+          150,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "error_codes": [],
+        "committed_steps": "7"
+      }
+    },
+    {
+      "id": "register-custom-empty-function-work-yield",
+      "source": "@main\n~> #0 ;\n@end main\n@C0\n[r\n@end C0\n",
+      "run": {
+        "seed": "0",
+        "input": [],
+        "max_steps": "10"
+      },
+      "expected": {
+        "process_exit_code": 7,
+        "status": "work_limit_reached",
+        "vm_status": "running",
+        "output": [],
+        "registers": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "error_codes": [],
+        "committed_steps": "1"
+      }
     }
   ]
 }

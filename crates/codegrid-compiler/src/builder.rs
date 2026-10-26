@@ -1123,6 +1123,8 @@ fn validate_normal_placement(
 fn folded_primary_allowed(primary: PrimaryInstruction, custom_owned: bool) -> bool {
     match primary {
         PrimaryInstruction::FoldedBlock(_)
+        | PrimaryInstruction::FoldedBlockRegister
+        | PrimaryInstruction::CallRegister
         | PrimaryInstruction::Call(_)
         | PrimaryInstruction::Return
         | PrimaryInstruction::CustomReturn

@@ -466,7 +466,9 @@ fn verifies_the_complete_full_primary_attachment_compatibility_matrix() {
             let repeat_on_call_or_return = attachment.is_repeat()
                 && matches!(
                     primary,
-                    PrimaryInstruction::Call(_) | PrimaryInstruction::Return
+                    PrimaryInstruction::Call(_)
+                        | PrimaryInstruction::CallRegister
+                        | PrimaryInstruction::Return
                 );
             let inert_unencoded_read =
                 !primary.is_encodable() && matches!(attachment, Attachment::ReadCode);

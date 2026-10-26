@@ -59,6 +59,8 @@ export const PRIMARIES: PrimaryInfo[] = [
   ...Array.from({ length: 10 }, (_, slot) =>
     primary(`[${slot}`, `CALL ${slot}`, 139 + slot, 'call')
   ),
+  primary('[r', 'CALL_REGISTER', 205, 'call', 'Calls the Function selected by the current register byte; values above 9 skip the call. Empty Function slots keep wrapping.'),
+  primary('$r', 'FOLDED_BLOCK_REGISTER', 150, 'folded', 'Calls the board-local Folded Block selected by the current register byte; values above 9 skip the call. Each repeated invocation rereads the target.'),
   primary(']', 'RETURN', 93, 'return'),
   primary('$!', 'NEG', 69, 'arithmetic', 'Inverts all eight bits of the selected byte (255 minus its value).'),
   primary('$&', 'NAND', 74, 'nand'),

@@ -25,3 +25,10 @@ Provide CodeGrid file association, TextMate syntax highlighting, language config
 ## Validation
 
 Test grammar/token scopes, formatting idempotence and preservation, provider behavior, activation, and the optional-LSP failure fallback. Keep English as the default package language and use English for ordinary documentation, including the extension README. Dedicated localization catalogs and their translated UI may use their target languages. Preserve CodeGrid syntax, configuration keys, protocol fields, and stable error identifiers across locales.
+
+## Register-call contract (2026-10-26)
+
+The canonical Primaries are `CallRegister` (`[r`, code 205) and
+`FoldedBlockRegister` (`$r`, code 150). Use the shared model inventory. Function
+Repeat and both register calls inside Folded Blocks are forbidden. Runtime
+selection, empty-slot execution and per-pass target reads belong only to VM.

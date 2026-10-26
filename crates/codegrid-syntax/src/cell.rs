@@ -113,7 +113,9 @@ fn parse_attached_primary(token: &str) -> Result<CellToken, CellTokenError> {
         if attachment.is_repeat()
             && matches!(
                 primary,
-                PrimaryInstruction::Call(_) | PrimaryInstruction::Return
+                PrimaryInstruction::Call(_)
+                    | PrimaryInstruction::CallRegister
+                    | PrimaryInstruction::Return
             )
         {
             return Err(CellTokenError {
@@ -288,7 +290,9 @@ mod tests {
                     && (!attachment.is_repeat()
                         || !matches!(
                             primary,
-                            PrimaryInstruction::Call(_) | PrimaryInstruction::Return
+                            PrimaryInstruction::Call(_)
+                                | PrimaryInstruction::CallRegister
+                                | PrimaryInstruction::Return
                         ));
                 if compatible {
                     assert_eq!(

@@ -936,7 +936,14 @@ fn execute_primary(
                 stage_register(thread, code, draft);
             }
         }
-        PrimaryInstruction::Call(function) => {
+        PrimaryInstruction::Call(_) | PrimaryInstruction::CallRegister => {
+            let function = match primary {
+                PrimaryInstruction::Call(function) => function,
+                _ => match Slot::new(value) {
+                    Some(function) => function,
+                    None => return Flow::Move,
+                },
+            };
             let current_function = match thread.board {
                 BoardId::Function(current) => Some(current),
                 BoardId::Main => None,
@@ -954,15 +961,24 @@ fn execute_primary(
                 draft.fault = Some(VmFault::InternalInvariantViolation);
                 return Flow::Stay;
             };
-            let is_tail = current_function == Some(function)
+            let is_tail = matches!(primary, PrimaryInstruction::Call(_))
+                && current_function == Some(function)
                 && program.is_tail_call(mode.code_grid, function, index);
-            let Some(target) = runtime.functions.get(&function) else {
-                draft.fault = Some(VmFault::InternalInvariantViolation);
-                return Flow::Stay;
-            };
-            let Some((position, direction)) = first_entry(target) else {
-                draft.fault = Some(VmFault::InternalInvariantViolation);
-                return Flow::Stay;
+            let (position, direction) = match runtime.functions.get(&function) {
+                Some(target) => match first_entry(target) {
+                    Some(entry) => entry,
+                    None => {
+                        draft.fault = Some(VmFault::InternalInvariantViolation);
+                        return Flow::Stay;
+                    }
+                },
+                None if primary == PrimaryInstruction::CallRegister => {
+                    (Coordinate { x: 0, y: 0 }, Direction::Right)
+                }
+                None => {
+                    draft.fault = Some(VmFault::InternalInvariantViolation);
+                    return Flow::Stay;
+                }
             };
             if !is_tail {
                 thread.call_stack.push(CallFrame {
@@ -1042,10 +1058,24 @@ fn execute_primary(
                 draft,
             );
         }
-        PrimaryInstruction::FoldedBlock(fold_id) => {
+        PrimaryInstruction::FoldedBlock(_) | PrimaryInstruction::FoldedBlockRegister => {
+            let fold_id = match primary {
+                PrimaryInstruction::FoldedBlock(fold_id) => fold_id,
+                _ => match Slot::new(value) {
+                    Some(fold_id) => fold_id,
+                    None => return Flow::Move,
+                },
+            };
             if !runtime_board(runtime, thread.board)
                 .is_some_and(|board| board.folded_blocks.contains_key(&fold_id))
             {
+                if primary == PrimaryInstruction::FoldedBlockRegister {
+                    thread.phase = ExecutionPhase::FoldResume {
+                        saved_outer_direction: thread.direction,
+                        outer_repeat: repetition,
+                    };
+                    return Flow::Stay;
+                }
                 draft.errors.push(RuntimeError::new(
                     step,
                     mode.scope,
@@ -1543,10 +1573,7 @@ fn move_normal_cell(
     draft: &mut StepDraft,
     _mode: ExecutionMode,
 ) {
-    let Some(board) = runtime_board(runtime, thread.board) else {
-        draft.fault = Some(VmFault::InternalInvariantViolation);
-        return;
-    };
+    let board = runtime_board(runtime, thread.board).unwrap_or(&runtime.main);
     if let Some(next) = move_normal(thread.position, thread.direction, board.width, board.height) {
         thread.position = next;
     } else {

@@ -135,7 +135,12 @@ impl Vm {
         }
         let board = match thread.board {
             codegrid_ir::BoardId::Main => Some(&self.runtime_program.main),
-            codegrid_ir::BoardId::Function(slot) => self.runtime_program.functions.get(&slot),
+            codegrid_ir::BoardId::Function(slot) => Some(
+                self.runtime_program
+                    .functions
+                    .get(&slot)
+                    .unwrap_or(&self.runtime_program.main),
+            ),
         };
         let Some(board) = board else {
             return false;

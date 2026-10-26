@@ -26,3 +26,10 @@ host errors or implement transport or editor policy.
 ## Validation
 
 Add focused unit tests for model invariants. Check formatting and the model crate's native and supported `wasm32` builds when toolchains are available.
+
+## Register-call contract (2026-10-26)
+
+The canonical Primaries are `CallRegister` (`[r`, code 205) and
+`FoldedBlockRegister` (`$r`, code 150). Use the shared model inventory. Function
+Repeat and both register calls inside Folded Blocks are forbidden. Runtime
+selection, empty-slot execution and per-pass target reads belong only to VM.

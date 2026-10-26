@@ -122,6 +122,33 @@ RETURN without an active call frame is a ReturnWithoutCall runtime error. Source
 
 A statically proven self-tail CALL may reuse the current call frame. Only verifier-derived TailCallSite metadata may enable this optimization; hosts must not construct it independently. The current IR analyzer conservatively excludes any Function containing a conditional prefix from tail-call optimization. For remaining Functions it accepts a direct call from a Function to itself only if the CALL has no Attachment and every reachable post-call navigation path, under fixed four-direction wrapping, consists only of empty cells and direction changes and reaches RETURN without looping, entering an Entry, encountering an Attachment or another Primary. The analysis conservatively includes all directions that may reach the site, including the false fall-through of guarded control flow and both outcomes of reads, and every RandomDirection result. This conservative verifier rule is normative.
 
+### 5.4.1 Register-selected calls
+
+`[r` and `$r` read the active bank's selected register byte from the current
+transition-start snapshot, after a passing conditional prefix. Bytes 0 through
+9 select the Function in the current CodeGrid or Folded Block on the current
+board. The pointer index itself is not the target. Values above 9 perform a
+counted Primary no-op and ordinary movement: no frame, callee, or resume phase
+is entered. Compatible non-repeat suffixes execute on that same skipped-call
+transition. A false prefix skips the Primary and suffix without target lookup.
+
+A successful `[r` uses CALL's register-bank copy, frame, entry, RETURN and
+AfterCall rules. Dynamic calls never reuse a statically proven tail frame.
+An unfilled Function slot executes an implicit empty board with the owning
+CodeGrid Main's dimensions, default entry (0,0) facing Right, and normal wrapping;
+it does not return automatically. Explicit Function definitions keep their
+actual geometry. Program views retain only authored definitions; logical empty
+slots need not allocate or serialize synthetic boards.
+
+A successful `$r` uses Fold entry, first-cell execution and FoldResume rules.
+An unfilled Folded Block slot is empty and enters FoldResume on the call
+transition. Every repeated invocation rereads the current selected register and
+pointer. The Repeat total is captured once, including for `$rxr`. An invalid
+target consumes one repetition but has no FoldResume overhead. Successful
+invocations retain their fixed target until completion; returning never rereads
+it. Prefix rechecks follow the ordinary whole-fold Repeat rules. Both register
+calls preserve F and all registers except normal callee/Attachment effects.
+
 ### 5.5 Custom invocation
 
 Executing a Custom Primary starts a fresh isolated invocation of the referenced Custom CodeGrid. It executes synchronously inside the current outer thread dispatch. Its internal threads progress on aligned internal rounds until the invocation returns, halts, or encounters a runtime error.
@@ -212,6 +239,8 @@ Every ordinary Primary except Halt is followed by its defined movement or contro
 | Push | Push the selected register byte onto the current thread's data stack. |
 | PopAdd | Pop a data byte and add modulo 256 when present; on empty, perform the counted no-op specified in Section 6.2. |
 | Decode / Encode | Convert between selected register byte and Instruction Stack according to Section 6.3. |
+| CallRegister | Apply register-selected CALL as specified in Section 5.4.1. |
+| FoldedBlockRegister | Apply register-selected Fold as specified in Section 5.4.1. |
 | Call(slot) | Enter the referenced Function Board using Section 5.4. |
 | Return | Return through the current frame using Section 5.4, or raise ReturnWithoutCall. |
 | Nand | Pop a data byte and set register to the eight-bit complement of register AND byte when present; on empty, perform the counted no-op specified in Section 6.2. |
@@ -300,6 +329,8 @@ These encodable Primaries have canonical byte Instruction Codes and may be store
 | { | 123 |
 | } | 125 |
 | Call(slot 0 through 9) | 139 through 148, respectively |
+| $r | 150 |
+| [r | 205 |
 
 Return, OutputImmediate, Custom, CustomReturn, and Halt have no Instruction Code. EMPTY has code 32 but is not a Primary. Attachment tokens are not Instruction Codes.
 

@@ -218,6 +218,7 @@ pub enum PrimaryInstruction {
     Decode,
     Encode,
     Call(Slot),
+    CallRegister,
     Return,
     Neg,
     Nand,
@@ -226,6 +227,7 @@ pub enum PrimaryInstruction {
     MovePage(PageDirection),
     Shift(ShiftDirection),
     FoldedBlock(Slot),
+    FoldedBlockRegister,
     Custom(Slot),
     CustomReturn,
     Halt,
@@ -252,6 +254,8 @@ impl PrimaryInstruction {
             Self::PopAdd,
             Self::Decode,
             Self::Encode,
+            Self::CallRegister,
+            Self::FoldedBlockRegister,
             Self::Return,
             Self::Neg,
             Self::Nand,
@@ -295,6 +299,8 @@ impl PrimaryInstruction {
             ")" => Self::PopAdd,
             "&" => Self::Decode,
             "%" => Self::Encode,
+            "[r" => Self::CallRegister,
+            "$r" => Self::FoldedBlockRegister,
             "]" => Self::Return,
             "$!" => Self::Neg,
             "$&" => Self::Nand,
@@ -333,6 +339,7 @@ impl PrimaryInstruction {
             Self::Decode => "&".to_owned(),
             Self::Encode => "%".to_owned(),
             Self::Call(slot) => format!("[{}", slot.get()),
+            Self::CallRegister => "[r".to_owned(),
             Self::Return => "]".to_owned(),
             Self::Neg => "$!".to_owned(),
             Self::Nand => "$&".to_owned(),
@@ -343,6 +350,7 @@ impl PrimaryInstruction {
             Self::Shift(ShiftDirection::Left) => "$<".to_owned(),
             Self::Shift(ShiftDirection::Right) => "$>".to_owned(),
             Self::FoldedBlock(slot) => format!("${}", slot.get()),
+            Self::FoldedBlockRegister => "$r".to_owned(),
             Self::Custom(slot) => format!("#{}", slot.get()),
             Self::CustomReturn => "#]".to_owned(),
             Self::Halt => ";".to_owned(),
@@ -381,6 +389,7 @@ impl PrimaryInstruction {
             Self::Decode => Some(38),
             Self::Encode => Some(37),
             Self::Call(slot) => Some(139 + slot.get()),
+            Self::CallRegister => Some(205),
             Self::Neg => Some(69),
             Self::Nand => Some(74),
             Self::MemoryLoad => Some(76),
@@ -390,6 +399,7 @@ impl PrimaryInstruction {
             Self::Shift(ShiftDirection::Left) => Some(96),
             Self::Shift(ShiftDirection::Right) => Some(98),
             Self::FoldedBlock(slot) => Some(84 + slot.get()),
+            Self::FoldedBlockRegister => Some(150),
             Self::Return
             | Self::OutputImmediate(_)
             | Self::Custom(_)
@@ -429,6 +439,8 @@ impl PrimaryInstruction {
             125 => Self::MoveRegisterPointer(PointerDirection::Right),
             84..=93 => Self::FoldedBlock(Slot::new(code - 84)?),
             139..=148 => Self::Call(Slot::new(code - 139)?),
+            150 => Self::FoldedBlockRegister,
+            205 => Self::CallRegister,
             _ => return None,
         };
         Some(primary)
@@ -607,7 +619,7 @@ mod tests {
         let valid_codes = [
             32, 33, 37, 38, 40, 41, 43, 44, 45, 46, 60, 62, 126, 124, 74, 76, 77, 79, 81, 84, 85,
             86, 87, 88, 89, 90, 91, 92, 93, 94, 96, 98, 118, 123, 125, 139, 140, 141, 142, 143,
-            144, 145, 146, 147, 148,
+            144, 145, 146, 147, 148, 150, 205,
         ];
 
         for code in valid_codes {
@@ -699,7 +711,7 @@ mod tests {
     #[test]
     fn complete_primary_tokens_round_trip_without_duplicates() {
         let forms = PrimaryInstruction::source_forms();
-        assert_eq!(forms.len(), 68);
+        assert_eq!(forms.len(), 70);
         let mut tokens = std::collections::BTreeSet::new();
 
         for form in forms {

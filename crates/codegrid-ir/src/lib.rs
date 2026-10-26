@@ -543,7 +543,9 @@ fn validate_attachment(
     if attachment.is_repeat()
         && matches!(
             primary,
-            PrimaryInstruction::Call(_) | PrimaryInstruction::Return
+            PrimaryInstruction::Call(_)
+                | PrimaryInstruction::CallRegister
+                | PrimaryInstruction::Return
         )
     {
         errors.push(error(
@@ -653,6 +655,8 @@ fn validate_reference(
 pub fn folded_primary_allowed(primary: PrimaryInstruction, outer: bool) -> bool {
     match primary {
         PrimaryInstruction::FoldedBlock(_)
+        | PrimaryInstruction::FoldedBlockRegister
+        | PrimaryInstruction::CallRegister
         | PrimaryInstruction::Call(_)
         | PrimaryInstruction::Return
         | PrimaryInstruction::CustomReturn

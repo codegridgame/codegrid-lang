@@ -36,11 +36,11 @@ suite('Full editor metadata', () => {
   });
 
   test('recognizes complete source atoms without accepting split or malformed tokens', () => {
-    for (const token of ['$!', '$!*', '$!=', '$!x3', '$!xr', '?0$!', '+x3', '+xr', ',*', '?!,x3', '?!}', '[0=', ']=', '$0*', '$0=', '$0x3', '$0xr', '$&x2', '?=', '?==', '?=*', '?=x3', '?1?=', '?0??', '?2;', '?1.3']) {
+    for (const token of ['$r', '$rxr', '$rx3', '$r*', '$r=', '[r', '[r*', '[r=', '?0[r', '$!', '$!*', '$!=', '$!x3', '$!xr', '?0$!', '+x3', '+xr', ',*', '?!,x3', '?!}', '[0=', ']=', '$0*', '$0=', '$0x3', '$0xr', '$&x2', '?=', '?==', '?=*', '?=x3', '?1?=', '?0??', '?2;', '?1.3']) {
       assert.ok(parseCellToken(token), `${token} is a complete attached cell token`);
     }
     for (const token of [
-      ',^', ',v', ',<', ',>', '?!,vx3', '?!?0+', '?', '#^', '#v', '#<', '#>', '?0', '?3+', '?0?1+', '?0_', '?0~>', '?x1', '+x10', '+x2x3', '^*=', '[0x2', ']x2', '$0x1', ';=', '#00', '[10', '$10', '#vextra', '~V', '~v*', '_x2', '++', ';x2',
+      '[rx2', '[rxr', '$R', '[R', ',^', ',v', ',<', ',>', '?!,vx3', '?!?0+', '?', '#^', '#v', '#<', '#>', '?0', '?3+', '?0?1+', '?0_', '?0~>', '?x1', '+x10', '+x2x3', '^*=', '[0x2', ']x2', '$0x1', ';=', '#00', '[10', '$10', '#vextra', '~V', '~v*', '_x2', '++', ';x2',
     ]) {
       assert.strictEqual(parseCellToken(token), null, `${token} must not be split into a known token`);
     }
@@ -74,6 +74,8 @@ suite('Full editor metadata', () => {
 
 suite('Full hover descriptions', () => {
   test('describes established instructions and generic Full instruction names', () => {
+    assert.ok(describeToken('$r')?.includes('rereads the target'));
+    assert.ok(describeToken('[r')?.includes('Empty Function slots'));
     assert.ok(describeToken('!')?.includes('Sets the selected register to zero'));
     assert.ok(describeToken('!')?.includes('Preserves all stacks'));
     assert.ok(describeToken(',')?.includes('F=1'));

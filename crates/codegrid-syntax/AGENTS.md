@@ -22,3 +22,10 @@ Assign stable diagnostic/helper error codes at their detection site, following
 ## Validation
 
 Test tokenization, incomplete/malformed input recovery, spans (including UTF-8 and CRLF), and formatter stability. Run native and supported `wasm32` checks when available.
+
+## Register-call contract (2026-10-26)
+
+The canonical Primaries are `CallRegister` (`[r`, code 205) and
+`FoldedBlockRegister` (`$r`, code 150). Use the shared model inventory. Function
+Repeat and both register calls inside Folded Blocks are forbidden. Runtime
+selection, empty-slot execution and per-pass target reads belong only to VM.

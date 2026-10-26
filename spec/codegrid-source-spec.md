@@ -130,12 +130,14 @@ Every Primary token in the canonical language inventory is listed here. Instruct
 | `(`, `)` | Push the current register; pop and add. |
 | `&`, `%` | Decode or encode the instruction stack. |
 | `[0`–`[9` | Call Function `0`–`9` in the current CodeGrid. |
+| `[r` | Call the Function selected by the current register byte; values above 9 skip the call. |
 | `]` | Return from a Function. |
 | `$&` | NAND operation. |
 | `$(`, `$)` | Load from or store to memory. |
 | `$+`, `$-` | Move the Page forward or backward. |
 | `$<`, `$>` | Shift the current register left or right. |
 | `$0`–`$9` | Enter Folded Block `0`–`9` owned by the current Board. |
+| `$r` | Enter the board-local Folded Block selected by the current register byte; values above 9 skip the call. |
 | `#0`–`#9` | Call Custom CodeGrid `0`–`9`. |
 | `#]` | Return from a Custom invocation. |
 | `;` | Halt. |
@@ -165,7 +167,7 @@ are not Repeat syntax; `$!×2` and whitespace-separated `?0 $!` or `$! x2`
 are invalid. NEG is allowed on outer and Custom Main and Function Boards,
 and in Folded Blocks with any compatible suffix, under the existing placement rules.
 
-ReadCode may be attached to any Primary. When the Primary has no Instruction Code, ReadCode is accepted as an inert, uncounted no-op. WriteCode may be attached to any Primary with an Instruction Code, and to RETURN `]` as an inert, uncounted no-op. Repeat (`x2`–`x9` or `xr`) may be attached to any Primary with an Instruction Code except Function CALL and RETURN, and to immediate output Primaries `.0`–`.9`. Thus Folded Block calls `$0`–`$9` accept ReadCode, WriteCode, and Repeat; Custom calls, Custom returns, and HALT accept ReadCode only; immediate output accepts ReadCode and Repeat; RETURN accepts ReadCode and WriteCode but not Repeat. No other Primary-suffix combination is valid. Conditional prefix eligibility is independent.
+ReadCode may be attached to any Primary. When the Primary has no Instruction Code, ReadCode is accepted as an inert, uncounted no-op. WriteCode may be attached to any Primary with an Instruction Code, and to RETURN `]` as an inert, uncounted no-op. Repeat (`x2`–`x9` or `xr`) may be attached to any Primary with an Instruction Code except Function CALL (including `[r`) and RETURN, and to immediate output Primaries `.0`–`.9`. Thus Folded Block calls `$0`–`$9` and `$r` accept ReadCode, WriteCode, and Repeat; Custom calls, Custom returns, and HALT accept ReadCode only; immediate output accepts ReadCode and Repeat; RETURN accepts ReadCode and WriteCode but not Repeat. No other Primary-suffix combination is valid. Conditional prefix eligibility is independent.
 
 ## 7. Contextual placement and name resolution
 
@@ -179,6 +181,7 @@ Static validation checks each Primary against its owning CodeGrid and Board:
 
 - `]` is valid only on a Function Board.
 - `#]` is valid only directly on a Custom Main Board; it is not valid on an outer board or a Function Board.
+- Register calls `[r` and `$r` have no static target reference. All ten target slots are available logically; unfilled slots have empty content. Both forms are forbidden inside Folded Blocks. Lowercase `r` is required; `[rx2` and `[rxr` are invalid. See the VM register-call decision for empty-slot geometry and skipped-call timing.
 - A Function CALL `[n` resolves only to Function `n` in the same CodeGrid. Calls may be forward references. A reference to an undefined Function is invalid.
 - A Folded Block call `$n` resolves only to Folded Block `n` owned by the current Board. It cannot resolve to a Main Board or Function Board owned Folded Block in another scope.
 - A Custom call `#n` resolves to a declared Custom CodeGrid. Custom calls are permitted from outer CodeGrid code, including the outer Main Board, Function Boards, and outer-owned Folded Blocks. They are forbidden from inside a Custom CodeGrid, including its Main Board, Function Boards, and Folded Blocks.

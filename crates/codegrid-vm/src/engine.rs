@@ -1334,7 +1334,16 @@ fn runtime_cell(
     board: BoardId,
     position: Coordinate,
 ) -> Option<&codegrid_ir::Cell> {
-    runtime_board(program, board)?.cell(position.x, position.y)
+    if let Some(board) = runtime_board(program, board) {
+        board.cell(position.x, position.y)
+    } else if position.x < program.main.width && position.y < program.main.height {
+        // Unfilled register-selected Function slots are logical empty boards.
+        // Keep them sparse instead of allocating every possible Function.
+        static EMPTY: codegrid_ir::Cell = codegrid_ir::Cell::empty();
+        Some(&EMPTY)
+    } else {
+        None
+    }
 }
 
 fn runtime_static_primary(

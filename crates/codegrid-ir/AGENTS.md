@@ -23,3 +23,10 @@ verification origins; the compiler forwards them without message classification.
 ## Validation
 
 Add verifier tests for malformed identities, references, layouts, and version boundaries. Check native and supported `wasm32` builds when available.
+
+## Register-call contract (2026-10-26)
+
+The canonical Primaries are `CallRegister` (`[r`, code 205) and
+`FoldedBlockRegister` (`$r`, code 150). Use the shared model inventory. Function
+Repeat and both register calls inside Folded Blocks are forbidden. Runtime
+selection, empty-slot execution and per-pass target reads belong only to VM.
