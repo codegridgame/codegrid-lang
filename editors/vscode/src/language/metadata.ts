@@ -42,7 +42,7 @@ export const PRIMARIES: PrimaryInfo[] = [
   primary('??', 'Random Direction', 126, 'random'),
   primary('?=', 'CMP', 124, 'compare', 'Compares Data Stack top A without popping with the selected register B. Writes 0 if equal, 1 if A > B, or 2 if A < B. An empty stack preserves the register.'),
   primary(',', 'READ', 44, 'read', 'Reads a byte into the selected register and sets F=0. Exhaustion preserves the register and sets F=1; direction is unchanged.'),
-  primary('!', 'CLEAR', 33, 'clear'),
+  primary('!', 'CLEAR', 33, 'clear', 'Sets the selected register to zero, regardless of Data Stack contents. Preserves all stacks, the register pointer, Page, and F.'),
   primary('+', 'ADD', 43, 'arithmetic', 'Increments R0 with 8-bit wrapping.'),
   primary('-', 'SUB', 45, 'arithmetic', 'Decrements R0 with 8-bit wrapping.'),
   primary('{', 'MOVE_REGISTER_POINTER_LEFT', 123, 'pointer'),

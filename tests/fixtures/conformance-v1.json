@@ -229,8 +229,8 @@
       }
     },
     {
-      "id": "pop-clear-pops-and-zeros-before-output",
-      "source": "~> , ( ! . ;\n",
+      "id": "clear-preserves-stack-and-zeros-before-output",
+      "source": "~> , ( ! . ) . ;\n",
       "run": {
         "seed": "0",
         "input": [
@@ -243,6 +243,41 @@
         "status": "halted",
         "vm_status": "halted",
         "output": [
+          0,
+          37
+        ],
+        "registers": [
+          37,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "error_codes": [],
+        "committed_steps": "8"
+      }
+    },
+    {
+      "id": "clear-empty-stack-preserves-flag",
+      "source": "~> , , ! ?!.0 . ;\n",
+      "run": {
+        "seed": "0",
+        "input": [
+          37
+        ],
+        "max_steps": "10"
+      },
+      "expected": {
+        "process_exit_code": 0,
+        "status": "halted",
+        "vm_status": "halted",
+        "output": [
+          0,
           0
         ],
         "registers": [
@@ -257,8 +292,9 @@
           0,
           0
         ],
+        "remaining_input": [],
         "error_codes": [],
-        "committed_steps": "6"
+        "committed_steps": "7"
       }
     },
     {
@@ -3081,10 +3117,10 @@
         "status": "halted",
         "vm_status": "halted",
         "output": [
-          0
+          250
         ],
         "registers": [
-          0,
+          250,
           0,
           0,
           0,
@@ -3407,7 +3443,7 @@
           1
         ],
         "registers": [
-          255,
+          0,
           0,
           0,
           0,

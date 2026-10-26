@@ -5201,7 +5201,7 @@ mod tests {
     }
 
     #[test]
-    fn pop_clear_consumes_a_data_value_and_zeros_the_register() {
+    fn clear_preserves_a_data_value_and_zeros_the_register() {
         use codegrid_model::PrimaryInstruction;
 
         let program = verified_cells(
@@ -5210,7 +5210,7 @@ mod tests {
                 Cell::instruction(PrimaryInstruction::Read, None),
                 Cell::instruction(PrimaryInstruction::Push, None),
                 Cell::instruction(PrimaryInstruction::Read, None),
-                Cell::instruction(PrimaryInstruction::PopClear, None),
+                Cell::instruction(PrimaryInstruction::Clear, None),
                 Cell::instruction(PrimaryInstruction::Output, None),
                 Cell::instruction(PrimaryInstruction::Halt, None),
             ],
@@ -5228,7 +5228,7 @@ mod tests {
         assert_eq!(vm.snapshot().threads[0].status_flag, 1);
         assert_eq!(vm.step().status, VmStatus::Running);
         assert_eq!(vm.snapshot().registers[0], 0);
-        assert!(vm.snapshot().threads[0].data_stack.is_empty());
+        assert_eq!(vm.snapshot().threads[0].data_stack, vec![37]);
         assert_eq!(vm.snapshot().threads[0].status_flag, 1);
         assert_eq!(vm.step().status, VmStatus::Running);
         assert_eq!(vm.step().status, VmStatus::Halted);
@@ -5238,7 +5238,7 @@ mod tests {
     }
 
     #[test]
-    fn pop_clear_on_an_empty_stack_preserves_the_register_and_flag() {
+    fn clear_on_an_empty_stack_zeros_the_register_and_preserves_the_flag() {
         use codegrid_model::PrimaryInstruction;
 
         let program = verified_cells(
@@ -5246,7 +5246,7 @@ mod tests {
                 Cell::entry(Direction::Right),
                 Cell::instruction(PrimaryInstruction::Read, None),
                 Cell::instruction(PrimaryInstruction::Read, None),
-                Cell::instruction(PrimaryInstruction::PopClear, None),
+                Cell::instruction(PrimaryInstruction::Clear, None),
                 Cell::instruction(PrimaryInstruction::Output, None),
                 Cell::instruction(PrimaryInstruction::Halt, None),
             ],
@@ -5259,12 +5259,57 @@ mod tests {
             assert_eq!(vm.step().status, VmStatus::Running);
         }
         let snapshot = vm.snapshot();
-        assert_eq!(snapshot.registers[0], 37);
+        assert_eq!(snapshot.registers[0], 0);
         assert!(snapshot.threads[0].data_stack.is_empty());
         assert_eq!(snapshot.threads[0].status_flag, 1);
         assert_eq!(vm.step().status, VmStatus::Running);
         assert_eq!(vm.step().status, VmStatus::Halted);
-        assert_eq!(vm.snapshot().output, vec![37]);
+        assert_eq!(vm.snapshot().output, vec![0]);
+    }
+
+    #[test]
+    fn clear_only_changes_the_selected_register_and_moves_normally() {
+        use codegrid_model::{InstructionStackItem, PrimaryInstruction};
+
+        let program = verified_cells(
+            vec![
+                Cell::instruction(PrimaryInstruction::Clear, None),
+                Cell::instruction(PrimaryInstruction::Halt, None),
+            ],
+            2,
+        );
+        for flag in [0, 1] {
+            let mut vm = Vm::new(program.clone(), [42], config()).unwrap();
+            vm.registers = [37; 10];
+            vm.threads[0].register_pointer = 3;
+            vm.threads[0].status_flag = flag;
+            vm.threads[0].page = num_bigint::BigInt::from(-5);
+            vm.threads[0].data_stack = vec![12, 34];
+            vm.threads[0].instruction_stack = vec![
+                InstructionStackItem::from_primary(PrimaryInstruction::Add).unwrap(),
+            ];
+            let before = vm.snapshot();
+
+            let prepared = vm.prepare_step();
+            assert_eq!(
+                prepared.report().footprint.operations,
+                BTreeMap::from([(crate::InstructionKind::Clear, 1)])
+            );
+            assert_eq!(prepared.commit().status, VmStatus::Running);
+
+            let after = vm.snapshot();
+            let mut expected_registers = before.registers;
+            expected_registers[3] = 0;
+            assert_eq!(after.registers, expected_registers);
+            let mut expected_thread = before.threads[0].clone();
+            expected_thread.position = Coordinate { x: 1, y: 0 };
+            assert_eq!(after.threads[0], expected_thread);
+            assert_eq!(after.input, before.input);
+            assert_eq!(after.output, before.output);
+            assert_eq!(after.memory, before.memory);
+            assert_eq!(after.runtime_program, before.runtime_program);
+            assert_eq!(after.committed_steps, 1);
+        }
     }
 
     #[test]
@@ -6198,7 +6243,7 @@ mod tests {
         outer_cells[6] = Cell::entry(Direction::Right);
         outer_cells[7] = Cell::instruction(PrimaryInstruction::Custom(custom_id), None);
         outer_cells[9] = Cell::entry(Direction::Right);
-        outer_cells[10] = Cell::instruction(PrimaryInstruction::PopClear, None);
+        outer_cells[10] = Cell::instruction(PrimaryInstruction::Clear, None);
         outer_cells[11] = Cell::instruction(PrimaryInstruction::Call(function_id), None);
         outer_cells[12] = Cell::entry(Direction::Left);
 

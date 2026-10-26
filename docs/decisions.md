@@ -8,6 +8,16 @@ do not replace current specifications. Game-only decisions and game-specific
 verification excerpts are archived in the sibling
 [Game Runtime history index](../../bf-steam-wt/doc/codegrid-lang-history/README.md).
 
+## CLEAR replaces POPCLEAR (2026-10-26)
+
+Explicit user decision: `!` is CLEAR. It unconditionally sets the selected
+register to zero and preserves every other register, all stacks, the register
+pointer, Page, and F. It uses ordinary movement and compatible Attachments;
+each execution remains one operation. Token `!` and Instruction Code 33 stay
+the same. Canonical Rust instruction and footprint names are `Clear`; the game
+authoring capability is `CLEAR`, independently of `STACK`. Replace the current
+unpublished contracts directly without retaining a POPCLEAR alias.
+
 ## Sources of truth
 
 - [`spec/codegrid-source-spec.md`](../spec/codegrid-source-spec.md) is the normative Full authority for source syntax and static acceptance. Source-language choices are resolved below, and the source/compiler plus IR implementation gates have focused conformance coverage.

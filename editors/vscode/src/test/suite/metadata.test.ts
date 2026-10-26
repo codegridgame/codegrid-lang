@@ -74,6 +74,8 @@ suite('Full editor metadata', () => {
 
 suite('Full hover descriptions', () => {
   test('describes established instructions and generic Full instruction names', () => {
+    assert.ok(describeToken('!')?.includes('Sets the selected register to zero'));
+    assert.ok(describeToken('!')?.includes('Preserves all stacks'));
     assert.ok(describeToken(',')?.includes('F=1'));
     assert.ok(describeToken('?0^')?.includes('register equals 0'));
     assert.ok(describeToken('$>')?.includes('logically'));

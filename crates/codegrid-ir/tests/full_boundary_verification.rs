@@ -531,7 +531,7 @@ fn accepts_full_primary_inventory_in_scoped_programs() {
             P::Read,
             P::Read,
             P::Read,
-            P::PopClear,
+            P::Clear,
             P::Add,
             P::Sub,
             P::MoveRegisterPointer(PointerDirection::Left),

@@ -602,7 +602,7 @@ fn primary_description(primary: PrimaryInstruction) -> String {
         }
         PrimaryInstruction::Compare => "Compare Data Stack top A without popping with selected register B; write 0 for equality, 1 for A > B, or 2 for A < B. An empty stack leaves the register unchanged.".to_owned(),
         PrimaryInstruction::Read => "Read a byte into the selected register and set F=0; on exhaustion preserve the register and set F=1. Direction is unchanged.".to_owned(),
-        PrimaryInstruction::PopClear => "When the data stack is nonempty, pop one byte and set the selected register to zero; otherwise do nothing.".to_owned(),
+        PrimaryInstruction::Clear => "Set the selected register to zero, regardless of data stack contents. Preserve all stacks, the register pointer, Page, and F.".to_owned(),
         PrimaryInstruction::Add => "Increment the selected register with 8-bit wrapping.".to_owned(),
         PrimaryInstruction::Sub => "Decrement the selected register with 8-bit wrapping.".to_owned(),
         PrimaryInstruction::MoveRegisterPointer(direction) => format!(

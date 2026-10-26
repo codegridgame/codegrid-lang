@@ -31,7 +31,7 @@ F is one bit owned by the active execution context, not a shared register or an 
 
 Empty POPADD sets F=1 while preserving the selected register and empty stack. It remains a counted normal operation with ordinary movement, not an error. This explicitly extends the existing empty-stack no-op behavior. Empty and nonempty NAND preserve F. Arithmetic still wraps modulo 256; INC/POPADD detect unsigned carry and DEC detects borrow.
 
-Every other operation preserves F, including CMP, PUSH, NEG, NAND, POPCLEAR, OUTPUT, immediate output, direction, random direction, codec, memory, Page, ReadCode/WriteCode, HALT, Empty, Entry, and board movement or boundary wrapping. Calls and returns switch the active F scope as described below. Existing runtime errors retain their identities and return surfaces; F does not replace them.
+Every other operation preserves F, including CMP, PUSH, NEG, NAND, CLEAR, OUTPUT, immediate output, direction, random direction, codec, memory, Page, ReadCode/WriteCode, HALT, Empty, Entry, and board movement or boundary wrapping. Calls and returns switch the active F scope as described below. Existing runtime errors retain their identities and return surfaces; F does not replace them.
 
 ## Scope, timing, and transactions
 

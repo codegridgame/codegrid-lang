@@ -180,7 +180,7 @@ pointer right sets it on R9-to-R0 wrap. Each of these operations overwrites F
 with zero when its stated condition is false. READ follows Section 7.
 
 All other instructions preserve F, including empty/nonempty NAND, NEG, CMP,
-POPCLEAR, codec, memory, Page, output, direction, Attachments and movement.
+CLEAR, codec, memory, Page, output, direction, Attachments and movement.
 An empty POPADD preserves the register and stack while setting F=1.
 False prefixes preserve F and skip both Primary and suffix. Repeat checks the
 current flag before every attempted execution; a false test cancels the rest.
@@ -203,7 +203,7 @@ Every ordinary Primary except Halt is followed by its defined movement or contro
 | RandomDirection | Draw once from that thread's deterministic PRNG and set its direction. |
 | Compare | Peek thread Data Stack top A without popping, compare against selected register B as unsigned bytes, and stage 0 if equal, 1 if A > B, or 2 if A < B. With an empty stack, preserve the register and stack. Use ordinary movement and count one operation. Custom CMP uses the internal thread stack, not the caller stack. |
 | Read | Consume the next outer input byte or Custom caller-stack top and write the selected register with F=0; on exhaustion preserve the register with F=1. Preserve direction in both cases. |
-| PopClear | When the Data Stack is nonempty, pop one byte and set the selected register to zero; with an empty stack, preserve the register and perform the counted no-op. Preserve F in either case. |
+| Clear | Set the selected register to zero, regardless of Data Stack contents. Preserve all other registers, stacks, the register pointer, Page, and F. Use ordinary movement and count one operation. |
 | Add / Sub | Increment / decrement the selected register modulo 256. |
 | Neg | Set the selected byte to its eight-bit complement, `!value` or `255 - value`. Preserve the pointer and every other register; use ordinary movement. |
 | MoveRegisterPointer(left/right) | Move the thread pointer one slot in the encoded direction, wrapping between R0 and R9. |
