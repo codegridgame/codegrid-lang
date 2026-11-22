@@ -1,5 +1,13 @@
 # Mandatory downstream synchronization
 
+## 2026-11-22 Committed condition observations
+
+Lang implementation `24a837374b3c7e4bdc7c404903075530b8c6dbf6` is pushed and pinned by the game Rust workspace. Game Runtime exposes the last committed outer conditional check to visible single-case Debug and unscored Terminal observations; Steam shows matched and skipped feedback on MAIN and folded rows. No host re-evaluates conditions. Full browser/server and the four Level WASM consumers were rebuilt and synchronized without a Cargo override. The game worktree's Git link is unavailable; its recorded Rust tree hash identifies the actual build inputs.
+
+Level WASM SHA-256 `d532eb69675c80af4d06960163bd5e0fb1076dade3c3f89badb062c74df433c9`; evaluator `game-runtime-source-sha256:1ef4507cf3ed35ae5c370aec13b2e1d2cb1ea5f0cbc8a80707fe00730d9933c5`. Full browser WASM SHA-256 `311ba0a89e5e756dd5b64357c38d1319936f56c16aeda56c0b9ad258ee054d07`; Full server WASM SHA-256 `d45674293283759c25f412047d6ac62c72b0ffc23d609575d78efaf3035001a6`.
+
+Lang workspace tests and formatting, game Rust workspace tests, 123 Level cases in actual Chromium, 135 Full fixtures in native and Chromium/Node browser and Node server, Steam 38 focused tests and Electron condition feedback, Web artifact integrity 3/3, Editor WASM 3/3, and API Level 17/17 pass. Three older Level fixtures were corrected to permit their own OUTPUT and HALT instructions. Existing game Rust formatting differences remain. Wasmtime and physical-device acceptance were not rerun.
+
 ## 2026-10-26 Register-selected Function and Folded Block calls
 
 Lang implementation `f60eeafaa815b6cefb27176bb023d4576c4948ef` is pushed and pinned by Game
