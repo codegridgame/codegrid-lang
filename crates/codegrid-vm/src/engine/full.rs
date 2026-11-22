@@ -364,7 +364,7 @@ fn execute_normal(
     let id = cell_id(mode.code_grid, thread.board, None, thread.position);
     record_cell_visit(metrics, draft, thread, id, mode.scope);
     // Keep this before resolving Primary or Attachment operands.
-    if !condition_matches(cell.prefix, thread, registers, metrics, draft) {
+    if !condition_matches(cell.prefix, thread, registers, metrics, draft, mode, id) {
         move_normal_cell(thread, step, runtime, config, draft, mode);
         return;
     }
@@ -463,14 +463,9 @@ fn execute_repeat(
         draft.fault = Some(VmFault::InternalInvariantViolation);
         return;
     }
-    record_cell_visit(
-        metrics,
-        draft,
-        thread,
-        cell_id(mode.code_grid, thread.board, None, thread.position),
-        mode.scope,
-    );
-    if !condition_matches(cell.prefix, thread, registers, metrics, draft) {
+    let id = cell_id(mode.code_grid, thread.board, None, thread.position);
+    record_cell_visit(metrics, draft, thread, id, mode.scope);
+    if !condition_matches(cell.prefix, thread, registers, metrics, draft, mode, id) {
         thread.phase = ExecutionPhase::Normal;
         move_normal_cell(thread, step, runtime, config, draft, mode);
         return;
@@ -695,6 +690,8 @@ fn execute_fold_cell(
         registers,
         metrics,
         draft,
+        mode,
+        cell,
     );
     let total = repetition.map(|(total, _)| total).or_else(|| {
         matched
@@ -1587,13 +1584,23 @@ fn condition_matches(
     registers: &[Value; 10],
     metrics: &mut crate::RuntimeMetrics,
     draft: &mut StepDraft,
+    mode: ExecutionMode,
+    cell: crate::StaticCellId,
 ) -> bool {
     let Some(prefix) = prefix else {
         return true;
     };
     record_operation(metrics, InstructionKind::Condition, draft);
-    match prefix {
+    let matched = match prefix {
         codegrid_model::ConditionPrefix::Flag => thread.status_flag == 1,
         _ => registers[usize::from(thread.register_pointer)] == prefix.value(),
+    };
+    if mode.scope == crate::ExecutionScope::Outer {
+        draft.conditions.push(crate::ConditionObservation {
+            thread_id: thread.id,
+            cell,
+            matched,
+        });
     }
+    matched
 }

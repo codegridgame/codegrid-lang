@@ -17,7 +17,8 @@ mod thread;
 pub use codegrid_ir::{TailCallSite, VerifiedProgram};
 pub use config::VmConfig;
 pub use engine::{
-    PreparedStep, RunOutcome, RunResult, StepReport, StepResult, VmEvent, WorkLimitExceeded,
+    ConditionObservation, PreparedStep, RunOutcome, RunResult, StepReport, StepResult, VmEvent,
+    WorkLimitExceeded,
 };
 pub use error::{ExecutionScope, RuntimeError, RuntimeErrorKind};
 pub use memory::{effective_address, Memory, MemoryAddress, Page};

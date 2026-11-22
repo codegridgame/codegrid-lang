@@ -421,6 +421,12 @@ counters are independent.
 
 A successful step may emit ordered events for reached cells, consumed input, committed register/memory/code changes, and thread changes. Failed or rolled-back transitions emit no events and no newly committed output. A state-change event is emitted only when the committed value changes. Empty input, empty-stack WriteCode, and invalid DECODE no-ops do not emit a change event.
 
+A committed `StepResult` also reports the static cell, thread ID, and matched
+result of each outer conditional-prefix check performed in that transition.
+This includes checks in Folded Blocks and on Repeat passes. Failed or aborted
+transitions expose no such observations. Custom-internal checks are excluded.
+These observations are separate from the ordered event stream.
+
 CellReached covers outer and Custom cells, Entry and empty cells, Folded Block shells, and visited Folded Block cells. Failed-transition cell visits are not returned as events; prepared candidates expose the visited-cell identities through `StepReport.footprint`. Custom scope identifies caller thread, Custom ID, and internal transition. Newly emitted outer output is a per-step ordered delta and is appended to cumulative output. Custom OUTPUT changes the caller stack instead.
 
 On a successful commit, every `CellReached` event precedes committed state-change events. Cell visits are ordered by outer thread ID; for each outer thread, its outer-context visit precedes its Custom visits, which are ordered by Custom internal transition and internal thread ID. Custom state-change events follow in `(internal transition, caller thread ID, Custom ID)` order, then Outer state-change events. Within each context transition, state events are ordered by category: `InputConsumed`, `RegisterChanged`, `MemoryChanged`, `CodeChanged`, then `ThreadChanged`. Within a category, order by thread ID, register index, `MemoryLocationId`, `StaticCellId`, or thread ID respectively. Failed or rolled-back transitions emit no events.

@@ -24,6 +24,8 @@ pub struct StepResult {
     /// Ordered execution and committed-state events for this transition.
     /// Failed or rolled-back attempts return no events.
     pub events: Vec<VmEvent>,
+    /// Conditions evaluated in the outer scope of this committed transition.
+    pub conditions: Vec<ConditionObservation>,
     pub status: VmStatus,
     pub newly_emitted_output: Vec<Value>,
     pub errors: Vec<RuntimeError>,
@@ -48,6 +50,14 @@ pub struct StepReport {
     pub candidate_status: VmStatus,
     pub errors: Vec<RuntimeError>,
     pub fault: Option<VmFault>,
+}
+
+/// A condition evaluated at an outer cell during a committed transition.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub struct ConditionObservation {
+    pub thread_id: u64,
+    pub cell: StaticCellId,
+    pub matched: bool,
 }
 
 /// A host-neutral event emitted by a successfully committed transition.
@@ -562,6 +572,7 @@ struct StepDraft {
     effects: SharedEffectBatch,
     events: CellVisitLog,
     committed_events: Vec<VmEvent>,
+    conditions: Vec<ConditionObservation>,
     errors: Vec<RuntimeError>,
     halt_requested: bool,
     work_limit_exceeded: bool,
@@ -655,6 +666,7 @@ impl Vm {
                     committed_steps: self.metrics.committed_steps(),
                     metrics: self.metrics.summary(),
                     events: Vec::new(),
+                    conditions: Vec::new(),
                     status: self.status,
                     newly_emitted_output: Vec::new(),
                     errors: self.terminal_errors.clone(),
@@ -673,6 +685,7 @@ impl Vm {
                     committed_steps: self.metrics.committed_steps(),
                     metrics: self.metrics.summary(),
                     events: Vec::new(),
+                    conditions: Vec::new(),
                     status: self.status,
                     newly_emitted_output: Vec::new(),
                     errors: Vec::new(),
@@ -816,6 +829,7 @@ impl Vm {
                     committed_steps: self.metrics.committed_steps(),
                     metrics: self.metrics.summary(),
                     events: Vec::new(),
+                    conditions: Vec::new(),
                     status: self.status,
                     newly_emitted_output: Vec::new(),
                     errors: Vec::new(),
@@ -835,6 +849,7 @@ impl Vm {
                     committed_steps: self.metrics.committed_steps(),
                     metrics: self.metrics.summary(),
                     events: Vec::new(),
+                    conditions: Vec::new(),
                     status: self.status,
                     newly_emitted_output: Vec::new(),
                     errors: draft.errors,
@@ -853,6 +868,7 @@ impl Vm {
                     committed_steps: self.metrics.committed_steps(),
                     metrics: self.metrics.summary(),
                     events: Vec::new(),
+                    conditions: Vec::new(),
                     status: self.status,
                     newly_emitted_output: Vec::new(),
                     errors: Vec::new(),
@@ -910,6 +926,11 @@ impl Vm {
                 committed_steps: self.metrics.committed_steps(),
                 metrics: self.metrics.summary(),
                 events: if committed { events } else { Vec::new() },
+                conditions: if committed {
+                    draft.conditions
+                } else {
+                    Vec::new()
+                },
                 status: self.status,
                 newly_emitted_output: self.output[output_start..].to_vec(),
                 errors: Vec::new(),

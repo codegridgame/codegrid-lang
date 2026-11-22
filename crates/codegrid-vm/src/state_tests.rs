@@ -189,6 +189,31 @@ mod tests {
     }
 
     #[test]
+    fn committed_condition_observations_follow_actual_vm_judgment() {
+        use codegrid_model::{ConditionPrefix, PrimaryInstruction};
+        for prefix in ConditionPrefix::ALL {
+            for value in 0..=2 {
+                for flag in 0..=1 {
+                    let program = verified_cells(vec![
+                        Cell::entry(Direction::Right),
+                        Cell::instruction(PrimaryInstruction::Halt, None).with_prefix(prefix),
+                    ], 2);
+                    let mut vm = Vm::new(program, [], config()).unwrap();
+                    vm.registers[0] = value;
+                    vm.threads[0].status_flag = flag;
+                    vm.step();
+                    vm.prepare_step().abort();
+                    let result = vm.step();
+                    assert_eq!(result.conditions.len(), 1);
+                    assert_eq!(result.conditions[0].matched, if prefix == ConditionPrefix::Flag { flag == 1 } else { value == prefix.value() });
+                    assert_eq!(result.conditions[0].cell.position.x, 1);
+                    assert_eq!(result.conditions[0].cell.position.y, 0);
+                }
+            }
+        }
+    }
+
+    #[test]
     fn implicit_custom_entry_executes_origin_and_returns() {
         use codegrid_model::{PrimaryInstruction, Slot};
         let program = verified_with_custom(
@@ -2114,12 +2139,18 @@ mod tests {
         let mut vm = Vm::new(program, [], config()).expect("one initial thread fits in u64");
 
         assert_eq!(vm.step().status, VmStatus::Running);
-        assert_eq!(vm.step().status, VmStatus::Running);
+        let first = vm.step();
+        assert_eq!(first.status, VmStatus::Running);
+        assert!(first.conditions[0].matched);
+        assert_eq!(first.conditions[0].cell.folded_block, Some(fold_id));
         assert!(matches!(
             vm.snapshot().threads[0].phase,
             super::ThreadPhaseSnapshot::FoldRepeat { completed: 1, .. }
         ));
-        assert_eq!(vm.step().status, VmStatus::Running);
+        let second = vm.step();
+        assert_eq!(second.status, VmStatus::Running);
+        assert!(!second.conditions[0].matched);
+        assert_eq!(second.conditions[0].cell.folded_block, Some(fold_id));
         let snapshot = vm.snapshot();
         assert_eq!(snapshot.registers[0], 1);
         assert!(matches!(

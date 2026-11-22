@@ -44,3 +44,5 @@ The canonical Primaries are `CallRegister` (`[r`, code 205) and
 `FoldedBlockRegister` (`$r`, code 150). Use the shared model inventory. Function
 Repeat and both register calls inside Folded Blocks are forbidden. Runtime
 selection, empty-slot execution and per-pass target reads belong only to VM.
+
+Committed `StepResult.conditions` reports outer conditional checks with static cell identity, thread ID, and actual matched result, including Folded Blocks and Repeat passes. Failed, aborted, or work-limited transitions expose none. It does not expose Custom-internal checks.

@@ -8,6 +8,14 @@ do not replace current specifications. Game-only decisions and game-specific
 verification excerpts are archived in the sibling
 [Game Runtime history index](../../bf-steam-wt/doc/codegrid-lang-history/README.md).
 
+## Committed outer condition observations (2026-11-22)
+
+A successful VM step returns the actual result and static cell identity of each
+condition evaluated in outer execution. This neutral per-transition observation
+includes folded cells and repeated checks, and is discarded on rollback. Custom
+internal conditions are excluded. It does not change conditional semantics,
+events, metrics, or host-facing Full Runtime JSON.
+
 ## Register-selected calls (2026-10-26)
 
 Explicit user decision: `$r` calls the current board's Folded Block selected
