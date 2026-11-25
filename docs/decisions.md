@@ -583,3 +583,8 @@ normally, while Repeat itself adds no operation. Adding the verified attachment
 value advances executable IR from format 5 to format 6; the Runtime API and
 Server ABI field shapes remain unchanged, so their current versions remain in
 place under the pre-publication policy.
+
+## 2026-11-25: Remove NEG
+
+Remove the NEG Primary (`$!`) from Full source and execution. Byte 69
+now follows the existing invalid Instruction Code rule.

@@ -7,7 +7,7 @@
 **Execution semantics:** [CodeGrid VM Specification](codegrid-vm-spec.md)  
 **Authority:** This document defines accepted Full source syntax and static validation. The shared syntax/compiler implementation is the sole source-acceptance authority for every host.
 
-**Implemented (2026-10-08):** `$!` / NEG is accepted by the shared compiler and rebuilt WASM hosts; see §11.
+**Current contract:** `$!` is not a valid Primary.
 
 ## 1. Source text and lexical units
 
@@ -123,7 +123,6 @@ Every Primary token in the canonical language inventory is listed here. Instruct
 | `,` | Read a byte and set F=0; on exhaustion retain the register and set F=1. Direction is unchanged. |
 | `!` | Clear the current register to zero. Preserve all stacks, the register pointer, and F. |
 | `+`, `-` | Add to or subtract from the current register. |
-| `$!` | NEG: invert all eight bits of the selected byte (`255 - value`). |
 | `{`, `}` | Move the register pointer left or right. |
 | `.` | Output the current register. |
 | `.0`–`.9` | Output the raw byte 0–9 without changing registers or the register pointer. |
@@ -160,12 +159,6 @@ An Attachment is concatenated directly to a Primary token in the same cell. The 
 | `xr` | Repeat using the selected register's byte value as the total count. |
 
 Examples of complete attached cells are `+x3`, `+xr`, `,*`, `[0=`, `$0x3`, `$0xr`, and `;*`. An Attachment separated by whitespace from its Primary is detached and invalid. A cell cannot contain more than one suffix Attachment. Entry markers cannot carry a suffix. Folded Block cells use the same Attachment compatibility rules as other cells, subject to Folded Block Primary restrictions.
-
-NEG is an encodable ordinary Primary. Its complete forms include `$!`,
-`?0$!`, `$!*`, `$!=`, `$!x2`, and `?1$!x3`. Unicode multiplication signs
-are not Repeat syntax; `$!×2` and whitespace-separated `?0 $!` or `$! x2`
-are invalid. NEG is allowed on outer and Custom Main and Function Boards,
-and in Folded Blocks with any compatible suffix, under the existing placement rules.
 
 ReadCode may be attached to any Primary. When the Primary has no Instruction Code, ReadCode is accepted as an inert, uncounted no-op. WriteCode may be attached to any Primary with an Instruction Code, and to RETURN `]` as an inert, uncounted no-op. Repeat (`x2`–`x9` or `xr`) may be attached to any Primary with an Instruction Code except Function CALL (including `[r`) and RETURN, and to immediate output Primaries `.0`–`.9`. Thus Folded Block calls `$0`–`$9` and `$r` accept ReadCode, WriteCode, and Repeat; Custom calls, Custom returns, and HALT accept ReadCode only; immediate output accepts ReadCode and Repeat; RETURN accepts ReadCode and WriteCode but not Repeat. No other Primary-suffix combination is valid. Conditional prefix eligibility is independent.
 

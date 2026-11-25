@@ -853,7 +853,6 @@ fn execute_primary(
                 stage_register(thread, result, draft);
             }
         }
-        PrimaryInstruction::Neg => stage_register(thread, !value, draft),
         PrimaryInstruction::Read => {
             if mode.scope == ExecutionScope::Outer {
                 let value = input.front().copied();

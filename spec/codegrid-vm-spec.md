@@ -206,7 +206,7 @@ old bit7 and SHIFT RIGHT uses old bit0. Pointer left sets it on R0-to-R9 wrap;
 pointer right sets it on R9-to-R0 wrap. Each of these operations overwrites F
 with zero when its stated condition is false. READ follows Section 7.
 
-All other instructions preserve F, including empty/nonempty NAND, NEG, CMP,
+All other instructions preserve F, including empty/nonempty NAND, CMP,
 CLEAR, codec, memory, Page, output, direction, Attachments and movement.
 An empty POPADD preserves the register and stack while setting F=1.
 False prefixes preserve F and skip both Primary and suffix. Repeat checks the
@@ -232,7 +232,6 @@ Every ordinary Primary except Halt is followed by its defined movement or contro
 | Read | Consume the next outer input byte or Custom caller-stack top and write the selected register with F=0; on exhaustion preserve the register with F=1. Preserve direction in both cases. |
 | Clear | Set the selected register to zero, regardless of Data Stack contents. Preserve all other registers, stacks, the register pointer, Page, and F. Use ordinary movement and count one operation. |
 | Add / Sub | Increment / decrement the selected register modulo 256. |
-| Neg | Set the selected byte to its eight-bit complement, `!value` or `255 - value`. Preserve the pointer and every other register; use ordinary movement. |
 | MoveRegisterPointer(left/right) | Move the thread pointer one slot in the encoded direction, wrapping between R0 and R9. |
 | Output | Outer context: stage the selected byte into the shared output sequence. Custom context: stage a push onto the caller's data stack. |
 | OutputImmediate(digit 0 through 9) | Stage the literal raw byte into outer output, or onto the Custom caller's data stack. Preserve all registers and the register pointer. Use ordinary Output movement, conflicts, rollback, transition and work accounting. |
@@ -254,11 +253,7 @@ Every ordinary Primary except Halt is followed by its defined movement or contro
 
 Outer READ uses one shared input queue. When the queue is nonempty and exactly one thread reads in a transition, the first byte is consumed and staged for that thread's selected register. Multiple reads while the queue is nonempty conflict rather than receiving the same byte or consuming successive bytes. When input is empty, READ does not write a register or consume a byte; it sets F=1 and preserves direction. Empty-queue reads do not conflict; a successful read sets F=0, including the last byte.
 
-NEG is an encodable ordinary Primary with Instruction Code 69 and distinct
-metric kind `Neg`. It accepts the existing conditional prefixes and suffix
-matrix, including per-transition Repeat and prefix rechecks. Every execution counts
-one operation; work remains one unit per scheduled dispatch. It introduces no
-instruction-specific overflow error. Game resource pricing and capability policy are outside the VM.
+Byte 69 is not an Instruction Code. DECODE applies the ordinary invalid-byte rule.
 
 ## 8. Attachments
 
@@ -313,7 +308,6 @@ These encodable Primaries have canonical byte Instruction Codes and may be store
 | . | 46 |
 | < | 60 |
 | > | 62 |
-| $! | 69 |
 | ?? | 126 |
 | ?= | 124 |
 | $& | 74 |
@@ -341,8 +335,7 @@ bank. Register conflict identity includes bank ownership: writes to R0 in
 different Function invocations, or to Function R0 and Main R0, do not conflict.
 Input, output, memory, mutable-code and Custom caller-stack conflicts are
 unchanged. Private writes roll back when any shared effect rejects the transition.
-NEG changes every selected byte to a different value and participates in the
-existing register write conflicts. Main threads still share the Main bank.
+Main threads still share the Main bank.
 
 OutputImmediate has no Instruction Code and accepts inert ReadCode suffixes and Repeat suffixes x2 through x9 or xr; conditional prefixes are permitted. Repeat uses the ordinary per-transition Primary execution, movement, conflicts, rollback, work accounting, and Custom caller-stack routing. WriteCode remains invalid. It cannot
 be represented on the Instruction Stack. Existing Instruction Codes remain

@@ -220,7 +220,6 @@ pub enum PrimaryInstruction {
     Call(Slot),
     CallRegister,
     Return,
-    Neg,
     Nand,
     MemoryLoad,
     MemoryStore,
@@ -257,7 +256,6 @@ impl PrimaryInstruction {
             Self::CallRegister,
             Self::FoldedBlockRegister,
             Self::Return,
-            Self::Neg,
             Self::Nand,
             Self::MemoryLoad,
             Self::MemoryStore,
@@ -302,7 +300,6 @@ impl PrimaryInstruction {
             "[r" => Self::CallRegister,
             "$r" => Self::FoldedBlockRegister,
             "]" => Self::Return,
-            "$!" => Self::Neg,
             "$&" => Self::Nand,
             "$(" => Self::MemoryLoad,
             "$)" => Self::MemoryStore,
@@ -341,7 +338,6 @@ impl PrimaryInstruction {
             Self::Call(slot) => format!("[{}", slot.get()),
             Self::CallRegister => "[r".to_owned(),
             Self::Return => "]".to_owned(),
-            Self::Neg => "$!".to_owned(),
             Self::Nand => "$&".to_owned(),
             Self::MemoryLoad => "$(".to_owned(),
             Self::MemoryStore => "$)".to_owned(),
@@ -390,7 +386,6 @@ impl PrimaryInstruction {
             Self::Encode => Some(37),
             Self::Call(slot) => Some(139 + slot.get()),
             Self::CallRegister => Some(205),
-            Self::Neg => Some(69),
             Self::Nand => Some(74),
             Self::MemoryLoad => Some(76),
             Self::MemoryStore => Some(77),
@@ -425,7 +420,6 @@ impl PrimaryInstruction {
             62 => Self::Direction(Direction::Right),
             126 => Self::RandomDirection,
             124 => Self::Compare,
-            69 => Self::Neg,
             74 => Self::Nand,
             76 => Self::MemoryLoad,
             77 => Self::MemoryStore,
@@ -655,6 +649,12 @@ mod tests {
     }
 
     #[test]
+    fn removed_neg_token_and_code_are_rejected() {
+        assert_eq!(PrimaryInstruction::from_token("$!"), None);
+        assert_eq!(InstructionStackItem::from_code(69), None);
+    }
+
+    #[test]
     fn decoder_rejects_attachment_prefix_and_structural_codes() {
         for code in [35, 36, 42, 104, 106, 138, 162, 59, 61, 70, 120] {
             assert_eq!(InstructionStackItem::from_code(code), None);
@@ -711,7 +711,7 @@ mod tests {
     #[test]
     fn complete_primary_tokens_round_trip_without_duplicates() {
         let forms = PrimaryInstruction::source_forms();
-        assert_eq!(forms.len(), 70);
+        assert_eq!(forms.len(), 69);
         let mut tokens = std::collections::BTreeSet::new();
 
         for form in forms {
